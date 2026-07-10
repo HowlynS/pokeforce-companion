@@ -25,9 +25,10 @@ export function AppShell({ children }: AppShellProps) {
         <header
           style={{
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "space-between",
-            gap: "16px",
+            flexWrap: "wrap",
+            gap: "24px",
             padding: "16px 0 32px",
           }}
         >
