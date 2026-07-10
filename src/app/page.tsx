@@ -1,7 +1,63 @@
+﻿import { AppShell } from "@/components/layout/app-shell";
+import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { designTokens } from "@/lib/design-tokens";
+
 export default function Home() {
   return (
-    <main>
-      <div>Hello world!</div>
-    </main>
+    <AppShell>
+      <PageHeader
+        title="PokeForce Companion"
+        description="A crafting wiki companion for browsing items, recipes, professions, and categories."
+      />
+
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "16px",
+        }}
+      >
+        <Card
+          title="Items"
+          description="Browse materials, resources, and useful item references."
+        />
+        <Card
+          title="Recipes"
+          description="Explore crafting recipes and their required ingredients."
+        />
+        <Card
+          title="Professions"
+          description="Review crafting paths and profession-related content."
+        />
+        <Card
+          title="Categories"
+          description="Navigate grouped content faster with clear categories."
+        />
+      </section>
+
+      <section
+        style={{
+          marginTop: designTokens.layout.sectionGap,
+          border: `1px solid ${designTokens.colors.border}`,
+          borderRadius: designTokens.radius.lg,
+          background: designTokens.colors.surfaceSoft,
+          padding: "24px",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            color: designTokens.colors.textMuted,
+            fontSize: "16px",
+            lineHeight: 1.6,
+          }}
+        >
+          Milestone 2 is setting up the visual foundation only. Data, search,
+          admin editing, images, storage, and deployment will come in later
+          milestones.
+        </p>
+      </section>
+    </AppShell>
   );
 }
