@@ -85,11 +85,25 @@ Set up the visual system, layout, navigation, reusable UI components, and basic 
 
 ## Milestone 3 - Data Model
 
-Status: Not started
+Status: Complete
 
 Goal:
 
 Create the initial database schema for items, recipes, professions, categories, and recipe ingredients.
+
+### Completed
+
+- [x] Prisma configured
+- [x] PostgreSQL/Supabase connection working
+- [x] Initial schema created for Category, Item, Profession, Recipe, RecipeIngredient
+- [x] Initial migration applied
+- [x] Seed data created and verified
+- [x] Application retrieves and displays relational recipe data on `/recipes`
+- [x] Local browser verification passed
+- [x] `pnpm prisma validate` passed
+- [x] `pnpm lint` passed
+- [x] `pnpm build` passed
+- [x] Repository clean and pushed through commit `b1bbf80`
 
 ---
 
