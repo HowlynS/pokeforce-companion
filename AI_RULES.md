@@ -1,4 +1,4 @@
-# PokeForce Companion — AI Rules
+﻿# PokeForce Companion - AI Rules
 
 ## Source of Truth
 
@@ -14,11 +14,11 @@ AI tools must not invent features, architecture, database tables, or design syst
 
 The current phase is:
 
-Milestone 1 — App Foundation is complete.
+Milestone 2 - Design Foundation is complete.
 
-The project is ready to begin Milestone 2 — Design Foundation.
+The project is ready to begin Milestone 3 - Data Model.
 
-Do not start Milestone 2 work until explicitly instructed in the next milestone conversation.
+Do not start Milestone 3 work until explicitly instructed in the next milestone conversation.
 
 ## AI Workflow Rules
 

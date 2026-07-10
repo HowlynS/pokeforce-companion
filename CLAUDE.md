@@ -1,4 +1,4 @@
-# CLAUDE.md — PokeForce Companion
+﻿# CLAUDE.md - PokeForce Companion
 
 You are assisting with PokeForce Companion.
 
@@ -13,11 +13,11 @@ Before making or suggesting changes, respect these documents:
 
 ## Current Phase
 
-Milestone 1 — App Foundation is complete.
+Milestone 2 - Design Foundation is complete.
 
-The project is ready to begin Milestone 2 — Design Foundation.
+The project is ready to begin Milestone 3 - Data Model.
 
-Do not start Milestone 2 work until explicitly instructed in the next milestone conversation.
+Do not start Milestone 3 work until explicitly instructed in the next milestone conversation.
 
 ## Working Style
 
