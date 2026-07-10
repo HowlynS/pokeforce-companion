@@ -32,11 +32,24 @@ Status: Complete
 
 ## Milestone 1 — App Foundation
 
-Status: In progress
+Status: Complete
 
 Goal:
 
 Create the base Next.js application with TypeScript, Tailwind CSS, app structure, and first local run.
+
+### Completed
+
+- [x] Base Next.js application created
+- [x] TypeScript configured
+- [x] Tailwind CSS configured
+- [x] App Router structure created
+- [x] `src/` directory structure created
+- [x] Dependencies installed with pnpm
+- [x] `pnpm lint` passed
+- [x] `pnpm build` passed
+- [x] First local run verified at `http://localhost:3000`
+- [x] Browser displayed `hello world!`
 
 ---
 
