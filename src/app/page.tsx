@@ -1,6 +1,7 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
+import { ContentGrid } from "@/components/ui/content-grid";
 import { designTokens } from "@/lib/design-tokens";
 
 export default function Home() {
@@ -11,13 +12,7 @@ export default function Home() {
         description="A crafting wiki companion for browsing items, recipes, professions, and categories."
       />
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px",
-        }}
-      >
+      <ContentGrid>
         <Card
           title="Items"
           description="Browse materials, resources, and useful item references."
@@ -34,11 +29,10 @@ export default function Home() {
           title="Categories"
           description="Navigate grouped content faster with clear categories."
         />
-      </section>
+      </ContentGrid>
 
       <section
         style={{
-          marginTop: designTokens.layout.sectionGap,
           border: `1px solid ${designTokens.colors.border}`,
           borderRadius: designTokens.radius.lg,
           background: designTokens.colors.surfaceSoft,
