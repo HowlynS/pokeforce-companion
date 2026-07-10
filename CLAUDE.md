@@ -13,9 +13,11 @@ Before making or suggesting changes, respect these documents:
 
 ## Current Phase
 
-Milestone 1 — App Foundation.
+Milestone 1 — App Foundation is complete.
 
-Development must remain within the confirmed Milestone 1 scope.
+The project is ready to begin Milestone 2 — Design Foundation.
+
+Do not start Milestone 2 work until explicitly instructed in the next milestone conversation.
 
 ## Working Style
 
