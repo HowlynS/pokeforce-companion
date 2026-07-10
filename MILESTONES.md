@@ -2,7 +2,7 @@
 
 ## Milestone 0 — Preparation
 
-Status: In progress
+Status: Complete
 
 ### Completed
 
@@ -25,8 +25,8 @@ Status: In progress
 
 ### Remaining
 
-- [ ] Final Milestone 0 verification
-- [ ] Confirm readiness for Milestone 1
+- [x] Final Milestone 0 verification
+- [x] Confirm readiness for Milestone 1
 
 ---
 
