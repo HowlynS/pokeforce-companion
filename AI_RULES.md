@@ -14,9 +14,9 @@ AI tools must not invent features, architecture, database tables, or design syst
 
 The current phase is:
 
-Milestone 0 — Preparation
+Milestone 1 — App Foundation
 
-No feature development should happen yet unless explicitly approved.
+Development must remain within the confirmed Milestone 1 scope.
 
 ## AI Workflow Rules
 

@@ -32,7 +32,7 @@ Status: Complete
 
 ## Milestone 1 — App Foundation
 
-Status: Not started
+Status: In progress
 
 Goal:
 

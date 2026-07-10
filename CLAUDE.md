@@ -13,9 +13,9 @@ Before making or suggesting changes, respect these documents:
 
 ## Current Phase
 
-Milestone 0 — Preparation.
+Milestone 1 — App Foundation.
 
-Do not start feature development yet.
+Development must remain within the confirmed Milestone 1 scope.
 
 ## Working Style
 
