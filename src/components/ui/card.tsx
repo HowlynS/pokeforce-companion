@@ -3,18 +3,12 @@
 type CardProps = {
   title: string;
   description: string;
+  href?: string;
 };
 
-export function Card({ title, description }: CardProps) {
-  return (
-    <article
-      style={{
-        border: `1px solid ${designTokens.colors.border}`,
-        borderRadius: designTokens.radius.md,
-        background: designTokens.colors.surface,
-        padding: "24px",
-      }}
-    >
+export function Card({ title, description, href }: CardProps) {
+  const cardContent = (
+    <>
       <h3
         style={{
           margin: "0 0 8px",
@@ -35,6 +29,26 @@ export function Card({ title, description }: CardProps) {
       >
         {description}
       </p>
-    </article>
+    </>
   );
+
+  const cardStyles = {
+    border: `1px solid ${designTokens.colors.border}`,
+    borderRadius: designTokens.radius.md,
+    background: designTokens.colors.surface,
+    color: designTokens.colors.text,
+    display: "block",
+    padding: "24px",
+    textDecoration: "none",
+  };
+
+  if (href) {
+    return (
+      <a href={href} style={cardStyles}>
+        {cardContent}
+      </a>
+    );
+  }
+
+  return <article style={cardStyles}>{cardContent}</article>;
 }

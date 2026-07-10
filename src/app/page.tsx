@@ -16,18 +16,22 @@ export default function Home() {
         <Card
           title="Items"
           description="Browse materials, resources, and useful item references."
+          href="/items"
         />
         <Card
           title="Recipes"
           description="Explore crafting recipes and their required ingredients."
+          href="/recipes"
         />
         <Card
           title="Professions"
           description="Review crafting paths and profession-related content."
+          href="/professions"
         />
         <Card
           title="Categories"
           description="Navigate grouped content faster with clear categories."
+          href="/categories"
         />
       </ContentGrid>
 
