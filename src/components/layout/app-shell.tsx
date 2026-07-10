@@ -60,6 +60,18 @@ export function AppShell({ children }: AppShellProps) {
         </header>
 
         <main>{children}</main>
+
+        <footer
+          style={{
+            borderTop: `1px solid ${designTokens.colors.border}`,
+            marginTop: "48px",
+            padding: "24px 0 0",
+            color: designTokens.colors.textMuted,
+            fontSize: "14px",
+          }}
+        >
+          PokeForce Companion - Design Foundation
+        </footer>
       </div>
     </div>
   );
