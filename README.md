@@ -12,3 +12,7 @@ This project is based on:
 ## Current Milestone
 
 Milestone 0 — Preparation
+
+## Development Status
+
+Repository connected to GitHub.
