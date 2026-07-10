@@ -1,6 +1,6 @@
-# PokeForce Companion — Milestones
+﻿# PokeForce Companion - Milestones
 
-## Milestone 0 — Preparation
+## Milestone 0 - Preparation
 
 Status: Complete
 
@@ -30,7 +30,7 @@ Status: Complete
 
 ---
 
-## Milestone 1 — App Foundation
+## Milestone 1 - App Foundation
 
 Status: Complete
 
@@ -53,17 +53,37 @@ Create the base Next.js application with TypeScript, Tailwind CSS, app structure
 
 ---
 
-## Milestone 2 — Design Foundation
+## Milestone 2 - Design Foundation
 
-Status: Not started
+Status: Complete
 
 Goal:
 
 Set up the visual system, layout, navigation, reusable UI components, and basic page structure.
 
+### Completed
+
+- [x] Design tokens created
+- [x] App shell created
+- [x] Main navigation created
+- [x] Reusable page header created
+- [x] Reusable card component created
+- [x] Reusable content grid created
+- [x] Reusable empty state created
+- [x] Homepage overview created
+- [x] Basic section pages created
+- [x] Homepage cards made clickable
+- [x] App metadata updated
+- [x] Global app styles added
+- [x] Responsive header layout improved
+- [x] App footer added
+- [x] `pnpm lint` passed
+- [x] `pnpm build` passed
+- [x] Local visual verification passed
+
 ---
 
-## Milestone 3 — Data Model
+## Milestone 3 - Data Model
 
 Status: Not started
 
@@ -73,7 +93,7 @@ Create the initial database schema for items, recipes, professions, categories, 
 
 ---
 
-## Milestone 4 — Content Pages
+## Milestone 4 - Content Pages
 
 Status: Not started
 
@@ -83,7 +103,7 @@ Build item, recipe, profession, and category pages.
 
 ---
 
-## Milestone 5 — Admin Editing
+## Milestone 5 - Admin Editing
 
 Status: Not started
 
@@ -93,7 +113,7 @@ Create a protected admin interface for editing game data.
 
 ---
 
-## Milestone 6 — Images and Storage
+## Milestone 6 - Images and Storage
 
 Status: Not started
 
@@ -103,7 +123,7 @@ Add image upload and storage for items, recipes, and professions.
 
 ---
 
-## Milestone 7 — Search and Polish
+## Milestone 7 - Search and Polish
 
 Status: Not started
 
@@ -113,7 +133,7 @@ Add basic search, improve navigation, and polish the user experience.
 
 ---
 
-## Milestone 8 — Deployment
+## Milestone 8 - Deployment
 
 Status: Not started
 
