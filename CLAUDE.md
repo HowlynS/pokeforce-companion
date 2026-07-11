@@ -13,11 +13,11 @@ Before making or suggesting changes, respect these documents:
 
 ## Current Phase
 
-Milestone 3 - Data Model is complete.
+Milestone 4 - Content Pages is complete.
 
-The project is ready to begin Milestone 4 - Content Pages.
+The project is ready to begin Milestone 5 - Admin Editing.
 
-Do not start Milestone 4 work until explicitly instructed in the next milestone conversation.
+Do not start Milestone 5 work until explicitly instructed in the next milestone conversation.
 
 ## Working Style
 

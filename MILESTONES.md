@@ -109,11 +109,32 @@ Create the initial database schema for items, recipes, professions, categories, 
 
 ## Milestone 4 - Content Pages
 
-Status: Not started
+Status: Complete
 
 Goal:
 
 Build item, recipe, profession, and category pages.
+
+### Completed
+
+- [x] Database-backed `/items` browsing page
+- [x] Database-backed `/recipes` browsing page
+- [x] Database-backed `/professions` browsing page
+- [x] Database-backed `/categories` browsing page
+- [x] Dynamic `/items/[slug]` detail pages
+- [x] Dynamic `/recipes/[slug]` detail pages
+- [x] Dynamic `/professions/[slug]` detail pages
+- [x] Dynamic `/categories/[slug]` detail pages
+- [x] Relational content displayed from Prisma
+- [x] Navigation links between browsing pages, detail pages, and related content
+- [x] Deterministic ordering for browsing and relational data
+- [x] Empty states where appropriate
+- [x] `notFound()` handling for invalid slugs
+- [x] `pnpm prisma validate` passed
+- [x] `pnpm lint` passed
+- [x] `pnpm build` passed
+- [x] `git diff --check` passed
+- [x] Full local browser verification passed
 
 ---
 
