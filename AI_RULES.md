@@ -14,11 +14,11 @@ AI tools must not invent features, architecture, database tables, or design syst
 
 The current phase is:
 
-Milestone 4 - Content Pages is complete.
+Milestone 5 - Admin Editing is complete.
 
-The project is ready to begin Milestone 5 - Admin Editing.
+The project is ready to begin Milestone 6 - Images and Storage.
 
-Do not start Milestone 5 work until explicitly instructed in the next milestone conversation.
+Do not start Milestone 6 work until explicitly instructed in the next milestone conversation.
 
 ## AI Workflow Rules
 

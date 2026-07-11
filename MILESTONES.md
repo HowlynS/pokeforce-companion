@@ -140,11 +140,52 @@ Build item, recipe, profession, and category pages.
 
 ## Milestone 5 - Admin Editing
 
-Status: Not started
+Status: Complete
 
 Goal:
 
 Create a protected admin interface for editing game data.
+
+### Completed
+
+- [x] Supabase email/password authentication, no public sign-up page
+- [x] Admin account created manually in Supabase
+- [x] Server-only `ADMIN_EMAIL` authorization check (`requireAdminUser()`)
+- [x] `/admin` redirects unauthenticated visitors to `/login`
+- [x] Authenticated non-admin emails are denied access
+- [x] Next.js proxy (`src/proxy.ts`) refreshes the Supabase session cookie only; not the authorization boundary
+- [x] Sign-in and sign-out browser-verified
+- [x] Every mutation independently repeats `requireAdminUser()`
+- [x] Category admin: list, create, edit, delete
+- [x] Profession admin: list, create, edit, delete
+- [x] Item admin: list, create, edit, delete, optional Category relation
+- [x] Recipe admin: list, create, edit, delete, resulting Item, optional Profession, multiple ingredients
+- [x] Case-insensitive duplicate-name protection on Category, Profession, Item, Recipe
+- [x] Unique-slug conflict handling (`P2002`) on all four resources
+- [x] Stable-ID updates and deletes throughout (never by editable slug)
+- [x] Server-side verification of every submitted relation ID (Category, Profession, Item results/ingredients)
+- [x] Dedicated server-rendered delete-confirmation pages (no client-side `confirm()`)
+- [x] Deletion blocked while Category is linked to Items
+- [x] Deletion blocked while Profession is linked to Recipes
+- [x] Deletion blocked while Item is referenced by Recipes (as result or ingredient)
+- [x] Recipe deletion cascades its own RecipeIngredient rows (confirmed schema `onDelete: Cascade`); resulting Item, ingredient Items, and Profession are preserved
+- [x] Atomic Recipe + RecipeIngredient writes on create (nested create) and edit (`$transaction`)
+- [x] Relation-aware route revalidation (admin + public + affected relation routes) on every mutation
+- [x] `notFound()` handling for missing admin edit/delete routes
+- [x] No raw Prisma/database errors rendered anywhere
+- [x] Local validation helpers only; no validation package added
+- [x] `pnpm prisma validate` passed
+- [x] `pnpm lint` passed
+- [x] `pnpm build` passed
+- [x] `git diff --check` passed
+- [x] Full local browser verification passed for every resource and destructive action
+
+### Deferred to later milestones
+
+- Image upload/storage for items, recipes, professions — Milestone 6
+- Search and live duplicate-name feedback — Milestone 7
+- Final visual redesign / mock-up-based styling — later polish work
+- Deployment — Milestone 8
 
 ---
 
