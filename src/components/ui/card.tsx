@@ -4,11 +4,14 @@ type CardProps = {
   title: string;
   description: string;
   href?: string;
+  media?: React.ReactNode;
 };
 
-export function Card({ title, description, href }: CardProps) {
+export function Card({ title, description, href, media }: CardProps) {
   const cardContent = (
     <>
+      {media ? <div style={{ marginBottom: "16px" }}>{media}</div> : null}
+
       <h3
         style={{
           margin: "0 0 8px",

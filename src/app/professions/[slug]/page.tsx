@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -49,6 +50,14 @@ export default async function ProfessionDetailPage({ params }: ProfessionDetailP
         title={profession.name}
         description={profession.description ?? "No description available."}
       />
+
+      <section style={{ marginBottom: "24px" }}>
+        <ContentImage
+          imagePath={profession.image}
+          alt={`Image of ${profession.name}`}
+          size="detail"
+        />
+      </section>
 
       <section>
         <SectionHeading>Recipes</SectionHeading>

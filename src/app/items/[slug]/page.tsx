@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -64,6 +65,14 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
         title={item.name}
         description={item.description ?? "No description available."}
       />
+
+      <section style={{ marginBottom: "24px" }}>
+        <ContentImage
+          imagePath={item.image}
+          alt={`Image of ${item.name}`}
+          size="detail"
+        />
+      </section>
 
       <ContentGrid>
         <Card title="Details" description={details.join(" · ")} />

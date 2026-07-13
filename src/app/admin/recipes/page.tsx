@@ -33,12 +33,21 @@ const errorMessages: Record<string, string> = {
   missing_recipe: "That recipe no longer exists.",
   relation_changed:
     "One of the selected items, or the profession, no longer exists. Please review your selections and try again.",
+  image_too_large: "The image must be 5 MB or smaller.",
+  invalid_image_type: "Only PNG, JPEG, and WebP images are allowed.",
+  upload_failed: "The image could not be uploaded. Please try again.",
+  conflicting_image_input:
+    "Choose either a replacement image or Remove current image, not both.",
 };
 
 const successMessages: Record<string, string> = {
   created: "Recipe created.",
   updated: "Recipe updated.",
+  updated_image_cleanup:
+    "Recipe updated, but the previous image file could not be removed from storage and may need manual cleanup in Supabase.",
   deleted: "Recipe deleted.",
+  deleted_image_cleanup:
+    "Recipe deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
 };
 
 type AdminRecipesPageProps = {
@@ -381,6 +390,18 @@ export default async function AdminRecipesPage({
                 </div>
               ))}
             </fieldset>
+
+            <label style={{ display: "grid", gap: "6px" }}>
+              <span style={{ color: designTokens.colors.textMuted }}>
+                Image (optional — PNG, JPEG, or WebP, up to 5 MB)
+              </span>
+              <input
+                type="file"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+                style={inputStyle}
+              />
+            </label>
 
             <button
               type="submit"

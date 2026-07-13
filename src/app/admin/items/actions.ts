@@ -6,6 +6,11 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { parseItemInput } from "@/lib/validation/item";
+import {
+  deleteImage,
+  uploadImage,
+  validateImageFile,
+} from "@/lib/storage/images";
 
 const UNIQUE_CONSTRAINT_ERROR_CODE = "P2002";
 
@@ -34,6 +39,39 @@ function isForeignKeyError(
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === "P2003"
   );
+}
+
+// Browsers submit an empty File for an untouched file input, so both a
+// missing value and a zero-byte value mean "no image was chosen".
+function getSubmittedImageFile(formData: FormData): File | null {
+  const value = formData.get("image");
+
+  if (!(value instanceof File) || value.size === 0) {
+    return null;
+  }
+
+  return value;
+}
+
+// Best-effort storage cleanup. Storage and the database cannot share a
+// transaction, so a failed delete here must never replace or hide the
+// outcome the user actually needs to see; the failure is logged (message
+// only, never tokens or client state) and reported via the return value.
+async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
+  if (!objectPath) {
+    return true;
+  }
+
+  try {
+    await deleteImage(objectPath);
+    return true;
+  } catch (error) {
+    console.error(
+      `Failed to delete stored image "${objectPath}":`,
+      error instanceof Error ? error.message : "unknown error"
+    );
+    return false;
+  }
 }
 
 export async function createItemAction(formData: FormData) {
@@ -71,6 +109,25 @@ export async function createItemAction(formData: FormData) {
     categorySlug = category.slug;
   }
 
+  // The optional image is uploaded only after every other validation has
+  // passed, so a rejected submission never leaves an orphaned file behind.
+  const imageFile = getSubmittedImageFile(formData);
+  let imagePath: string | null = null;
+
+  if (imageFile) {
+    const imageValidation = validateImageFile(imageFile);
+
+    if (!imageValidation.ok) {
+      redirect(`/admin/items?error=${imageValidation.error}`);
+    }
+
+    try {
+      imagePath = await uploadImage("items", imageFile);
+    } catch {
+      redirect("/admin/items?error=upload_failed");
+    }
+  }
+
   try {
     await prisma.item.create({
       data: {
@@ -81,9 +138,14 @@ export async function createItemAction(formData: FormData) {
         tradeable: parsed.value.tradeable,
         baseValue: parsed.value.baseValue,
         categoryId: parsed.value.categoryId,
+        image: imagePath,
       },
     });
   } catch (error) {
+    // The row was never created, so the file just uploaded for it must not
+    // linger in storage. The user still sees the database outcome below.
+    await tryDeleteImage(imagePath);
+
     if (isUniqueConstraintError(error)) {
       redirect("/admin/items?error=duplicate");
     }
@@ -158,6 +220,39 @@ export async function updateItemAction(formData: FormData) {
     newCategorySlug = category.slug;
   }
 
+  // The image intent comes from the submission, but the existing stored
+  // path only ever comes from the database record loaded above — a
+  // client-supplied path is never trusted to target a storage operation.
+  const existingImagePath = existingItem.image;
+  const imageFile = getSubmittedImageFile(formData);
+  const removeImage = formData.get("removeImage") === "on";
+
+  if (imageFile && removeImage) {
+    redirect(`${editPath ?? "/admin/items"}?error=conflicting_image_input`);
+  }
+
+  // Uploaded only after every other validation has passed, so a rejected
+  // submission never leaves an orphaned file behind.
+  let newImagePath: string | null = null;
+
+  if (imageFile) {
+    const imageValidation = validateImageFile(imageFile);
+
+    if (!imageValidation.ok) {
+      redirect(`${editPath ?? "/admin/items"}?error=${imageValidation.error}`);
+    }
+
+    try {
+      newImagePath = await uploadImage("items", imageFile);
+    } catch {
+      redirect(`${editPath ?? "/admin/items"}?error=upload_failed`);
+    }
+  }
+
+  // Replacement stores the new path, removal clears it, and an untouched
+  // image control keeps the existing stored path.
+  const imageValue = newImagePath ?? (removeImage ? null : existingImagePath);
+
   try {
     // Located by the stable cuid `id`, not the editable slug, so changing
     // the slug in this same submission cannot lose the target record.
@@ -171,9 +266,14 @@ export async function updateItemAction(formData: FormData) {
         tradeable: parsed.value.tradeable,
         baseValue: parsed.value.baseValue,
         categoryId: parsed.value.categoryId,
+        image: imageValue,
       },
     });
   } catch (error) {
+    // The database still references the old image (or none), so the file
+    // just uploaded for this failed update must not linger in storage.
+    await tryDeleteImage(newImagePath);
+
     if (isUniqueConstraintError(error)) {
       redirect(`${editPath ?? "/admin/items"}?error=duplicate`);
     }
@@ -184,6 +284,16 @@ export async function updateItemAction(formData: FormData) {
       redirect(`${editPath ?? "/admin/items"}?error=invalid_category`);
     }
     throw error;
+  }
+
+  // Only after the database update has succeeded is the old file deleted.
+  // If this cleanup fails, the update stays successful — an orphaned file
+  // is less harmful than rolling the record back to a deleted path — and
+  // the admin gets a distinct success message noting the leftover file.
+  let oldImageCleanupFailed = false;
+
+  if ((newImagePath !== null || removeImage) && existingImagePath) {
+    oldImageCleanupFailed = !(await tryDeleteImage(existingImagePath));
   }
 
   revalidatePath("/admin/items");
@@ -207,7 +317,11 @@ export async function updateItemAction(formData: FormData) {
     revalidatePath(`/categories/${newCategorySlug}`);
   }
 
-  redirect("/admin/items?success=updated");
+  redirect(
+    oldImageCleanupFailed
+      ? "/admin/items?success=updated_image_cleanup"
+      : "/admin/items?success=updated"
+  );
 }
 
 export async function deleteItemAction(formData: FormData) {
@@ -263,6 +377,14 @@ export async function deleteItemAction(formData: FormData) {
     throw error;
   }
 
+  // Only after the database deletion has succeeded is the stored image
+  // removed — database first, so a blocked or failed delete never strands
+  // a surviving record pointing at a missing file. The path comes from the
+  // trusted record loaded above, never from the client. If this cleanup
+  // fails, the deletion stays successful and the admin gets a distinct
+  // success message noting the leftover file.
+  const imageCleanupFailed = !(await tryDeleteImage(item.image));
+
   revalidatePath("/admin/items");
   revalidatePath(confirmPath);
   revalidatePath("/items");
@@ -272,5 +394,9 @@ export async function deleteItemAction(formData: FormData) {
     revalidatePath(`/categories/${categorySlug}`);
   }
 
-  redirect("/admin/items?success=deleted");
+  redirect(
+    imageCleanupFailed
+      ? "/admin/items?success=deleted_image_cleanup"
+      : "/admin/items?success=deleted"
+  );
 }

@@ -6,6 +6,11 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { parseRecipeInput } from "@/lib/validation/recipe";
+import {
+  deleteImage,
+  uploadImage,
+  validateImageFile,
+} from "@/lib/storage/images";
 
 const UNIQUE_CONSTRAINT_ERROR_CODE = "P2002";
 
@@ -34,6 +39,39 @@ function isForeignKeyError(
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === "P2003"
   );
+}
+
+// Browsers submit an empty File for an untouched file input, so both a
+// missing value and a zero-byte value mean "no image was chosen".
+function getSubmittedImageFile(formData: FormData): File | null {
+  const value = formData.get("image");
+
+  if (!(value instanceof File) || value.size === 0) {
+    return null;
+  }
+
+  return value;
+}
+
+// Best-effort storage cleanup. Storage and the database cannot share a
+// transaction, so a failed delete here must never replace or hide the
+// outcome the user actually needs to see; the failure is logged (message
+// only, never tokens or client state) and reported via the return value.
+async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
+  if (!objectPath) {
+    return true;
+  }
+
+  try {
+    await deleteImage(objectPath);
+    return true;
+  } catch (error) {
+    console.error(
+      `Failed to delete stored image "${objectPath}":`,
+      error instanceof Error ? error.message : "unknown error"
+    );
+    return false;
+  }
 }
 
 export async function createRecipeAction(formData: FormData) {
@@ -89,6 +127,26 @@ export async function createRecipeAction(formData: FormData) {
     redirect("/admin/recipes?error=invalid_ingredient_item");
   }
 
+  // The optional image is uploaded only after every field and relation
+  // validation has passed, so a rejected submission never leaves an
+  // orphaned file behind.
+  const imageFile = getSubmittedImageFile(formData);
+  let imagePath: string | null = null;
+
+  if (imageFile) {
+    const imageValidation = validateImageFile(imageFile);
+
+    if (!imageValidation.ok) {
+      redirect(`/admin/recipes?error=${imageValidation.error}`);
+    }
+
+    try {
+      imagePath = await uploadImage("recipes", imageFile);
+    } catch {
+      redirect("/admin/recipes?error=upload_failed");
+    }
+  }
+
   try {
     // A single nested create: Prisma performs the Recipe insert and all
     // RecipeIngredient inserts as one atomic operation, so a failure on any
@@ -97,6 +155,7 @@ export async function createRecipeAction(formData: FormData) {
       data: {
         name: parsed.value.name,
         slug: parsed.value.slug,
+        image: imagePath,
         resultingItemId: parsed.value.resultingItemId,
         resultingQuantity: parsed.value.resultingQuantity,
         professionId: parsed.value.professionId,
@@ -110,6 +169,10 @@ export async function createRecipeAction(formData: FormData) {
       },
     });
   } catch (error) {
+    // The row was never created, so the file just uploaded for it must not
+    // linger in storage. The user still sees the database outcome below.
+    await tryDeleteImage(imagePath);
+
     if (isUniqueConstraintError(error)) {
       redirect("/admin/recipes?error=duplicate");
     }
@@ -210,6 +273,41 @@ export async function updateRecipeAction(formData: FormData) {
     redirect(`${editPath ?? "/admin/recipes"}?error=invalid_ingredient_item`);
   }
 
+  // The image intent comes from the submission, but the existing stored
+  // path only ever comes from the database record loaded above — a
+  // client-supplied path is never trusted to target a storage operation.
+  const existingImagePath = existingRecipe.image;
+  const imageFile = getSubmittedImageFile(formData);
+  const removeImage = formData.get("removeImage") === "on";
+
+  if (imageFile && removeImage) {
+    redirect(`${editPath ?? "/admin/recipes"}?error=conflicting_image_input`);
+  }
+
+  // Uploaded only after every field and relation validation has passed, so
+  // a rejected submission never leaves an orphaned file behind.
+  let newImagePath: string | null = null;
+
+  if (imageFile) {
+    const imageValidation = validateImageFile(imageFile);
+
+    if (!imageValidation.ok) {
+      redirect(
+        `${editPath ?? "/admin/recipes"}?error=${imageValidation.error}`
+      );
+    }
+
+    try {
+      newImagePath = await uploadImage("recipes", imageFile);
+    } catch {
+      redirect(`${editPath ?? "/admin/recipes"}?error=upload_failed`);
+    }
+  }
+
+  // Replacement stores the new path, removal clears it, and an untouched
+  // image control keeps the existing stored path.
+  const imageValue = newImagePath ?? (removeImage ? null : existingImagePath);
+
   try {
     // Update the Recipe, delete all of its existing ingredient rows, then
     // recreate the submitted set — all as one atomic transaction, so the
@@ -221,6 +319,7 @@ export async function updateRecipeAction(formData: FormData) {
         data: {
           name: parsed.value.name,
           slug: parsed.value.slug,
+          image: imageValue,
           resultingItemId: parsed.value.resultingItemId,
           resultingQuantity: parsed.value.resultingQuantity,
           professionId: parsed.value.professionId,
@@ -237,6 +336,10 @@ export async function updateRecipeAction(formData: FormData) {
       }),
     ]);
   } catch (error) {
+    // The database still references the old image (or none), so the file
+    // just uploaded for this failed update must not linger in storage.
+    await tryDeleteImage(newImagePath);
+
     if (isUniqueConstraintError(error)) {
       redirect(`${editPath ?? "/admin/recipes"}?error=duplicate`);
     }
@@ -250,6 +353,16 @@ export async function updateRecipeAction(formData: FormData) {
       redirect(`${editPath ?? "/admin/recipes"}?error=relation_changed`);
     }
     throw error;
+  }
+
+  // Only after the transaction has succeeded is the old file deleted. If
+  // this cleanup fails, the update stays successful — an orphaned file is
+  // less harmful than rolling the record back to a deleted path — and the
+  // admin gets a distinct success message noting the leftover file.
+  let oldImageCleanupFailed = false;
+
+  if ((newImagePath !== null || removeImage) && existingImagePath) {
+    oldImageCleanupFailed = !(await tryDeleteImage(existingImagePath));
   }
 
   revalidatePath("/admin/recipes");
@@ -283,7 +396,11 @@ export async function updateRecipeAction(formData: FormData) {
     revalidatePath(`/professions/${professionSlug}`);
   }
 
-  redirect("/admin/recipes?success=updated");
+  redirect(
+    oldImageCleanupFailed
+      ? "/admin/recipes?success=updated_image_cleanup"
+      : "/admin/recipes?success=updated"
+  );
 }
 
 export async function deleteRecipeAction(formData: FormData) {
@@ -330,6 +447,14 @@ export async function deleteRecipeAction(formData: FormData) {
     throw error;
   }
 
+  // Only after the database deletion has succeeded is the stored image
+  // removed — database first, so a blocked or failed delete never strands
+  // a surviving record pointing at a missing file. The path comes from the
+  // trusted record loaded above, never from the client. If this cleanup
+  // fails, the deletion stays successful and the admin gets a distinct
+  // success message noting the leftover file.
+  const imageCleanupFailed = !(await tryDeleteImage(recipe.image));
+
   revalidatePath("/admin/recipes");
   revalidatePath(confirmPath);
   revalidatePath(`/admin/recipes/${recipe.slug}/edit`);
@@ -348,5 +473,9 @@ export async function deleteRecipeAction(formData: FormData) {
     revalidatePath(`/professions/${recipe.profession.slug}`);
   }
 
-  redirect("/admin/recipes?success=deleted");
+  redirect(
+    imageCleanupFailed
+      ? "/admin/recipes?success=deleted_image_cleanup"
+      : "/admin/recipes?success=deleted"
+  );
 }

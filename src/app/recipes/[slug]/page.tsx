@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -60,6 +61,14 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
         title={recipe.name}
         description="Crafting recipe details, including its result and required ingredients."
       />
+
+      <section style={{ marginBottom: "24px" }}>
+        <ContentImage
+          imagePath={recipe.image}
+          alt={`Image of ${recipe.name}`}
+          size="detail"
+        />
+      </section>
 
       <ContentGrid>
         <Card

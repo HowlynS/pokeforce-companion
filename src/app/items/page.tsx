@@ -1,5 +1,6 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -50,6 +51,13 @@ export default async function ItemsPage() {
               title={item.name}
               description={buildItemDescription(item)}
               href={`/items/${item.slug}`}
+              media={
+                <ContentImage
+                  imagePath={item.image}
+                  alt={`Image of ${item.name}`}
+                  size="card"
+                />
+              }
             />
           ))}
         </ContentGrid>

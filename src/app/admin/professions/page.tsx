@@ -17,12 +17,21 @@ const errorMessages: Record<string, string> = {
   missing_profession: "That profession no longer exists.",
   linked_recipes:
     "That profession cannot be deleted while recipes are still assigned to it.",
+  image_too_large: "The image must be 5 MB or smaller.",
+  invalid_image_type: "Only PNG, JPEG, and WebP images are allowed.",
+  upload_failed: "The image could not be uploaded. Please try again.",
+  conflicting_image_input:
+    "Choose either a replacement image or Remove current image, not both.",
 };
 
 const successMessages: Record<string, string> = {
   created: "Profession created.",
   updated: "Profession updated.",
+  updated_image_cleanup:
+    "Profession updated, but the previous image file could not be removed from storage and may need manual cleanup in Supabase.",
   deleted: "Profession deleted.",
+  deleted_image_cleanup:
+    "Profession deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
 };
 
 type AdminProfessionsPageProps = {
@@ -228,6 +237,18 @@ export default async function AdminProfessionsPage({
               name="description"
               rows={3}
               style={{ ...inputStyle, resize: "vertical" }}
+            />
+          </label>
+
+          <label style={{ display: "grid", gap: "6px" }}>
+            <span style={{ color: designTokens.colors.textMuted }}>
+              Image (optional — PNG, JPEG, or WebP, up to 5 MB)
+            </span>
+            <input
+              type="file"
+              name="image"
+              accept="image/png,image/jpeg,image/webp"
+              style={inputStyle}
             />
           </label>
 

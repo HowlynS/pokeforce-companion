@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { getImagePublicUrl } from "@/lib/storage/images";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
 import { updateRecipeAction } from "../../actions";
 
@@ -33,6 +34,11 @@ const errorMessages: Record<string, string> = {
   missing_recipe: "That recipe no longer exists.",
   relation_changed:
     "One of the selected items, or the profession, no longer exists. Please review your selections and try again.",
+  image_too_large: "The image must be 5 MB or smaller.",
+  invalid_image_type: "Only PNG, JPEG, and WebP images are allowed.",
+  upload_failed: "The image could not be uploaded. Please try again.",
+  conflicting_image_input:
+    "Choose either a replacement image or Remove current image, not both.",
 };
 
 type EditRecipePageProps = {
@@ -69,6 +75,9 @@ export default async function EditRecipePage({
   if (!recipe) {
     notFound();
   }
+
+  // Derived from the trusted database path; null when no image is stored.
+  const imageUrl = await getImagePublicUrl(recipe.image);
 
   const inputStyle = {
     border: `1px solid ${designTokens.colors.border}`,
@@ -282,6 +291,120 @@ export default async function EditRecipePage({
               );
             })}
           </fieldset>
+
+          <div style={{ display: "grid", gap: "6px" }}>
+            <span style={{ color: designTokens.colors.textMuted }}>
+              Current image
+            </span>
+            {imageUrl ? (
+              <div style={{ position: "relative", justifySelf: "start" }}>
+                <style>{`
+                  .remove-image-checkbox,
+                  .remove-image-hidden-text {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    margin: -1px;
+                    padding: 0;
+                    overflow: hidden;
+                    clip: rect(0 0 0 0);
+                    white-space: nowrap;
+                    border: 0;
+                  }
+                  .remove-image-frame {
+                    position: relative;
+                    display: inline-block;
+                  }
+                  .remove-image-toggle {
+                    position: absolute;
+                    top: 4px;
+                    right: 4px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 22px;
+                    height: 22px;
+                    border-radius: 9999px;
+                    background: ${designTokens.colors.danger};
+                    color: ${designTokens.colors.background};
+                    font-size: 14px;
+                    font-weight: 700;
+                    line-height: 1;
+                    cursor: pointer;
+                    user-select: none;
+                  }
+                  .remove-image-checkbox:focus-visible ~ .remove-image-frame .remove-image-toggle {
+                    outline: 2px solid ${designTokens.colors.accent};
+                    outline-offset: 2px;
+                  }
+                  .remove-image-checkbox:checked ~ .remove-image-frame img {
+                    opacity: 0.35;
+                  }
+                  .remove-image-note {
+                    display: none;
+                    margin: 6px 0 0;
+                    color: ${designTokens.colors.danger};
+                  }
+                  .remove-image-checkbox:checked ~ .remove-image-note {
+                    display: block;
+                  }
+                `}</style>
+                <input
+                  type="checkbox"
+                  name="removeImage"
+                  id="removeImage"
+                  className="remove-image-checkbox"
+                />
+                <div className="remove-image-frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
+                  <img
+                    src={imageUrl}
+                    alt={`Current image for ${recipe.name}`}
+                    style={{
+                      maxWidth: "128px",
+                      height: "auto",
+                      border: `1px solid ${designTokens.colors.border}`,
+                      borderRadius: designTokens.radius.sm,
+                      background: designTokens.colors.surface,
+                      padding: "8px",
+                      display: "block",
+                    }}
+                  />
+                  <label
+                    htmlFor="removeImage"
+                    title="Remove current image"
+                    className="remove-image-toggle"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                    <span className="remove-image-hidden-text">
+                      Remove current image
+                    </span>
+                  </label>
+                </div>
+                <p className="remove-image-note">
+                  Image will be removed when saved.
+                </p>
+              </div>
+            ) : (
+              <span style={{ color: designTokens.colors.textMuted }}>
+                No image uploaded.
+              </span>
+            )}
+          </div>
+
+          <label style={{ display: "grid", gap: "6px" }}>
+            <span style={{ color: designTokens.colors.textMuted }}>
+              {recipe.image
+                ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
+                : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
+            </span>
+            <input
+              type="file"
+              name="image"
+              accept="image/png,image/jpeg,image/webp"
+              style={inputStyle}
+            />
+          </label>
 
           <div style={{ display: "flex", gap: "12px" }}>
             <button

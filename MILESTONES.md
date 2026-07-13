@@ -191,11 +191,43 @@ Create a protected admin interface for editing game data.
 
 ## Milestone 6 - Images and Storage
 
-Status: Not started
+Status: Complete
 
 Goal:
 
 Add image upload and storage for items, recipes, and professions.
+
+### Completed
+
+- [x] Supabase Storage bucket `game-images`: publicly readable, 5 MB limit, PNG/JPEG/WebP MIME restrictions
+- [x] Admin-only storage policies (SELECT, INSERT, UPDATE, DELETE) scoped to `bucket_id = 'game-images'`, the exact admin Auth UUID, and the `authenticated` role
+- [x] No service-role key introduced; storage writes run as the authenticated admin session
+- [x] `Recipe.image String?` added via additive migration `20260713171320_add_recipe_image` (Item and Profession already had `image`)
+- [x] Database image fields store Storage object paths, never full public URLs
+- [x] Shared server-only storage utilities (`src/lib/storage/images.ts`): validation, upload, public-URL derivation, guarded deletion
+- [x] Server-side validation: PNG, JPEG, and WebP only; 5 MB maximum; SVG rejected; empty file inputs treated as no upload
+- [x] Server-generated UUID object names under `items/`, `professions/`, `recipes/`; client filenames never trusted; `upsert: false`; a new unique path for every upload
+- [x] Server Action body limit raised to 6 MB to allow multipart overhead around the 5 MB file limit
+- [x] Item, Profession, and Recipe admin image handling: optional upload on create, current-image preview on edit, replacement, removal via an accessible red × control, unchanged-image behavior, and replacement + removal conflict rejection
+- [x] Every image-mutating action repeats `requireAdminUser()`; no client-supplied path ever targets a storage operation
+- [x] New uploads cleaned up best-effort when database writes fail; old files deleted only after database success; readable cleanup warnings on failure
+- [x] Record-deletion cleanup for all three resources: database-first deletion, then best-effort image removal; relation blockers and the RecipeIngredient cascade preserved
+- [x] Recipe create/edit atomicity (nested create and `$transaction`) preserved with the image field included
+- [x] Public browsing cards (96 × 96) and detail pages (160 × 160) display images through the shared `ContentImage` component with `object-fit: contain`, no cropping or distortion
+- [x] Smooth browser rendering by default (universal pixelated rendering removed); consistent "No image available" fallbacks sized identically to the image canvases
+- [x] `next.config.ts` restricts remote images to the Supabase host's public `game-images` path only
+- [x] No raw Storage or Prisma errors exposed; readable error and success messages throughout
+- [x] Categories excluded from image support by design
+- [x] `pnpm prisma validate` passed
+- [x] `pnpm lint` passed
+- [x] `pnpm build` passed
+- [x] `git diff --check` passed
+- [x] Full local browser verification passed for all three resources, including replacement, removal, blocked deletions, and deletion cleanup
+
+### Deferred to later milestones
+
+- Per-image Smooth / Pixel art rendering option — deferred until the approved real asset set is known
+- Real game assets and descriptions — pending explicit permission from the game owner; test assets and placeholders are in use
 
 ---
 

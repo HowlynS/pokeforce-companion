@@ -384,3 +384,142 @@ Alternatives considered:
 
 - Adding the `image` field to forms now but leaving upload unimplemented —
   rejected; a field with nowhere to put a real value is worse than no field.
+
+---
+
+### 2026-07-13 — Milestone 6 image and storage architecture
+
+Decision:
+
+Milestone 6 adds image support for Items, Recipes, and Professions only —
+Categories are not included. Each supported record has exactly one optional
+image. Recipes get their own independent optional image field: a Recipe's
+image is never inferred from or permanently coupled to its resulting Item's
+image. The future Recipe field matches the existing Item and Profession
+pattern (`image String?`), which means a later slice will need an additive
+Prisma migration for Recipe. That migration is not created in this
+documentation slice.
+
+Storage provider is Supabase Storage, with a single bucket named
+`game-images`. The bucket is publicly readable, because the public content
+pages are accessible without authentication. All write operations (upload,
+replace, remove, delete) remain protected: Milestone 6 reuses the
+Milestone 5 authentication and authorization architecture unchanged — the
+Supabase authenticated session with the anon key only, no service-role key
+— and every server action that uploads, replaces, removes, or deletes an
+image calls the existing `requireAdminUser()` itself, per the established
+admin mutation pattern (the protected admin layout is not sufficient
+authorization for mutations). Supabase Storage policies must prevent
+anonymous writes and should restrict write operations to the authenticated
+admin account as tightly as is practical with the existing architecture;
+the exact SQL policy implementation is handled in a later storage-setup
+slice.
+
+Database image fields store the Supabase Storage object path (for example
+`items/<generated-unique-name>.png`,
+`recipes/<generated-unique-name>.webp`,
+`professions/<generated-unique-name>.jpg`), never a full public URL.
+Public URLs are derived from the stored path by application code, so
+records are not permanently coupled to one Supabase project URL. Object
+names are always generated server-side — a client-supplied filename is
+never trusted or directly reused as the storage object name — grouped by
+resource type (`items/`, `recipes/`, `professions/`), and every upload
+gets a new unique path rather than overwriting an existing one. This
+reduces stale CDN cache problems and filename conflicts.
+
+Accepted image types are PNG, JPEG, and WebP; SVG uploads are not allowed.
+The maximum file size is 5 MB. Both file type and size are validated
+server-side; a client-side `accept` attribute may be used for convenience
+but is not a security boundary.
+
+Admin create forms support an optional image upload. Admin edit forms
+display the current image and let the admin upload a replacement,
+explicitly remove the current image, or leave it unchanged. Replacement
+follows this order: (1) validate the new file, (2) upload it to a new
+unique storage path, (3) update the database record to reference the new
+path, (4) if the database update fails, attempt to delete the newly
+uploaded file, (5) delete the old stored file only after the database
+update succeeds. The old file is never overwritten in place. When a
+supported database record is deleted, its associated image should also be
+removed from Supabase Storage; because the database and Storage cannot
+share one transaction, that cleanup must be defensive and must never
+expose a raw storage or database error — the exact delete ordering and
+user-facing failure handling are finalized during the implementation slice
+that updates the delete actions. A client-supplied object path is never
+trusted as authorization to delete or replace a file: the server
+determines the existing stored image path from the database record before
+any destructive storage operation. All storage mutations follow the
+existing readable-error and redirect patterns; no raw Supabase, Storage,
+Prisma, or database error is ever rendered.
+
+Images are displayed on public browsing cards, public detail pages, and
+admin edit forms (as a current-image preview). Admin list thumbnails are
+not required unless later found necessary for a clear workflow. Records
+without an uploaded image use a consistent fallback or placeholder system
+with stable, predictable paths, and the application must continue
+rendering correctly when no uploaded image exists — but no elaborate
+placeholder artwork and no visual redesign are part of this milestone.
+PokeForce artwork uses small 16-bit-style sprites, and display must
+preserve that character: preserve the original aspect ratio, avoid
+cropping sprites to fill containers, and avoid arbitrary large
+enlargement. The surrounding layout may provide spacing and framing, but
+sprites are not treated like large photographic assets.
+
+Amended 2026-07-14: image display uses the browser's normal smooth
+rendering by default. Universal `image-rendering: pixelated` was tried
+and rejected because it degraded smooth artwork. No in-app upscaler will
+be added. A per-image Smooth / Pixel art display option is deferred until
+the approved real asset set is known. The project currently uses test
+assets and placeholders while awaiting explicit permission from the game
+owner to use game assets and descriptions.
+
+The application is expected to use Next.js image handling where practical.
+A later display slice may require Supabase Storage remote-image
+configuration in `next.config.ts`, pixel-art-safe CSS, an explicit image
+container size, and a server-action body-size configuration compatible
+with the 5 MB upload limit. `next.config.ts` is not modified in this
+documentation slice.
+
+Out of scope for Milestone 6: Category images; automatic image resizing,
+format conversion, or cropping; AI upscaling; image enhancement;
+sprite-generation tools; multiple images per record; Milestone 7 search;
+live duplicate-name validation; locations, NPCs, marketplace, or AI
+features; deployment; final visual redesign; gameplay verification
+metadata; Held item fields; and application build/version metadata.
+Manually prepared or externally upscaled assets may still be uploaded
+later as normal image files.
+
+Reason:
+
+A single publicly readable bucket matches how the content is consumed —
+anonymous visitors browse the public pages, so image reads need no
+authentication — while keeping every write behind the same server-side
+`requireAdminUser()` boundary already protecting all game-data mutations.
+Storing the object path instead of a full URL keeps records portable
+across Supabase projects. Generating unique server-side object names
+extends the established "never trust client input for anything that
+authorizes or targets a mutation" posture to filenames and avoids CDN
+staleness on replacement. Giving Recipes their own image field keeps the
+three supported resources symmetric and avoids inventing a coupling rule
+(recipe inherits its result's image) that no source-of-truth document
+defines. The upload-then-update-then-clean-up replacement order accepts
+that Storage and Postgres cannot share one transaction and chooses the
+failure mode that never leaves a database record pointing at a missing
+file — a temporary orphaned file is recoverable; a broken image reference
+on a public page is user-visible.
+
+Alternatives considered:
+
+- A Supabase service-role key for storage writes — rejected again,
+  consistent with the Milestone 5 decision; the authenticated admin
+  session with storage policies is sufficient and keeps the service-role
+  key out of the app entirely.
+- Storing full public URLs in the database — rejected; it permanently
+  couples every record to one Supabase project URL.
+- Overwriting the existing object path on replacement — rejected; CDN
+  caching can serve the stale file, and a failed overwrite could corrupt
+  the only copy.
+- Deriving a Recipe's image from its resulting Item — rejected; it
+  couples two independent records and prevents distinct recipe artwork.
+- Allowing SVG uploads — rejected; SVG is a script-capable format and is
+  unnecessary for sprite-based assets.
