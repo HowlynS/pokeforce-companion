@@ -1,5 +1,5 @@
 // Guard-first, prefix-scoped database helpers for the authenticated
-// Category, Profession, and Item browser tests.
+// Category, Profession, Item, and Recipe browser tests.
 //
 // Why not the Prisma helper from src/lib/testing/integration-database.ts:
 // Playwright's test transpiler compiles imports to CommonJS, and the
@@ -43,6 +43,16 @@ export const E2E_ITEM_SLUG_PREFIX = "test-e2e-item";
 // blocked-deletion tests. Deliberately a separate, unmistakable prefix so
 // relation cleanup can never touch a seeded Recipe.
 export const E2E_ITEM_RELATION_SLUG_PREFIX = "test-e2e-item-relation-";
+
+// Covers every Recipe slug the browser tests use (test-e2e-recipe,
+// test-e2e-recipe-updated, and the validation/capacity/deletion recipes)
+// and can never match a seeded slug (iron-sword, charcoal, ...).
+export const E2E_RECIPE_SLUG_PREFIX = "test-e2e-recipe";
+
+// Reserved for temporary Items the Recipe suite might need. The current
+// tests use only seeded Items (referenced, never modified), but cleanup
+// still sweeps this prefix defensively.
+export const E2E_RECIPE_ITEM_SLUG_PREFIX = "test-e2e-recipe-item-";
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -446,6 +456,135 @@ export async function removeTemporaryItemRelationRecords(): Promise<number> {
       (recipes.rowCount ?? 0) +
       (items.rowCount ?? 0)
     );
+  });
+}
+
+// Defense in depth for every Recipe helper below, mirroring the other
+// prefix assertions.
+function assertRecipePrefixesAreSafe(): void {
+  if (
+    E2E_RECIPE_SLUG_PREFIX.length < 5 ||
+    !E2E_RECIPE_ITEM_SLUG_PREFIX.startsWith(E2E_RECIPE_SLUG_PREFIX)
+  ) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the browser-test Recipe slug prefixes are unsafe."
+    );
+  }
+}
+
+/**
+ * Deletes ONLY the browser-test Recipe rows (and any temporary Items under
+ * the reserved Recipe-item prefix), in foreign-key-safe order:
+ * RecipeIngredient rows belonging to a test Recipe first, then the test
+ * Recipes, then any reserved-prefix Items. A RecipeIngredient row can only
+ * match through a test-prefixed Recipe, so seeded ingredient rows can
+ * never qualify. Returns how many rows were removed in total; throws
+ * loudly on a rejected delete.
+ */
+export async function deleteE2eTestRecipeRecords(): Promise<number> {
+  assertRecipePrefixesAreSafe();
+
+  return withVerifiedDatabase(async (client) => {
+    const ingredients = await client.query(
+      `delete from "RecipeIngredient"
+       where "recipeId" in (select id from "Recipe" where slug like $1)`,
+      [`${E2E_RECIPE_SLUG_PREFIX}%`]
+    );
+    const recipes = await client.query(
+      `delete from "Recipe" where slug like $1`,
+      [`${E2E_RECIPE_SLUG_PREFIX}%`]
+    );
+    const items = await client.query(
+      `delete from "Item" where slug like $1`,
+      [`${E2E_RECIPE_ITEM_SLUG_PREFIX}%`]
+    );
+    return (
+      (ingredients.rowCount ?? 0) +
+      (recipes.rowCount ?? 0) +
+      (items.rowCount ?? 0)
+    );
+  });
+}
+
+/**
+ * Read-only count of leftover browser-test Recipe rows, their ingredient
+ * rows, and any reserved-prefix Items.
+ */
+export async function countE2eTestRecipeRecords(): Promise<number> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `select
+         (select count(*) from "Recipe" where slug like $1)::int
+           + (select count(*) from "RecipeIngredient"
+              where "recipeId" in (select id from "Recipe" where slug like $1))::int
+           + (select count(*) from "Item" where slug like $2)::int as n`,
+      [`${E2E_RECIPE_SLUG_PREFIX}%`, `${E2E_RECIPE_ITEM_SLUG_PREFIX}%`]
+    );
+    return result.rows[0].n as number;
+  });
+}
+
+/**
+ * Creates one temporary Recipe carrying SIX ingredient rows — one more
+ * than the edit form's fixed capacity — so the existing capacity guard on
+ * the edit page can be exercised. The recipe and its ingredient rows are
+ * fully test-prefixed; the six ingredient Items and the resulting Item are
+ * seeded fixtures that are only REFERENCED (never modified), and deleting
+ * the recipe later cascades only its own ingredient rows. Throws if any
+ * expected seeded Item is missing.
+ */
+export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
+  assertRecipePrefixesAreSafe();
+
+  // Stable seeded fixtures; six distinct ingredients plus one result.
+  const ingredientSlugs = [
+    "iron-ore",
+    "copper-ore",
+    "wood",
+    "charcoal",
+    "herb-leaf",
+    "spring-water",
+  ];
+  const resultSlug = "iron-sword";
+
+  await withVerifiedDatabase(async (client) => {
+    const items = await client.query(
+      `select id, slug from "Item" where slug = any($1::text[])`,
+      [[...ingredientSlugs, resultSlug]]
+    );
+
+    if (items.rowCount !== ingredientSlugs.length + 1) {
+      throw new Error(
+        "Cannot create the six-ingredient Recipe: an expected seeded Item is missing."
+      );
+    }
+
+    const idBySlug = new Map<string, string>(
+      items.rows.map((row) => [row.slug as string, row.id as string])
+    );
+
+    // id has no database default (Prisma cuids are client-generated) and
+    // updatedAt has no database default (@updatedAt is client-maintained),
+    // so both are supplied explicitly.
+    const recipe = await client.query(
+      `insert into "Recipe"
+         (id, slug, name, "resultingItemId", "resultingQuantity", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, now())
+       returning id`,
+      [
+        `${E2E_RECIPE_SLUG_PREFIX}-six-ingredients`,
+        "Test E2E Recipe Six Ingredients",
+        idBySlug.get(resultSlug) as string,
+      ]
+    );
+
+    for (const slug of ingredientSlugs) {
+      await client.query(
+        `insert into "RecipeIngredient" (id, "recipeId", "itemId", quantity)
+         values (gen_random_uuid()::text, $1, $2, 1)`,
+        [recipe.rows[0].id as string, idBySlug.get(slug) as string]
+      );
+    }
   });
 }
 
