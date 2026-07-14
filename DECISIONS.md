@@ -523,3 +523,87 @@ Alternatives considered:
   couples two independent records and prevents distinct recipe artwork.
 - Allowing SVG uploads — rejected; SVG is a script-capable format and is
   unnecessary for sprite-based assets.
+
+---
+
+### 2026-07-14 — Milestone 7 automated testing foundation and isolated test environment
+
+Decision:
+
+Automated testing is the first engineering slice of Milestone 7, before any
+search or polish work changes existing behavior. What exists today: Vitest
+(Node environment, no DOM library, no coverage dependency) runs service-free
+unit tests covering the pure validation parsers, the image validation and
+object-path logic, and the shared Prisma error guards — these tests load no
+environment variables and touch no database, Supabase, or browser. Local,
+reliable testing comes before CI: Playwright is planned Chromium-only for
+later slices, and GitHub Actions remains deferred.
+
+Everything below is the approved plan for later slices, not yet implemented.
+
+Destructive automated tests (database writes, Storage cleanup, authenticated
+end-to-end flows) must never target the normal development Supabase project.
+A separate Supabase test project will be used — intended name
+`pokeforce-companion-test` — so the database, Auth users, Storage objects,
+and policies are all isolated by the project boundary. The Storage bucket
+keeps the production name `game-images` inside the isolated project; the
+project boundary is the isolation, and renaming would force a production
+code change for no safety gain. The test project gets one manually created
+test admin (a second non-admin user may be added later for authorization
+tests), and no service-role key will be introduced there either.
+
+Real test credentials and URLs belong only in `.env.test.local`, which is
+already ignored by the existing `.env.*.local` rule and must stay ignored.
+The committed `.env.test.example` contains variable names and placeholders
+only. Future guarded commands will load `.env.test.local` explicitly, with
+test values overriding any inherited development values; bare Prisma
+commands will not be used for destructive test operations. Unit tests remain
+service-free and never load the test environment.
+
+A code-level safety guard will protect every destructive command: it
+requires `SUPABASE_TEST_PROJECT_REF` to be set, verifies that both
+`DATABASE_URL` and `NEXT_PUBLIC_SUPABASE_URL` belong to that test project,
+and requires the test-only Auth values to be present. The guard fails —
+with a readable message that prints no secrets — before any Prisma, Auth,
+or Storage client is created. `NODE_ENV=test` alone is deliberately not
+sufficient, because it proves nothing about which project would be written.
+
+Database lifecycle: migrations are applied to the test project with
+`prisma migrate deploy`; test data is cleaned in foreign-key-safe order
+(RecipeIngredient, Recipe, Item, Profession, Category) and reseeded with
+the existing deterministic seed. Tests use the stable seed slugs as
+handles and never hard-code generated database IDs. Database-backed tests
+run serially at first. The test project is disposable and may be reset at
+any time without touching development.
+
+Auth and Storage lifecycle: the test admin's credentials live only in
+`.env.test.local`; Playwright will later save authenticated state under
+`playwright/.auth/`, which is ignored along with Playwright's generated
+output. Storage cleanup only ever operates inside the isolated test
+project, and a failed run is recovered by the next guarded cleanup/prepare
+run rather than by manual repair.
+
+Reason:
+
+One accidental destructive run against the development project would cost
+real data and real Storage objects; project-level isolation plus an
+explicit fail-closed guard makes that class of mistake structurally
+impossible instead of merely unlikely. A separate hosted test project
+reuses the exact dashboard skills already practiced in Milestones 3, 5,
+and 6, which suits this beginner-led workflow better than new local
+tooling. The guard extends the project's established fail-secure posture
+(`requireAdminUser()` denying when unconfigured) to test infrastructure.
+
+Alternatives considered:
+
+- Running destructive tests against the development project with careful
+  cleanup — rejected; cleanup bugs or interrupted runs would damage real
+  data, and "careful" is not a boundary.
+- Local Supabase via the CLI and Docker — rejected for now; heavier
+  Windows setup and a second way of running Supabase to learn, with no
+  safety advantage over a separate hosted project. May be revisited later.
+- Renaming the test bucket (e.g. `game-images-test`) — rejected; the
+  bucket name is a hard-coded production constant, and the project
+  boundary already isolates Storage completely.
+- Guarding on `NODE_ENV=test` — rejected; it does not prove the loaded
+  configuration points at the test project.

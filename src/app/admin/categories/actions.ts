@@ -4,28 +4,11 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
-import { Prisma } from "@/generated/prisma/client";
+import {
+  isMissingRecordError,
+  isUniqueConstraintError,
+} from "@/lib/prisma-errors";
 import { parseCategoryInput } from "@/lib/validation/category";
-
-const UNIQUE_CONSTRAINT_ERROR_CODE = "P2002";
-
-function isUniqueConstraintError(
-  error: unknown
-): error is Prisma.PrismaClientKnownRequestError {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === UNIQUE_CONSTRAINT_ERROR_CODE
-  );
-}
-
-function isMissingRecordError(
-  error: unknown
-): error is Prisma.PrismaClientKnownRequestError {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2025"
-  );
-}
 
 export async function createCategoryAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and

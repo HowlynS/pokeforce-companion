@@ -24,3 +24,8 @@ yarn-debug.log*
 Thumbs.db
 .vscode/
 /src/generated/prisma
+
+# Test artifacts
+playwright/.auth/
+playwright-report/
+test-results/

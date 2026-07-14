@@ -4,42 +4,17 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
-import { Prisma } from "@/generated/prisma/client";
+import {
+  isForeignKeyError,
+  isMissingRecordError,
+  isUniqueConstraintError,
+} from "@/lib/prisma-errors";
 import { parseRecipeInput } from "@/lib/validation/recipe";
 import {
   deleteImage,
   uploadImage,
   validateImageFile,
 } from "@/lib/storage/images";
-
-const UNIQUE_CONSTRAINT_ERROR_CODE = "P2002";
-
-function isUniqueConstraintError(
-  error: unknown
-): error is Prisma.PrismaClientKnownRequestError {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === UNIQUE_CONSTRAINT_ERROR_CODE
-  );
-}
-
-function isMissingRecordError(
-  error: unknown
-): error is Prisma.PrismaClientKnownRequestError {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2025"
-  );
-}
-
-function isForeignKeyError(
-  error: unknown
-): error is Prisma.PrismaClientKnownRequestError {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2003"
-  );
-}
 
 // Browsers submit an empty File for an untouched file input, so both a
 // missing value and a zero-byte value mean "no image was chosen".
