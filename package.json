@@ -12,6 +12,8 @@
     "test:env:check": "tsx scripts/test-environment-check.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:service": "vitest run --config vitest.service.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
@@ -26,6 +28,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
