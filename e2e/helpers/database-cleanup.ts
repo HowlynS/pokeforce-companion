@@ -12,7 +12,14 @@
 // Category rows carrying the browser-test slug prefix.
 
 import { Client } from "pg";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadTestEnvironment } from "../../src/lib/testing/load-test-environment";
+import {
+  SERVICE_TEST_BUCKET,
+  createAnonymousServiceClient,
+  createSignedInAdminClient,
+  signOutServiceClient,
+} from "../../src/lib/testing/supabase-service";
 
 // Covers every slug the browser tests use (test-e2e-category,
 // test-e2e-category-updated, test-e2e-category-duplicate) and can never
@@ -53,6 +60,20 @@ export const E2E_RECIPE_SLUG_PREFIX = "test-e2e-recipe";
 // tests use only seeded Items (referenced, never modified), but cleanup
 // still sweeps this prefix defensively.
 export const E2E_RECIPE_ITEM_SLUG_PREFIX = "test-e2e-recipe-item-";
+
+// Covers every Item slug the image browser tests use. It is deliberately a
+// sub-prefix of test-e2e-item, so the generic Item cleanup would still
+// catch a stranded row — but the image-aware cleanup below must always run
+// first (this suite's own hooks), because only it also removes the exact
+// Storage object recorded on the row.
+export const E2E_ITEM_IMAGE_SLUG_PREFIX = "test-e2e-item-image";
+
+// Mirrors the production SAFE_OBJECT_PATH_PATTERN in
+// src/lib/storage/images.ts, narrowed to the items/ folder: exactly one
+// generated file name with one controlled extension. Every Storage
+// verification or removal below refuses anything else, so a broad or
+// unrelated path can never be targeted.
+const SAFE_ITEM_IMAGE_PATH_PATTERN = /^items\/[a-z0-9-]+\.(png|jpg|webp)$/;
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -586,6 +607,215 @@ export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
       );
     }
   });
+}
+
+// Defense in depth for every image helper below.
+function assertItemImagePrefixIsSafe(): void {
+  if (
+    E2E_ITEM_IMAGE_SLUG_PREFIX.length < 5 ||
+    !E2E_ITEM_IMAGE_SLUG_PREFIX.startsWith(E2E_ITEM_SLUG_PREFIX)
+  ) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the browser-test Item image slug prefix is unsafe."
+    );
+  }
+}
+
+function assertSafeItemImagePath(objectPath: string): void {
+  if (!SAFE_ITEM_IMAGE_PATH_PATTERN.test(objectPath)) {
+    throw new Error(
+      "Refusing a Storage operation: the object path is not a generated items/ image path."
+    );
+  }
+}
+
+// Signed-in admin Supabase client for Storage verification/cleanup, always
+// signed out afterwards. The helper module runs the fail-closed environment
+// guard before any client exists.
+async function withStorageAdmin<T>(
+  run: (admin: SupabaseClient) => Promise<T>
+): Promise<T> {
+  const admin = await createSignedInAdminClient();
+  try {
+    return await run(admin);
+  } finally {
+    await signOutServiceClient(admin);
+  }
+}
+
+async function storageObjectExists(
+  admin: SupabaseClient,
+  objectPath: string
+): Promise<boolean> {
+  assertSafeItemImagePath(objectPath);
+  const name = objectPath.slice("items/".length);
+  const { data, error } = await admin.storage
+    .from(SERVICE_TEST_BUCKET)
+    .list("items", { limit: 1000, search: name });
+  if (error) {
+    throw new Error(
+      `Could not list the items folder (status ${
+        (error as { statusCode?: string }).statusCode ?? "unknown"
+      }).`
+    );
+  }
+  return (data ?? []).some((object) => object.name === name);
+}
+
+/**
+ * Reads the stored image object path of ONE browser-test Item, straight
+ * from the database row (never from the client). Returns null when the row
+ * stores no image; throws when the Item does not exist or the slug does
+ * not carry the image-suite prefix.
+ */
+export async function readItemImagePath(slug: string): Promise<string | null> {
+  assertItemImagePrefixIsSafe();
+
+  if (!slug.startsWith(E2E_ITEM_IMAGE_SLUG_PREFIX)) {
+    throw new Error(
+      "Refusing to read an image path: the Item slug does not carry the image-suite prefix."
+    );
+  }
+
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `select image from "Item" where slug = $1`,
+      [slug]
+    );
+
+    if (result.rowCount !== 1) {
+      throw new Error(
+        "Cannot read the image path: the browser-test Item was not found."
+      );
+    }
+
+    return (result.rows[0].image as string | null) ?? null;
+  });
+}
+
+/** True when the exact generated items/ object currently exists. */
+export async function itemImageObjectExists(
+  objectPath: string
+): Promise<boolean> {
+  return withStorageAdmin((admin) => storageObjectExists(admin, objectPath));
+}
+
+/**
+ * Fetches the exact object through its public URL with no authentication
+ * and a cache-busting query value. Returns the served content-type when the
+ * object is publicly readable, or null when it is not. Never logs the URL.
+ */
+export async function fetchItemImageContentType(
+  objectPath: string
+): Promise<string | null> {
+  assertSafeItemImagePath(objectPath);
+
+  const anonymous = await createAnonymousServiceClient();
+  const { data } = anonymous.storage
+    .from(SERVICE_TEST_BUCKET)
+    .getPublicUrl(objectPath);
+  const response = await fetch(`${data.publicUrl}?cb=${crypto.randomUUID()}`);
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.headers.get("content-type");
+}
+
+/**
+ * Read-only count of ALL objects currently in the items/ folder, for
+ * before/after orphan checks. Counting is the only whole-folder operation
+ * this module performs — deletion is always by exact recorded path.
+ */
+export async function countItemFolderObjects(): Promise<number> {
+  return withStorageAdmin(async (admin) => {
+    const { data, error } = await admin.storage
+      .from(SERVICE_TEST_BUCKET)
+      .list("items", { limit: 1000 });
+    if (error) {
+      throw new Error(
+        `Could not list the items folder (status ${
+          (error as { statusCode?: string }).statusCode ?? "unknown"
+        }).`
+      );
+    }
+    return (data ?? []).length;
+  });
+}
+
+/**
+ * Read-only count of leftover image-suite Item rows.
+ */
+export async function countE2eTestItemImageRecords(): Promise<number> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `select count(*)::int as n from "Item" where slug like $1`,
+      [`${E2E_ITEM_IMAGE_SLUG_PREFIX}%`]
+    );
+    return result.rows[0].n as number;
+  });
+}
+
+/**
+ * Deletes ONLY the image-suite Item rows and their exact recorded Storage
+ * objects: first the object paths are read from the matching database rows,
+ * each path is validated against the generated-path shape, only those exact
+ * objects are removed (never a folder or bucket listing), removal is
+ * verified, and finally the rows themselves are deleted. Returns rows plus
+ * objects removed; throws loudly on any failure or leftover.
+ */
+export async function deleteE2eTestItemImageRecords(): Promise<number> {
+  assertItemImagePrefixIsSafe();
+
+  const paths = await withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `select image from "Item" where slug like $1 and image is not null`,
+      [`${E2E_ITEM_IMAGE_SLUG_PREFIX}%`]
+    );
+    return result.rows.map((row) => row.image as string);
+  });
+
+  let objectsRemoved = 0;
+
+  if (paths.length > 0) {
+    for (const objectPath of paths) {
+      assertSafeItemImagePath(objectPath);
+    }
+
+    await withStorageAdmin(async (admin) => {
+      const { error } = await admin.storage
+        .from(SERVICE_TEST_BUCKET)
+        .remove(paths);
+      if (error) {
+        throw new Error(
+          `Storage cleanup could not remove image-suite objects (status ${
+            (error as { statusCode?: string }).statusCode ?? "unknown"
+          }).`
+        );
+      }
+
+      for (const objectPath of paths) {
+        if (await storageObjectExists(admin, objectPath)) {
+          throw new Error(
+            "Storage cleanup left an image-suite object behind."
+          );
+        }
+      }
+    });
+
+    objectsRemoved = paths.length;
+  }
+
+  const rowsRemoved = await withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `delete from "Item" where slug like $1`,
+      [`${E2E_ITEM_IMAGE_SLUG_PREFIX}%`]
+    );
+    return result.rowCount ?? 0;
+  });
+
+  return rowsRemoved + objectsRemoved;
 }
 
 /** Read-only snapshot of the seeded fixture counts for preservation checks. */

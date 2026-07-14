@@ -1,0 +1,1 @@
+This is not an image file; it exists to test upload rejection.
