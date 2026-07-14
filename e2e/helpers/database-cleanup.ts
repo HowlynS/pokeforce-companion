@@ -1,5 +1,5 @@
 // Guard-first, prefix-scoped database helpers for the authenticated
-// Category and Profession browser tests.
+// Category, Profession, and Item browser tests.
 //
 // Why not the Prisma helper from src/lib/testing/integration-database.ts:
 // Playwright's test transpiler compiles imports to CommonJS, and the
@@ -31,6 +31,18 @@ export const E2E_PROFESSION_SLUG_PREFIX = "test-e2e-profession";
 // seeded Item or Recipe (whose slugs are plain names like iron-sword).
 export const E2E_PROFESSION_RELATION_SLUG_PREFIX =
   "test-e2e-profession-relation-";
+
+// Covers every Item slug the browser tests use (test-e2e-item,
+// test-e2e-item-updated, test-e2e-item-duplicate, the blocked-deletion
+// items, and the relation helper item below) and can never match a seeded
+// slug (iron-ore, iron-sword, ...).
+export const E2E_ITEM_SLUG_PREFIX = "test-e2e-item";
+
+// Temporary Recipe/helper-Item rows created ONLY so a Recipe can reference
+// a test Item (as its result or through an ingredient) for the
+// blocked-deletion tests. Deliberately a separate, unmistakable prefix so
+// relation cleanup can never touch a seeded Recipe.
+export const E2E_ITEM_RELATION_SLUG_PREFIX = "test-e2e-item-relation-";
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -229,6 +241,211 @@ export async function removeTemporaryRecipeForProfession(): Promise<number> {
       [`${E2E_PROFESSION_RELATION_SLUG_PREFIX}%`]
     );
     return (recipes.rowCount ?? 0) + (items.rowCount ?? 0);
+  });
+}
+
+// Defense in depth for every Item helper below, mirroring the Profession
+// prefix assertion.
+function assertItemPrefixesAreSafe(): void {
+  if (
+    E2E_ITEM_SLUG_PREFIX.length < 5 ||
+    !E2E_ITEM_RELATION_SLUG_PREFIX.startsWith(E2E_ITEM_SLUG_PREFIX)
+  ) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the browser-test Item slug prefixes are unsafe."
+    );
+  }
+}
+
+/**
+ * Deletes ONLY the browser-test Item rows and the temporary relation rows
+ * created for the blocked-deletion tests, in foreign-key-safe order:
+ * RecipeIngredient first (rows referencing a relation Recipe or a test
+ * Item), then the relation Recipes, then every test Item (the relation
+ * prefix is a sub-prefix of the Item prefix, so one delete covers both).
+ * A RecipeIngredient row can only match if it points at a test-prefixed
+ * Recipe or Item, so seeded ingredient rows can never qualify. Returns how
+ * many rows were removed in total; throws loudly on a rejected delete.
+ */
+export async function deleteE2eTestItemRecords(): Promise<number> {
+  assertItemPrefixesAreSafe();
+
+  return withVerifiedDatabase(async (client) => {
+    const ingredients = await client.query(
+      `delete from "RecipeIngredient"
+       where "recipeId" in (select id from "Recipe" where slug like $1)
+          or "itemId" in (select id from "Item" where slug like $2)`,
+      [`${E2E_ITEM_RELATION_SLUG_PREFIX}%`, `${E2E_ITEM_SLUG_PREFIX}%`]
+    );
+    const recipes = await client.query(
+      `delete from "Recipe" where slug like $1`,
+      [`${E2E_ITEM_RELATION_SLUG_PREFIX}%`]
+    );
+    const items = await client.query(
+      `delete from "Item" where slug like $1`,
+      [`${E2E_ITEM_SLUG_PREFIX}%`]
+    );
+    return (
+      (ingredients.rowCount ?? 0) +
+      (recipes.rowCount ?? 0) +
+      (items.rowCount ?? 0)
+    );
+  });
+}
+
+/**
+ * Read-only count of leftover browser-test Item rows plus any temporary
+ * relation Recipe/RecipeIngredient rows.
+ */
+export async function countE2eTestItemRecords(): Promise<number> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `select
+         (select count(*) from "Item" where slug like $1)::int
+           + (select count(*) from "Recipe" where slug like $2)::int
+           + (select count(*) from "RecipeIngredient"
+              where "recipeId" in (select id from "Recipe" where slug like $2)
+                 or "itemId" in (select id from "Item" where slug like $1))::int as n`,
+      [`${E2E_ITEM_SLUG_PREFIX}%`, `${E2E_ITEM_RELATION_SLUG_PREFIX}%`]
+    );
+    return result.rows[0].n as number;
+  });
+}
+
+/**
+ * Creates one temporary Recipe whose RESULT is the given browser-test
+ * Item, so the produced-result deletion blocker can be exercised. The
+ * target Item slug MUST carry the browser-test prefix, so a seeded Item
+ * can never be referenced. Recipe admin browser workflows are deliberately
+ * not used — they are out of scope for this suite.
+ */
+export async function createTemporaryRecipeProducingItem(
+  itemSlug: string
+): Promise<void> {
+  assertItemPrefixesAreSafe();
+
+  if (!itemSlug.startsWith(E2E_ITEM_SLUG_PREFIX)) {
+    throw new Error(
+      "Refusing to link a Recipe: the target Item slug does not carry the browser-test prefix."
+    );
+  }
+
+  await withVerifiedDatabase(async (client) => {
+    const item = await client.query(
+      `select id from "Item" where slug = $1`,
+      [itemSlug]
+    );
+
+    if (item.rowCount !== 1) {
+      throw new Error(
+        "Cannot create the temporary producing Recipe: the browser-test Item was not found."
+      );
+    }
+
+    // id has no database default (Prisma cuids are client-generated) and
+    // updatedAt has no database default (@updatedAt is client-maintained),
+    // so both are supplied explicitly.
+    await client.query(
+      `insert into "Recipe"
+         (id, slug, name, "resultingItemId", "resultingQuantity", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, now())`,
+      [
+        `${E2E_ITEM_RELATION_SLUG_PREFIX}produces`,
+        "Test E2E Item Relation Producing Recipe",
+        item.rows[0].id as string,
+      ]
+    );
+  });
+}
+
+/**
+ * Creates the minimum temporary rows for the given browser-test Item to be
+ * a Recipe INGREDIENT: one helper Item (the recipe's required result), one
+ * Recipe, and one RecipeIngredient pointing at the test Item. All created
+ * slugs use the relation prefix; the target Item slug MUST carry the
+ * browser-test prefix, so a seeded Item can never be referenced.
+ */
+export async function createTemporaryIngredientReferenceToItem(
+  itemSlug: string
+): Promise<void> {
+  assertItemPrefixesAreSafe();
+
+  if (!itemSlug.startsWith(E2E_ITEM_SLUG_PREFIX)) {
+    throw new Error(
+      "Refusing to link a RecipeIngredient: the target Item slug does not carry the browser-test prefix."
+    );
+  }
+
+  await withVerifiedDatabase(async (client) => {
+    const item = await client.query(
+      `select id from "Item" where slug = $1`,
+      [itemSlug]
+    );
+
+    if (item.rowCount !== 1) {
+      throw new Error(
+        "Cannot create the temporary ingredient reference: the browser-test Item was not found."
+      );
+    }
+
+    const resultItem = await client.query(
+      `insert into "Item" (id, slug, name, "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, now())
+       returning id`,
+      [
+        `${E2E_ITEM_RELATION_SLUG_PREFIX}result`,
+        "Test E2E Item Relation Result Item",
+      ]
+    );
+
+    const recipe = await client.query(
+      `insert into "Recipe"
+         (id, slug, name, "resultingItemId", "resultingQuantity", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, now())
+       returning id`,
+      [
+        `${E2E_ITEM_RELATION_SLUG_PREFIX}consumes`,
+        "Test E2E Item Relation Consuming Recipe",
+        resultItem.rows[0].id as string,
+      ]
+    );
+
+    await client.query(
+      `insert into "RecipeIngredient" (id, "recipeId", "itemId", quantity)
+       values (gen_random_uuid()::text, $1, $2, 1)`,
+      [recipe.rows[0].id as string, item.rows[0].id as string]
+    );
+  });
+}
+
+/**
+ * Removes ONLY the temporary relation rows (RecipeIngredient, then Recipe,
+ * then helper Item — foreign-key-safe order), leaving the browser-test
+ * Item in place so the deletion flow can be retried through the real UI.
+ * Returns how many rows were removed.
+ */
+export async function removeTemporaryItemRelationRecords(): Promise<number> {
+  assertItemPrefixesAreSafe();
+
+  return withVerifiedDatabase(async (client) => {
+    const ingredients = await client.query(
+      `delete from "RecipeIngredient"
+       where "recipeId" in (select id from "Recipe" where slug like $1)`,
+      [`${E2E_ITEM_RELATION_SLUG_PREFIX}%`]
+    );
+    const recipes = await client.query(
+      `delete from "Recipe" where slug like $1`,
+      [`${E2E_ITEM_RELATION_SLUG_PREFIX}%`]
+    );
+    const items = await client.query(
+      `delete from "Item" where slug like $1`,
+      [`${E2E_ITEM_RELATION_SLUG_PREFIX}%`]
+    );
+    return (
+      (ingredients.rowCount ?? 0) +
+      (recipes.rowCount ?? 0) +
+      (items.rowCount ?? 0)
+    );
   });
 }
 
