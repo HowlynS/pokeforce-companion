@@ -26,9 +26,31 @@ export default defineConfig({
     video: "off",
   },
   projects: [
+    // Signs the test admin in through the real login form and saves the
+    // browser storage state for the chromium-admin project. Its filename
+    // (auth.setup.ts) never matches the normal spec pattern, so it cannot
+    // run as an ordinary browser test.
+    {
+      name: "setup",
+      testMatch: /auth\.setup\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Public and protection tests: always unauthenticated, so the admin
+    // specs are explicitly excluded from this project.
     {
       name: "chromium",
+      testIgnore: /admin-.+\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    // Authenticated admin tests: reuse the storage state saved by setup.
+    {
+      name: "chromium-admin",
+      dependencies: ["setup"],
+      testMatch: /admin-.+\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/admin.json",
+      },
     },
   ],
   webServer: {
