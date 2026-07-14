@@ -32,6 +32,27 @@ Do not start Milestone 7 work until explicitly instructed in the next milestone 
   - git status
   - relevant version/test command
 
+## PowerShell command style
+
+Run routine Git and verification commands as separate PowerShell tool calls.
+
+Avoid combining unrelated commands with semicolons or pipelines solely to reduce tool calls.
+
+Do not use expandable strings containing variables such as
+`"exit:$LASTEXITCODE"` when the command's native exit status is sufficient.
+
+Prefer:
+
+- `git diff --check`
+- `git status --short -uall`
+- `git log -8 --oneline`
+- `git rev-parse HEAD`
+- `git rev-parse origin/main`
+- `git check-ignore .env.test.local`
+- `git ls-files --error-unmatch next-env.d.ts`
+
+as individual commands.
+
 ## Expected Stack
 
 - Next.js
