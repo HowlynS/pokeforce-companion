@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
@@ -12,5 +12,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // Integration tests hit the real isolated test database and belong to
+    // vitest.integration.config.ts only — the unit suite must never collect
+    // them. Vitest's default excludes are kept alongside the extra pattern.
+    exclude: [...configDefaults.exclude, "**/*.integration.test.ts"],
   },
 });
