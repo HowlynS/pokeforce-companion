@@ -12,9 +12,14 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
-    // Integration tests hit the real isolated test database and belong to
-    // vitest.integration.config.ts only — the unit suite must never collect
-    // them. Vitest's default excludes are kept alongside the extra pattern.
-    exclude: [...configDefaults.exclude, "**/*.integration.test.ts"],
+    // Integration and service tests hit the real isolated test project and
+    // belong to vitest.integration.config.ts / vitest.service.config.ts
+    // only — the unit suite must never collect them. Vitest's default
+    // excludes are kept alongside the extra patterns.
+    exclude: [
+      ...configDefaults.exclude,
+      "**/*.integration.test.ts",
+      "**/*.service.test.ts",
+    ],
   },
 });
