@@ -68,12 +68,10 @@ export const E2E_RECIPE_ITEM_SLUG_PREFIX = "test-e2e-recipe-item-";
 // Storage object recorded on the row.
 export const E2E_ITEM_IMAGE_SLUG_PREFIX = "test-e2e-item-image";
 
-// Mirrors the production SAFE_OBJECT_PATH_PATTERN in
-// src/lib/storage/images.ts, narrowed to the items/ folder: exactly one
-// generated file name with one controlled extension. Every Storage
-// verification or removal below refuses anything else, so a broad or
-// unrelated path can never be targeted.
-const SAFE_ITEM_IMAGE_PATH_PATTERN = /^items\/[a-z0-9-]+\.(png|jpg|webp)$/;
+// Covers every Profession slug the image browser tests use — the same
+// sub-prefix arrangement (and the same run-order caveat) as the Item image
+// prefix above, relative to test-e2e-profession.
+export const E2E_PROFESSION_IMAGE_SLUG_PREFIX = "test-e2e-profession-image";
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -609,22 +607,56 @@ export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
   });
 }
 
+// The Item and Profession image suites share one folder-parameterized
+// implementation; the per-entity exports below pin the table, folder, and
+// slug prefix together so a call can never mix entities. The folder/table
+// values are compile-time literals from this file — never runtime input —
+// so interpolating them into SQL identifiers and path patterns is safe.
+type ImageSuite = {
+  folder: "items" | "professions";
+  table: "Item" | "Profession";
+  slugPrefix: string;
+  parentPrefix: string;
+};
+
+const ITEM_IMAGE_SUITE: ImageSuite = {
+  folder: "items",
+  table: "Item",
+  slugPrefix: E2E_ITEM_IMAGE_SLUG_PREFIX,
+  parentPrefix: E2E_ITEM_SLUG_PREFIX,
+};
+
+const PROFESSION_IMAGE_SUITE: ImageSuite = {
+  folder: "professions",
+  table: "Profession",
+  slugPrefix: E2E_PROFESSION_IMAGE_SLUG_PREFIX,
+  parentPrefix: E2E_PROFESSION_SLUG_PREFIX,
+};
+
 // Defense in depth for every image helper below.
-function assertItemImagePrefixIsSafe(): void {
+function assertImageSuitePrefixIsSafe(suite: ImageSuite): void {
   if (
-    E2E_ITEM_IMAGE_SLUG_PREFIX.length < 5 ||
-    !E2E_ITEM_IMAGE_SLUG_PREFIX.startsWith(E2E_ITEM_SLUG_PREFIX)
+    suite.slugPrefix.length < 5 ||
+    !suite.slugPrefix.startsWith(suite.parentPrefix)
   ) {
     throw new Error(
-      "Refusing prefix-scoped cleanup: the browser-test Item image slug prefix is unsafe."
+      "Refusing prefix-scoped cleanup: the browser-test image slug prefix is unsafe."
     );
   }
 }
 
-function assertSafeItemImagePath(objectPath: string): void {
-  if (!SAFE_ITEM_IMAGE_PATH_PATTERN.test(objectPath)) {
+// Mirrors the production SAFE_OBJECT_PATH_PATTERN in
+// src/lib/storage/images.ts, narrowed to the suite's own folder: exactly
+// one generated file name with one controlled extension. Every Storage
+// verification or removal below refuses anything else, so a broad or
+// unrelated path can never be targeted.
+function assertSafeImagePath(suite: ImageSuite, objectPath: string): void {
+  const pattern = new RegExp(
+    `^${suite.folder}/[a-z0-9-]+\\.(png|jpg|webp)$`
+  );
+  if (!pattern.test(objectPath)) {
     throw new Error(
-      "Refusing a Storage operation: the object path is not a generated items/ image path."
+      `Refusing a Storage operation: the object path is not a generated ${suite.folder}/ image path.`
     );
   }
 }
@@ -644,17 +676,18 @@ async function withStorageAdmin<T>(
 }
 
 async function storageObjectExists(
+  suite: ImageSuite,
   admin: SupabaseClient,
   objectPath: string
 ): Promise<boolean> {
-  assertSafeItemImagePath(objectPath);
-  const name = objectPath.slice("items/".length);
+  assertSafeImagePath(suite, objectPath);
+  const name = objectPath.slice(`${suite.folder}/`.length);
   const { data, error } = await admin.storage
     .from(SERVICE_TEST_BUCKET)
-    .list("items", { limit: 1000, search: name });
+    .list(suite.folder, { limit: 1000, search: name });
   if (error) {
     throw new Error(
-      `Could not list the items folder (status ${
+      `Could not list the ${suite.folder} folder (status ${
         (error as { statusCode?: string }).statusCode ?? "unknown"
       }).`
     );
@@ -663,29 +696,32 @@ async function storageObjectExists(
 }
 
 /**
- * Reads the stored image object path of ONE browser-test Item, straight
- * from the database row (never from the client). Returns null when the row
- * stores no image; throws when the Item does not exist or the slug does
- * not carry the image-suite prefix.
+ * Reads the stored image object path of ONE browser-test row, straight
+ * from the database (never from the client). Returns null when the row
+ * stores no image; throws when the row does not exist or the slug does not
+ * carry the suite's image prefix.
  */
-export async function readItemImagePath(slug: string): Promise<string | null> {
-  assertItemImagePrefixIsSafe();
+async function readImagePathFor(
+  suite: ImageSuite,
+  slug: string
+): Promise<string | null> {
+  assertImageSuitePrefixIsSafe(suite);
 
-  if (!slug.startsWith(E2E_ITEM_IMAGE_SLUG_PREFIX)) {
+  if (!slug.startsWith(suite.slugPrefix)) {
     throw new Error(
-      "Refusing to read an image path: the Item slug does not carry the image-suite prefix."
+      "Refusing to read an image path: the slug does not carry the image-suite prefix."
     );
   }
 
   return withVerifiedDatabase(async (client) => {
     const result = await client.query(
-      `select image from "Item" where slug = $1`,
+      `select image from "${suite.table}" where slug = $1`,
       [slug]
     );
 
     if (result.rowCount !== 1) {
       throw new Error(
-        "Cannot read the image path: the browser-test Item was not found."
+        "Cannot read the image path: the browser-test row was not found."
       );
     }
 
@@ -693,22 +729,16 @@ export async function readItemImagePath(slug: string): Promise<string | null> {
   });
 }
 
-/** True when the exact generated items/ object currently exists. */
-export async function itemImageObjectExists(
-  objectPath: string
-): Promise<boolean> {
-  return withStorageAdmin((admin) => storageObjectExists(admin, objectPath));
-}
-
 /**
  * Fetches the exact object through its public URL with no authentication
  * and a cache-busting query value. Returns the served content-type when the
  * object is publicly readable, or null when it is not. Never logs the URL.
  */
-export async function fetchItemImageContentType(
+async function fetchImageContentTypeFor(
+  suite: ImageSuite,
   objectPath: string
 ): Promise<string | null> {
-  assertSafeItemImagePath(objectPath);
+  assertSafeImagePath(suite, objectPath);
 
   const anonymous = await createAnonymousServiceClient();
   const { data } = anonymous.storage
@@ -724,18 +754,18 @@ export async function fetchItemImageContentType(
 }
 
 /**
- * Read-only count of ALL objects currently in the items/ folder, for
+ * Read-only count of ALL objects currently in the suite's folder, for
  * before/after orphan checks. Counting is the only whole-folder operation
  * this module performs — deletion is always by exact recorded path.
  */
-export async function countItemFolderObjects(): Promise<number> {
+async function countFolderObjectsFor(suite: ImageSuite): Promise<number> {
   return withStorageAdmin(async (admin) => {
     const { data, error } = await admin.storage
       .from(SERVICE_TEST_BUCKET)
-      .list("items", { limit: 1000 });
+      .list(suite.folder, { limit: 1000 });
     if (error) {
       throw new Error(
-        `Could not list the items folder (status ${
+        `Could not list the ${suite.folder} folder (status ${
           (error as { statusCode?: string }).statusCode ?? "unknown"
         }).`
       );
@@ -744,34 +774,32 @@ export async function countItemFolderObjects(): Promise<number> {
   });
 }
 
-/**
- * Read-only count of leftover image-suite Item rows.
- */
-export async function countE2eTestItemImageRecords(): Promise<number> {
+/** Read-only count of leftover image-suite rows. */
+async function countImageSuiteRecordsFor(suite: ImageSuite): Promise<number> {
   return withVerifiedDatabase(async (client) => {
     const result = await client.query(
-      `select count(*)::int as n from "Item" where slug like $1`,
-      [`${E2E_ITEM_IMAGE_SLUG_PREFIX}%`]
+      `select count(*)::int as n from "${suite.table}" where slug like $1`,
+      [`${suite.slugPrefix}%`]
     );
     return result.rows[0].n as number;
   });
 }
 
 /**
- * Deletes ONLY the image-suite Item rows and their exact recorded Storage
+ * Deletes ONLY the suite's image rows and their exact recorded Storage
  * objects: first the object paths are read from the matching database rows,
  * each path is validated against the generated-path shape, only those exact
  * objects are removed (never a folder or bucket listing), removal is
  * verified, and finally the rows themselves are deleted. Returns rows plus
  * objects removed; throws loudly on any failure or leftover.
  */
-export async function deleteE2eTestItemImageRecords(): Promise<number> {
-  assertItemImagePrefixIsSafe();
+async function deleteImageSuiteRecordsFor(suite: ImageSuite): Promise<number> {
+  assertImageSuitePrefixIsSafe(suite);
 
   const paths = await withVerifiedDatabase(async (client) => {
     const result = await client.query(
-      `select image from "Item" where slug like $1 and image is not null`,
-      [`${E2E_ITEM_IMAGE_SLUG_PREFIX}%`]
+      `select image from "${suite.table}" where slug like $1 and image is not null`,
+      [`${suite.slugPrefix}%`]
     );
     return result.rows.map((row) => row.image as string);
   });
@@ -780,7 +808,7 @@ export async function deleteE2eTestItemImageRecords(): Promise<number> {
 
   if (paths.length > 0) {
     for (const objectPath of paths) {
-      assertSafeItemImagePath(objectPath);
+      assertSafeImagePath(suite, objectPath);
     }
 
     await withStorageAdmin(async (admin) => {
@@ -796,7 +824,7 @@ export async function deleteE2eTestItemImageRecords(): Promise<number> {
       }
 
       for (const objectPath of paths) {
-        if (await storageObjectExists(admin, objectPath)) {
+        if (await storageObjectExists(suite, admin, objectPath)) {
           throw new Error(
             "Storage cleanup left an image-suite object behind."
           );
@@ -809,13 +837,81 @@ export async function deleteE2eTestItemImageRecords(): Promise<number> {
 
   const rowsRemoved = await withVerifiedDatabase(async (client) => {
     const result = await client.query(
-      `delete from "Item" where slug like $1`,
-      [`${E2E_ITEM_IMAGE_SLUG_PREFIX}%`]
+      `delete from "${suite.table}" where slug like $1`,
+      [`${suite.slugPrefix}%`]
     );
     return result.rowCount ?? 0;
   });
 
   return rowsRemoved + objectsRemoved;
+}
+
+// --- Item image suite exports (signatures unchanged from Slice 5F) -------
+
+export async function readItemImagePath(slug: string): Promise<string | null> {
+  return readImagePathFor(ITEM_IMAGE_SUITE, slug);
+}
+
+/** True when the exact generated items/ object currently exists. */
+export async function itemImageObjectExists(
+  objectPath: string
+): Promise<boolean> {
+  return withStorageAdmin((admin) =>
+    storageObjectExists(ITEM_IMAGE_SUITE, admin, objectPath)
+  );
+}
+
+export async function fetchItemImageContentType(
+  objectPath: string
+): Promise<string | null> {
+  return fetchImageContentTypeFor(ITEM_IMAGE_SUITE, objectPath);
+}
+
+export async function countItemFolderObjects(): Promise<number> {
+  return countFolderObjectsFor(ITEM_IMAGE_SUITE);
+}
+
+export async function countE2eTestItemImageRecords(): Promise<number> {
+  return countImageSuiteRecordsFor(ITEM_IMAGE_SUITE);
+}
+
+export async function deleteE2eTestItemImageRecords(): Promise<number> {
+  return deleteImageSuiteRecordsFor(ITEM_IMAGE_SUITE);
+}
+
+// --- Profession image suite exports --------------------------------------
+
+export async function readProfessionImagePath(
+  slug: string
+): Promise<string | null> {
+  return readImagePathFor(PROFESSION_IMAGE_SUITE, slug);
+}
+
+/** True when the exact generated professions/ object currently exists. */
+export async function professionImageObjectExists(
+  objectPath: string
+): Promise<boolean> {
+  return withStorageAdmin((admin) =>
+    storageObjectExists(PROFESSION_IMAGE_SUITE, admin, objectPath)
+  );
+}
+
+export async function fetchProfessionImageContentType(
+  objectPath: string
+): Promise<string | null> {
+  return fetchImageContentTypeFor(PROFESSION_IMAGE_SUITE, objectPath);
+}
+
+export async function countProfessionFolderObjects(): Promise<number> {
+  return countFolderObjectsFor(PROFESSION_IMAGE_SUITE);
+}
+
+export async function countE2eTestProfessionImageRecords(): Promise<number> {
+  return countImageSuiteRecordsFor(PROFESSION_IMAGE_SUITE);
+}
+
+export async function deleteE2eTestProfessionImageRecords(): Promise<number> {
+  return deleteImageSuiteRecordsFor(PROFESSION_IMAGE_SUITE);
 }
 
 /** Read-only snapshot of the seeded fixture counts for preservation checks. */
