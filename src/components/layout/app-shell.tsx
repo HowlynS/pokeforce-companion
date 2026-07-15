@@ -1,4 +1,5 @@
-﻿import { designTokens } from "@/lib/design-tokens";
+﻿import Link from "next/link";
+import { designTokens } from "@/lib/design-tokens";
 import { MainNav } from "@/components/layout/main-nav";
 
 type AppShellProps = {
@@ -32,29 +33,37 @@ export function AppShell({ children }: AppShellProps) {
             padding: "16px 0 32px",
           }}
         >
-          <div>
+          {/* Brand lockup, deliberately NOT a heading: each page supplies
+              its own h1 through PageHeader, so the shell must not compete
+              with it. The lockup links home, as visitors expect. */}
+          <Link
+            href="/"
+            style={{
+              display: "block",
+              textDecoration: "none",
+            }}
+          >
             <p
               style={{
                 margin: 0,
                 color: designTokens.colors.accent,
-                fontSize: "14px",
+                fontSize: "20px",
                 fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
+                letterSpacing: "0.04em",
               }}
             >
               PokeForce Companion
             </p>
-            <h1
+            <p
               style={{
-                margin: "8px 0 0",
-                fontSize: "32px",
-                lineHeight: 1.1,
+                margin: "4px 0 0",
+                color: designTokens.colors.textMuted,
+                fontSize: "14px",
               }}
             >
               Crafting Wiki Companion
-            </h1>
-          </div>
+            </p>
+          </Link>
 
           <MainNav />
         </header>
@@ -70,7 +79,8 @@ export function AppShell({ children }: AppShellProps) {
             fontSize: "14px",
           }}
         >
-          PokeForce Companion - Design Foundation
+          PokeForce Companion — a crafting wiki for PokeForce items,
+          recipes, professions, and categories.
         </footer>
       </div>
     </div>

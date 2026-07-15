@@ -14,15 +14,17 @@ export function PageHeader({ title, description }: PageHeaderProps) {
         marginBottom: designTokens.layout.sectionGap,
       }}
     >
-      <h2
+      {/* The one h1 of every page: the shell's brand lockup is not a
+          heading, so the page title owns the top of the outline. */}
+      <h1
         style={{
           margin: 0,
-          fontSize: "40px",
+          fontSize: designTokens.typography.pageTitle,
           lineHeight: 1.1,
         }}
       >
         {title}
-      </h2>
+      </h1>
 
       <p
         style={{

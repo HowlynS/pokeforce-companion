@@ -76,7 +76,7 @@ test("authenticated admin access uses the saved storage state", async ({
   // No redirect to /login: the saved state authenticates the request.
   await expect(page).toHaveURL("/admin");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Admin", exact: true })
+    page.getByRole("heading", { level: 1, name: "Admin", exact: true })
   ).toBeVisible();
   await expect(page.getByText(/^Signed in as/)).toBeVisible();
   await expect(
@@ -92,7 +92,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   await page.getByRole("link", { name: /Manage Categories/ }).click();
   await expect(page).toHaveURL("/admin/categories");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Category Management" })
+    page.getByRole("heading", { level: 1, name: "Category Management" })
   ).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(INITIAL.name);
@@ -109,7 +109,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   // Public detail page renders the new category.
   await page.goto(`/categories/${INITIAL.slug}`);
   await expect(
-    page.getByRole("heading", { level: 2, name: INITIAL.name, exact: true })
+    page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
 
@@ -127,7 +127,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   await adminRow(page, INITIAL.name).getByRole("link", { name: "Edit" }).click();
   await expect(page).toHaveURL(`/admin/categories/${INITIAL.slug}/edit`);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Edit Category" })
+    page.getByRole("heading", { level: 1, name: "Edit Category" })
   ).toBeVisible();
   await expect(page.getByText(`Update details for "${INITIAL.name}".`)).toBeVisible();
 
@@ -149,7 +149,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   // ...and the new public detail page renders the edited values.
   await page.goto(`/categories/${EDITED.slug}`);
   await expect(
-    page.getByRole("heading", { level: 2, name: EDITED.name, exact: true })
+    page.getByRole("heading", { level: 1, name: EDITED.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(EDITED.description)).toBeVisible();
 
@@ -166,7 +166,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   await adminRow(page, EDITED.name).getByRole("link", { name: "Delete" }).click();
   await expect(page).toHaveURL(`/admin/categories/${EDITED.slug}/delete`);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Delete Category" })
+    page.getByRole("heading", { level: 1, name: "Delete Category" })
   ).toBeVisible();
   // The confirmation identifies exactly this category by name and slug.
   await expect(page.getByText(`(${EDITED.slug})`)).toBeVisible();

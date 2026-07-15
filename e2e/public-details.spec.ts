@@ -32,7 +32,7 @@ test.describe("public detail pages", () => {
     await page.goto("/items/iron-sword");
 
     await expect(
-      page.getByRole("heading", { level: 2, name: "Iron Sword", exact: true })
+      page.getByRole("heading", { level: 1, name: "Iron Sword", exact: true })
     ).toBeVisible();
     // Relational facts rendered as text in the Details card.
     await expect(page.getByText("Category: Gear")).toBeVisible();
@@ -51,7 +51,7 @@ test.describe("public detail pages", () => {
     await page.goto("/recipes/iron-sword");
 
     await expect(
-      page.getByRole("heading", { level: 2, name: "Iron Sword", exact: true })
+      page.getByRole("heading", { level: 1, name: "Iron Sword", exact: true })
     ).toBeVisible();
 
     const resultCard = cardLink(page, "Result: Iron Sword");
@@ -71,7 +71,7 @@ test.describe("public detail pages", () => {
     await page.goto("/professions/blacksmithing");
 
     await expect(
-      page.getByRole("heading", { level: 2, name: "Blacksmithing", exact: true })
+      page.getByRole("heading", { level: 1, name: "Blacksmithing", exact: true })
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
@@ -86,7 +86,7 @@ test.describe("public detail pages", () => {
     await page.goto("/categories/materials");
 
     await expect(
-      page.getByRole("heading", { level: 2, name: "Materials", exact: true })
+      page.getByRole("heading", { level: 1, name: "Materials", exact: true })
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { level: 2, name: "Items", exact: true })
@@ -109,7 +109,7 @@ test.describe("relational navigation journeys", () => {
     await cardLink(page, "Result: Iron Sword").click();
     await expect(page).toHaveURL("/items/iron-sword");
     await expect(
-      page.getByRole("heading", { level: 2, name: "Iron Sword", exact: true })
+      page.getByRole("heading", { level: 1, name: "Iron Sword", exact: true })
     ).toBeVisible();
   });
 
@@ -121,7 +121,7 @@ test.describe("relational navigation journeys", () => {
     await cardLink(page, "Iron Ore").click();
     await expect(page).toHaveURL("/items/iron-ore");
     await expect(
-      page.getByRole("heading", { level: 2, name: "Iron Ore", exact: true })
+      page.getByRole("heading", { level: 1, name: "Iron Ore", exact: true })
     ).toBeVisible();
   });
 
@@ -130,7 +130,7 @@ test.describe("relational navigation journeys", () => {
     await cardLink(page, "Iron Sword").click();
     await expect(page).toHaveURL("/recipes/iron-sword");
     await expect(
-      page.getByRole("heading", { level: 2, name: "Iron Sword", exact: true })
+      page.getByRole("heading", { level: 1, name: "Iron Sword", exact: true })
     ).toBeVisible();
   });
 });
@@ -149,7 +149,7 @@ test.describe("image fallback", () => {
   }) => {
     await page.goto("/items/iron-ore");
     await expect(
-      page.getByRole("heading", { level: 2, name: "Iron Ore", exact: true })
+      page.getByRole("heading", { level: 1, name: "Iron Ore", exact: true })
     ).toBeVisible();
     await expect(page.getByText("No image available").first()).toBeVisible();
   });

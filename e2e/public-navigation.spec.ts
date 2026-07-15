@@ -31,12 +31,14 @@ test.describe("homepage", () => {
   test("renders the shell, heading, and main landmark", async ({ page }) => {
     await page.goto("/");
 
+    // The page title is the one h1; the shell's brand lockup is a home
+    // link (containing the product name and tagline), not a heading.
     await expect(
-      page.getByRole("heading", { level: 1, name: "Crafting Wiki Companion" })
+      page.getByRole("heading", { level: 1, name: "PokeForce Companion" })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "PokeForce Companion" })
-    ).toBeVisible();
+      page.getByRole("link", { name: /Crafting Wiki Companion/ })
+    ).toHaveAttribute("href", "/");
     await expect(page.getByRole("main")).toBeVisible();
     await expect(
       page.getByRole("navigation", { name: "Main navigation" })
@@ -63,7 +65,7 @@ test.describe("main navigation", () => {
 
       await expect(page).toHaveURL(target.path);
       await expect(
-        page.getByRole("heading", { level: 2, name: target.heading, exact: true })
+        page.getByRole("heading", { level: 1, name: target.heading, exact: true })
       ).toBeVisible();
     });
   }
@@ -106,7 +108,7 @@ test.describe("public list pages", () => {
       await page.goto(listPage.path);
 
       await expect(
-        page.getByRole("heading", { level: 2, name: listPage.heading, exact: true })
+        page.getByRole("heading", { level: 1, name: listPage.heading, exact: true })
       ).toBeVisible();
 
       const card = cardLink(page, listPage.seededName);

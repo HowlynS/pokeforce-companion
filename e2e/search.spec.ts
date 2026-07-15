@@ -52,7 +52,7 @@ test("the header search form reaches /search with the submitted query", async ({
 
   await expect(page).toHaveURL("/search?q=iron");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Search", exact: true })
+    page.getByRole("heading", { level: 1, name: "Search", exact: true })
   ).toBeVisible();
   await expect(cardLink(page, "Iron Ore")).toBeVisible();
 });
@@ -138,7 +138,7 @@ test("a result card links to the existing public detail page", async ({
 
   await expect(page).toHaveURL("/items/whetstone");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Whetstone", exact: true })
+    page.getByRole("heading", { level: 1, name: "Whetstone", exact: true })
   ).toBeVisible();
 });
 
@@ -245,7 +245,7 @@ test("searching a profession name returns its recipes, linked to their detail pa
   await cardLink(page, "Stamina Brew").click();
   await expect(page).toHaveURL("/recipes/stamina-brew");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Stamina Brew", exact: true })
+    page.getByRole("heading", { level: 1, name: "Stamina Brew", exact: true })
   ).toBeVisible();
 });
 

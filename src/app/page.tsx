@@ -51,9 +51,9 @@ export default function Home() {
             lineHeight: 1.6,
           }}
         >
-          Milestone 2 is setting up the visual foundation only. Data, search,
-          admin editing, images, storage, and deployment will come in later
-          milestones.
+          Looking for something specific? Use the search box in the header —
+          it finds items, recipes, professions, and categories by name, and
+          recipes by their result, profession, or ingredients.
         </p>
       </section>
     </AppShell>

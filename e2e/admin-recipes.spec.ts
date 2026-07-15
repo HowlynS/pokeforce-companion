@@ -146,7 +146,7 @@ test("authenticated recipe admin access uses the saved storage state", async ({
   // No redirect to /login: the saved state authenticates the request.
   await expect(page).toHaveURL("/admin/recipes");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Recipe Management" })
+    page.getByRole("heading", { level: 1, name: "Recipe Management" })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Recipe", exact: true })
@@ -168,7 +168,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   await page.getByRole("link", { name: /Manage Recipes/ }).click();
   await expect(page).toHaveURL("/admin/recipes");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Recipe Management" })
+    page.getByRole("heading", { level: 1, name: "Recipe Management" })
   ).toBeVisible();
 
   await createRecipeThroughForm(page, {
@@ -216,7 +216,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   // ingredients with quantities, and the no-image fallback.
   await page.goto("/recipes/test-e2e-recipe");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Test E2E Recipe", exact: true })
+    page.getByRole("heading", { level: 1, name: "Test E2E Recipe", exact: true })
   ).toBeVisible();
   await expect(
     cardLink(page, "Result: Iron Ingot").getByText(
@@ -257,7 +257,7 @@ test("recipe editing prefills ingredients and applies the transactional update",
     .click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe/edit");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Edit Recipe" })
+    page.getByRole("heading", { level: 1, name: "Edit Recipe" })
   ).toBeVisible();
   await expect(
     page.getByText(`Update details for "Test E2E Recipe".`)
@@ -337,7 +337,7 @@ test("recipe editing prefills ingredients and applies the transactional update",
   await page.goto("/recipes/test-e2e-recipe-updated");
   await expect(
     page.getByRole("heading", {
-      level: 2,
+      level: 1,
       name: "Test E2E Recipe Updated",
       exact: true,
     })
@@ -574,7 +574,7 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
     .click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-delete/delete");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Delete Recipe" })
+    page.getByRole("heading", { level: 1, name: "Delete Recipe" })
   ).toBeVisible();
   // The confirmation identifies exactly this recipe and its relations.
   await expect(page.getByText("(test-e2e-recipe-delete)")).toBeVisible();

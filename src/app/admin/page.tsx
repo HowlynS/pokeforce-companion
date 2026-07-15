@@ -13,7 +13,7 @@ export default async function AdminPage() {
     <AppShell>
       <PageHeader
         title="Admin"
-        description="This area is protected by server-side authorization. Editing tools for game data will be added in later steps of this milestone."
+        description="Manage the wiki's game data: create, edit, and delete categories, professions, items, and recipes."
       />
 
       <div
@@ -71,18 +71,7 @@ export default async function AdminPage() {
         </p>
 
         <form action={signOutAction}>
-          <button
-            type="submit"
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.sm,
-              background: designTokens.colors.surfaceSoft,
-              color: designTokens.colors.text,
-              padding: "10px 16px",
-              fontSize: "16px",
-              cursor: "pointer",
-            }}
-          >
+          <button type="submit" className="btn btn-secondary">
             Sign out
           </button>
         </form>

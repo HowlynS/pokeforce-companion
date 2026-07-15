@@ -113,7 +113,7 @@ test("authenticated profession admin access uses the saved storage state", async
   // No redirect to /login: the saved state authenticates the request.
   await expect(page).toHaveURL("/admin/professions");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Profession Management" })
+    page.getByRole("heading", { level: 1, name: "Profession Management" })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Profession", exact: true })
@@ -136,7 +136,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   await page.getByRole("link", { name: /Manage Professions/ }).click();
   await expect(page).toHaveURL("/admin/professions");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Profession Management" })
+    page.getByRole("heading", { level: 1, name: "Profession Management" })
   ).toBeVisible();
 
   await createProfessionThroughForm(page, INITIAL);
@@ -145,7 +145,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   // fallback and the empty recipes state.
   await page.goto(`/professions/${INITIAL.slug}`);
   await expect(
-    page.getByRole("heading", { level: 2, name: INITIAL.name, exact: true })
+    page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
   await expect(page.getByText("No image available")).toBeVisible();
@@ -165,7 +165,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   await adminRow(page, INITIAL.name).getByRole("link", { name: "Edit" }).click();
   await expect(page).toHaveURL(`/admin/professions/${INITIAL.slug}/edit`);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Edit Profession" })
+    page.getByRole("heading", { level: 1, name: "Edit Profession" })
   ).toBeVisible();
   await expect(
     page.getByText(`Update details for "${INITIAL.name}".`)
@@ -189,7 +189,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   // ...and the new public detail page renders the edited values.
   await page.goto(`/professions/${EDITED.slug}`);
   await expect(
-    page.getByRole("heading", { level: 2, name: EDITED.name, exact: true })
+    page.getByRole("heading", { level: 1, name: EDITED.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(EDITED.description)).toBeVisible();
 
@@ -206,7 +206,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   await adminRow(page, EDITED.name).getByRole("link", { name: "Delete" }).click();
   await expect(page).toHaveURL(`/admin/professions/${EDITED.slug}/delete`);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Delete Profession" })
+    page.getByRole("heading", { level: 1, name: "Delete Profession" })
   ).toBeVisible();
   // The confirmation identifies exactly this profession by name and slug.
   await expect(page.getByText(`(${EDITED.slug})`)).toBeVisible();
@@ -275,7 +275,7 @@ test("deletion is blocked while a recipe references the profession", async ({
   // it shows a zero count and offers the delete button.
   await page.goto(`/admin/professions/${BLOCKED.slug}/delete`);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Delete Profession" })
+    page.getByRole("heading", { level: 1, name: "Delete Profession" })
   ).toBeVisible();
   await expect(page.getByText("Linked recipes: 0")).toBeVisible();
   const deleteButton = page.getByRole("button", {
@@ -316,7 +316,7 @@ test("deletion is blocked while a recipe references the profession", async ({
   ).toBeVisible();
   await page.goto(`/professions/${BLOCKED.slug}`);
   await expect(
-    page.getByRole("heading", { level: 2, name: BLOCKED.name, exact: true })
+    page.getByRole("heading", { level: 1, name: BLOCKED.name, exact: true })
   ).toBeVisible();
   await expect(
     cardLink(page, "Test E2E Profession Relation Recipe")

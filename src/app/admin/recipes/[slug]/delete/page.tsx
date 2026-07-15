@@ -118,37 +118,12 @@ export default async function DeleteRecipePage({
           <form action={deleteRecipeAction}>
             <input type="hidden" name="id" value={recipe.id} />
             <input type="hidden" name="slug" value={recipe.slug} />
-            <button
-              type="submit"
-              style={{
-                border: "none",
-                borderRadius: designTokens.radius.sm,
-                background: designTokens.colors.danger,
-                color: designTokens.colors.text,
-                padding: "12px 16px",
-                fontSize: "16px",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
+            <button type="submit" className="btn btn-danger">
               Delete Permanently
             </button>
           </form>
 
-          <a
-            href="/admin/recipes"
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.sm,
-              background: designTokens.colors.surface,
-              color: designTokens.colors.text,
-              padding: "12px 16px",
-              fontSize: "16px",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
+          <a href="/admin/recipes" className="btn btn-secondary">
             Cancel
           </a>
         </div>

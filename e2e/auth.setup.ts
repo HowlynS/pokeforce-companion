@@ -20,7 +20,7 @@ setup("authenticate as the test admin", async ({ page }) => {
 
   await page.goto("/login");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Admin sign-in" })
+    page.getByRole("heading", { level: 1, name: "Admin sign-in" })
   ).toBeVisible();
 
   await page.getByLabel("Email").fill(adminEmail);
@@ -30,7 +30,7 @@ setup("authenticate as the test admin", async ({ page }) => {
   // The sign-in server action redirects straight into the protected area.
   await expect(page).toHaveURL("/admin", { timeout: 15_000 });
   await expect(
-    page.getByRole("heading", { level: 2, name: "Admin", exact: true })
+    page.getByRole("heading", { level: 1, name: "Admin", exact: true })
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: /Manage Categories/ })

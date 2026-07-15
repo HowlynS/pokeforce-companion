@@ -15,7 +15,7 @@ export function Card({ title, description, href, media }: CardProps) {
       <h3
         style={{
           margin: "0 0 8px",
-          fontSize: "22px",
+          fontSize: designTokens.typography.cardTitle,
           lineHeight: 1.2,
         }}
       >
@@ -46,8 +46,10 @@ export function Card({ title, description, href, media }: CardProps) {
   };
 
   if (href) {
+    // Linked cards get the shared hover/focus affordance; static article
+    // cards stay quiet.
     return (
-      <a href={href} style={cardStyles}>
+      <a href={href} className="interactive-card" style={cardStyles}>
         {cardContent}
       </a>
     );

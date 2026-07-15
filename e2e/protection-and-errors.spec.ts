@@ -52,7 +52,7 @@ test.describe("unauthenticated admin protection", () => {
 
       await expect(page).toHaveURL("/login");
       await expect(
-        page.getByRole("heading", { level: 2, name: "Admin sign-in" })
+        page.getByRole("heading", { level: 1, name: "Admin sign-in" })
       ).toBeVisible();
     });
   }
@@ -66,7 +66,7 @@ test.describe("login page", () => {
     await page.goto("/login");
 
     await expect(
-      page.getByRole("heading", { level: 2, name: "Admin sign-in" })
+      page.getByRole("heading", { level: 1, name: "Admin sign-in" })
     ).toBeVisible();
     await expect(
       page.getByText("Sign in with the authorized administrator account.")

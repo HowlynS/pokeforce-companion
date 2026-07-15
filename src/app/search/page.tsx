@@ -101,17 +101,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         <button
           type="submit"
-          style={{
-            border: "none",
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.accent,
-            color: designTokens.colors.background,
-            padding: "10px 16px",
-            fontSize: "16px",
-            fontWeight: 700,
-            cursor: "pointer",
-            alignSelf: "end",
-          }}
+          className="btn btn-primary"
+          style={{ alignSelf: "end" }}
         >
           Search
         </button>

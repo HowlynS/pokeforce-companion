@@ -21,6 +21,7 @@ export function MainNav() {
         <a
           key={item.href}
           href={item.href}
+          className="nav-pill"
           style={{
             border: `1px solid ${designTokens.colors.border}`,
             borderRadius: designTokens.radius.sm,
@@ -60,19 +61,9 @@ export function MainNav() {
             width: "140px",
           }}
         />
-        <button
-          type="submit"
-          style={{
-            border: `1px solid ${designTokens.colors.border}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surface,
-            color: designTokens.colors.text,
-            padding: "8px 12px",
-            fontSize: "16px",
-            fontFamily: "inherit",
-            cursor: "pointer",
-          }}
-        >
+        {/* Filled accent button: clearly a form control, not another nav
+            link. */}
+        <button type="submit" className="btn btn-primary btn-compact">
           Search
         </button>
       </form>

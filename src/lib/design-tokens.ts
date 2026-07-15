@@ -17,6 +17,13 @@ export const designTokens = {
     pagePadding: "24px",
     sectionGap: "32px",
   },
+  // Three clearly separated title tiers: the page title (one h1 per page),
+  // section headings (h2), and card titles (h3). Body text stays 16px.
+  typography: {
+    pageTitle: "36px",
+    sectionTitle: "24px",
+    cardTitle: "18px",
+  },
   radius: {
     sm: "8px",
     md: "12px",

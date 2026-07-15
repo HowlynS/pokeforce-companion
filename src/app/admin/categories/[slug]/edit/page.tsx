@@ -127,36 +127,11 @@ export default async function EditCategoryPage({
         </label>
 
         <div style={{ display: "flex", gap: "12px" }}>
-          <button
-            type="submit"
-            style={{
-              border: "none",
-              borderRadius: designTokens.radius.sm,
-              background: designTokens.colors.accent,
-              color: designTokens.colors.background,
-              padding: "12px 16px",
-              fontSize: "16px",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
+          <button type="submit" className="btn btn-primary">
             Save Changes
           </button>
 
-          <a
-            href="/admin/categories"
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.sm,
-              background: designTokens.colors.surfaceSoft,
-              color: designTokens.colors.text,
-              padding: "12px 16px",
-              fontSize: "16px",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
+          <a href="/admin/categories" className="btn btn-secondary">
             Cancel
           </a>
         </div>

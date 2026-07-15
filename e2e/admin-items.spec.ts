@@ -122,7 +122,7 @@ test("authenticated item admin access uses the saved storage state", async ({
   // No redirect to /login: the saved state authenticates the request.
   await expect(page).toHaveURL("/admin/items");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Item Management" })
+    page.getByRole("heading", { level: 1, name: "Item Management" })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Item", exact: true })
@@ -145,7 +145,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await page.getByRole("link", { name: /Manage Items/ }).click();
   await expect(page).toHaveURL("/admin/items");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Item Management" })
+    page.getByRole("heading", { level: 1, name: "Item Management" })
   ).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(INITIAL.name);
@@ -188,7 +188,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   // plus the no-image fallback and both empty recipe-relation states.
   await page.goto(`/items/${INITIAL.slug}`);
   await expect(
-    page.getByRole("heading", { level: 2, name: INITIAL.name, exact: true })
+    page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
   await expect(
@@ -212,7 +212,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await adminRow(page, INITIAL.name).getByRole("link", { name: "Edit" }).click();
   await expect(page).toHaveURL(`/admin/items/${INITIAL.slug}/edit`);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Edit Item" })
+    page.getByRole("heading", { level: 1, name: "Edit Item" })
   ).toBeVisible();
   await expect(
     page.getByText(`Update details for "${INITIAL.name}".`)
@@ -252,7 +252,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   // the reassigned Category.
   await page.goto(`/items/${EDITED.slug}`);
   await expect(
-    page.getByRole("heading", { level: 2, name: EDITED.name, exact: true })
+    page.getByRole("heading", { level: 1, name: EDITED.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(EDITED.description)).toBeVisible();
   await expect(
@@ -271,7 +271,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await adminRow(page, EDITED.name).getByRole("link", { name: "Delete" }).click();
   await expect(page).toHaveURL(`/admin/items/${EDITED.slug}/delete`);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Delete Item" })
+    page.getByRole("heading", { level: 1, name: "Delete Item" })
   ).toBeVisible();
   // The confirmation identifies exactly this item by name, slug, Category,
   // and both recipe-reference counts.
@@ -341,7 +341,7 @@ test("deletion is blocked while a recipe produces the item", async ({
   // counts are zero and the delete button is offered.
   await page.goto(`/admin/items/${BLOCKED_RESULT.slug}/delete`);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Delete Item" })
+    page.getByRole("heading", { level: 1, name: "Delete Item" })
   ).toBeVisible();
   await expect(page.getByText("Used as a recipe result: 0")).toBeVisible();
   await expect(page.getByText("Used as a recipe ingredient: 0")).toBeVisible();
@@ -385,7 +385,7 @@ test("deletion is blocked while a recipe produces the item", async ({
   await page.goto(`/items/${BLOCKED_RESULT.slug}`);
   await expect(
     page.getByRole("heading", {
-      level: 2,
+      level: 1,
       name: BLOCKED_RESULT.name,
       exact: true,
     })
@@ -456,7 +456,7 @@ test("deletion is blocked while the item is a recipe ingredient", async ({
   await page.goto(`/items/${BLOCKED_INGREDIENT.slug}`);
   await expect(
     page.getByRole("heading", {
-      level: 2,
+      level: 1,
       name: BLOCKED_INGREDIENT.name,
       exact: true,
     })

@@ -107,38 +107,13 @@ export default async function DeleteCategoryPage({
             <form action={deleteCategoryAction}>
               <input type="hidden" name="id" value={category.id} />
               <input type="hidden" name="slug" value={category.slug} />
-              <button
-                type="submit"
-                style={{
-                  border: "none",
-                  borderRadius: designTokens.radius.sm,
-                  background: designTokens.colors.danger,
-                  color: designTokens.colors.text,
-                  padding: "12px 16px",
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
+              <button type="submit" className="btn btn-danger">
                 Delete Permanently
               </button>
             </form>
           ) : null}
 
-          <a
-            href="/admin/categories"
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.sm,
-              background: designTokens.colors.surface,
-              color: designTokens.colors.text,
-              padding: "12px 16px",
-              fontSize: "16px",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
+          <a href="/admin/categories" className="btn btn-secondary">
             Cancel
           </a>
         </div>

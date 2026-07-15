@@ -261,17 +261,8 @@ export default async function AdminProfessionsPage({
 
           <button
             type="submit"
-            style={{
-              border: "none",
-              borderRadius: designTokens.radius.sm,
-              background: designTokens.colors.accent,
-              color: designTokens.colors.background,
-              padding: "12px 16px",
-              fontSize: "16px",
-              fontWeight: 700,
-              cursor: "pointer",
-              justifySelf: "start",
-            }}
+            className="btn btn-primary"
+            style={{ justifySelf: "start" }}
           >
             Create Profession
           </button>
