@@ -35,11 +35,13 @@ export function MainNav() {
 
       {/* Compact global search: a plain GET form to /search, so it works
           without client JavaScript and wraps with the nav links on small
-          screens. The full form lives on the /search page itself. */}
+          screens. The full form lives on the /search page itself; the
+          aria-label keeps the two search landmarks distinguishable. */}
       <form
         action="/search"
         method="get"
         role="search"
+        aria-label="Site search"
         style={{ display: "flex", gap: "8px" }}
       >
         <input

@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
 import {
+  buildSearchSummary,
   countSearchResults,
   emptySearchResults,
   normalizeSearchQuery,
@@ -61,11 +62,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         description="Search items, recipes, professions, and categories by name or description."
       />
 
-      {/* Plain GET form: the query lives in the URL, no client JavaScript. */}
+      {/* Plain GET form: the query lives in the URL, no client JavaScript.
+          The aria-label keeps this search landmark distinguishable from the
+          compact one in the header. */}
       <form
         action="/search"
         method="get"
         role="search"
+        aria-label="Search the wiki"
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -116,16 +120,37 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       {query === "" ? (
         <EmptyState
           title="Start searching"
-          description="Type a word from an item, recipe, profession, or category — for example a material like iron — and press Search."
+          description="Search Items, Recipes, Professions, and Categories by name or description — for example a material like iron. Recipes are also found through their resulting item, profession, or ingredients."
         />
       ) : totalResults === 0 ? (
-        // React escapes the interpolated query, so it renders as plain text.
+        // React escapes the interpolated query, so it renders as plain
+        // text. The form above keeps the submitted query so it can be
+        // edited directly.
         <EmptyState
           title="No results"
-          description={`Nothing matched "${query}". Check the spelling or try a shorter word.`}
+          description={`No items, recipes, professions, or categories matched "${query}". Check the spelling or try a shorter, broader term.`}
         />
       ) : (
-        RESULT_GROUPS.map((group) => {
+        <>
+          {/* Query feedback: what was searched and how much is shown. The
+              per-type cap means this counts displayed results, and the
+              summary wording says so. */}
+          <section style={{ marginBottom: "24px" }}>
+            <h2
+              style={{
+                fontSize: "24px",
+                lineHeight: 1.2,
+                margin: "0 0 8px",
+              }}
+            >
+              Search results for &quot;{query}&quot;
+            </h2>
+            <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
+              {buildSearchSummary(results)}
+            </p>
+          </section>
+
+          {RESULT_GROUPS.map((group) => {
           const entries: SearchResultEntry[] = results[group.key];
 
           if (entries.length === 0) {
@@ -146,22 +171,26 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
               <ContentGrid>
                 {entries.map((entry) => (
-                  // A relational match shows its one context line (for
-                  // example "Ingredient: Iron Ore") in place of the plain
-                  // description/type label.
+                  // The card line always starts with the record's own
+                  // description (or its resource-type label), and a
+                  // relational match appends its one context line — so the
+                  // type and the reason it matched stay distinguishable:
+                  // "Recipe · Ingredient: Leather Strap".
                   <Card
                     key={entry.slug}
                     title={entry.name}
-                    description={
-                      entry.context ?? entry.description ?? group.fallback
-                    }
+                    description={[
+                      entry.description ?? group.fallback,
+                      ...(entry.context ? [entry.context] : []),
+                    ].join(" · ")}
                     href={`${group.basePath}/${entry.slug}`}
                   />
                 ))}
               </ContentGrid>
             </section>
           );
-        })
+          })}
+        </>
       )}
     </AppShell>
   );

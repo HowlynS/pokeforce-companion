@@ -227,3 +227,26 @@ export function countSearchResults(results: GlobalSearchResults): number {
     results.categories.length
   );
 }
+
+/**
+ * One-line summary of what the results page is showing, e.g.
+ * "Showing 6 results across 2 resource types." — phrased as DISPLAYED
+ * results ("Showing"), because each group is capped at
+ * SEARCH_RESULTS_PER_TYPE and the true match count may be larger. Pure
+ * counting/formatting only; callers with zero results render the
+ * no-results state instead.
+ */
+export function buildSearchSummary(results: GlobalSearchResults): string {
+  const total = countSearchResults(results);
+  const groups = [
+    results.items,
+    results.recipes,
+    results.professions,
+    results.categories,
+  ].filter((group) => group.length > 0).length;
+
+  const resultWord = total === 1 ? "result" : "results";
+  const typeWord = groups === 1 ? "resource type" : "resource types";
+
+  return `Showing ${total} ${resultWord} across ${groups} ${typeWord}.`;
+}

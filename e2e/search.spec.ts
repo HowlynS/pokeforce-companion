@@ -65,6 +65,19 @@ test("visiting /search without a query shows the empty-query guidance", async ({
   await expect(
     page.getByRole("heading", { level: 3, name: "Start searching" })
   ).toBeVisible();
+  // The guidance names every searchable resource type and the relational
+  // paths (asserted on its unique tail — the page header paragraph shares
+  // the resource-type phrasing).
+  await expect(
+    page.getByText(
+      "Search Items, Recipes, Professions, and Categories by name or description — for example a material like iron."
+    )
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Recipes are also found through their resulting item, profession, or ingredients."
+    )
+  ).toBeVisible();
   await expect(pageSearchInput(page)).toHaveValue("");
 
   // Submitting the still-empty page form stays in the guidance state.
@@ -236,7 +249,7 @@ test("searching a profession name returns its recipes, linked to their detail pa
   ).toBeVisible();
 });
 
-test("a query with no matches shows the no-results message with the query", async ({
+test("a query with no matches shows actionable no-results guidance with the query", async ({
   page,
 }) => {
   await page.goto("/search?q=test-e2e-no-such-thing");
@@ -244,8 +257,68 @@ test("a query with no matches shows the no-results message with the query", asyn
   await expect(
     page.getByRole("heading", { level: 3, name: "No results" })
   ).toBeVisible();
+  // The message names the query safely and suggests a concrete next step.
   await expect(
-    page.getByText('Nothing matched "test-e2e-no-such-thing".')
+    page.getByText(
+      'No items, recipes, professions, or categories matched "test-e2e-no-such-thing".'
+    )
   ).toBeVisible();
+  await expect(
+    page.getByText("Check the spelling or try a shorter, broader term.")
+  ).toBeVisible();
+  // The form stays populated so the query can be edited directly.
   await expect(pageSearchInput(page)).toHaveValue("test-e2e-no-such-thing");
+});
+
+test("a non-empty query gets a results heading and a displayed-results summary", async ({
+  page,
+}) => {
+  await page.goto("/search?q=iron");
+
+  // The results heading names the submitted query...
+  await expect(
+    page.getByRole("heading", {
+      level: 2,
+      name: 'Search results for "iron"',
+      exact: true,
+    })
+  ).toBeVisible();
+  // ...and the summary counts what is displayed: 3 items + 3 recipes in
+  // 2 non-empty groups ("Showing", because groups are capped at ten).
+  await expect(
+    page.getByText("Showing 6 results across 2 resource types.")
+  ).toBeVisible();
+});
+
+test("the two search forms expose distinguishable accessible names", async ({
+  page,
+}) => {
+  await page.goto("/search");
+
+  // Two search landmarks on one page: the compact header form and the
+  // page's own form, each with its own accessible name.
+  await expect(
+    page.getByRole("search", { name: "Site search" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("search", { name: "Search the wiki" })
+  ).toBeVisible();
+});
+
+test("search stays usable at a narrow mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 700 });
+  await page.goto("/search?q=iron");
+
+  // Results and both forms remain visible and operable.
+  await expect(cardLink(page, "Iron Ore")).toBeVisible();
+  await expect(headerSearchInput(page)).toBeVisible();
+
+  // A follow-up search through the page form works at this width.
+  await pageSearchInput(page).fill("gear");
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: "Search", exact: true })
+    .click();
+  await expect(page).toHaveURL("/search?q=gear");
+  await expect(cardLink(page, "Reinforced Shield")).toBeVisible();
 });

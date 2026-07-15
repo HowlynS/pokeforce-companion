@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   SEARCH_RESULTS_PER_TYPE,
   buildMatchContext,
+  buildSearchSummary,
   countSearchResults,
   emptySearchResults,
   normalizeSearchQuery,
@@ -149,6 +150,50 @@ describe("countSearchResults", () => {
       categories: [entry, entry, entry],
     };
     expect(countSearchResults(results)).toBe(7);
+  });
+});
+
+describe("buildSearchSummary", () => {
+  const entry = { slug: "x", name: "X", description: null, context: null };
+
+  it("counts displayed results and non-empty groups with plural wording", () => {
+    const results: GlobalSearchResults = {
+      items: [entry, entry, entry],
+      recipes: [entry, entry, entry],
+      professions: [],
+      categories: [],
+    };
+    expect(buildSearchSummary(results)).toBe(
+      "Showing 6 results across 2 resource types."
+    );
+  });
+
+  it("uses singular wording for one result in one group", () => {
+    const results: GlobalSearchResults = {
+      items: [],
+      recipes: [entry],
+      professions: [],
+      categories: [],
+    };
+    expect(buildSearchSummary(results)).toBe(
+      "Showing 1 result across 1 resource type."
+    );
+  });
+
+  it("counts a group only when it holds results", () => {
+    const results: GlobalSearchResults = {
+      items: [entry],
+      recipes: [],
+      professions: [entry],
+      categories: [entry],
+    };
+    expect(buildSearchSummary(results)).toBe(
+      "Showing 3 results across 3 resource types."
+    );
+  });
+
+  it("says 'Showing' so a capped group is never presented as the full match count", () => {
+    expect(buildSearchSummary(emptySearchResults())).toMatch(/^Showing /);
   });
 });
 
