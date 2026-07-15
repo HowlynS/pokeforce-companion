@@ -32,6 +32,48 @@ export function MainNav() {
           {item.label}
         </a>
       ))}
+
+      {/* Compact global search: a plain GET form to /search, so it works
+          without client JavaScript and wraps with the nav links on small
+          screens. The full form lives on the /search page itself. */}
+      <form
+        action="/search"
+        method="get"
+        role="search"
+        style={{ display: "flex", gap: "8px" }}
+      >
+        <input
+          type="search"
+          name="q"
+          aria-label="Search query"
+          placeholder="Search..."
+          style={{
+            border: `1px solid ${designTokens.colors.border}`,
+            borderRadius: designTokens.radius.sm,
+            background: designTokens.colors.surface,
+            color: designTokens.colors.text,
+            padding: "8px 12px",
+            fontSize: "16px",
+            fontFamily: "inherit",
+            width: "140px",
+          }}
+        />
+        <button
+          type="submit"
+          style={{
+            border: `1px solid ${designTokens.colors.border}`,
+            borderRadius: designTokens.radius.sm,
+            background: designTokens.colors.surface,
+            color: designTokens.colors.text,
+            padding: "8px 12px",
+            fontSize: "16px",
+            fontFamily: "inherit",
+            cursor: "pointer",
+          }}
+        >
+          Search
+        </button>
+      </form>
     </nav>
   );
 }
