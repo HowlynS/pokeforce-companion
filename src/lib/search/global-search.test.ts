@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import {
   SEARCH_RESULTS_PER_TYPE,
+  buildMatchContext,
   countSearchResults,
   emptySearchResults,
   normalizeSearchQuery,
@@ -70,8 +71,71 @@ describe("emptySearchResults", () => {
   });
 });
 
+describe("buildMatchContext", () => {
+  const relations = [
+    { label: "Result", value: "Iron Ingot" },
+    { label: "Profession", value: "Blacksmithing" },
+    { label: "Ingredient", value: "Iron Ore" },
+  ];
+
+  it("returns null for a direct match — no explanation needed", () => {
+    expect(buildMatchContext("sword", ["Iron Sword"], relations)).toBeNull();
+  });
+
+  it("checks direct fields case-insensitively", () => {
+    expect(buildMatchContext("SWORD", ["Iron Sword"], relations)).toBeNull();
+  });
+
+  it("labels the matching relation for a purely relational match", () => {
+    expect(buildMatchContext("blacksmith", ["Charcoal"], relations)).toBe(
+      "Profession: Blacksmithing"
+    );
+  });
+
+  it("matches relations case-insensitively", () => {
+    expect(buildMatchContext("BLACKSMITH", ["Charcoal"], relations)).toBe(
+      "Profession: Blacksmithing"
+    );
+  });
+
+  it("picks the first matching relation as the deterministic priority", () => {
+    // "iron" occurs in both the result and an ingredient; the earlier
+    // candidate wins.
+    expect(buildMatchContext("iron", ["Charcoal"], relations)).toBe(
+      "Result: Iron Ingot"
+    );
+  });
+
+  it("skips null and undefined fields and relation values", () => {
+    expect(
+      buildMatchContext(
+        "materials",
+        ["Iron Ore", null, undefined],
+        [
+          { label: "Profession", value: undefined },
+          { label: "Category", value: "Materials" },
+        ]
+      )
+    ).toBe("Category: Materials");
+  });
+
+  it("returns null when nothing matches", () => {
+    expect(buildMatchContext("zzz", ["Charcoal"], relations)).toBeNull();
+  });
+
+  it("returns null for a blank query", () => {
+    expect(buildMatchContext("   ", ["Charcoal"], relations)).toBeNull();
+  });
+
+  it("trims the query before comparing", () => {
+    expect(buildMatchContext("  blacksmith  ", ["Charcoal"], relations)).toBe(
+      "Profession: Blacksmithing"
+    );
+  });
+});
+
 describe("countSearchResults", () => {
-  const entry = { slug: "x", name: "X", description: null };
+  const entry = { slug: "x", name: "X", description: null, context: null };
 
   it("counts zero for empty results", () => {
     expect(countSearchResults(emptySearchResults())).toBe(0);

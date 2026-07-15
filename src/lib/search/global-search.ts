@@ -6,12 +6,15 @@
 // module safe to import from service-free unit tests and preserves the
 // guard-first order for test database access.
 //
-// Matching is deliberately simple for this first slice: case-insensitive
-// substring matching on each resource's own text fields (name, description
-// where the field exists, and Item.rarity). Slugs are internal/editable
-// identifiers, not user-facing search terms, so they are not searched.
-// Relational search (e.g. finding a Recipe by its ingredient's name) is
-// deferred. Queries never log, never mutate, and never expose database IDs.
+// Matching is deliberately simple: case-insensitive substring matching on
+// each resource's own text fields (name, description where the field
+// exists, and Item.rarity), plus relational NAME matching through Prisma
+// relation filters — an Item matches through its Category name, and a
+// Recipe matches through its resulting Item name, its Profession name, or
+// any of its ingredient Item names. Relation descriptions are deliberately
+// not searched. Slugs are internal/editable identifiers, not user-facing
+// search terms, so they are not searched. Queries never log, never mutate,
+// and never expose database IDs.
 
 type GameDataClient = (typeof import("@/lib/db"))["prisma"];
 
@@ -35,7 +38,53 @@ export type SearchResultEntry = {
   slug: string;
   name: string;
   description: string | null;
+  // One concise line explaining a purely relational match (for example
+  // "Ingredient: Iron Ore"); null when the record matched directly through
+  // its own fields and needs no explanation.
+  context: string | null;
 };
+
+// A relation that may explain why a record matched, in priority order.
+type RelationCandidate = {
+  label: string;
+  value: string | null | undefined;
+};
+
+/**
+ * Picks the one context line for a result. Direct matches (the query occurs
+ * in one of the record's own fields) need no explanation and return null.
+ * Otherwise the FIRST relation candidate containing the query wins, so the
+ * caller's candidate order is the deterministic priority. Substring checks
+ * use simple lowercase comparison — this decides display text only, never
+ * which records match (Prisma already decided that), so a rare collation
+ * difference degrades to "no context line", not to a wrong result.
+ */
+export function buildMatchContext(
+  rawQuery: unknown,
+  directFields: (string | null | undefined)[],
+  relations: RelationCandidate[]
+): string | null {
+  const query = normalizeSearchQuery(rawQuery).toLowerCase();
+
+  if (query === "") {
+    return null;
+  }
+
+  const matchedDirectly = directFields.some(
+    (field) => typeof field === "string" && field.toLowerCase().includes(query)
+  );
+  if (matchedDirectly) {
+    return null;
+  }
+
+  const relation = relations.find(
+    (candidate) =>
+      typeof candidate.value === "string" &&
+      candidate.value.toLowerCase().includes(query)
+  );
+
+  return relation ? `${relation.label}: ${relation.value}` : null;
+}
 
 export type GlobalSearchResults = {
   items: SearchResultEntry[];
@@ -67,23 +116,53 @@ export async function searchGameData(
   const ordering = [{ name: "asc" as const }, { slug: "asc" as const }];
 
   const [items, recipes, professions, categories] = await Promise.all([
+    // Direct fields plus the Category relation by NAME. Relation names
+    // selected here are internal input for the context line only and are
+    // stripped from the returned entries below.
     db.item.findMany({
       where: {
         OR: [
           { name: contains },
           { description: contains },
           { rarity: contains },
+          { category: { name: contains } },
         ],
       },
-      select: { slug: true, name: true, description: true },
+      select: {
+        slug: true,
+        name: true,
+        description: true,
+        rarity: true,
+        category: { select: { name: true } },
+      },
       orderBy: ordering,
       take: SEARCH_RESULTS_PER_TYPE,
     }),
-    // Recipe has no description field in the schema; its only searchable
-    // text field is name.
+    // Recipe has no description field in the schema; its own searchable
+    // text field is name. Relational matching covers the resulting Item,
+    // the Profession, and every ingredient Item — all by name. One OR over
+    // one findMany returns each Recipe at most once, however many of these
+    // relations match.
     db.recipe.findMany({
-      where: { name: contains },
-      select: { slug: true, name: true },
+      where: {
+        OR: [
+          { name: contains },
+          { resultingItem: { name: contains } },
+          { profession: { name: contains } },
+          { ingredients: { some: { item: { name: contains } } } },
+        ],
+      },
+      select: {
+        slug: true,
+        name: true,
+        resultingItem: { select: { name: true } },
+        profession: { select: { name: true } },
+        // Ordered so "first matching ingredient" is deterministic.
+        ingredients: {
+          select: { item: { select: { name: true } } },
+          orderBy: { item: { name: "asc" } },
+        },
+      },
       orderBy: ordering,
       take: SEARCH_RESULTS_PER_TYPE,
     }),
@@ -102,10 +181,40 @@ export async function searchGameData(
   ]);
 
   return {
-    items,
-    recipes: recipes.map((recipe) => ({ ...recipe, description: null })),
-    professions,
-    categories,
+    items: items.map((item) => ({
+      slug: item.slug,
+      name: item.name,
+      description: item.description,
+      context: buildMatchContext(
+        query,
+        [item.name, item.description, item.rarity],
+        [{ label: "Category", value: item.category?.name }]
+      ),
+    })),
+    recipes: recipes.map((recipe) => ({
+      slug: recipe.slug,
+      name: recipe.name,
+      description: null,
+      // Priority when several relations match: result, then profession,
+      // then the alphabetically first matching ingredient.
+      context: buildMatchContext(
+        query,
+        [recipe.name],
+        [
+          { label: "Result", value: recipe.resultingItem.name },
+          { label: "Profession", value: recipe.profession?.name },
+          ...recipe.ingredients.map((ingredient) => ({
+            label: "Ingredient",
+            value: ingredient.item.name,
+          })),
+        ]
+      ),
+    })),
+    professions: professions.map((profession) => ({
+      ...profession,
+      context: null,
+    })),
+    categories: categories.map((category) => ({ ...category, context: null })),
   };
 }
 

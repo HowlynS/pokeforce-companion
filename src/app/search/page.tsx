@@ -146,10 +146,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
               <ContentGrid>
                 {entries.map((entry) => (
+                  // A relational match shows its one context line (for
+                  // example "Ingredient: Iron Ore") in place of the plain
+                  // description/type label.
                   <Card
                     key={entry.slug}
                     title={entry.name}
-                    description={entry.description ?? group.fallback}
+                    description={
+                      entry.context ?? entry.description ?? group.fallback
+                    }
                     href={`${group.basePath}/${entry.slug}`}
                   />
                 ))}

@@ -92,12 +92,17 @@ test("a seeded query returns grouped items and recipes with counts", async ({
     "/items/iron-ore"
   );
 
-  // Recipes group: Iron Ingot and Iron Sword. The two same-named cards
-  // (item + recipe) are told apart by their hrefs.
+  // Recipes group: Iron Ingot and Iron Sword by name, plus Reinforced
+  // Shield relationally through its Iron Ingot ingredient (with a context
+  // line saying so). Same-named cards (item + recipe) are told apart by
+  // their hrefs.
   await expect(
-    page.getByRole("heading", { level: 2, name: "Recipes (2)", exact: true })
+    page.getByRole("heading", { level: 2, name: "Recipes (3)", exact: true })
   ).toBeVisible();
   await expect(cardLink(page, "Iron Sword")).toHaveCount(2);
+  await expect(
+    cardLink(page, "Reinforced Shield").getByText("Ingredient: Iron Ingot")
+  ).toBeVisible();
 
   // No profession or category matches "iron": those groups are omitted.
   await expect(
@@ -166,6 +171,69 @@ test("descriptions are searched where the field exists", async ({ page }) => {
     "href",
     "/categories/consumables"
   );
+});
+
+test("searching a category name returns its items with match context", async ({
+  page,
+}) => {
+  // No seeded item text contains "gear"; the three Gear items match
+  // through their category relation.
+  await page.goto("/search?q=gear");
+
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Items (3)", exact: true })
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Copper Dagger").getByText("Category: Gear")
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Categories (1)", exact: true })
+  ).toBeVisible();
+  await expect(cardLink(page, "Gear")).toHaveAttribute(
+    "href",
+    "/categories/gear"
+  );
+});
+
+test("searching an ingredient item name returns the recipes that use it", async ({
+  page,
+}) => {
+  // Three seeded recipes consume Leather Strap; none carries "leather" in
+  // its own name.
+  await page.goto("/search?q=leather");
+
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Recipes (3)", exact: true })
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Iron Sword").getByText("Ingredient: Leather Strap")
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Items (1)", exact: true })
+  ).toBeVisible();
+  await expect(cardLink(page, "Leather Strap")).toBeVisible();
+});
+
+test("searching a profession name returns its recipes, linked to their detail pages", async ({
+  page,
+}) => {
+  // Both Alchemy recipes match relationally; neither name contains
+  // "alchemy".
+  await page.goto("/search?q=alchemy");
+
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Recipes (2)", exact: true })
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Stamina Brew").getByText("Profession: Alchemy")
+  ).toBeVisible();
+
+  // The relational result links to the existing recipe detail page.
+  await cardLink(page, "Stamina Brew").click();
+  await expect(page).toHaveURL("/recipes/stamina-brew");
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Stamina Brew", exact: true })
+  ).toBeVisible();
 });
 
 test("a query with no matches shows the no-results message with the query", async ({
