@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ItemNameField } from "@/components/admin/item-name-field";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -262,10 +263,10 @@ export default async function AdminItemsPage({
             maxWidth: "480px",
           }}
         >
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>Name</span>
-            <input type="text" name="name" required style={inputStyle} />
-          </label>
+          {/* Client-enhanced Name field with live duplicate feedback; the
+              submission-time duplicate check in createItemAction remains
+              the authoritative protection. */}
+          <ItemNameField inputStyle={inputStyle} />
 
           <label style={{ display: "grid", gap: "6px" }}>
             <span style={{ color: designTokens.colors.textMuted }}>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { ItemNameField } from "@/components/admin/item-name-field";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -104,16 +105,15 @@ export default async function EditItemPage({
         <input type="hidden" name="id" value={item.id} />
         <input type="hidden" name="originalSlug" value={item.slug} />
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>Name</span>
-          <input
-            type="text"
-            name="name"
-            required
-            defaultValue={item.name}
-            style={inputStyle}
-          />
-        </label>
+        {/* Client-enhanced Name field with live duplicate feedback. The
+            saved name counts as "current" (never queried), and the record's
+            own id is excluded server-side so it cannot conflict with
+            itself; updateItemAction stays the authoritative check. */}
+        <ItemNameField
+          inputStyle={inputStyle}
+          originalName={item.name}
+          excludeId={item.id}
+        />
 
         <label style={{ display: "grid", gap: "6px" }}>
           <span style={{ color: designTokens.colors.textMuted }}>Slug</span>

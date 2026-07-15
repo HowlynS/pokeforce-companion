@@ -10,6 +10,7 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import { parseItemInput } from "@/lib/validation/item";
+import { isItemNameTaken } from "@/lib/items/item-name";
 import {
   deleteImage,
   uploadImage,
@@ -60,11 +61,9 @@ export async function createItemAction(formData: FormData) {
     redirect(`/admin/items?error=${parsed.error}`);
   }
 
-  const existingByName = await prisma.item.findFirst({
-    where: { name: { equals: parsed.value.name, mode: "insensitive" } },
-  });
-
-  if (existingByName) {
+  // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
+  // live availability feedback queries, so the two can never disagree.
+  if (await isItemNameTaken(prisma, parsed.value.name)) {
     redirect("/admin/items?error=duplicate_name");
   }
 
@@ -168,14 +167,10 @@ export async function updateItemAction(formData: FormData) {
     redirect("/admin/items?error=missing_item");
   }
 
-  const existingByName = await prisma.item.findFirst({
-    where: {
-      name: { equals: parsed.value.name, mode: "insensitive" },
-      NOT: { id },
-    },
-  });
-
-  if (existingByName) {
+  // Shared duplicate rule (trimmed, case-insensitive), excluding this very
+  // record so it never conflicts with itself — the same helper the live
+  // availability feedback queries, so the two can never disagree.
+  if (await isItemNameTaken(prisma, parsed.value.name, id)) {
     redirect(`${editPath ?? "/admin/items"}?error=duplicate_name`);
   }
 
