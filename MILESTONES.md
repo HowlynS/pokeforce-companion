@@ -233,11 +233,44 @@ Add image upload and storage for items, recipes, and professions.
 
 ## Milestone 7 - Search and Polish
 
-Status: Not started
+Status: In progress
 
 Goal:
 
 Add basic search, improve navigation, and polish the user experience.
+
+### Completed - Automated Testing Foundation
+
+- [x] Vitest unit tests for the validation parsers, image validation and object-path logic, and shared Prisma error guards (service-free; no environment, database, or browser)
+- [x] Guarded Prisma database integration tests (foundation, relations, cascades, error codes, transactions)
+- [x] Supabase Auth/Storage service tests (anon key only, in-memory sessions, boolean-only assertions)
+- [x] Playwright Chromium E2E tests: public browsing, navigation journeys, error/protection behavior, and authenticated admin flows
+- [x] Isolated Supabase test project with applied migrations, deterministic seed, one manually created test admin, and admin-scoped Storage policies
+- [x] Fail-closed `.env.test.local` environment guard runs before any test client or destructive command can touch a database or bucket
+- [x] Deterministic prefix-scoped cleanup and seeded-fixture preservation checks in every destructive suite; Storage deletions target only exact database-recorded object paths
+- [x] Authenticated admin CRUD coverage: Categories, Professions, Items, Recipes
+- [x] Image workflow coverage (create/render/replace/remove/reject/delete): Items, Professions, Recipes
+- [x] Verified totals: 189 unit / 26 integration / 9 service / 70 E2E — 294 automated tests
+- [x] Supabase Security Advisor "RLS Disabled in Public" warnings resolved by disabling the Data API in both the main and test projects (see DECISIONS.md 2026-07-15); the Advisor reports no security errors, and full post-change verification passed
+
+The foundation protects current behavior; future features still need their own tests as they are built.
+
+### Remaining
+
+- [ ] Search
+- [ ] Instant duplicate-name feedback while typing (postponed from Milestone 5; only if still desired)
+- [ ] Functional/UX polish
+- [ ] Visual review and polish
+
+Search and Polish work has not started yet.
+
+### Deferred product requirements (recorded, not part of the testing foundation)
+
+- Exact Item field `Held item` with Yes/No
+- Item locations
+- Game-build verification metadata
+- Update metadata
+- Changelog/contributor tracking
 
 ---
 

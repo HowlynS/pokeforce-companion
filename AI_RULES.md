@@ -14,11 +14,11 @@ AI tools must not invent features, architecture, database tables, or design syst
 
 The current phase is:
 
-Milestone 6 - Images and Storage is complete.
+Milestone 7 - Search and Polish is in progress.
 
-The project is ready to begin Milestone 7 - Search and Polish.
+The Automated Testing Foundation is complete, and the Supabase security warning is resolved (Data API disabled on both projects — see DECISIONS.md).
 
-Do not start Milestone 7 work until explicitly instructed in the next milestone conversation.
+Search and Polish have not started yet. Do not start that work until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 

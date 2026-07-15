@@ -13,11 +13,23 @@ Before making or suggesting changes, respect these documents:
 
 ## Current Phase
 
-Milestone 6 - Images and Storage is complete.
+Milestone 7 - Search and Polish is in progress.
 
-The repository is prepared for Milestone 7 - Search and Polish.
+The Automated Testing Foundation is complete: 189 unit / 26 integration / 9 service / 70 E2E — 294 automated tests, backed by an isolated Supabase test project and a fail-closed `.env.test.local` guard.
 
-Do not start Milestone 7 work until explicitly instructed in the next milestone conversation.
+The Supabase security warning is resolved: the Data API is disabled on both projects, and Prisma over direct PostgreSQL remains the only game-data access layer (see DECISIONS.md 2026-07-15).
+
+The project is ready to resume Milestone 7 Search and Polish. Search and Polish have not started yet — do not begin them until explicitly instructed in the milestone conversation.
+
+## Test Commands
+
+- `pnpm test:unit`
+- `pnpm test:env:check`
+- `pnpm test:integration`
+- `pnpm test:service`
+- `pnpm test:e2e`
+
+Follow the test execution cadence recorded in DECISIONS.md (2026-07-15): targeted runs during implementation, the relevant suites plus lint/build/diff-check before a checkpoint commit, and the full stack plus the preservation audit before a milestone completion or major push.
 
 ## Working Style
 

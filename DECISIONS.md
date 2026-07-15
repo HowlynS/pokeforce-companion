@@ -607,3 +607,111 @@ Alternatives considered:
   boundary already isolates Storage completely.
 - Guarding on `NODE_ENV=test` — rejected; it does not prove the loaded
   configuration points at the test project.
+
+---
+
+### 2026-07-15 — Automated testing foundation complete; test execution cadence
+
+Decision:
+
+The Milestone 7 automated testing foundation planned in the 2026-07-14
+entry is implemented and verified. The project now has: Vitest unit tests;
+guarded Prisma database integration tests; Supabase Auth/Storage service
+tests; Playwright (Chromium-only) public and authenticated E2E tests; the
+isolated Supabase test project; the fail-closed `.env.test.local`
+environment guard in front of every test client; deterministic
+prefix-scoped cleanup with seeded-fixture preservation checks; and
+authenticated admin coverage for Categories, Professions, Items, and
+Recipes, including the full image workflow for Items, Professions, and
+Recipes. Verified totals: 189 unit, 26 integration, 9 service, 70 E2E —
+294 automated tests. The commands are `pnpm test:unit`,
+`pnpm test:env:check`, `pnpm test:integration`, `pnpm test:service`, and
+`pnpm test:e2e`. The foundation covers current behavior only; future
+features must bring their own tests.
+
+The established test execution cadence is:
+
+- During implementation: run only the directly relevant targeted suite or
+  spec; do not run the entire stack after every small edit.
+- Before a checkpoint commit: the relevant suite; the environment guard
+  where external test resources are involved; the regression suites
+  appropriate to the change; `pnpm lint`; `pnpm build`; `git diff --check`.
+- Before a milestone completion or major push: full unit, environment
+  guard, integration, service, full E2E, lint, build, and the guard-first
+  read-only preservation audit.
+- A second full E2E run is required only for new cleanup-sensitive
+  infrastructure, destructive test workflows, suspected flakiness, or
+  major harness changes — not for routine feature edits.
+
+Clarification recorded while testing the Recipe form: resulting quantity
+and ingredient quantities must be finite positive integers; the browser
+inputs use `min=1` and `step=1`; no upper bound currently exists. A value
+such as `9999` is accepted but is not a maximum — any earlier impression
+that quantities are capped at 9999 is inaccurate. This documents current
+behavior only; no validation change was made.
+
+Reason:
+
+The cadence balances fast feedback during implementation against full
+confidence at commit and push boundaries, and it matches how every
+testing-foundation slice was actually verified. Recording the quantity
+contract prevents a stale "maximum 9999" assumption from resurfacing in
+future validation or search work.
+
+Alternatives considered:
+
+- Running the full stack after every edit — rejected; the full E2E suite
+  takes minutes and would slow every small change without adding safety
+  beyond the checkpoint runs.
+- Requiring a double full E2E run at every checkpoint — rejected; the
+  double run proved its value for cleanup-sensitive infrastructure and is
+  kept for that class of change only.
+
+---
+
+### 2026-07-15 — Supabase Data API disabled; Prisma is the only game-data access layer
+
+Decision:
+
+The Supabase Data API (PostgREST REST endpoints and GraphQL) is disabled
+on both the main project and the isolated test project. This is the
+final, intentional architecture:
+
+- Prisma is the exclusive game-data access layer, connecting over direct
+  PostgreSQL — never through PostgREST.
+- Supabase Auth remains enabled and used (login, session cookies, the
+  admin check).
+- Supabase Storage remains enabled and used (the `game-images` bucket).
+- The `public` Prisma tables (Category, Item, Profession, Recipe,
+  RecipeIngredient, `_prisma_migrations`) are no longer exposed through
+  generated REST or GraphQL endpoints.
+- No service-role key is used by the application or the tests.
+- Public read access to the Storage bucket remains intentional; Storage
+  writes and deletes remain protected by the authenticated-admin policies.
+
+Background: the Security Advisor reported "RLS Disabled in Public" for all
+six tables because they sat in the PostgREST-exposed `public` schema with
+RLS off, meaning the public anon key could have read or written them
+through the generated REST endpoints. A repository audit confirmed that no
+application or test code uses `supabase.from(<table>)`, RPC, GraphQL, or
+any `/rest/v1/` call — every Supabase client call is Auth or Storage, and
+all game data flows through Prisma. After the Data API was disabled in
+both dashboards, the Security Advisor was rerun and reports no security
+errors, and the full verification stack (environment guard, 26
+integration, 9 service, 70 E2E, lint, build, preservation audit) passed
+unchanged.
+
+Reason:
+
+Disabling an API surface that nothing uses removes the exposure entirely
+and permanently, with zero application impact — Prisma, Auth, Storage, and
+public image serving are all separate services unaffected by the change.
+
+Alternatives considered:
+
+- Enabling RLS with policies on every table (keeping the Data API) —
+  rejected; it would protect an API surface the application never uses and
+  add permanent policy maintenance for no benefit.
+- Leaving the warning unaddressed — rejected; the anon key ships to every
+  browser by design, so the exposed tables were a real risk, not a
+  theoretical one.
