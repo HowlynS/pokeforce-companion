@@ -4,7 +4,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { RecordNameField } from "@/components/admin/record-name-field";
 import { createProfessionAction } from "./actions";
+import { checkProfessionNameAvailability } from "./name-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -217,10 +219,15 @@ export default async function AdminProfessionsPage({
             maxWidth: "480px",
           }}
         >
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>Name</span>
-            <input type="text" name="name" required style={inputStyle} />
-          </label>
+          {/* Client-enhanced Name field with live duplicate feedback; the
+              submission-time duplicate check in createProfessionAction
+              remains the authoritative protection. */}
+          <RecordNameField
+            checkAvailabilityAction={checkProfessionNameAvailability}
+            takenText="A profession with that name already exists."
+            regionId="profession-name-availability"
+            inputStyle={inputStyle}
+          />
 
           <label style={{ display: "grid", gap: "6px" }}>
             <span style={{ color: designTokens.colors.textMuted }}>

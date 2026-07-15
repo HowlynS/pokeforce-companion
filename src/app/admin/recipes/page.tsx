@@ -5,7 +5,9 @@ import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
+import { RecordNameField } from "@/components/admin/record-name-field";
 import { createRecipeAction } from "./actions";
+import { checkRecipeNameAvailability } from "./name-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -275,10 +277,15 @@ export default async function AdminRecipesPage({
               maxWidth: "560px",
             }}
           >
-            <label style={{ display: "grid", gap: "6px" }}>
-              <span style={{ color: designTokens.colors.textMuted }}>Name</span>
-              <input type="text" name="name" required style={inputStyle} />
-            </label>
+            {/* Client-enhanced Name field with live duplicate feedback; the
+                submission-time duplicate check in createRecipeAction remains
+                the authoritative protection. */}
+            <RecordNameField
+              checkAvailabilityAction={checkRecipeNameAvailability}
+              takenText="A recipe with that name already exists."
+              regionId="recipe-name-availability"
+              inputStyle={inputStyle}
+            />
 
             <label style={{ display: "grid", gap: "6px" }}>
               <span style={{ color: designTokens.colors.textMuted }}>

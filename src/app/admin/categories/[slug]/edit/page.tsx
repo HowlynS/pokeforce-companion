@@ -4,7 +4,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { RecordNameField } from "@/components/admin/record-name-field";
 import { updateCategoryAction } from "../../actions";
+import { checkCategoryNameAvailability } from "../../name-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -89,16 +91,18 @@ export default async function EditCategoryPage({
         <input type="hidden" name="id" value={category.id} />
         <input type="hidden" name="originalSlug" value={category.slug} />
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>Name</span>
-          <input
-            type="text"
-            name="name"
-            required
-            defaultValue={category.name}
-            style={inputStyle}
-          />
-        </label>
+        {/* Client-enhanced Name field with live duplicate feedback. The
+            saved name counts as "current" (never queried), and the record's
+            own id is excluded server-side so it cannot conflict with
+            itself; updateCategoryAction stays the authoritative check. */}
+        <RecordNameField
+          checkAvailabilityAction={checkCategoryNameAvailability}
+          takenText="A category with that name already exists."
+          regionId="category-name-availability"
+          inputStyle={inputStyle}
+          originalName={category.name}
+          excludeId={category.id}
+        />
 
         <label style={{ display: "grid", gap: "6px" }}>
           <span style={{ color: designTokens.colors.textMuted }}>Slug</span>

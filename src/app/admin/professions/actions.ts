@@ -9,6 +9,7 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import { parseProfessionInput } from "@/lib/validation/profession";
+import { isProfessionNameTaken } from "@/lib/admin/record-name";
 import {
   deleteImage,
   uploadImage,
@@ -59,11 +60,9 @@ export async function createProfessionAction(formData: FormData) {
     redirect(`/admin/professions?error=${parsed.error}`);
   }
 
-  const existingByName = await prisma.profession.findFirst({
-    where: { name: { equals: parsed.value.name, mode: "insensitive" } },
-  });
-
-  if (existingByName) {
+  // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
+  // live availability feedback queries, so the two can never disagree.
+  if (await isProfessionNameTaken(prisma, parsed.value.name)) {
     redirect("/admin/professions?error=duplicate_name");
   }
 
@@ -128,12 +127,14 @@ export async function updateProfessionAction(formData: FormData) {
     redirect(`${editPath ?? "/admin/professions"}?error=${parsed.error}`);
   }
 
-  const existingByName = await prisma.profession.findFirst({
-    where: {
-      name: { equals: parsed.value.name, mode: "insensitive" },
-      NOT: { id },
-    },
-  });
+  // Shared duplicate rule (trimmed, case-insensitive), excluding this very
+  // record so it never conflicts with itself — the same helper the live
+  // availability feedback queries, so the two can never disagree.
+  const existingByName = await isProfessionNameTaken(
+    prisma,
+    parsed.value.name,
+    id
+  );
 
   if (existingByName) {
     redirect(`${editPath ?? "/admin/professions"}?error=duplicate_name`);

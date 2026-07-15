@@ -6,7 +6,9 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
+import { RecordNameField } from "@/components/admin/record-name-field";
 import { updateRecipeAction } from "../../actions";
+import { checkRecipeNameAvailability } from "../../name-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -155,16 +157,19 @@ export default async function EditRecipePage({
           <input type="hidden" name="id" value={recipe.id} />
           <input type="hidden" name="originalSlug" value={recipe.slug} />
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>Name</span>
-            <input
-              type="text"
-              name="name"
-              required
-              defaultValue={recipe.name}
-              style={inputStyle}
-            />
-          </label>
+          {/* Client-enhanced Name field with live duplicate feedback. The
+              saved name counts as "current" (never queried), and the
+              record's own id is excluded server-side so it cannot conflict
+              with itself; updateRecipeAction stays the authoritative
+              check. */}
+          <RecordNameField
+            checkAvailabilityAction={checkRecipeNameAvailability}
+            takenText="A recipe with that name already exists."
+            regionId="recipe-name-availability"
+            inputStyle={inputStyle}
+            originalName={recipe.name}
+            excludeId={recipe.id}
+          />
 
           <label style={{ display: "grid", gap: "6px" }}>
             <span style={{ color: designTokens.colors.textMuted }}>Slug</span>

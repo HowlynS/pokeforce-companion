@@ -5,7 +5,9 @@ import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
+import { RecordNameField } from "@/components/admin/record-name-field";
 import { updateProfessionAction } from "../../actions";
+import { checkProfessionNameAvailability } from "../../name-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -98,16 +100,18 @@ export default async function EditProfessionPage({
         <input type="hidden" name="id" value={profession.id} />
         <input type="hidden" name="originalSlug" value={profession.slug} />
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>Name</span>
-          <input
-            type="text"
-            name="name"
-            required
-            defaultValue={profession.name}
-            style={inputStyle}
-          />
-        </label>
+        {/* Client-enhanced Name field with live duplicate feedback. The
+            saved name counts as "current" (never queried), and the record's
+            own id is excluded server-side so it cannot conflict with
+            itself; updateProfessionAction stays the authoritative check. */}
+        <RecordNameField
+          checkAvailabilityAction={checkProfessionNameAvailability}
+          takenText="A profession with that name already exists."
+          regionId="profession-name-availability"
+          inputStyle={inputStyle}
+          originalName={profession.name}
+          excludeId={profession.id}
+        />
 
         <label style={{ display: "grid", gap: "6px" }}>
           <span style={{ color: designTokens.colors.textMuted }}>Slug</span>

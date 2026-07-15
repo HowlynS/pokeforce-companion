@@ -9,6 +9,7 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import { parseCategoryInput } from "@/lib/validation/category";
+import { isCategoryNameTaken } from "@/lib/admin/record-name";
 
 export async function createCategoryAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
@@ -21,11 +22,9 @@ export async function createCategoryAction(formData: FormData) {
     redirect(`/admin/categories?error=${parsed.error}`);
   }
 
-  const existingByName = await prisma.category.findFirst({
-    where: { name: { equals: parsed.value.name, mode: "insensitive" } },
-  });
-
-  if (existingByName) {
+  // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
+  // live availability feedback queries, so the two can never disagree.
+  if (await isCategoryNameTaken(prisma, parsed.value.name)) {
     redirect("/admin/categories?error=duplicate_name");
   }
 
@@ -63,12 +62,14 @@ export async function updateCategoryAction(formData: FormData) {
     redirect(`${editPath ?? "/admin/categories"}?error=${parsed.error}`);
   }
 
-  const existingByName = await prisma.category.findFirst({
-    where: {
-      name: { equals: parsed.value.name, mode: "insensitive" },
-      NOT: { id },
-    },
-  });
+  // Shared duplicate rule (trimmed, case-insensitive), excluding this very
+  // record so it never conflicts with itself — the same helper the live
+  // availability feedback queries, so the two can never disagree.
+  const existingByName = await isCategoryNameTaken(
+    prisma,
+    parsed.value.name,
+    id
+  );
 
   if (existingByName) {
     redirect(`${editPath ?? "/admin/categories"}?error=duplicate_name`);
