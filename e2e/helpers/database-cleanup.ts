@@ -73,6 +73,11 @@ export const E2E_ITEM_IMAGE_SLUG_PREFIX = "test-e2e-item-image";
 // prefix above, relative to test-e2e-profession.
 export const E2E_PROFESSION_IMAGE_SLUG_PREFIX = "test-e2e-profession-image";
 
+// Covers every Recipe slug the image browser tests use — the same
+// sub-prefix arrangement (and the same run-order caveat) as the Item image
+// prefix above, relative to test-e2e-recipe.
+export const E2E_RECIPE_IMAGE_SLUG_PREFIX = "test-e2e-recipe-image";
+
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
 ): Promise<T> {
@@ -607,14 +612,15 @@ export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
   });
 }
 
-// The Item and Profession image suites share one folder-parameterized
-// implementation; the per-entity exports below pin the table, folder, and
-// slug prefix together so a call can never mix entities. The folder/table
-// values are compile-time literals from this file — never runtime input —
-// so interpolating them into SQL identifiers and path patterns is safe.
+// The Item, Profession, and Recipe image suites share one
+// folder-parameterized implementation; the per-entity exports below pin the
+// table, folder, and slug prefix together so a call can never mix entities.
+// The folder/table values are compile-time literals from this file — never
+// runtime input — so interpolating them into SQL identifiers and path
+// patterns is safe.
 type ImageSuite = {
-  folder: "items" | "professions";
-  table: "Item" | "Profession";
+  folder: "items" | "professions" | "recipes";
+  table: "Item" | "Profession" | "Recipe";
   slugPrefix: string;
   parentPrefix: string;
 };
@@ -631,6 +637,13 @@ const PROFESSION_IMAGE_SUITE: ImageSuite = {
   table: "Profession",
   slugPrefix: E2E_PROFESSION_IMAGE_SLUG_PREFIX,
   parentPrefix: E2E_PROFESSION_SLUG_PREFIX,
+};
+
+const RECIPE_IMAGE_SUITE: ImageSuite = {
+  folder: "recipes",
+  table: "Recipe",
+  slugPrefix: E2E_RECIPE_IMAGE_SLUG_PREFIX,
+  parentPrefix: E2E_RECIPE_SLUG_PREFIX,
 };
 
 // Defense in depth for every image helper below.
@@ -790,8 +803,12 @@ async function countImageSuiteRecordsFor(suite: ImageSuite): Promise<number> {
  * objects: first the object paths are read from the matching database rows,
  * each path is validated against the generated-path shape, only those exact
  * objects are removed (never a folder or bucket listing), removal is
- * verified, and finally the rows themselves are deleted. Returns rows plus
- * objects removed; throws loudly on any failure or leftover.
+ * verified, and finally the rows themselves are deleted. For the Recipe
+ * suite, deleting the rows also removes their own RecipeIngredient rows
+ * through the database-level ON DELETE CASCADE on
+ * RecipeIngredient.recipeId — seeded ingredient rows belong to seeded
+ * Recipes and can never match. Returns rows plus objects removed; throws
+ * loudly on any failure or leftover.
  */
 async function deleteImageSuiteRecordsFor(suite: ImageSuite): Promise<number> {
   assertImageSuitePrefixIsSafe(suite);
@@ -912,6 +929,60 @@ export async function countE2eTestProfessionImageRecords(): Promise<number> {
 
 export async function deleteE2eTestProfessionImageRecords(): Promise<number> {
   return deleteImageSuiteRecordsFor(PROFESSION_IMAGE_SUITE);
+}
+
+// --- Recipe image suite exports -------------------------------------------
+
+export async function readRecipeImagePath(
+  slug: string
+): Promise<string | null> {
+  return readImagePathFor(RECIPE_IMAGE_SUITE, slug);
+}
+
+/** True when the exact generated recipes/ object currently exists. */
+export async function recipeImageObjectExists(
+  objectPath: string
+): Promise<boolean> {
+  return withStorageAdmin((admin) =>
+    storageObjectExists(RECIPE_IMAGE_SUITE, admin, objectPath)
+  );
+}
+
+export async function fetchRecipeImageContentType(
+  objectPath: string
+): Promise<string | null> {
+  return fetchImageContentTypeFor(RECIPE_IMAGE_SUITE, objectPath);
+}
+
+export async function countRecipeFolderObjects(): Promise<number> {
+  return countFolderObjectsFor(RECIPE_IMAGE_SUITE);
+}
+
+export async function countE2eTestRecipeImageRecords(): Promise<number> {
+  return countImageSuiteRecordsFor(RECIPE_IMAGE_SUITE);
+}
+
+/**
+ * Read-only count of RecipeIngredient rows belonging to image-suite
+ * Recipes. An ingredient row cannot outlive its Recipe (database-level
+ * ON DELETE CASCADE), so together with a zero Recipe count this proves no
+ * temporary ingredient row remains.
+ */
+export async function countE2eTestRecipeImageIngredientRows(): Promise<number> {
+  assertImageSuitePrefixIsSafe(RECIPE_IMAGE_SUITE);
+
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `select count(*)::int as n from "RecipeIngredient"
+       where "recipeId" in (select id from "Recipe" where slug like $1)`,
+      [`${RECIPE_IMAGE_SUITE.slugPrefix}%`]
+    );
+    return result.rows[0].n as number;
+  });
+}
+
+export async function deleteE2eTestRecipeImageRecords(): Promise<number> {
+  return deleteImageSuiteRecordsFor(RECIPE_IMAGE_SUITE);
 }
 
 /** Read-only snapshot of the seeded fixture counts for preservation checks. */
