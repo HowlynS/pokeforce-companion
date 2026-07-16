@@ -71,7 +71,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     <AppShell>
       <PageHeader
         title={item.name}
-        description={item.description ?? "No description available."}
+        description={item.description ?? undefined}
       />
 
       <section className="detail-hero">

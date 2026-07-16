@@ -48,15 +48,22 @@ export default async function ProfessionDetailPage({ params }: ProfessionDetailP
     <AppShell>
       <PageHeader
         title={profession.name}
-        description={profession.description ?? "No description available."}
+        description={profession.description ?? undefined}
       />
 
-      <section style={{ marginBottom: "24px" }}>
+      <section className="detail-hero">
         <ContentImage
           imagePath={profession.image}
           alt={`Image of ${profession.name}`}
           size="detail"
         />
+
+        <div className="detail-hero-facts">
+          <Card
+            title="Details"
+            description={`Recipes: ${profession.recipes.length}`}
+          />
+        </div>
       </section>
 
       <section>

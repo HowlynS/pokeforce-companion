@@ -63,8 +63,18 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
     <AppShell>
       <PageHeader
         title={category.name}
-        description={category.description ?? "No description available."}
+        description={category.description ?? undefined}
       />
+
+      {/* Categories store no image, so the hero holds only the facts card. */}
+      <section className="detail-hero">
+        <div className="detail-hero-facts">
+          <Card
+            title="Details"
+            description={`Items: ${category.items.length}`}
+          />
+        </div>
+      </section>
 
       <section>
         <SectionHeading>Items</SectionHeading>
