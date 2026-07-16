@@ -49,6 +49,12 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
     notFound();
   }
 
+  // The unset-category placeholder is omitted; "Profession: None" stays, as
+  // a recipe with no profession requirement is a meaningful fact.
+  const resultCategory = recipe.resultingItem.category
+    ? ` (${recipe.resultingItem.category.name})`
+    : "";
+
   const recipeDetails = [`Profession: ${recipe.profession?.name ?? "None"}`];
 
   if (recipe.requiredLevel !== null) {
@@ -62,22 +68,22 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
         description="Crafting recipe details, including its result and required ingredients."
       />
 
-      <section style={{ marginBottom: "24px" }}>
+      <section className="detail-hero">
         <ContentImage
           imagePath={recipe.image}
           alt={`Image of ${recipe.name}`}
           size="detail"
         />
-      </section>
 
-      <ContentGrid>
-        <Card
-          title={`Result: ${recipe.resultingItem.name}`}
-          description={`Yields ${recipe.resultingQuantity}x ${recipe.resultingItem.name} (${recipe.resultingItem.category?.name ?? "Uncategorized"}).`}
-          href={`/items/${recipe.resultingItem.slug}`}
-        />
-        <Card title="Recipe Details" description={recipeDetails.join(" · ")} />
-      </ContentGrid>
+        <div className="detail-hero-facts">
+          <Card
+            title={`Result: ${recipe.resultingItem.name}`}
+            description={`Yields ${recipe.resultingQuantity}x ${recipe.resultingItem.name}${resultCategory}.`}
+            href={`/items/${recipe.resultingItem.slug}`}
+          />
+          <Card title="Recipe Details" description={recipeDetails.join(" · ")} />
+        </div>
+      </section>
 
       <section style={{ marginBottom: designTokens.layout.sectionGap }}>
         <SectionHeading>Ingredients</SectionHeading>

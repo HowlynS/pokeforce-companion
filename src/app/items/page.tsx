@@ -15,11 +15,19 @@ function buildItemDescription(item: {
   tradeable: boolean;
   baseValue: number | null;
 }): string {
-  const details = [
-    `Category: ${item.category?.name ?? "Uncategorized"}`,
-    `Rarity: ${item.rarity ?? "Unknown"}`,
-    `Tradeable: ${item.tradeable ? "Yes" : "No"}`,
-  ];
+  // Only meaningful metadata makes it onto the card: unset optional fields
+  // are omitted rather than rendered as placeholder values.
+  const details: string[] = [];
+
+  if (item.category) {
+    details.push(`Category: ${item.category.name}`);
+  }
+
+  if (item.rarity) {
+    details.push(`Rarity: ${item.rarity}`);
+  }
+
+  details.push(`Tradeable: ${item.tradeable ? "Yes" : "No"}`);
 
   if (item.baseValue !== null) {
     details.push(`Base value: ${item.baseValue}`);

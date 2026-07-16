@@ -15,12 +15,15 @@ const CANVAS_SIZES = {
 } as const;
 
 /**
- * Fixed square display canvas (96×96 for cards, 160×160 for detail pages)
- * with a same-sized no-image fallback, so records with and without images
- * occupy identical space. The image is display-resized only — the stored
- * object is untouched — scaled up or down to fit the square via
- * object-fit: contain, so a non-square source is centered without cropping
- * or distortion, using the browser's normal image rendering.
+ * Fixed square display canvas (96×96 for cards, 160×160 for detail pages).
+ * The image is display-resized only — the stored object is untouched —
+ * scaled up or down to fit the square via object-fit: contain, so a
+ * non-square source is centered without cropping or distortion, using the
+ * browser's normal image rendering.
+ *
+ * Records without an image render a compact muted pill instead of a
+ * full-size empty canvas, so the missing-image state stays quiet inside
+ * cards and detail pages.
  */
 export async function ContentImage({
   imagePath,
@@ -29,6 +32,26 @@ export async function ContentImage({
 }: ContentImageProps) {
   const imageUrl = await getImagePublicUrl(imagePath);
   const canvasSize = CANVAS_SIZES[size];
+
+  if (!imageUrl) {
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          border: `1px solid ${designTokens.colors.border}`,
+          borderRadius: designTokens.radius.sm,
+          background: designTokens.colors.surfaceSoft,
+          color: designTokens.colors.textMuted,
+          padding: "4px 10px",
+          fontSize: "13px",
+          lineHeight: 1.4,
+        }}
+      >
+        No image available
+      </span>
+    );
+  }
 
   return (
     <div
@@ -45,29 +68,17 @@ export async function ContentImage({
         overflow: "hidden",
       }}
     >
-      {imageUrl ? (
-        <Image
-          src={imageUrl}
-          alt={alt}
-          width={canvasSize}
-          height={canvasSize}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-          }}
-        />
-      ) : (
-        <span
-          style={{
-            color: designTokens.colors.textMuted,
-            fontSize: "14px",
-            textAlign: "center",
-          }}
-        >
-          No image available
-        </span>
-      )}
+      <Image
+        src={imageUrl}
+        alt={alt}
+        width={canvasSize}
+        height={canvasSize}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+        }}
+      />
     </div>
   );
 }

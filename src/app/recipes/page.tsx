@@ -15,20 +15,31 @@ function buildRecipeDescription(recipe: {
   requiredLevel: number | null;
   ingredients: { quantity: number; item: { name: string } }[];
 }): string {
-  const ingredientList = recipe.ingredients
-    .map((ingredient) => `${ingredient.quantity}x ${ingredient.item.name}`)
-    .join(", ");
+  // Only meaningful metadata makes it onto the card: unset optional fields
+  // are omitted rather than rendered as placeholder values.
+  const resultCategory = recipe.resultingItem.category
+    ? ` (${recipe.resultingItem.category.name})`
+    : "";
 
   const details = [
-    `Crafts ${recipe.resultingQuantity}x ${recipe.resultingItem.name} (${recipe.resultingItem.category?.name ?? "Uncategorized"})`,
-    `Profession: ${recipe.profession?.name ?? "None"}`,
+    `Crafts ${recipe.resultingQuantity}x ${recipe.resultingItem.name}${resultCategory}`,
   ];
+
+  if (recipe.profession) {
+    details.push(`Profession: ${recipe.profession.name}`);
+  }
 
   if (recipe.requiredLevel !== null) {
     details.push(`Required level: ${recipe.requiredLevel}`);
   }
 
-  details.push(`Requires: ${ingredientList || "No ingredients"}`);
+  if (recipe.ingredients.length > 0) {
+    const ingredientList = recipe.ingredients
+      .map((ingredient) => `${ingredient.quantity}x ${ingredient.item.name}`)
+      .join(", ");
+
+    details.push(`Requires: ${ingredientList}`);
+  }
 
   return details.join(" · ");
 }

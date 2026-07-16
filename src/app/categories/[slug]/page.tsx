@@ -26,6 +26,23 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
+function buildItemCardDescription(item: {
+  rarity: string | null;
+  tradeable: boolean;
+}): string {
+  // Only meaningful metadata makes it onto the card: an unset rarity is
+  // omitted rather than rendered as "Unknown".
+  const details: string[] = [];
+
+  if (item.rarity) {
+    details.push(`Rarity: ${item.rarity}`);
+  }
+
+  details.push(`Tradeable: ${item.tradeable ? "Yes" : "No"}`);
+
+  return details.join(" · ");
+}
+
 export default async function CategoryDetailPage({ params }: CategoryDetailPageProps) {
   const { slug } = await params;
 
@@ -58,7 +75,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
               <Card
                 key={item.id}
                 title={item.name}
-                description={`Rarity: ${item.rarity ?? "Unknown"} · Tradeable: ${item.tradeable ? "Yes" : "No"}`}
+                description={buildItemCardDescription(item)}
                 href={`/items/${item.slug}`}
               />
             ))}

@@ -49,11 +49,19 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     notFound();
   }
 
-  const details = [
-    `Category: ${item.category?.name ?? "Uncategorized"}`,
-    `Rarity: ${item.rarity ?? "Unknown"}`,
-    `Tradeable: ${item.tradeable ? "Yes" : "No"}`,
-  ];
+  // Only meaningful metadata is shown: unset optional fields are omitted
+  // rather than rendered as placeholder values.
+  const details: string[] = [];
+
+  if (item.category) {
+    details.push(`Category: ${item.category.name}`);
+  }
+
+  if (item.rarity) {
+    details.push(`Rarity: ${item.rarity}`);
+  }
+
+  details.push(`Tradeable: ${item.tradeable ? "Yes" : "No"}`);
 
   if (item.baseValue !== null) {
     details.push(`Base value: ${item.baseValue}`);
@@ -66,17 +74,17 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
         description={item.description ?? "No description available."}
       />
 
-      <section style={{ marginBottom: "24px" }}>
+      <section className="detail-hero">
         <ContentImage
           imagePath={item.image}
           alt={`Image of ${item.name}`}
           size="detail"
         />
-      </section>
 
-      <ContentGrid>
-        <Card title="Details" description={details.join(" · ")} />
-      </ContentGrid>
+        <div className="detail-hero-facts">
+          <Card title="Details" description={details.join(" · ")} />
+        </div>
+      </section>
 
       <section style={{ marginBottom: designTokens.layout.sectionGap }}>
         <SectionHeading>Produced by</SectionHeading>
@@ -87,7 +95,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               <Card
                 key={recipe.id}
                 title={recipe.name}
-                description={`Yields ${recipe.resultingQuantity}x ${item.name}.`}
+                description={`Yields ${recipe.resultingQuantity}x per craft.`}
                 href={`/recipes/${recipe.slug}`}
               />
             ))}
@@ -109,7 +117,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               <Card
                 key={ingredient.id}
                 title={ingredient.recipe.name}
-                description={`Requires ${ingredient.quantity}x ${item.name}.`}
+                description={`${ingredient.quantity}x required.`}
                 href={`/recipes/${ingredient.recipe.slug}`}
               />
             ))}
