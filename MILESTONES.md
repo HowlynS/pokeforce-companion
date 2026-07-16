@@ -250,7 +250,7 @@ Add basic search, improve navigation, and polish the user experience.
 - [x] Deterministic prefix-scoped cleanup and seeded-fixture preservation checks in every destructive suite; Storage deletions target only exact database-recorded object paths
 - [x] Authenticated admin CRUD coverage: Categories, Professions, Items, Recipes
 - [x] Image workflow coverage (create/render/replace/remove/reject/delete): Items, Professions, Recipes
-- [x] Verified totals: 189 unit / 26 integration / 9 service / 70 E2E — 294 automated tests
+- [x] Verified totals at foundation completion: 189 unit / 26 integration / 9 service / 70 E2E — 294 automated tests (grown by the later Milestone 7 slices to 236 unit / 64 integration / 9 service / 103 E2E — 412 automated tests at milestone close)
 - [x] Supabase Security Advisor "RLS Disabled in Public" warnings resolved by disabling the Data API in both the main and test projects (see DECISIONS.md 2026-07-15); the Advisor reports no security errors, and full post-change verification passed
 
 The foundation protects current behavior; future features still need their own tests as they are built.

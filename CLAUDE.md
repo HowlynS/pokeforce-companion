@@ -15,7 +15,7 @@ Before making or suggesting changes, respect these documents:
 
 Milestone 7 - Search and Polish is complete (see MILESTONES.md): global search, instant duplicate-name feedback, the Automated Testing Foundation, and the public and admin visual polish passes are all done and verified.
 
-The Automated Testing Foundation totals remain 189 unit / 26 integration / 9 service / 70 E2E — 294 automated tests, backed by an isolated Supabase test project and a fail-closed `.env.test.local` guard.
+The automated test stack totals 236 unit / 64 integration / 9 service / 103 E2E — 412 automated tests, backed by an isolated Supabase test project and a fail-closed `.env.test.local` guard.
 
 The Supabase security warning is resolved: the Data API is disabled on both projects, and Prisma over direct PostgreSQL remains the only game-data access layer (see DECISIONS.md 2026-07-15).
 
