@@ -55,143 +55,70 @@ export default async function AdminProfessionsPage({
     orderBy: { name: "asc" },
   });
 
-  const inputStyle = {
-    border: `1px solid ${designTokens.colors.border}`,
-    borderRadius: designTokens.radius.sm,
-    background: designTokens.colors.surface,
-    color: designTokens.colors.text,
-    padding: "10px 12px",
-    fontSize: "16px",
-    fontFamily: "inherit",
-  };
-
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Profession Management"
         description="View existing professions and create new ones."
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin" style={{ color: designTokens.colors.accent }}>
+      <nav className="admin-toolbar" aria-label="Profession management">
+        <a href="/admin" className="link-accent">
           &larr; Back to Admin
         </a>
-      </p>
+
+        <a href="#create-profession" className="btn btn-secondary btn-compact">
+          + New profession
+        </a>
+      </nav>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
       {successMessage ? (
-        <p
-          role="status"
-          style={{
-            border: `1px solid ${designTokens.colors.success}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.success,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="status" className="banner banner-success">
           {successMessage}
         </p>
       ) : null}
 
       <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <h2 style={{ fontSize: "24px", lineHeight: 1.2, margin: "0 0 16px" }}>
-          Existing Professions
-        </h2>
+        <h2 className="section-title">Existing Professions</h2>
 
         {professions.length > 0 ? (
-          <div
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.md,
-              background: designTokens.colors.surface,
-              overflow: "hidden",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
               <thead>
                 <tr>
                   {["Name", "Slug", "Description", "Actions"].map((heading) => (
-                    <th
-                      key={heading}
-                      style={{
-                        textAlign: "left",
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                        fontSize: "14px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      {heading}
-                    </th>
+                    <th key={heading}>{heading}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {professions.map((profession) => (
                   <tr key={profession.id}>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                      }}
-                    >
-                      {profession.name}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {profession.slug}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {profession.description ?? "—"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                      }}
-                    >
-                      <a
-                        href={`/admin/professions/${profession.slug}/edit`}
-                        style={{ color: designTokens.colors.accent, marginRight: "16px" }}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        href={`/admin/professions/${profession.slug}/delete`}
-                        style={{ color: designTokens.colors.danger }}
-                      >
-                        Delete
-                      </a>
+                    <td>{profession.name}</td>
+                    <td>{profession.slug}</td>
+                    <td>{profession.description ?? "—"}</td>
+                    <td>
+                      <span className="row-actions">
+                        <a
+                          href={`/admin/professions/${profession.slug}/edit`}
+                          className="link-accent"
+                        >
+                          Edit
+                        </a>
+                        <a
+                          href={`/admin/professions/${profession.slug}/delete`}
+                          className="link-danger"
+                        >
+                          Delete
+                        </a>
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -206,19 +133,10 @@ export default async function AdminProfessionsPage({
         )}
       </section>
 
-      <section>
-        <h2 style={{ fontSize: "24px", lineHeight: 1.2, margin: "0 0 16px" }}>
-          Create Profession
-        </h2>
+      <section id="create-profession">
+        <h2 className="section-title">Create Profession</h2>
 
-        <form
-          action={createProfessionAction}
-          style={{
-            display: "grid",
-            gap: "16px",
-            maxWidth: "480px",
-          }}
-        >
+        <form action={createProfessionAction} className="form-grid">
           {/* Client-enhanced Name field with live duplicate feedback; the
               submission-time duplicate check in createProfessionAction
               remains the authoritative protection. */}
@@ -226,46 +144,37 @@ export default async function AdminProfessionsPage({
             checkAvailabilityAction={checkProfessionNameAvailability}
             takenText="A profession with that name already exists."
             regionId="profession-name-availability"
-            inputStyle={inputStyle}
           />
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
+          <label className="form-field">
+            <span className="form-field-label">
               Slug (optional — generated from name if left blank)
             </span>
-            <input type="text" name="slug" style={inputStyle} />
+            <input type="text" name="slug" className="form-input" />
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Description (optional)
-            </span>
-            <textarea
-              name="description"
-              rows={3}
-              style={{ ...inputStyle, resize: "vertical" }}
-            />
+          <label className="form-field">
+            <span className="form-field-label">Description (optional)</span>
+            <textarea name="description" rows={3} className="form-input" />
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
+          <label className="form-field">
+            <span className="form-field-label">
               Image (optional — PNG, JPEG, or WebP, up to 5 MB)
             </span>
             <input
               type="file"
               name="image"
               accept="image/png,image/jpeg,image/webp"
-              style={inputStyle}
+              className="form-input"
             />
           </label>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ justifySelf: "start" }}
-          >
-            Create Profession
-          </button>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
+              Create Profession
+            </button>
+          </div>
         </form>
       </section>
     </AppShell>

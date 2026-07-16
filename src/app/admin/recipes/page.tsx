@@ -80,16 +80,6 @@ export default async function AdminRecipesPage({
     prisma.profession.findMany({ orderBy: { name: "asc" } }),
   ]);
 
-  const inputStyle = {
-    border: `1px solid ${designTokens.colors.border}`,
-    borderRadius: designTokens.radius.sm,
-    background: designTokens.colors.surface,
-    color: designTokens.colors.text,
-    padding: "10px 12px",
-    fontSize: "16px",
-    fontFamily: "inherit",
-  };
-
   const ingredientRows = Array.from(
     { length: RECIPE_INGREDIENT_ROW_COUNT },
     (_, index) => index + 1
@@ -98,83 +88,44 @@ export default async function AdminRecipesPage({
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Recipe Management"
         description="View existing recipes and create new ones."
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin" style={{ color: designTokens.colors.accent }}>
+      <nav className="admin-toolbar" aria-label="Recipe management">
+        <a href="/admin" className="link-accent">
           &larr; Back to Admin
         </a>
-      </p>
+
+        <a href="#create-recipe" className="btn btn-secondary btn-compact">
+          + New recipe
+        </a>
+      </nav>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
       {successMessage ? (
-        <p
-          role="status"
-          style={{
-            border: `1px solid ${designTokens.colors.success}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.success,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="status" className="banner banner-success">
           {successMessage}
         </p>
       ) : null}
 
       <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <h2 style={{ fontSize: "24px", lineHeight: 1.2, margin: "0 0 16px" }}>
-          Existing Recipes
-        </h2>
+        <h2 className="section-title">Existing Recipes</h2>
 
         {recipes.length > 0 ? (
-          <div
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.md,
-              background: designTokens.colors.surface,
-              overflow: "hidden",
-              overflowX: "auto",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
               <thead>
                 <tr>
                   {["Name", "Slug", "Result", "Profession", "Ingredients", "Actions"].map(
                     (heading) => (
-                      <th
-                        key={heading}
-                        style={{
-                          textAlign: "left",
-                          padding: "12px 16px",
-                          borderBottom: `1px solid ${designTokens.colors.border}`,
-                          color: designTokens.colors.textMuted,
-                          fontSize: "14px",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.04em",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {heading}
-                      </th>
+                      <th key={heading}>{heading}</th>
                     )
                   )}
                 </tr>
@@ -182,68 +133,28 @@ export default async function AdminRecipesPage({
               <tbody>
                 {recipes.map((recipe) => (
                   <tr key={recipe.id}>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                      }}
-                    >
-                      {recipe.name}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {recipe.slug}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
+                    <td>{recipe.name}</td>
+                    <td>{recipe.slug}</td>
+                    <td>
                       {recipe.resultingQuantity}x {recipe.resultingItem.name}
                     </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {recipe.profession?.name ?? "No profession"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {recipe.ingredients.length}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                      }}
-                    >
-                      <a
-                        href={`/admin/recipes/${recipe.slug}/edit`}
-                        style={{ color: designTokens.colors.accent, marginRight: "16px" }}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        href={`/admin/recipes/${recipe.slug}/delete`}
-                        style={{ color: designTokens.colors.danger }}
-                      >
-                        Delete
-                      </a>
+                    <td>{recipe.profession?.name ?? "No profession"}</td>
+                    <td>{recipe.ingredients.length}</td>
+                    <td>
+                      <span className="row-actions">
+                        <a
+                          href={`/admin/recipes/${recipe.slug}/edit`}
+                          className="link-accent"
+                        >
+                          Edit
+                        </a>
+                        <a
+                          href={`/admin/recipes/${recipe.slug}/delete`}
+                          className="link-danger"
+                        >
+                          Delete
+                        </a>
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -258,10 +169,8 @@ export default async function AdminRecipesPage({
         )}
       </section>
 
-      <section>
-        <h2 style={{ fontSize: "24px", lineHeight: 1.2, margin: "0 0 16px" }}>
-          Create Recipe
-        </h2>
+      <section id="create-recipe">
+        <h2 className="section-title">Create Recipe</h2>
 
         {items.length === 0 ? (
           <EmptyState
@@ -269,14 +178,7 @@ export default async function AdminRecipesPage({
             description="Create at least one item before creating a recipe."
           />
         ) : (
-          <form
-            action={createRecipeAction}
-            style={{
-              display: "grid",
-              gap: "16px",
-              maxWidth: "560px",
-            }}
-          >
+          <form action={createRecipeAction} className="form-grid form-grid-wide">
             {/* Client-enhanced Name field with live duplicate feedback; the
                 submission-time duplicate check in createRecipeAction remains
                 the authoritative protection. */}
@@ -284,21 +186,23 @@ export default async function AdminRecipesPage({
               checkAvailabilityAction={checkRecipeNameAvailability}
               takenText="A recipe with that name already exists."
               regionId="recipe-name-availability"
-              inputStyle={inputStyle}
             />
 
-            <label style={{ display: "grid", gap: "6px" }}>
-              <span style={{ color: designTokens.colors.textMuted }}>
+            <label className="form-field">
+              <span className="form-field-label">
                 Slug (optional — generated from name if left blank)
               </span>
-              <input type="text" name="slug" style={inputStyle} />
+              <input type="text" name="slug" className="form-input" />
             </label>
 
-            <label style={{ display: "grid", gap: "6px" }}>
-              <span style={{ color: designTokens.colors.textMuted }}>
-                Resulting item
-              </span>
-              <select name="resultingItemId" required defaultValue="" style={inputStyle}>
+            <label className="form-field">
+              <span className="form-field-label">Resulting item</span>
+              <select
+                name="resultingItemId"
+                required
+                defaultValue=""
+                className="form-input"
+              >
                 <option value="" disabled>
                   Select an item
                 </option>
@@ -310,25 +214,21 @@ export default async function AdminRecipesPage({
               </select>
             </label>
 
-            <label style={{ display: "grid", gap: "6px" }}>
-              <span style={{ color: designTokens.colors.textMuted }}>
-                Resulting quantity
-              </span>
+            <label className="form-field">
+              <span className="form-field-label">Resulting quantity</span>
               <input
                 type="number"
                 name="resultingQuantity"
                 min={1}
                 step={1}
                 defaultValue={1}
-                style={inputStyle}
+                className="form-input"
               />
             </label>
 
-            <label style={{ display: "grid", gap: "6px" }}>
-              <span style={{ color: designTokens.colors.textMuted }}>
-                Profession
-              </span>
-              <select name="professionId" defaultValue="" style={inputStyle}>
+            <label className="form-field">
+              <span className="form-field-label">Profession</span>
+              <select name="professionId" defaultValue="" className="form-input">
                 <option value="">No profession</option>
                 {professions.map((profession) => (
                   <option key={profession.id} value={profession.id}>
@@ -338,8 +238,8 @@ export default async function AdminRecipesPage({
               </select>
             </label>
 
-            <label style={{ display: "grid", gap: "6px" }}>
-              <span style={{ color: designTokens.colors.textMuted }}>
+            <label className="form-field">
+              <span className="form-field-label">
                 Required level (optional)
               </span>
               <input
@@ -347,36 +247,19 @@ export default async function AdminRecipesPage({
                 name="requiredLevel"
                 min={0}
                 step={1}
-                style={inputStyle}
+                className="form-input"
               />
             </label>
 
-            <fieldset
-              style={{
-                border: `1px solid ${designTokens.colors.border}`,
-                borderRadius: designTokens.radius.sm,
-                padding: "16px",
-                display: "grid",
-                gap: "12px",
-              }}
-            >
-              <legend style={{ color: designTokens.colors.textMuted, padding: "0 4px" }}>
-                Ingredients (fill at least one row)
-              </legend>
+            <fieldset className="form-fieldset">
+              <legend>Ingredients (fill at least one row)</legend>
 
               {ingredientRows.map((row) => (
-                <div
-                  key={row}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr",
-                    gap: "8px",
-                  }}
-                >
+                <div key={row} className="ingredient-row">
                   <select
                     name={`ingredientItemId${row}`}
                     defaultValue=""
-                    style={inputStyle}
+                    className="form-input"
                   >
                     <option value="">No ingredient</option>
                     {items.map((item) => (
@@ -392,31 +275,29 @@ export default async function AdminRecipesPage({
                     min={1}
                     step={1}
                     placeholder="Qty"
-                    style={inputStyle}
+                    className="form-input"
                   />
                 </div>
               ))}
             </fieldset>
 
-            <label style={{ display: "grid", gap: "6px" }}>
-              <span style={{ color: designTokens.colors.textMuted }}>
+            <label className="form-field">
+              <span className="form-field-label">
                 Image (optional — PNG, JPEG, or WebP, up to 5 MB)
               </span>
               <input
                 type="file"
                 name="image"
                 accept="image/png,image/jpeg,image/webp"
-                style={inputStyle}
+                className="form-input"
               />
             </label>
 
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ justifySelf: "start" }}
-            >
-              Create Recipe
-            </button>
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">
+                Create Recipe
+              </button>
+            </div>
           </form>
         )}
       </section>

@@ -46,143 +46,70 @@ export default async function AdminCategoriesPage({
     orderBy: { name: "asc" },
   });
 
-  const inputStyle = {
-    border: `1px solid ${designTokens.colors.border}`,
-    borderRadius: designTokens.radius.sm,
-    background: designTokens.colors.surface,
-    color: designTokens.colors.text,
-    padding: "10px 12px",
-    fontSize: "16px",
-    fontFamily: "inherit",
-  };
-
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Category Management"
         description="View existing categories and create new ones."
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin" style={{ color: designTokens.colors.accent }}>
+      <nav className="admin-toolbar" aria-label="Category management">
+        <a href="/admin" className="link-accent">
           &larr; Back to Admin
         </a>
-      </p>
+
+        <a href="#create-category" className="btn btn-secondary btn-compact">
+          + New category
+        </a>
+      </nav>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
       {successMessage ? (
-        <p
-          role="status"
-          style={{
-            border: `1px solid ${designTokens.colors.success}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.success,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="status" className="banner banner-success">
           {successMessage}
         </p>
       ) : null}
 
       <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <h2 style={{ fontSize: "24px", lineHeight: 1.2, margin: "0 0 16px" }}>
-          Existing Categories
-        </h2>
+        <h2 className="section-title">Existing Categories</h2>
 
         {categories.length > 0 ? (
-          <div
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.md,
-              background: designTokens.colors.surface,
-              overflow: "hidden",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
               <thead>
                 <tr>
                   {["Name", "Slug", "Description", "Actions"].map((heading) => (
-                    <th
-                      key={heading}
-                      style={{
-                        textAlign: "left",
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                        fontSize: "14px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      {heading}
-                    </th>
+                    <th key={heading}>{heading}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {categories.map((category) => (
                   <tr key={category.id}>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                      }}
-                    >
-                      {category.name}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {category.slug}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {category.description ?? "—"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                      }}
-                    >
-                      <a
-                        href={`/admin/categories/${category.slug}/edit`}
-                        style={{ color: designTokens.colors.accent, marginRight: "16px" }}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        href={`/admin/categories/${category.slug}/delete`}
-                        style={{ color: designTokens.colors.danger }}
-                      >
-                        Delete
-                      </a>
+                    <td>{category.name}</td>
+                    <td>{category.slug}</td>
+                    <td>{category.description ?? "—"}</td>
+                    <td>
+                      <span className="row-actions">
+                        <a
+                          href={`/admin/categories/${category.slug}/edit`}
+                          className="link-accent"
+                        >
+                          Edit
+                        </a>
+                        <a
+                          href={`/admin/categories/${category.slug}/delete`}
+                          className="link-danger"
+                        >
+                          Delete
+                        </a>
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -197,19 +124,10 @@ export default async function AdminCategoriesPage({
         )}
       </section>
 
-      <section>
-        <h2 style={{ fontSize: "24px", lineHeight: 1.2, margin: "0 0 16px" }}>
-          Create Category
-        </h2>
+      <section id="create-category">
+        <h2 className="section-title">Create Category</h2>
 
-        <form
-          action={createCategoryAction}
-          style={{
-            display: "grid",
-            gap: "16px",
-            maxWidth: "480px",
-          }}
-        >
+        <form action={createCategoryAction} className="form-grid">
           {/* Client-enhanced Name field with live duplicate feedback; the
               submission-time duplicate check in createCategoryAction remains
               the authoritative protection. */}
@@ -217,34 +135,25 @@ export default async function AdminCategoriesPage({
             checkAvailabilityAction={checkCategoryNameAvailability}
             takenText="A category with that name already exists."
             regionId="category-name-availability"
-            inputStyle={inputStyle}
           />
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
+          <label className="form-field">
+            <span className="form-field-label">
               Slug (optional — generated from name if left blank)
             </span>
-            <input type="text" name="slug" style={inputStyle} />
+            <input type="text" name="slug" className="form-input" />
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Description (optional)
-            </span>
-            <textarea
-              name="description"
-              rows={3}
-              style={{ ...inputStyle, resize: "vertical" }}
-            />
+          <label className="form-field">
+            <span className="form-field-label">Description (optional)</span>
+            <textarea name="description" rows={3} className="form-input" />
           </label>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ justifySelf: "start" }}
-          >
-            Create Category
-          </button>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
+              Create Category
+            </button>
+          </div>
         </form>
       </section>
     </AppShell>

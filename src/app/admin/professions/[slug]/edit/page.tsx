@@ -50,53 +50,27 @@ export default async function EditProfessionPage({
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(profession.image);
 
-  const inputStyle = {
-    border: `1px solid ${designTokens.colors.border}`,
-    borderRadius: designTokens.radius.sm,
-    background: designTokens.colors.surface,
-    color: designTokens.colors.text,
-    padding: "10px 12px",
-    fontSize: "16px",
-    fontFamily: "inherit",
-  };
-
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Edit Profession"
         description={`Update details for "${profession.name}".`}
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin/professions" style={{ color: designTokens.colors.accent }}>
+      <p className="admin-toolbar">
+        <a href="/admin/professions" className="link-accent">
           &larr; Back to Profession Management
         </a>
       </p>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
-      <form
-        action={updateProfessionAction}
-        style={{
-          display: "grid",
-          gap: "16px",
-          maxWidth: "480px",
-        }}
-      >
+      <form action={updateProfessionAction} className="form-grid">
         <input type="hidden" name="id" value={profession.id} />
         <input type="hidden" name="originalSlug" value={profession.slug} />
 
@@ -108,37 +82,32 @@ export default async function EditProfessionPage({
           checkAvailabilityAction={checkProfessionNameAvailability}
           takenText="A profession with that name already exists."
           regionId="profession-name-availability"
-          inputStyle={inputStyle}
           originalName={profession.name}
           excludeId={profession.id}
         />
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>Slug</span>
+        <label className="form-field">
+          <span className="form-field-label">Slug</span>
           <input
             type="text"
             name="slug"
             defaultValue={profession.slug}
-            style={inputStyle}
+            className="form-input"
           />
         </label>
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Description (optional)
-          </span>
+        <label className="form-field">
+          <span className="form-field-label">Description (optional)</span>
           <textarea
             name="description"
             rows={3}
             defaultValue={profession.description ?? ""}
-            style={{ ...inputStyle, resize: "vertical" }}
+            className="form-input"
           />
         </label>
 
-        <div style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Current image
-          </span>
+        <div className="form-field">
+          <span className="form-field-label">Current image</span>
           {imageUrl ? (
             <div style={{ position: "relative", justifySelf: "start" }}>
               <style>{`
@@ -229,14 +198,12 @@ export default async function EditProfessionPage({
               </p>
             </div>
           ) : (
-            <span style={{ color: designTokens.colors.textMuted }}>
-              No image uploaded.
-            </span>
+            <span className="form-field-label">No image uploaded.</span>
           )}
         </div>
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
+        <label className="form-field">
+          <span className="form-field-label">
             {profession.image
               ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
               : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
@@ -245,11 +212,11 @@ export default async function EditProfessionPage({
             type="file"
             name="image"
             accept="image/png,image/jpeg,image/webp"
-            style={inputStyle}
+            className="form-input"
           />
         </label>
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="form-actions">
           <button type="submit" className="btn btn-primary">
             Save Changes
           </button>

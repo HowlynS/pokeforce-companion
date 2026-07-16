@@ -12,6 +12,7 @@
   --color-text-muted: #cbd5e1;
   --color-accent: #facc15;
   --color-accent-soft: #fde68a;
+  --color-success: #22c55e;
   --color-danger: #ef4444;
 }
 
@@ -151,4 +152,206 @@ select:focus-visible {
 /* Smaller padding for buttons that sit inside the header row. */
 .btn-compact {
   padding: 8px 12px;
+}
+
+/* ---- Admin interface (Slice 7D) -------------------------------------
+   One shared vocabulary for every admin page: toolbars, status banners,
+   record tables, form fields, and delete confirmations. These replace the
+   per-page inline style objects that previously duplicated the same look
+   thirteen times. */
+
+/* Inline text links inside toolbars and table rows. */
+.link-accent {
+  color: var(--color-accent);
+}
+
+.link-danger {
+  color: var(--color-danger);
+}
+
+/* Row under the page header: back link on the left, the page's primary
+   action (e.g. a jump link to the create form) on the right. */
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin: 0 0 24px;
+}
+
+.admin-toolbar p {
+  margin: 0;
+}
+
+/* Success (role="status") and error (role="alert") messages. */
+.banner {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-soft);
+  padding: 12px 16px;
+  margin: 0 0 24px;
+}
+
+.banner-error {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.banner-success {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+/* Section headings (h2) on admin pages, matching the public 24px tier. */
+.section-title {
+  margin: 0 0 16px;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+/* Record tables: one bordered surface that scrolls horizontally on
+   narrow screens instead of overflowing the page. */
+.admin-table-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* The name column leads each row in full text color; the metadata
+   columns stay muted. */
+.admin-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.admin-table td:first-child {
+  color: var(--color-text);
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Edit/Delete pair at the end of a table row. */
+.row-actions {
+  display: inline-flex;
+  gap: 16px;
+  white-space: nowrap;
+}
+
+/* Form column plus its field/label/input vocabulary. */
+.form-grid {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+}
+
+.form-grid-wide {
+  max-width: 560px;
+}
+
+.form-field {
+  display: grid;
+  gap: 6px;
+}
+
+.form-field-label {
+  color: var(--color-text-muted);
+}
+
+.form-input {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 10px 12px;
+  font-size: 16px;
+  font-family: inherit;
+  min-width: 0;
+}
+
+textarea.form-input {
+  resize: vertical;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--color-accent);
+}
+
+.form-checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+}
+
+.form-fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.form-fieldset legend {
+  color: var(--color-text-muted);
+  padding: 0 4px;
+}
+
+/* One recipe ingredient row: item select plus quantity. */
+.ingredient-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 8px;
+}
+
+/* Submit/cancel (and delete/cancel) button rows. */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Delete confirmation surface: unmistakably destructive, never wider
+   than a comfortable reading column. */
+.confirm-card {
+  border: 1px solid var(--color-danger);
+  border-radius: 12px;
+  background: var(--color-surface-soft);
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.confirm-card p {
+  margin: 0;
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-danger {
+  color: var(--color-danger);
 }

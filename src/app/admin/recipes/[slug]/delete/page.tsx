@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { deleteRecipeAction } from "../../actions";
@@ -55,66 +54,47 @@ export default async function DeleteRecipePage({
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Delete Recipe"
         description={`Review before permanently deleting "${recipe.name}".`}
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin/recipes" style={{ color: designTokens.colors.accent }}>
+      <p className="admin-toolbar">
+        <a href="/admin/recipes" className="link-accent">
           &larr; Back to Recipe Management
         </a>
       </p>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
-      <div
-        style={{
-          border: `1px solid ${designTokens.colors.danger}`,
-          borderRadius: designTokens.radius.md,
-          background: designTokens.colors.surfaceSoft,
-          padding: "24px",
-          display: "grid",
-          gap: "16px",
-          maxWidth: "560px",
-        }}
-      >
-        <p style={{ margin: 0 }}>
+      <div className="confirm-card">
+        <p>
           You are about to permanently delete <strong>{recipe.name}</strong> (
           {recipe.slug}). This action cannot be undone.
         </p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
+        <p className="text-muted">
           Result: {recipe.resultingQuantity}x {recipe.resultingItem.name}
         </p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
+        <p className="text-muted">
           Profession: {recipe.profession?.name ?? "No profession"}
         </p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
+        <p className="text-muted">
           Ingredients ({recipe.ingredients.length}): {ingredientSummary}
         </p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
+        <p className="text-muted">
           The resulting item, ingredient items, and profession will not be
           deleted — only this recipe and its own ingredient list entries.
         </p>
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="form-actions">
           <form action={deleteRecipeAction}>
             <input type="hidden" name="id" value={recipe.id} />
             <input type="hidden" name="slug" value={recipe.slug} />

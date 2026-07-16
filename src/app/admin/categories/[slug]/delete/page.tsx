@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { deleteCategoryAction } from "../../actions";
@@ -43,28 +42,19 @@ export default async function DeleteCategoryPage({
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Delete Category"
         description={`Review before permanently deleting "${category.name}".`}
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin/categories" style={{ color: designTokens.colors.accent }}>
+      <p className="admin-toolbar">
+        <a href="/admin/categories" className="link-accent">
           &larr; Back to Category Management
         </a>
       </p>
 
       {error ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {error === "linked_items"
             ? `This category cannot be deleted because it is assigned to ${describeLinkedItems(
                 itemCount
@@ -73,36 +63,24 @@ export default async function DeleteCategoryPage({
         </p>
       ) : null}
 
-      <div
-        style={{
-          border: `1px solid ${designTokens.colors.danger}`,
-          borderRadius: designTokens.radius.md,
-          background: designTokens.colors.surfaceSoft,
-          padding: "24px",
-          display: "grid",
-          gap: "16px",
-          maxWidth: "480px",
-        }}
-      >
-        <p style={{ margin: 0 }}>
+      <div className="confirm-card">
+        <p>
           You are about to permanently delete{" "}
           <strong>{category.name}</strong> ({category.slug}). This action
           cannot be undone.
         </p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
-          Linked items: {itemCount}
-        </p>
+        <p className="text-muted">Linked items: {itemCount}</p>
 
         {!canDelete ? (
-          <p style={{ margin: 0, color: designTokens.colors.danger }}>
+          <p className="text-danger">
             This category cannot be deleted because it is assigned to{" "}
             {describeLinkedItems(itemCount)}. Reassign or remove those items
             first.
           </p>
         ) : null}
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="form-actions">
           {canDelete ? (
             <form action={deleteCategoryAction}>
               <input type="hidden" name="id" value={category.id} />

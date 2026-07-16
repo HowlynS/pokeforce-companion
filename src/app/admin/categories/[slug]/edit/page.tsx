@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { RecordNameField } from "@/components/admin/record-name-field";
@@ -41,53 +40,27 @@ export default async function EditCategoryPage({
     notFound();
   }
 
-  const inputStyle = {
-    border: `1px solid ${designTokens.colors.border}`,
-    borderRadius: designTokens.radius.sm,
-    background: designTokens.colors.surface,
-    color: designTokens.colors.text,
-    padding: "10px 12px",
-    fontSize: "16px",
-    fontFamily: "inherit",
-  };
-
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Edit Category"
         description={`Update details for "${category.name}".`}
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin/categories" style={{ color: designTokens.colors.accent }}>
+      <p className="admin-toolbar">
+        <a href="/admin/categories" className="link-accent">
           &larr; Back to Category Management
         </a>
       </p>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
-      <form
-        action={updateCategoryAction}
-        style={{
-          display: "grid",
-          gap: "16px",
-          maxWidth: "480px",
-        }}
-      >
+      <form action={updateCategoryAction} className="form-grid">
         <input type="hidden" name="id" value={category.id} />
         <input type="hidden" name="originalSlug" value={category.slug} />
 
@@ -99,34 +72,31 @@ export default async function EditCategoryPage({
           checkAvailabilityAction={checkCategoryNameAvailability}
           takenText="A category with that name already exists."
           regionId="category-name-availability"
-          inputStyle={inputStyle}
           originalName={category.name}
           excludeId={category.id}
         />
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>Slug</span>
+        <label className="form-field">
+          <span className="form-field-label">Slug</span>
           <input
             type="text"
             name="slug"
             defaultValue={category.slug}
-            style={inputStyle}
+            className="form-input"
           />
         </label>
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Description (optional)
-          </span>
+        <label className="form-field">
+          <span className="form-field-label">Description (optional)</span>
           <textarea
             name="description"
             rows={3}
             defaultValue={category.description ?? ""}
-            style={{ ...inputStyle, resize: "vertical" }}
+            className="form-input"
           />
         </label>
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="form-actions">
           <button type="submit" className="btn btn-primary">
             Save Changes
           </button>

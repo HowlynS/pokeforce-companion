@@ -55,53 +55,27 @@ export default async function EditItemPage({
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(item.image);
 
-  const inputStyle = {
-    border: `1px solid ${designTokens.colors.border}`,
-    borderRadius: designTokens.radius.sm,
-    background: designTokens.colors.surface,
-    color: designTokens.colors.text,
-    padding: "10px 12px",
-    fontSize: "16px",
-    fontFamily: "inherit",
-  };
-
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Edit Item"
         description={`Update details for "${item.name}".`}
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin/items" style={{ color: designTokens.colors.accent }}>
+      <p className="admin-toolbar">
+        <a href="/admin/items" className="link-accent">
           &larr; Back to Item Management
         </a>
       </p>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
-      <form
-        action={updateItemAction}
-        style={{
-          display: "grid",
-          gap: "16px",
-          maxWidth: "480px",
-        }}
-      >
+      <form action={updateItemAction} className="form-grid">
         <input type="hidden" name="id" value={item.id} />
         <input type="hidden" name="originalSlug" value={item.slug} />
 
@@ -109,42 +83,34 @@ export default async function EditItemPage({
             saved name counts as "current" (never queried), and the record's
             own id is excluded server-side so it cannot conflict with
             itself; updateItemAction stays the authoritative check. */}
-        <ItemNameField
-          inputStyle={inputStyle}
-          originalName={item.name}
-          excludeId={item.id}
-        />
+        <ItemNameField originalName={item.name} excludeId={item.id} />
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>Slug</span>
+        <label className="form-field">
+          <span className="form-field-label">Slug</span>
           <input
             type="text"
             name="slug"
             defaultValue={item.slug}
-            style={inputStyle}
+            className="form-input"
           />
         </label>
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Description (optional)
-          </span>
+        <label className="form-field">
+          <span className="form-field-label">Description (optional)</span>
           <textarea
             name="description"
             rows={3}
             defaultValue={item.description ?? ""}
-            style={{ ...inputStyle, resize: "vertical" }}
+            className="form-input"
           />
         </label>
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Category
-          </span>
+        <label className="form-field">
+          <span className="form-field-label">Category</span>
           <select
             name="categoryId"
             defaultValue={item.categoryId ?? ""}
-            style={inputStyle}
+            className="form-input"
           >
             <option value="">No category</option>
             {categories.map((category) => (
@@ -155,26 +121,17 @@ export default async function EditItemPage({
           </select>
         </label>
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Rarity (optional)
-          </span>
+        <label className="form-field">
+          <span className="form-field-label">Rarity (optional)</span>
           <input
             type="text"
             name="rarity"
             defaultValue={item.rarity ?? ""}
-            style={inputStyle}
+            className="form-input"
           />
         </label>
 
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            color: designTokens.colors.textMuted,
-          }}
-        >
+        <label className="form-checkbox-field">
           <input
             type="checkbox"
             name="tradeable"
@@ -183,24 +140,20 @@ export default async function EditItemPage({
           <span>Tradeable</span>
         </label>
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Base value (optional)
-          </span>
+        <label className="form-field">
+          <span className="form-field-label">Base value (optional)</span>
           <input
             type="number"
             name="baseValue"
             min={0}
             step={1}
             defaultValue={item.baseValue ?? ""}
-            style={inputStyle}
+            className="form-input"
           />
         </label>
 
-        <div style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Current image
-          </span>
+        <div className="form-field">
+          <span className="form-field-label">Current image</span>
           {imageUrl ? (
             <div style={{ position: "relative", justifySelf: "start" }}>
               <style>{`
@@ -291,14 +244,12 @@ export default async function EditItemPage({
               </p>
             </div>
           ) : (
-            <span style={{ color: designTokens.colors.textMuted }}>
-              No image uploaded.
-            </span>
+            <span className="form-field-label">No image uploaded.</span>
           )}
         </div>
 
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
+        <label className="form-field">
+          <span className="form-field-label">
             {item.image
               ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
               : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
@@ -307,11 +258,11 @@ export default async function EditItemPage({
             type="file"
             name="image"
             accept="image/png,image/jpeg,image/webp"
-            style={inputStyle}
+            className="form-input"
           />
         </label>
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="form-actions">
           <button type="submit" className="btn btn-primary">
             Save Changes
           </button>

@@ -64,7 +64,6 @@ type RecordNameFieldProps = {
   // Unique id for this form's live region (also the aria-describedby
   // target), e.g. "category-name-availability".
   regionId: string;
-  inputStyle: React.CSSProperties;
   // Edit-only: the record's saved name (treated as "current", never
   // queried) and its id (excluded server-side so the record cannot
   // conflict with itself).
@@ -76,7 +75,6 @@ export function RecordNameField({
   checkAvailabilityAction,
   takenText,
   regionId,
-  inputStyle,
   originalName,
   excludeId,
 }: RecordNameFieldProps) {
@@ -151,9 +149,9 @@ export function RecordNameField({
   }, [trimmed, isCurrentName, excludeId, result, checkAvailabilityAction]);
 
   return (
-    <div style={{ display: "grid", gap: "6px" }}>
-      <label style={{ display: "grid", gap: "6px" }}>
-        <span style={{ color: designTokens.colors.textMuted }}>Name</span>
+    <div className="form-field">
+      <label className="form-field">
+        <span className="form-field-label">Name</span>
         <input
           type="text"
           name="name"
@@ -161,7 +159,7 @@ export function RecordNameField({
           value={name}
           onChange={(event) => setName(event.target.value)}
           aria-describedby={regionId}
-          style={inputStyle}
+          className="form-input"
         />
       </label>
       {/* Always-present polite live region, kept OUTSIDE the label so the

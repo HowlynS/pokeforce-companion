@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { deleteProfessionAction } from "../../actions";
@@ -43,28 +42,19 @@ export default async function DeleteProfessionPage({
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Delete Profession"
         description={`Review before permanently deleting "${profession.name}".`}
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin/professions" style={{ color: designTokens.colors.accent }}>
+      <p className="admin-toolbar">
+        <a href="/admin/professions" className="link-accent">
           &larr; Back to Profession Management
         </a>
       </p>
 
       {error ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {error === "linked_recipes"
             ? `This profession cannot be deleted because it is assigned to ${describeLinkedRecipes(
                 recipeCount
@@ -73,36 +63,24 @@ export default async function DeleteProfessionPage({
         </p>
       ) : null}
 
-      <div
-        style={{
-          border: `1px solid ${designTokens.colors.danger}`,
-          borderRadius: designTokens.radius.md,
-          background: designTokens.colors.surfaceSoft,
-          padding: "24px",
-          display: "grid",
-          gap: "16px",
-          maxWidth: "480px",
-        }}
-      >
-        <p style={{ margin: 0 }}>
+      <div className="confirm-card">
+        <p>
           You are about to permanently delete{" "}
           <strong>{profession.name}</strong> ({profession.slug}). This action
           cannot be undone.
         </p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
-          Linked recipes: {recipeCount}
-        </p>
+        <p className="text-muted">Linked recipes: {recipeCount}</p>
 
         {!canDelete ? (
-          <p style={{ margin: 0, color: designTokens.colors.danger }}>
+          <p className="text-danger">
             This profession cannot be deleted because it is assigned to{" "}
             {describeLinkedRecipes(recipeCount)}. Reassign or remove those
             recipes first.
           </p>
         ) : null}
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="form-actions">
           {canDelete ? (
             <form action={deleteProfessionAction}>
               <input type="hidden" name="id" value={profession.id} />

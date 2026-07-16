@@ -62,77 +62,42 @@ export default async function AdminItemsPage({
     }),
   ]);
 
-  const inputStyle = {
-    border: `1px solid ${designTokens.colors.border}`,
-    borderRadius: designTokens.radius.sm,
-    background: designTokens.colors.surface,
-    color: designTokens.colors.text,
-    padding: "10px 12px",
-    fontSize: "16px",
-    fontFamily: "inherit",
-  };
-
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Item Management"
         description="View existing items and create new ones."
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin" style={{ color: designTokens.colors.accent }}>
+      <nav className="admin-toolbar" aria-label="Item management">
+        <a href="/admin" className="link-accent">
           &larr; Back to Admin
         </a>
-      </p>
+
+        <a href="#create-item" className="btn btn-secondary btn-compact">
+          + New item
+        </a>
+      </nav>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
       {successMessage ? (
-        <p
-          role="status"
-          style={{
-            border: `1px solid ${designTokens.colors.success}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.success,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="status" className="banner banner-success">
           {successMessage}
         </p>
       ) : null}
 
       <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <h2 style={{ fontSize: "24px", lineHeight: 1.2, margin: "0 0 16px" }}>
-          Existing Items
-        </h2>
+        <h2 className="section-title">Existing Items</h2>
 
         {items.length > 0 ? (
-          <div
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.md,
-              background: designTokens.colors.surface,
-              overflow: "hidden",
-              overflowX: "auto",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
               <thead>
                 <tr>
                   {[
@@ -144,98 +109,34 @@ export default async function AdminItemsPage({
                     "Base Value",
                     "Actions",
                   ].map((heading) => (
-                    <th
-                      key={heading}
-                      style={{
-                        textAlign: "left",
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                        fontSize: "14px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {heading}
-                    </th>
+                    <th key={heading}>{heading}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id}>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                      }}
-                    >
-                      {item.name}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {item.slug}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {item.category?.name ?? "Uncategorized"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {item.rarity ?? "—"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {item.tradeable ? "Yes" : "No"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                        color: designTokens.colors.textMuted,
-                      }}
-                    >
-                      {item.baseValue ?? "—"}
-                    </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${designTokens.colors.border}`,
-                      }}
-                    >
-                      <a
-                        href={`/admin/items/${item.slug}/edit`}
-                        style={{ color: designTokens.colors.accent, marginRight: "16px" }}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        href={`/admin/items/${item.slug}/delete`}
-                        style={{ color: designTokens.colors.danger }}
-                      >
-                        Delete
-                      </a>
+                    <td>{item.name}</td>
+                    <td>{item.slug}</td>
+                    <td>{item.category?.name ?? "Uncategorized"}</td>
+                    <td>{item.rarity ?? "—"}</td>
+                    <td>{item.tradeable ? "Yes" : "No"}</td>
+                    <td>{item.baseValue ?? "—"}</td>
+                    <td>
+                      <span className="row-actions">
+                        <a
+                          href={`/admin/items/${item.slug}/edit`}
+                          className="link-accent"
+                        >
+                          Edit
+                        </a>
+                        <a
+                          href={`/admin/items/${item.slug}/delete`}
+                          className="link-danger"
+                        >
+                          Delete
+                        </a>
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -250,47 +151,30 @@ export default async function AdminItemsPage({
         )}
       </section>
 
-      <section>
-        <h2 style={{ fontSize: "24px", lineHeight: 1.2, margin: "0 0 16px" }}>
-          Create Item
-        </h2>
+      <section id="create-item">
+        <h2 className="section-title">Create Item</h2>
 
-        <form
-          action={createItemAction}
-          style={{
-            display: "grid",
-            gap: "16px",
-            maxWidth: "480px",
-          }}
-        >
+        <form action={createItemAction} className="form-grid">
           {/* Client-enhanced Name field with live duplicate feedback; the
               submission-time duplicate check in createItemAction remains
               the authoritative protection. */}
-          <ItemNameField inputStyle={inputStyle} />
+          <ItemNameField />
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
+          <label className="form-field">
+            <span className="form-field-label">
               Slug (optional — generated from name if left blank)
             </span>
-            <input type="text" name="slug" style={inputStyle} />
+            <input type="text" name="slug" className="form-input" />
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Description (optional)
-            </span>
-            <textarea
-              name="description"
-              rows={3}
-              style={{ ...inputStyle, resize: "vertical" }}
-            />
+          <label className="form-field">
+            <span className="form-field-label">Description (optional)</span>
+            <textarea name="description" rows={3} className="form-input" />
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Category
-            </span>
-            <select name="categoryId" defaultValue="" style={inputStyle}>
+          <label className="form-field">
+            <span className="form-field-label">Category</span>
+            <select name="categoryId" defaultValue="" className="form-input">
               <option value="">No category</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -300,57 +184,44 @@ export default async function AdminItemsPage({
             </select>
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Rarity (optional)
-            </span>
-            <input type="text" name="rarity" style={inputStyle} />
+          <label className="form-field">
+            <span className="form-field-label">Rarity (optional)</span>
+            <input type="text" name="rarity" className="form-input" />
           </label>
 
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              color: designTokens.colors.textMuted,
-            }}
-          >
+          <label className="form-checkbox-field">
             <input type="checkbox" name="tradeable" />
             <span>Tradeable</span>
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Base value (optional)
-            </span>
+          <label className="form-field">
+            <span className="form-field-label">Base value (optional)</span>
             <input
               type="number"
               name="baseValue"
               min={0}
               step={1}
-              style={inputStyle}
+              className="form-input"
             />
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
+          <label className="form-field">
+            <span className="form-field-label">
               Image (optional — PNG, JPEG, or WebP, up to 5 MB)
             </span>
             <input
               type="file"
               name="image"
               accept="image/png,image/jpeg,image/webp"
-              style={inputStyle}
+              className="form-input"
             />
           </label>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ justifySelf: "start" }}
-          >
-            Create Item
-          </button>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
+              Create Item
+            </button>
+          </div>
         </form>
       </section>
     </AppShell>

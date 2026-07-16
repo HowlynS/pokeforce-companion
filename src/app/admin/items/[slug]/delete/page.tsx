@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { deleteItemAction } from "../../actions";
@@ -66,28 +65,19 @@ export default async function DeleteItemPage({
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Delete Item"
         description={`Review before permanently deleting "${item.name}".`}
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin/items" style={{ color: designTokens.colors.accent }}>
+      <p className="admin-toolbar">
+        <a href="/admin/items" className="link-accent">
           &larr; Back to Item Management
         </a>
       </p>
 
       {error ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {error === "linked_recipes"
             ? `This item cannot be deleted because it is used as ${describeRecipeReferences(
                 resultCount,
@@ -97,43 +87,31 @@ export default async function DeleteItemPage({
         </p>
       ) : null}
 
-      <div
-        style={{
-          border: `1px solid ${designTokens.colors.danger}`,
-          borderRadius: designTokens.radius.md,
-          background: designTokens.colors.surfaceSoft,
-          padding: "24px",
-          display: "grid",
-          gap: "16px",
-          maxWidth: "480px",
-        }}
-      >
-        <p style={{ margin: 0 }}>
+      <div className="confirm-card">
+        <p>
           You are about to permanently delete <strong>{item.name}</strong> (
           {item.slug}). This action cannot be undone.
         </p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
+        <p className="text-muted">
           Category: {item.category?.name ?? "Uncategorized"}
         </p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
-          Used as a recipe result: {resultCount}
-        </p>
+        <p className="text-muted">Used as a recipe result: {resultCount}</p>
 
-        <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
+        <p className="text-muted">
           Used as a recipe ingredient: {ingredientCount}
         </p>
 
         {!canDelete ? (
-          <p style={{ margin: 0, color: designTokens.colors.danger }}>
+          <p className="text-danger">
             This item cannot be deleted because it is used as{" "}
             {describeRecipeReferences(resultCount, ingredientCount)}. Remove
             or reassign those recipe references first.
           </p>
         ) : null}
 
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="form-actions">
           {canDelete ? (
             <form action={deleteItemAction}>
               <input type="hidden" name="id" value={item.id} />

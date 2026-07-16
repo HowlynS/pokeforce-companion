@@ -81,16 +81,6 @@ export default async function EditRecipePage({
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(recipe.image);
 
-  const inputStyle = {
-    border: `1px solid ${designTokens.colors.border}`,
-    borderRadius: designTokens.radius.sm,
-    background: designTokens.colors.surface,
-    color: designTokens.colors.text,
-    padding: "10px 12px",
-    fontSize: "16px",
-    fontFamily: "inherit",
-  };
-
   const tooManyIngredients =
     recipe.ingredients.length > RECIPE_INGREDIENT_ROW_COUNT;
 
@@ -102,43 +92,25 @@ export default async function EditRecipePage({
   return (
     <AppShell>
       <PageHeader
+        eyebrow="Admin"
         title="Edit Recipe"
         description={`Update details for "${recipe.name}".`}
       />
 
-      <p style={{ margin: "0 0 24px" }}>
-        <a href="/admin/recipes" style={{ color: designTokens.colors.accent }}>
+      <p className="admin-toolbar">
+        <a href="/admin/recipes" className="link-accent">
           &larr; Back to Recipe Management
         </a>
       </p>
 
       {errorMessage ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
+        <p role="alert" className="banner banner-error">
           {errorMessage}
         </p>
       ) : null}
 
       {tooManyIngredients ? (
-        <p
-          role="alert"
-          style={{
-            border: `1px solid ${designTokens.colors.danger}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surfaceSoft,
-            color: designTokens.colors.danger,
-            padding: "12px 16px",
-          }}
-        >
+        <p role="alert" className="banner banner-error" style={{ margin: 0 }}>
           This recipe has {recipe.ingredients.length} ingredients, but the
           edit form currently supports only {RECIPE_INGREDIENT_ROW_COUNT}.
           Editing is unavailable until the form supports more ingredient
@@ -146,14 +118,7 @@ export default async function EditRecipePage({
           dropped.
         </p>
       ) : (
-        <form
-          action={updateRecipeAction}
-          style={{
-            display: "grid",
-            gap: "16px",
-            maxWidth: "560px",
-          }}
-        >
+        <form action={updateRecipeAction} className="form-grid form-grid-wide">
           <input type="hidden" name="id" value={recipe.id} />
           <input type="hidden" name="originalSlug" value={recipe.slug} />
 
@@ -166,30 +131,27 @@ export default async function EditRecipePage({
             checkAvailabilityAction={checkRecipeNameAvailability}
             takenText="A recipe with that name already exists."
             regionId="recipe-name-availability"
-            inputStyle={inputStyle}
             originalName={recipe.name}
             excludeId={recipe.id}
           />
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>Slug</span>
+          <label className="form-field">
+            <span className="form-field-label">Slug</span>
             <input
               type="text"
               name="slug"
               defaultValue={recipe.slug}
-              style={inputStyle}
+              className="form-input"
             />
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Resulting item
-            </span>
+          <label className="form-field">
+            <span className="form-field-label">Resulting item</span>
             <select
               name="resultingItemId"
               required
               defaultValue={recipe.resultingItemId}
-              style={inputStyle}
+              className="form-input"
             >
               {items.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -199,28 +161,24 @@ export default async function EditRecipePage({
             </select>
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Resulting quantity
-            </span>
+          <label className="form-field">
+            <span className="form-field-label">Resulting quantity</span>
             <input
               type="number"
               name="resultingQuantity"
               min={1}
               step={1}
               defaultValue={recipe.resultingQuantity}
-              style={inputStyle}
+              className="form-input"
             />
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Profession
-            </span>
+          <label className="form-field">
+            <span className="form-field-label">Profession</span>
             <select
               name="professionId"
               defaultValue={recipe.professionId ?? ""}
-              style={inputStyle}
+              className="form-input"
             >
               <option value="">No profession</option>
               {professions.map((profession) => (
@@ -231,49 +189,30 @@ export default async function EditRecipePage({
             </select>
           </label>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Required level (optional)
-            </span>
+          <label className="form-field">
+            <span className="form-field-label">Required level (optional)</span>
             <input
               type="number"
               name="requiredLevel"
               min={0}
               step={1}
               defaultValue={recipe.requiredLevel ?? ""}
-              style={inputStyle}
+              className="form-input"
             />
           </label>
 
-          <fieldset
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.sm,
-              padding: "16px",
-              display: "grid",
-              gap: "12px",
-            }}
-          >
-            <legend style={{ color: designTokens.colors.textMuted, padding: "0 4px" }}>
-              Ingredients (fill at least one row)
-            </legend>
+          <fieldset className="form-fieldset">
+            <legend>Ingredients (fill at least one row)</legend>
 
             {ingredientRows.map((row) => {
               const existingIngredient = recipe.ingredients[row - 1];
 
               return (
-                <div
-                  key={row}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr",
-                    gap: "8px",
-                  }}
-                >
+                <div key={row} className="ingredient-row">
                   <select
                     name={`ingredientItemId${row}`}
                     defaultValue={existingIngredient?.itemId ?? ""}
-                    style={inputStyle}
+                    className="form-input"
                   >
                     <option value="">No ingredient</option>
                     {items.map((item) => (
@@ -290,17 +229,15 @@ export default async function EditRecipePage({
                     step={1}
                     placeholder="Qty"
                     defaultValue={existingIngredient?.quantity ?? ""}
-                    style={inputStyle}
+                    className="form-input"
                   />
                 </div>
               );
             })}
           </fieldset>
 
-          <div style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
-              Current image
-            </span>
+          <div className="form-field">
+            <span className="form-field-label">Current image</span>
             {imageUrl ? (
               <div style={{ position: "relative", justifySelf: "start" }}>
                 <style>{`
@@ -391,14 +328,12 @@ export default async function EditRecipePage({
                 </p>
               </div>
             ) : (
-              <span style={{ color: designTokens.colors.textMuted }}>
-                No image uploaded.
-              </span>
+              <span className="form-field-label">No image uploaded.</span>
             )}
           </div>
 
-          <label style={{ display: "grid", gap: "6px" }}>
-            <span style={{ color: designTokens.colors.textMuted }}>
+          <label className="form-field">
+            <span className="form-field-label">
               {recipe.image
                 ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
                 : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
@@ -407,11 +342,11 @@ export default async function EditRecipePage({
               type="file"
               name="image"
               accept="image/png,image/jpeg,image/webp"
-              style={inputStyle}
+              className="form-input"
             />
           </label>
 
-          <div style={{ display: "flex", gap: "12px" }}>
+          <div className="form-actions">
             <button type="submit" className="btn btn-primary">
               Save Changes
             </button>
