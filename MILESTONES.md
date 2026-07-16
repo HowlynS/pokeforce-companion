@@ -233,7 +233,7 @@ Add image upload and storage for items, recipes, and professions.
 
 ## Milestone 7 - Search and Polish
 
-Status: In progress
+Status: Complete
 
 Goal:
 
@@ -255,16 +255,47 @@ Add basic search, improve navigation, and polish the user experience.
 
 The foundation protects current behavior; future features still need their own tests as they are built.
 
-### Remaining
+### Completed - Search
 
-- [ ] Search
-- [ ] Instant duplicate-name feedback while typing (postponed from Milestone 5; only if still desired)
-- [ ] Functional/UX polish
-- [ ] Visual review and polish
+- [x] Global search page at `/search`: plain GET form with the query kept in the URL; no client JavaScript required; blank queries never touch the database
+- [x] Compact search box in the shared header on every page, kept distinguishable (via aria-label) from the page-level search landmark
+- [x] Items, Recipes, Professions, and Categories matched by name or description
+- [x] Recipes also matched relationally through their resulting item, profession, or ingredients, with a context line explaining the match (e.g. "Recipe · Ingredient: Iron Ingot")
+- [x] Deterministic group order, per-type result caps with a displayed-results summary, and readable start/no-results states
+- [x] Covered by dedicated unit tests and guarded integration tests (global search)
 
-Search and Polish work has not started yet.
+### Completed - Instant duplicate-name feedback
 
-### Deferred product requirements (recorded, not part of the testing foundation)
+- [x] Live Name-availability feedback on the create and edit forms of all four resources through the shared `RecordNameField` (the Item field wraps it unchanged)
+- [x] Debounced (300 ms) with a stale-response sequence guard; feedback is announced through a polite `aria-describedby` live region kept outside the label
+- [x] Edit forms treat the saved name as "current" and exclude the record's own id server-side
+- [x] Failed checks degrade to a non-blocking notice and never disable submission; each resource's server action remains the authoritative duplicate check
+- [x] Covered by dedicated unit tests and guarded integration tests (record/item name availability)
+
+### Completed - Public visual polish
+
+- [x] Shared visual foundation: design tokens mirrored as CSS variables, one button system (primary/secondary/danger), header nav pills, interactive-card hover/focus affordances, and a single visible keyboard-focus treatment
+- [x] Public list cards show only meaningful metadata — unset optional fields are omitted instead of rendering placeholders such as "Rarity: Unknown", "Category: Uncategorized", "Profession: None", or "Requires: No ingredients"
+- [x] Missing images render as a compact muted pill instead of a full-size empty canvas; the visible "No image available" text is preserved
+- [x] Item, Recipe, and Profession detail pages use a responsive detail hero (image beside the facts cards on desktop, stacked on narrow screens); the Category detail page follows the same structure without an image (categories store none)
+- [x] Relation cards no longer repeat the page's own record name
+- [x] `PageHeader` omits a missing description entirely instead of rendering "No description available."
+- [x] Verified at ~1280 px and 375 px with no horizontal overflow; the public-details E2E suite passed after each slice
+
+### Completed - Admin visual polish
+
+- [x] Shared admin presentation vocabulary in `globals.css` (toolbar, status banners, record tables, form fields, ingredient rows, delete-confirmation cards) replacing the duplicated inline styling across all thirteen admin pages
+- [x] Admin pages carry an "Admin" eyebrow label above the page title (outside the h1, so accessible headings are unchanged); the admin landing uses the shared card grid with a signed-in/sign-out toolbar
+- [x] List pages gained a "+ New …" jump link to their create form; admin tables scroll horizontally inside their own container on narrow screens instead of overflowing the page
+- [x] Success (role="status") and error (role="alert") messages, all copy, labels, routes, validation, image preview/replacement/removal, and destructive-action behavior unchanged
+- [x] Verified at ~1280 px and 375 px; all 66 admin E2E tests passed; lint, build, and `git diff --check` clean
+
+### Closing audit
+
+- [x] Final visual consistency audit across representative public and admin routes at desktop and 375 px: no blockers, no horizontal overflow on any of the 16 route/viewport checks, heading hierarchy and accessibility behavior intact, no stale copy
+- Two optional cosmetic follow-ups were noted and deliberately not applied: unifying the `/search` input onto the shared form classes, and a scroll-affordance hint for admin tables on mobile
+
+### Deferred product requirements (recorded, not implemented in Milestone 7)
 
 - Exact Item field `Held item` with Yes/No
 - Item locations
