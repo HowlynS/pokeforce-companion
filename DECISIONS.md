@@ -1238,3 +1238,46 @@ Alternatives considered:
   record list — rejected; the milestone's workspace direction needs the
   landing to be a list-plus-editor surface, and a dedicated creation
   page gives validation errors a stable home.
+
+---
+
+### 2026-07-17 — Slice 9B.5: cross-column form association via the HTML `form` attribute
+
+Decision:
+
+The Item General editor adopts `ImagePanel` and `VerificationPanel` in
+`AdminWorkspace`'s aside column, a sibling of the main column — not a
+descendant of it. The resource's own `<form>` lives in the main column
+only (so it never nests inside the record list's own search `<form>`,
+which HTML forbids). The aside panels' inputs (the file input, the
+remove-image checkbox, the Game Version picker, and the verify
+checkbox) are associated with that `<form>` purely via the standard
+HTML `form="<id>"` attribute — a native browser mechanism for
+form-associating a control that isn't a DOM descendant of its form.
+`VerificationPanel` and `GameVersionVerificationControls` both gained an
+optional `formId` prop that forwards to this attribute; omitted, they
+behave exactly as before (every other current caller of
+`GameVersionVerificationControls` is unaffected). This keeps submission
+entirely native — no client-side state, no custom submit handler — and
+is the pattern every later resource's aside-column conversion should
+reuse rather than re-deriving.
+
+Reason:
+
+`AdminWorkspace` renders `recordList`, the main region, and `aside` as
+three independent sibling slots (Slice 9B.1), and that structural
+contract was worth preserving rather than teaching the shared shell
+about forms. The `form` attribute is the standard-compliant answer to
+"a form control that must submit with a form it isn't nested inside."
+
+Alternatives considered:
+
+- Wrapping `AdminWorkspace`'s main+aside slots in a shared `<form>`
+  inside the component itself — rejected; it would couple a purely
+  structural, resource-agnostic shell to form semantics, and still
+  couldn't safely include the record list without producing nested
+  `<form>` elements (invalid HTML, since `RecordList` already renders
+  its own search form).
+- Duplicating the image/verification fields inside the main-column
+  `<form>` and hiding the aside copies — rejected; two copies of the
+  same inputs risk drifting out of sync and double-submitting.

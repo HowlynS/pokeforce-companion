@@ -1,12 +1,17 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
 import { ItemNameField } from "@/components/admin/item-name-field";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { ImagePanel } from "@/components/admin/image-panel";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { TimestampsPanel } from "@/components/admin/timestamps-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   itemDeleteHref,
+  itemEditHref,
   normalizeItemSearchQuery,
   withItemSearchQuery,
 } from "@/lib/admin/item-workspace";
@@ -15,6 +20,12 @@ import { getImagePublicUrl } from "@/lib/storage/images";
 import { updateItemAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
+
+// Associates the image and verification controls — both rendered in the
+// aside column, outside this <form> element — with this form via the
+// standard HTML `form` attribute, so every field still submits together
+// with one ordinary form submission.
+const ITEM_EDIT_FORM_ID = "item-edit-form";
 
 const errorMessages: Record<string, string> = {
   missing_name: "Item name is required.",
@@ -77,47 +88,43 @@ export default async function EditItemPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  // The edit route inside the Item workspace (Slice 9B.4): the record
-  // list marks this item selected and keeps the active search applied
-  // for quick switching; the form itself is unchanged.
+  // General is the only implemented section; the rest describe content
+  // that doesn't exist yet (Slice 9B.5) and render as inert placeholders
+  // rather than links to empty pages.
+  const tabs: EditorTab[] = [
+    { label: "General", href: itemEditHref(item.slug, query), active: true },
+    { label: "Acquisition Sources", href: "", active: false, disabled: true },
+    { label: "Used in Recipes", href: "", active: false, disabled: true },
+    { label: "Metadata", href: "", active: false, disabled: true },
+  ];
+
+  // The edit route inside the Item workspace (Slice 9B.4), now composed
+  // from the shared editor primitives (Slice 9B.5): the record list marks
+  // this item selected and keeps the active search applied for quick
+  // switching; every field, redirect, and server action is unchanged —
+  // only the presentation moved into EditorHeader/Tabs/Panels/Actions.
   return (
     <ItemWorkspace
       rawQuery={q}
       selectedSlug={item.slug}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
-            title="Edit Item"
-            description={`Update details for "${item.name}".`}
-          />
-
-          <nav className="admin-toolbar" aria-label="Item edit">
-            <a
-              href={withItemSearchQuery("/admin/items", query)}
-              className="link-accent"
-            >
-              &larr; Back to Item Management
-            </a>
-
-            <span className="row-actions">
+          <EditorHeader
+            title={item.name}
+            subtitle={item.slug}
+            backHref={withItemSearchQuery("/admin/items", query)}
+            backLabel="Back to Item Management"
+            actions={
               <a
                 href={`/admin/items/${item.slug}/sources`}
                 className="link-accent"
               >
                 Manage acquisition sources
               </a>
+            }
+          />
 
-              {/* The record table that used to carry per-row Delete links
-                  is gone; the confirmation route is reached from here. */}
-              <a
-                href={itemDeleteHref(item.slug, query)}
-                className="link-danger"
-              >
-                Delete
-              </a>
-            </span>
-          </nav>
+          <EditorTabs label="Item editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
@@ -126,8 +133,84 @@ export default async function EditItemPage({
           ) : null}
         </>
       }
+      aside={
+        <>
+          <ImagePanel>
+            {imageUrl ? (
+              <div style={{ position: "relative", justifySelf: "start" }}>
+                <input
+                  type="checkbox"
+                  name="removeImage"
+                  id="removeImage"
+                  form={ITEM_EDIT_FORM_ID}
+                  className="admin-image-remove-checkbox"
+                />
+                <div className="admin-image-remove-frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
+                  <img
+                    src={imageUrl}
+                    alt={`Current image for ${item.name}`}
+                    style={{
+                      maxWidth: "128px",
+                      height: "auto",
+                      border: `1px solid ${designTokens.colors.border}`,
+                      borderRadius: designTokens.radius.sm,
+                      background: designTokens.colors.surface,
+                      padding: "8px",
+                      display: "block",
+                    }}
+                  />
+                  <label
+                    htmlFor="removeImage"
+                    title="Remove current image"
+                    className="admin-image-remove-toggle"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                    <span className="admin-image-remove-hidden-text">
+                      Remove current image
+                    </span>
+                  </label>
+                </div>
+                <p className="admin-image-remove-note">
+                  Image will be removed when saved.
+                </p>
+              </div>
+            ) : (
+              <span className="form-field-label">No image uploaded.</span>
+            )}
+
+            <label className="form-field">
+              <span className="form-field-label">
+                {item.image
+                  ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
+                  : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
+              </span>
+              <input
+                type="file"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+                form={ITEM_EDIT_FORM_ID}
+                className="form-input"
+              />
+            </label>
+          </ImagePanel>
+
+          <VerificationPanel
+            gameVersions={gameVersions}
+            verifiedAt={item.verifiedAt}
+            verifiedGameVersion={item.verifiedGameVersion}
+            formId={ITEM_EDIT_FORM_ID}
+          />
+
+          <TimestampsPanel
+            createdAt={item.createdAt}
+            updatedAt={item.updatedAt}
+            verifiedAt={item.verifiedAt}
+          />
+        </>
+      }
     >
-      <form action={updateItemAction} className="form-grid">
+      <form id={ITEM_EDIT_FORM_ID} action={updateItemAction} className="form-grid">
         <input type="hidden" name="id" value={item.id} />
         <input type="hidden" name="originalSlug" value={item.slug} />
 
@@ -203,141 +286,12 @@ export default async function EditItemPage({
           />
         </label>
 
-        <div className="form-field">
-          <span className="form-field-label">Current image</span>
-          {imageUrl ? (
-            <div style={{ position: "relative", justifySelf: "start" }}>
-              <style>{`
-                .remove-image-checkbox,
-                .remove-image-hidden-text {
-                  position: absolute;
-                  width: 1px;
-                  height: 1px;
-                  margin: -1px;
-                  padding: 0;
-                  overflow: hidden;
-                  clip: rect(0 0 0 0);
-                  white-space: nowrap;
-                  border: 0;
-                }
-                .remove-image-frame {
-                  position: relative;
-                  display: inline-block;
-                }
-                .remove-image-toggle {
-                  position: absolute;
-                  top: 4px;
-                  right: 4px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  width: 22px;
-                  height: 22px;
-                  border-radius: 9999px;
-                  background: ${designTokens.colors.danger};
-                  color: ${designTokens.colors.background};
-                  font-size: 14px;
-                  font-weight: 700;
-                  line-height: 1;
-                  cursor: pointer;
-                  user-select: none;
-                }
-                .remove-image-checkbox:focus-visible ~ .remove-image-frame .remove-image-toggle {
-                  outline: 2px solid ${designTokens.colors.accent};
-                  outline-offset: 2px;
-                }
-                .remove-image-checkbox:checked ~ .remove-image-frame img {
-                  opacity: 0.35;
-                }
-                .remove-image-note {
-                  display: none;
-                  margin: 6px 0 0;
-                  color: ${designTokens.colors.danger};
-                }
-                .remove-image-checkbox:checked ~ .remove-image-note {
-                  display: block;
-                }
-              `}</style>
-              <input
-                type="checkbox"
-                name="removeImage"
-                id="removeImage"
-                className="remove-image-checkbox"
-              />
-              <div className="remove-image-frame">
-                {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
-                <img
-                  src={imageUrl}
-                  alt={`Current image for ${item.name}`}
-                  style={{
-                    maxWidth: "128px",
-                    height: "auto",
-                    border: `1px solid ${designTokens.colors.border}`,
-                    borderRadius: designTokens.radius.sm,
-                    background: designTokens.colors.surface,
-                    padding: "8px",
-                    display: "block",
-                  }}
-                />
-                <label
-                  htmlFor="removeImage"
-                  title="Remove current image"
-                  className="remove-image-toggle"
-                >
-                  <span aria-hidden="true">&times;</span>
-                  <span className="remove-image-hidden-text">
-                    Remove current image
-                  </span>
-                </label>
-              </div>
-              <p className="remove-image-note">
-                Image will be removed when saved.
-              </p>
-            </div>
-          ) : (
-            <span className="form-field-label">No image uploaded.</span>
-          )}
-        </div>
-
-        <label className="form-field">
-          <span className="form-field-label">
-            {item.image
-              ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
-              : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
-          </span>
-          <input
-            type="file"
-            name="image"
-            accept="image/png,image/jpeg,image/webp"
-            className="form-input"
-          />
-        </label>
-
-        {/* Admin-only verification status (public pages never show it).
-            Rendered only when BOTH fields are populated — never as an
-            empty row; the stable YYYY-MM-DD date never depends on the
-            server locale. */}
-        {item.verifiedAt && item.verifiedGameVersion ? (
-          <p className="text-muted">
-            Gameplay data verified for {item.verifiedGameVersion.name} on{" "}
-            {item.verifiedAt.toISOString().slice(0, 10)}.
-          </p>
-        ) : null}
-
-        <GameVersionVerificationControls gameVersions={gameVersions} />
-
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Save Changes
-          </button>
-
-          <a
-            href={withItemSearchQuery("/admin/items", query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Save item"
+          cancelHref={withItemSearchQuery("/admin/items", query)}
+          deleteHref={itemDeleteHref(item.slug, query)}
+          deleteLabel="Delete item"
+        />
       </form>
     </ItemWorkspace>
   );

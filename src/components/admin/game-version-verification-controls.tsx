@@ -20,10 +20,18 @@ export type GameVersionPickerOption = {
 
 type GameVersionVerificationControlsProps = {
   gameVersions: GameVersionPickerOption[];
+  /** Associates the picker and checkbox with a <form> element elsewhere
+      in the document (the standard HTML `form` attribute) — needed when
+      these controls render inside a contextual side panel that sits
+      outside the resource's own <form> (e.g. VerificationPanel in an
+      editor's aside column). Omitted when rendered as a normal form
+      descendant, exactly as before. */
+  formId?: string;
 };
 
 export function GameVersionVerificationControls({
   gameVersions,
+  formId,
 }: GameVersionVerificationControlsProps) {
   // Without any versions there is nothing to verify against: say so
   // plainly and point at the existing settings destination instead of
@@ -56,6 +64,7 @@ export function GameVersionVerificationControls({
         <select
           name="verifiedGameVersionId"
           defaultValue={currentVersion?.id ?? ""}
+          form={formId}
           className="form-input"
         >
           {!currentVersion ? (
@@ -75,7 +84,7 @@ export function GameVersionVerificationControls({
           server-validated selection, and an unchecked box leaves existing
           verification metadata untouched no matter what the picker says. */}
       <label className="form-checkbox-field">
-        <input type="checkbox" name="markVerified" />
+        <input type="checkbox" name="markVerified" form={formId} />
         <span>Mark gameplay data as verified for the selected game version.</span>
       </label>
     </>

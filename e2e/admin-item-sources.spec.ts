@@ -64,7 +64,7 @@ async function createTemporaryItem(page: Page, data: { name: string; slug: strin
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
-  await page.getByRole("button", { name: "Create Item", exact: true }).click();
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
 }
 

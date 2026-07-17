@@ -469,6 +469,9 @@ input[type="checkbox"] {
 .admin-workspace-aside {
   flex: 0 0 280px;
   min-width: 0;
+  display: grid;
+  gap: 16px;
+  align-content: start;
 }
 
 /* ---- Admin editor primitives (Slice 9B.2) -----------------------------
@@ -565,6 +568,17 @@ input[type="checkbox"] {
   font-weight: 700;
 }
 
+/* A tab whose destination doesn't exist yet (Slice 9B.5): inert text,
+   never a link, so it can never be clicked or focused into a dead page. */
+.admin-tab-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-tab-disabled:hover {
+  color: var(--color-text-muted);
+}
+
 /* Contextual panel/card: the right-column building block for image,
    verification, and timestamp content. */
 .admin-panel {
@@ -650,6 +664,70 @@ input[type="checkbox"] {
 
 .admin-image-panel-body input[type="file"]::file-selector-button {
   cursor: pointer;
+}
+
+/* Remove-current-image toggle (Slice 9B.5, migrated from the Item edit
+   page's former inline <style> block — same behavior, shared class names
+   so any future ImagePanel adopter can reuse it unchanged). The checkbox
+   itself is visually hidden (screen-reader pattern); its sibling label
+   is the visible round toggle, and checking it dims the preview and
+   reveals the confirmation note via the sibling combinator. */
+.admin-image-remove-checkbox,
+.admin-image-remove-hidden-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-image-remove-frame {
+  position: relative;
+  display: inline-block;
+}
+
+.admin-image-remove-toggle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--color-danger);
+  color: var(--color-background);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.admin-image-remove-checkbox:focus-visible
+  ~ .admin-image-remove-frame
+  .admin-image-remove-toggle {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.admin-image-remove-checkbox:checked ~ .admin-image-remove-frame img {
+  opacity: 0.35;
+}
+
+.admin-image-remove-note {
+  display: none;
+  margin: 6px 0 0;
+  color: var(--color-danger);
+}
+
+.admin-image-remove-checkbox:checked ~ .admin-image-remove-note {
+  display: block;
 }
 
 /* Sticky editor actions: pinned to the bottom of the scrolling content

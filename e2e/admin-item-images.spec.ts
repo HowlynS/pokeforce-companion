@@ -100,7 +100,7 @@ async function createItemWithImage(
     .getByRole("combobox", { name: "Category", exact: true })
     .selectOption({ label: "Materials" });
   await page.getByLabel(/^Image \(optional/).setInputFiles(imageFile);
-  await page.getByRole("button", { name: "Create Item", exact: true }).click();
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=created");
   await expect(page.getByRole("status")).toHaveText("Item created.");
@@ -162,7 +162,7 @@ test("replacing the image stores a new object and removes the old one", async ({
   await page
     .getByLabel(/^Replacement image \(optional/)
     .setInputFiles(WEBP_FIXTURE);
-  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await page.getByRole("button", { name: "Save item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=updated");
   await expect(page.getByRole("status")).toHaveText("Item updated.");
@@ -211,7 +211,7 @@ test("removing the image clears the row, deletes the object, and restores the fa
   await expect(
     page.getByText("Image will be removed when saved.")
   ).toBeVisible();
-  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await page.getByRole("button", { name: "Save item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=updated");
   await expect(page.getByRole("status")).toHaveText("Item updated.");
@@ -239,7 +239,7 @@ test("an unsupported file type is rejected and nothing is written", async ({
   // setInputFiles bypasses the accept picker hint (which is not
   // validation), so the submission reaches the server-side type check.
   await page.getByLabel(/^Image \(optional/).setInputFiles(TEXT_FIXTURE);
-  await page.getByRole("button", { name: "Create Item", exact: true }).click();
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items/new?error=invalid_image_type");
   await expect(
@@ -275,7 +275,7 @@ test("an oversized image is rejected and nothing is written", async ({
     await page.getByLabel(/^Slug/).fill("test-e2e-item-image-oversized");
     await page.getByLabel(/^Image \(optional/).setInputFiles(oversizedPath);
     await page
-      .getByRole("button", { name: "Create Item", exact: true })
+      .getByRole("button", { name: "Create item", exact: true })
       .click();
 
     await expect(page).toHaveURL("/admin/items/new?error=image_too_large");

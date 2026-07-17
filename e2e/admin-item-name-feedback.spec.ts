@@ -135,7 +135,7 @@ test("a duplicate submission remains rejected by the authoritative server check"
   // case-insensitive duplicate exactly as before.
   await nameInput(page).fill("  iRoN oRe  ");
   await expect(feedback(page)).toHaveText(TAKEN_TEXT);
-  await page.getByRole("button", { name: "Create Item", exact: true }).click();
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items/new?error=duplicate_name");
   await expect(
@@ -165,7 +165,7 @@ test("the feedback region is accessible and works with keyboard input", async ({
 
   // The submit button is never disabled by the feedback.
   await expect(
-    page.getByRole("button", { name: "Create Item", exact: true })
+    page.getByRole("button", { name: "Create item", exact: true })
   ).toBeEnabled();
 });
 

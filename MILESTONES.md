@@ -347,7 +347,9 @@ Version picker on every verification form); Slice 9B.1 (shared admin
 shell and persistent navigation) complete; Slice 9B.2 (shared admin
 editor primitives) complete; Slice 9B.3 (shared searchable record-list
 foundation) complete; Slice 9B.4 (Item workspace routes, record list,
-and quick switching) complete; Slice 9B.5 and later slices not started
+and quick switching) complete; Slice 9B.5 (Item General editor) complete
+for the General tab — Acquisition Sources, Used in Recipes, and Metadata
+tab content remain pending; later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -573,13 +575,47 @@ workspace.
       with `q` preserved, and selected-state movement;
       `/admin/items/new` added to the protection spec
 
+### Slice 9B.5 — Item General editor (complete for General, 2026-07-17)
+
+- [x] `/admin/items/new` and `/admin/items/[slug]/edit` are composed from
+      the shared editor primitives instead of `PageHeader` and a plain
+      form: `EditorHeader` (one h1 — "Create item" on create, the item's
+      own name on edit, with slug as subtitle and "Manage acquisition
+      sources" as a header action), `EditorTabs` (General active; every
+      existing core field lives there unchanged), `ImagePanel`,
+      `VerificationPanel`, `TimestampsPanel` (edit only), and sticky
+      `EditorActions`
+- [x] Tabs: on create, only General is shown (the other sections
+      describe relations that cannot exist before the record does); on
+      edit, Acquisition Sources/Used in Recipes/Metadata render as inert
+      placeholders via a new optional `disabled` field on the shared
+      `EditorTab` type — never links to empty pages
+- [x] `ImagePanel`/`VerificationPanel` render in the workspace's aside
+      column, outside the resource's own `<form>`; their inputs
+      associate with the form via the standard HTML `form` attribute (a
+      new optional `formId` prop on `VerificationPanel` and
+      `GameVersionVerificationControls`) — ordinary HTML submission, no
+      client-side mutation code
+- [x] The former inline "Gameplay data verified…" sentence is replaced
+      by `VerificationPanel`'s shared status badge and Verified
+      against/Verified on rows; the remove-current-image toggle's inline
+      `<style>` block moved to `globals.css` as shared classes
+- [x] Every redirect, server action, validation rule, image behavior,
+      verification rule, and name-availability check is unchanged — only
+      the presentation moved
+- [x] Tests: component coverage for the disabled-tab rendering and the
+      `formId` forwarding; the Item E2E suites (lifecycle, images,
+      name-feedback, sources, how-to-obtain) updated for the new
+      headings, button labels, and verification-panel markup
+- [ ] Acquisition Sources tab content, Used in Recipes tab content, and
+      Metadata tab content beyond `TimestampsPanel` remain unimplemented
+
 ### Remaining (not started)
 
-- [ ] Slice 9B.5 and later Milestone 9 work (the full Item editor
-      redesign — tabs, image/verification/timestamps panels, sticky
-      actions, sources integration — the other resource workspaces, and
-      dashboard summaries) — do not begin until explicitly instructed in
-      the milestone conversation
+- [ ] The rest of Slice 9B.5 (the three deferred tabs' actual content),
+      every other resource workspace conversion, dashboard summaries,
+      and Route Hubs — do not begin until explicitly instructed in the
+      milestone conversation
 
 ---
 

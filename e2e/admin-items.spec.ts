@@ -138,11 +138,23 @@ async function createMinimalItemThroughForm(
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
-  await page.getByRole("button", { name: "Create Item", exact: true }).click();
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=created");
   await expect(page.getByRole("status")).toHaveText("Item created.");
   await expect(recordRow(page, data.name)).toBeVisible();
+}
+
+// One of the shared VerificationPanel's rows inside the Item edit page's
+// aside column, located by its label (dt) text — scoped to the panel so
+// "Current version" and "Verified against" can never collide when both
+// happen to show the same Game Version name.
+function verificationRow(page: Page, label: string) {
+  return page
+    .locator(".admin-panel")
+    .filter({ has: page.getByRole("heading", { level: 2, name: "Verification", exact: true }) })
+    .locator(".admin-panel-row")
+    .filter({ hasText: label });
 }
 
 test("authenticated item admin access uses the saved storage state", async ({
@@ -162,7 +174,7 @@ test("authenticated item admin access uses the saved storage state", async ({
     page.getByRole("link", { name: "+ New item", exact: true })
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Create Item", exact: true })
+    page.getByRole("button", { name: "Create item", exact: true })
   ).toHaveCount(0);
 
   // Seeded items appear as record-list rows.
@@ -186,7 +198,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await page.getByRole("link", { name: "+ New item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items/new");
   await expect(
-    page.getByRole("heading", { level: 1, name: "Create Item" })
+    page.getByRole("heading", { level: 1, name: "Create item" })
   ).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(INITIAL.name);
@@ -203,7 +215,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   // The verification checkbox must render unchecked by default and stays
   // untouched here: a normal create must leave verification fields NULL.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
-  await page.getByRole("button", { name: "Create Item", exact: true }).click();
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=created");
   await expect(page.getByRole("status")).toHaveText("Item created.");
@@ -260,16 +272,35 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await page.goto("/admin/items");
   await recordRow(page, INITIAL.name).click();
   await expect(page).toHaveURL(`/admin/items/${INITIAL.slug}/edit`);
+  // The editor's one h1 is the item's own name; its slug is the subtitle
+  // context underneath (Slice 9B.5).
   await expect(
-    page.getByRole("heading", { level: 1, name: "Edit Item" })
+    page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
-  await expect(
-    page.getByText(`Update details for "${INITIAL.name}".`)
-  ).toBeVisible();
+  await expect(page.getByText(INITIAL.slug, { exact: true })).toBeVisible();
   await expect(recordRow(page, INITIAL.name)).toHaveAttribute(
     "aria-current",
     "page"
   );
+  // General is the only implemented tab, active, and the three deferred
+  // tabs render as inert, non-navigable placeholders — never links to
+  // empty pages.
+  const tabNav = page.getByRole("navigation", { name: "Item editor sections" });
+  await expect(
+    tabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  for (const deferredTab of [
+    "Acquisition Sources",
+    "Used in Recipes",
+    "Metadata",
+  ]) {
+    await expect(
+      tabNav.getByText(deferredTab, { exact: true })
+    ).toHaveAttribute("aria-disabled", "true");
+    await expect(
+      tabNav.getByRole("link", { name: deferredTab, exact: true })
+    ).toHaveCount(0);
+  }
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);
@@ -283,7 +314,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   // Unchecked by default on the edit form too, and left untouched: this
   // normal edit must not stamp verification metadata.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
-  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await page.getByRole("button", { name: "Save item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=updated");
   await expect(page.getByRole("status")).toHaveText("Item updated.");
@@ -314,7 +345,8 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   ).toBeVisible();
   // The normal edit above never touched the verification checkbox, so the
   // item must still render as unverified.
-  await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
+  await page.goto(`/admin/items/${EDITED.slug}/edit`);
+  await expect(verificationRow(page, "Verified against")).toHaveCount(0);
 
   await page.goto("/items");
   const editedCard = cardLink(page, EDITED.name);
@@ -327,7 +359,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await page.goto("/admin/items");
   await recordRow(page, EDITED.name).click();
   await expect(page).toHaveURL(`/admin/items/${EDITED.slug}/edit`);
-  await page.getByRole("link", { name: "Delete", exact: true }).click();
+  await page.getByRole("link", { name: "Delete item", exact: true }).click();
   await expect(page).toHaveURL(`/admin/items/${EDITED.slug}/delete`);
   await expect(
     page.getByRole("heading", { level: 1, name: "Delete Item" })
@@ -370,8 +402,13 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   ).toBeVisible();
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
-  // --- The picker lists versions and defaults to the current one --------
+  // --- The shared VerificationPanel shows Unverified with no stamp rows,
+  // and the picker lists versions and defaults to the current one -------
   await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
+  await expect(
+    page.locator(".admin-status-badge", { hasText: "Unverified" })
+  ).toBeVisible();
+  await expect(verificationRow(page, "Verified against")).toHaveCount(0);
   const picker = page.getByLabel("Game version to verify against");
   await expect(
     picker.locator("option:checked"),
@@ -385,17 +422,22 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
-  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await page.getByRole("button", { name: "Save item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=updated");
 
   // The admin edit page shows the stamp carrying the preselected current
-  // Game Version, resolved and validated server-side.
+  // Game Version, resolved and validated server-side, classified as
+  // verified-for-the-current-version by the shared panel.
   await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
-  const verificationLine = page.getByText(
-    `Gameplay data verified for ${CURRENT_VERSION_NAME} on`
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+  await expect(verificationRow(page, "Verified against")).toContainText(
+    CURRENT_VERSION_NAME
   );
-  await expect(verificationLine).toBeVisible();
-  const stampedText = await verificationLine.textContent();
+  const stampedDateText = await verificationRow(page, "Verified on").textContent();
 
   // Verification is admin-only since Slice 9A: the PUBLIC page must not
   // render it even for a verified item.
@@ -416,31 +458,42 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await page
     .getByLabel(/^Description/)
     .fill("Edited without touching verification.");
-  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await page.getByRole("button", { name: "Save item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=updated");
 
   await page.goto(`/items/${VERIFY_ITEM.slug}`);
   await expect(page.getByText("Edited without touching verification.")).toBeVisible();
 
   await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
-  const preservedLine = page.getByText(
-    `Gameplay data verified for ${CURRENT_VERSION_NAME} on`
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+  await expect(verificationRow(page, "Verified against")).toContainText(
+    CURRENT_VERSION_NAME
   );
-  await expect(preservedLine).toBeVisible();
-  expect(await preservedLine.textContent()).toBe(stampedText);
+  expect(await verificationRow(page, "Verified on").textContent()).toBe(
+    stampedDateText
+  );
 
   // --- Verifying against a SELECTED historical version ------------------
   await page
     .getByLabel("Game version to verify against")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
-  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await page.getByRole("button", { name: "Save item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=updated");
 
   await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
   await expect(
-    page.getByText(`Gameplay data verified for ${HISTORICAL_VERSION_NAME} on`)
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — older version",
+    })
   ).toBeVisible();
+  await expect(verificationRow(page, "Verified against")).toContainText(
+    HISTORICAL_VERSION_NAME
+  );
 
   // The historical stamp stays admin-only on the public page too.
   await page.goto(`/items/${VERIFY_ITEM.slug}`);
@@ -459,7 +512,7 @@ test("creating an item with a seeded name is rejected server-side", async ({
   // prefix so cleanup would catch the row if creation ever slipped through.
   await page.getByLabel("Name", { exact: true }).fill("  iron ore  ");
   await page.getByLabel(/^Slug/).fill("test-e2e-item-duplicate");
-  await page.getByRole("button", { name: "Create Item", exact: true }).click();
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
 
   // Rejections land back on the creation page, where the form lives.
   await expect(page).toHaveURL("/admin/items/new?error=duplicate_name");
@@ -473,7 +526,7 @@ test("creating an item with a seeded name is rejected server-side", async ({
 
   // Back on a safe form state, and nothing was written.
   await expect(
-    page.getByRole("button", { name: "Create Item", exact: true })
+    page.getByRole("button", { name: "Create item", exact: true })
   ).toBeVisible();
   expect(await countE2eTestItemRecords()).toBe(0);
 });

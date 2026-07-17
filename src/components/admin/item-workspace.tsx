@@ -26,11 +26,16 @@ type ItemWorkspaceProps = {
   /** Slug of the item open in the editor (edit/delete routes) — marks
       the selected row. Landing and create pages pass nothing. */
   selectedSlug?: string;
-  /** The page's header region: PageHeader plus toolbar/banners. */
+  /** The page's header region: EditorHeader/PageHeader plus tabs and
+      toolbar/banners. */
   header: React.ReactNode;
   /** The page's main content (guidance state, create form, edit form,
       or delete confirmation). */
   children: React.ReactNode;
+  /** Optional contextual side panel (Slice 9B.5: image, verification,
+      timestamps) — passed straight through to AdminWorkspace's aside
+      slot. Absent on the landing and delete-confirmation pages. */
+  aside?: React.ReactNode;
 };
 
 export async function ItemWorkspace({
@@ -38,6 +43,7 @@ export async function ItemWorkspace({
   selectedSlug,
   header,
   children,
+  aside,
 }: ItemWorkspaceProps) {
   const query = normalizeItemSearchQuery(rawQuery);
 
@@ -71,6 +77,7 @@ export async function ItemWorkspace({
   return (
     <AdminWorkspace
       header={header}
+      aside={aside}
       recordList={
         <RecordList
           label="Items"

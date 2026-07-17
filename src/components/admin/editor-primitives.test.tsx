@@ -96,6 +96,25 @@ describe("EditorTabs", () => {
 
     expect(html).toContain('href="?tab=details"');
   });
+
+  it("renders a disabled tab as inert text, never a link", () => {
+    const html = renderToStaticMarkup(
+      <EditorTabs
+        label="Item editor sections"
+        tabs={[
+          { label: "General", href: "/admin/items/iron-ore/edit", active: true },
+          { label: "Acquisition Sources", href: "", active: false, disabled: true },
+        ]}
+      />
+    );
+
+    expect(html).toContain('aria-disabled="true"');
+    expect(html).toContain("Acquisition Sources");
+    // Exactly one <a>, for the active/enabled tab — the disabled tab is a
+    // <span>, never an anchor a reader could click into an empty page.
+    expect(html.match(/<a /g)).toHaveLength(1);
+    expect(html).toMatch(/<span[^>]*aria-disabled="true"[^>]*>Acquisition Sources<\/span>/);
+  });
 });
 
 describe("ContextPanel", () => {
@@ -241,6 +260,32 @@ describe("VerificationPanel", () => {
     // The current version is preselected in the picker, exactly as the
     // shared control has always behaved.
     expect(html).toContain('selected=""');
+  });
+
+  it("associates the composed picker and checkbox with an external form when rendered outside it", () => {
+    const html = renderToStaticMarkup(
+      <VerificationPanel
+        gameVersions={versions}
+        verifiedAt={null}
+        verifiedGameVersion={null}
+        formId="item-edit-form"
+      />
+    );
+
+    expect(html).toMatch(/<select[^>]*form="item-edit-form"[^>]*>/);
+    expect(html).toMatch(/<input[^>]*form="item-edit-form"[^>]*name="markVerified"[^>]*>/);
+  });
+
+  it("omits the form attribute when no formId is supplied (rendered as a normal form descendant)", () => {
+    const html = renderToStaticMarkup(
+      <VerificationPanel
+        gameVersions={versions}
+        verifiedAt={null}
+        verifiedGameVersion={null}
+      />
+    );
+
+    expect(html).not.toContain("form=");
   });
 });
 

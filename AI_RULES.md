@@ -26,9 +26,11 @@ Slice 9B.3 (shared searchable record-list foundation) is complete: the resource-
 
 Slice 9B.4 (Item workspace adoption) is complete: `/admin/items` is the searchable record-list landing, `/admin/items/new` the dedicated creation route, and Item edit/delete render inside the workspace with URL-driven (`?q=`) server-rendered search and quick switching. Item forms, CRUD actions, images, and verification behavior are unchanged; the full Item editor redesign (tabs/panels/sticky actions) is still pending.
 
-Slice 9B.5 and later Milestone 9 work have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+Slice 9B.5 (Item General editor) is complete: `/admin/items/new` and `/admin/items/[slug]/edit` now compose the shared editor primitives — `EditorHeader` (one h1: "Create item" or the item's own name), `EditorTabs` (General active; on edit, Acquisition Sources/Used in Recipes/Metadata render as inert disabled placeholders, never links to empty pages; on create, only General is shown), `ImagePanel`, `VerificationPanel`, `TimestampsPanel` (edit only), and sticky `EditorActions` ("Create item"/"Save item", Cancel, and on edit a "Delete item" link to the existing confirmation route). Every Item field, redirect, server action, image behavior, verification rule, and name-availability check is unchanged — only the presentation moved. Acquisition Sources tab content, Used in Recipes tab content, and Metadata tab content beyond `TimestampsPanel` remain unimplemented. No other resource workspace was converted.
 
-Do not begin Slice 9B.5+, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
+The rest of Slice 9B.5 (Acquisition Sources tab content, Used in Recipes tab content, Metadata tab content beyond `TimestampsPanel`), every other resource workspace conversion, dashboard summaries, and Route Hubs remain unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+
+Do not begin the remaining Slice 9B.5 tab content, any other resource workspace, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 

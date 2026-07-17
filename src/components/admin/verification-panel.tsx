@@ -25,6 +25,9 @@ type VerificationPanelProps = {
   /** The record's verification stamp (both null when unverified). */
   verifiedAt: Date | null;
   verifiedGameVersion: { id: string; name: string } | null;
+  /** Forwarded to the composed controls — needed when this panel renders
+      in an editor's aside column, outside the resource's own <form>. */
+  formId?: string;
 };
 
 const STATUS_BADGE_CLASSES = {
@@ -37,6 +40,7 @@ export function VerificationPanel({
   gameVersions,
   verifiedAt,
   verifiedGameVersion,
+  formId,
 }: VerificationPanelProps) {
   const currentVersion = gameVersions.find((version) => version.isCurrent);
 
@@ -77,7 +81,10 @@ export function VerificationPanel({
         ) : null}
       </dl>
 
-      <GameVersionVerificationControls gameVersions={gameVersions} />
+      <GameVersionVerificationControls
+        gameVersions={gameVersions}
+        formId={formId}
+      />
     </ContextPanel>
   );
 }
