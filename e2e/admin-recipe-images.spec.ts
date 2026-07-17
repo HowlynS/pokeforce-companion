@@ -75,11 +75,14 @@ test.afterAll(async () => {
   expect(remaining).toBe(0);
 });
 
-// The admin table row for a recipe, located by its exact Name cell.
-function adminRow(page: Page, name: string) {
+// One row of the shared Recipe record list (Slice 9C.1), located by its
+// exact primary text inside the list's navigation landmark. The row link
+// itself opens the edit route.
+function recordRow(page: Page, name: string) {
   return page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name, exact: true }) });
+    .getByRole("navigation", { name: "Recipes records" })
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
 // The five fixed ingredient rows live inside one fieldset; its legend gives
@@ -107,17 +110,17 @@ async function expectRenderedImage(page: Page, alt: string) {
     .toBeGreaterThan(0);
 }
 
-// Fills the create form on /admin/recipes with the minimum valid Recipe:
-// seeded resulting item, no profession, no required level, and one seeded
-// ingredient row. The image input is filled with the given file when one is
-// provided; submission is left to the caller, since the rejection tests
-// expect an error state rather than success.
+// Fills the create form on /admin/recipes/new with the minimum valid
+// Recipe: seeded resulting item, no profession, no required level, and
+// one seeded ingredient row. The image input is filled with the given
+// file when one is provided; submission is left to the caller, since the
+// rejection tests expect an error state rather than success.
 async function fillMinimalRecipeForm(
   page: Page,
   data: { name: string; slug: string },
   imageFile: string | null
 ) {
-  await page.goto("/admin/recipes");
+  await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
   await page
@@ -147,9 +150,7 @@ async function createRecipeWithImage(
 
   await expect(page).toHaveURL("/admin/recipes?success=created");
   await expect(page.getByRole("status")).toHaveText("Recipe created.");
-  await expect(
-    page.getByRole("cell", { name: data.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, data.name)).toBeVisible();
 }
 
 test("creating a recipe with a valid PNG stores, serves, and renders it", async ({
@@ -328,7 +329,7 @@ test("an unsupported file type is rejected and nothing is written", async ({
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?error=invalid_image_type");
+  await expect(page).toHaveURL("/admin/recipes/new?error=invalid_image_type");
   await expect(
     page
       .getByRole("alert")
@@ -368,7 +369,7 @@ test("an oversized image is rejected and nothing is written", async ({
       .getByRole("button", { name: "Create Recipe", exact: true })
       .click();
 
-    await expect(page).toHaveURL("/admin/recipes?error=image_too_large");
+    await expect(page).toHaveURL("/admin/recipes/new?error=image_too_large");
     await expect(
       page
         .getByRole("alert")
@@ -399,9 +400,11 @@ test("deleting the recipe also deletes its stored image object and cascades its 
 
   // Real confirmation flow; the plain "Recipe deleted." message also proves
   // the image cleanup succeeded (a failed cleanup uses a distinct message).
-  await adminRow(page, RECIPE.name)
-    .getByRole("link", { name: "Delete" })
-    .click();
+  // Delete is reached from the edit page's toolbar (the old table's
+  // per-row Delete link is gone).
+  await recordRow(page, RECIPE.name).click();
+  await expect(page).toHaveURL(`/admin/recipes/${RECIPE.slug}/edit`);
+  await page.getByRole("link", { name: "Delete Recipe", exact: true }).click();
   await expect(page).toHaveURL(`/admin/recipes/${RECIPE.slug}/delete`);
   await page
     .getByRole("button", { name: "Delete Permanently", exact: true })
@@ -409,9 +412,7 @@ test("deleting the recipe also deletes its stored image object and cascades its 
 
   await expect(page).toHaveURL("/admin/recipes?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Recipe deleted.");
-  await expect(
-    page.getByRole("cell", { name: RECIPE.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, RECIPE.name)).toHaveCount(0);
 
   // The row is gone, its ingredient rows fell to the cascade (seeded
   // ingredient rows are untouched), and so is its exact Storage object.

@@ -1424,3 +1424,47 @@ Alternatives considered:
   picker and an unchecked mutation checkbox with no form to submit
   into, directly violating the "no mutation control" requirement rather
   than merely making it inert.
+
+---
+
+### 2026-07-18 — Slice 9C.1: Recipe's "Delete" link moves to the edit page's toolbar, outside the ingredient-count guard
+
+Decision:
+
+Adopting the shared record list for Recipes removes the old admin
+table's per-row Edit/Delete actions — the record-list row link now IS
+the edit route, matching the Item precedent. That leaves no per-row way
+to reach `/admin/recipes/[slug]/delete`, so a "Delete Recipe" link was
+added to the Recipe edit page. Critically, it was placed in the page's
+top toolbar (alongside "Back to Recipe Management"), OUTSIDE the
+existing `tooManyIngredients` conditional that hides the entire edit
+form (and its "Save Changes" button) for a recipe carrying more
+ingredient rows than the fixed form supports. Had the Delete link been
+added inside the form's own `form-actions` row instead (the more
+"obvious" spot, next to Save Changes), a six-plus-ingredient recipe
+would have become UNDELETABLE through the admin UI — a real regression
+the navigation-only move would otherwise have silently introduced,
+since the old admin table's Delete link never depended on the edit
+form being renderable at all.
+
+Reason:
+
+The task requires every existing Recipe behavior — including deletion
+protections — to survive this navigation-foundation pass unchanged.
+Deletion has no relationship to the ingredient-count guard (deleting a
+Recipe doesn't touch its ingredient ROWS' shape, `deleteRecipeAction`
+always runs the same unconditional `prisma.recipe.delete`), so nothing
+about the guard should have been able to affect whether deletion stays
+reachable. A new E2E assertion in `admin-recipes.spec.ts` (the
+"guards larger recipes" test) now explicitly proves the Delete Recipe
+link stays visible in the too-many-ingredients state.
+
+Alternatives considered:
+
+- Delete link inside `form-actions`, next to Save Changes — rejected
+  for the reason above: it would have been silently removed exactly
+  when a recipe most needs to be deletable (a data shape the form
+  can't safely edit).
+- A separate always-rendered delete confirmation link within the
+  `tooManyIngredients` error banner itself — rejected as more visual
+  clutter than a single toolbar link achieves the same guarantee with.

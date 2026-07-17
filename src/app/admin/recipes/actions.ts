@@ -59,13 +59,13 @@ export async function createRecipeAction(formData: FormData) {
   const parsed = parseRecipeInput(formData);
 
   if (!parsed.ok) {
-    redirect(`/admin/recipes?error=${parsed.error}`);
+    redirect(`/admin/recipes/new?error=${parsed.error}`);
   }
 
   // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
   // live availability feedback queries, so the two can never disagree.
   if (await isRecipeNameTaken(prisma, parsed.value.name)) {
-    redirect("/admin/recipes?error=duplicate_name");
+    redirect("/admin/recipes/new?error=duplicate_name");
   }
 
   // Every submitted relation ID is verified server-side before the write —
@@ -76,7 +76,7 @@ export async function createRecipeAction(formData: FormData) {
   });
 
   if (!resultingItem) {
-    redirect("/admin/recipes?error=invalid_resulting_item");
+    redirect("/admin/recipes/new?error=invalid_resulting_item");
   }
 
   let profession = null;
@@ -87,7 +87,7 @@ export async function createRecipeAction(formData: FormData) {
     });
 
     if (!profession) {
-      redirect("/admin/recipes?error=invalid_profession");
+      redirect("/admin/recipes/new?error=invalid_profession");
     }
   }
 
@@ -99,7 +99,7 @@ export async function createRecipeAction(formData: FormData) {
   });
 
   if (ingredientItems.length !== ingredientItemIds.length) {
-    redirect("/admin/recipes?error=invalid_ingredient_item");
+    redirect("/admin/recipes/new?error=invalid_ingredient_item");
   }
 
   // Resolved before any upload so a missing current Game Version rejects
@@ -111,7 +111,7 @@ export async function createRecipeAction(formData: FormData) {
   const verification = await resolveVerificationStamp(prisma, formData);
 
   if (verification.failed) {
-    redirect(`/admin/recipes?error=${verification.error}`);
+    redirect(`/admin/recipes/new?error=${verification.error}`);
   }
 
   // The optional image is uploaded only after every field and relation
@@ -124,13 +124,13 @@ export async function createRecipeAction(formData: FormData) {
     const imageValidation = validateImageFile(imageFile);
 
     if (!imageValidation.ok) {
-      redirect(`/admin/recipes?error=${imageValidation.error}`);
+      redirect(`/admin/recipes/new?error=${imageValidation.error}`);
     }
 
     try {
       imagePath = await uploadImage("recipes", imageFile);
     } catch {
-      redirect("/admin/recipes?error=upload_failed");
+      redirect("/admin/recipes/new?error=upload_failed");
     }
   }
 
@@ -164,7 +164,7 @@ export async function createRecipeAction(formData: FormData) {
     await tryDeleteImage(imagePath);
 
     if (isUniqueConstraintError(error)) {
-      redirect("/admin/recipes?error=duplicate");
+      redirect("/admin/recipes/new?error=duplicate");
     }
     throw error;
   }

@@ -34,9 +34,11 @@ Slice 9B.7 (Used in Recipes tab) is complete: `/admin/items/[slug]/recipes` is a
 
 Slice 9B.8 (Metadata tab) is complete: `/admin/items/[slug]/metadata` is the fourth and final real Item tab, showing restrained, read-only administrative information — `VerificationPanel` (now supporting a `readOnly` option that omits the composed picker/checkbox entirely) for status/verified-version/verified-date/current-version, and `TimestampsPanel` for created/updated/verified dates. No form, picker, checkbox, submit button, delete action, or image control exists on this tab; no database id, foreign key, or storage path is ever shown. `itemEditorTabs` now links every Item tab as a real destination — no Item tab remains disabled. The Item reference workspace (General, Acquisition Sources, Used in Recipes, Metadata) is functionally complete.
 
+Slice 9C.1 (Recipe workspace navigation foundation) is complete: Recipes are the SECOND production adoption of `AdminWorkspace`/`RecordList`, following the Item workspace's precedent from Slice 9B.4. `/admin/recipes` is the searchable record-list landing (no embedded creation form); `/admin/recipes/new` is the dedicated creation route; `/admin/recipes/[slug]/edit` and `/admin/recipes/[slug]/delete` render inside the new `RecipeWorkspace`. Recipe search is URL-driven (`?q=`), trimmed, case-insensitive on name/slug, server-rendered — no live per-keystroke requests. Every Recipe field, ingredient row, image behavior, and Game Version verification control is unchanged; this pass is deliberately narrow — no Recipe tabs, no Ingredients split, no shared editor panels or sticky actions yet. Professions, Categories, and Locations remain unconverted.
+
 Every other resource workspace conversion, dashboard summaries, and Route Hubs remain unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
 
-Do not begin any other resource workspace conversion, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
+Do not begin the Recipe editor redesign (tabs, panels, sticky actions), any other resource workspace conversion, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 

@@ -55,11 +55,15 @@ function cardLink(page: Page, name: string) {
     .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
 }
 
-// The admin table row for a recipe, located by its exact Name cell.
-function adminRow(page: Page, name: string) {
+// One row of the shared Recipe record list (Slice 9C.1), located by its
+// exact primary text inside the list's navigation landmark. The row link
+// itself opens the edit route — there is no separate per-row Edit/Delete
+// action any more (Delete is reached from the edit page's toolbar).
+function recordRow(page: Page, name: string) {
   return page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name, exact: true }) });
+    .getByRole("navigation", { name: "Recipes records" })
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
 // The five fixed ingredient rows live inside one fieldset; its legend
@@ -99,9 +103,10 @@ type RecipeFormData = {
   ingredients: { item: string; quantity: string }[];
 };
 
-// Fills the create form on /admin/recipes (the page must already be open)
-// and submits it. The optional image input is deliberately left untouched:
-// creation must succeed with no image.
+// Fills the create form on /admin/recipes/new (the page must already be
+// open — the dedicated creation route since Slice 9C.1) and submits it.
+// The optional image input is deliberately left untouched: creation must
+// succeed with no image.
 async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
@@ -133,9 +138,7 @@ async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
 
   await expect(page).toHaveURL("/admin/recipes?success=created");
   await expect(page.getByRole("status")).toHaveText("Recipe created.");
-  await expect(
-    page.getByRole("cell", { name: data.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, data.name)).toBeVisible();
 }
 
 test("authenticated recipe admin access uses the saved storage state", async ({
@@ -148,16 +151,33 @@ test("authenticated recipe admin access uses the saved storage state", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: "Recipe Management" })
   ).toBeVisible();
+
+  // The workspace landing state: the record list with its create link —
+  // the embedded creation form is gone from this page (Slice 9C.1,
+  // following the Item workspace's Slice 9B.4 precedent).
+  await expect(
+    page.getByRole("link", { name: "+ New recipe", exact: true })
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Recipe", exact: true })
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
 
-  // Seeded recipes appear in the admin table.
+  // Seeded recipes appear as record-list rows.
+  await expect(recordRow(page, "Iron Sword")).toBeVisible();
+  await expect(recordRow(page, "Minor Healing Tonic")).toBeVisible();
+});
+
+test("Create recipe opens the dedicated creation route", async ({ page }) => {
+  await page.goto("/admin/recipes");
+  await page.getByRole("link", { name: "+ New recipe", exact: true }).click();
+
+  await expect(page).toHaveURL("/admin/recipes/new");
   await expect(
-    page.getByRole("cell", { name: "Iron Sword", exact: true })
+    page.getByRole("heading", { level: 1, name: "Create Recipe" })
   ).toBeVisible();
   await expect(
-    page.getByRole("cell", { name: "Minor Healing Tonic", exact: true })
+    page.getByRole("button", { name: "Create Recipe", exact: true })
   ).toBeVisible();
 });
 
@@ -170,6 +190,9 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   await expect(
     page.getByRole("heading", { level: 1, name: "Recipe Management" })
   ).toBeVisible();
+
+  await page.getByRole("link", { name: "+ New recipe", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes/new");
 
   await createRecipeThroughForm(page, {
     name: "Test E2E Recipe",
@@ -184,21 +207,13 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     ],
   });
 
-  // The admin row summarizes the result, profession, and ingredient count.
-  const createdRow = adminRow(page, "Test E2E Recipe");
+  // The record-list row shows the resulting item as concise secondary
+  // context; the full submitted detail (slug, quantity, profession,
+  // ingredients) is verified below via the public pages, which render
+  // every field.
+  const createdRow = recordRow(page, "Test E2E Recipe");
   await expect(createdRow).toBeVisible();
-  await expect(
-    createdRow.getByRole("cell", { name: "test-e2e-recipe", exact: true })
-  ).toBeVisible();
-  await expect(
-    createdRow.getByRole("cell", { name: "2x Iron Ingot", exact: true })
-  ).toBeVisible();
-  await expect(
-    createdRow.getByRole("cell", { name: "Smithing", exact: true })
-  ).toBeVisible();
-  await expect(
-    createdRow.getByRole("cell", { name: "2", exact: true })
-  ).toBeVisible();
+  await expect(createdRow.getByText("Iron Ingot", { exact: true })).toBeVisible();
 
   // Public list card appears with the full summary (ingredients are
   // rendered in item-name order: Charcoal before Iron Ore).
@@ -238,7 +253,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
 test("recipe editing prefills ingredients and applies the transactional update", async ({
   page,
 }) => {
-  await page.goto("/admin/recipes");
+  await page.goto("/admin/recipes/new");
   await createRecipeThroughForm(page, {
     name: "Test E2E Recipe",
     slug: "test-e2e-recipe",
@@ -252,10 +267,14 @@ test("recipe editing prefills ingredients and applies the transactional update",
   });
 
   // --- Open the edit form and verify every prefilled value --------------
-  await adminRow(page, "Test E2E Recipe")
-    .getByRole("link", { name: "Edit" })
-    .click();
+  // Quick switching: the record-list row itself is the edit link, and the
+  // open record is marked selected (aria-current) in the list.
+  await recordRow(page, "Test E2E Recipe").click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe/edit");
+  await expect(recordRow(page, "Test E2E Recipe")).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
   await expect(
     page.getByRole("heading", { level: 1, name: "Edit Recipe" })
   ).toBeVisible();
@@ -320,13 +339,13 @@ test("recipe editing prefills ingredients and applies the transactional update",
   await expect(page).toHaveURL("/admin/recipes?success=updated");
   await expect(page.getByRole("status")).toHaveText("Recipe updated.");
 
-  const editedRow = adminRow(page, "Test E2E Recipe Updated");
+  // The list reflects the rename and the reassigned resulting item; the
+  // flipped profession and other fields are asserted on the public page
+  // below.
+  const editedRow = recordRow(page, "Test E2E Recipe Updated");
   await expect(editedRow).toBeVisible();
   await expect(
-    editedRow.getByRole("cell", { name: "3x Copper Ingot", exact: true })
-  ).toBeVisible();
-  await expect(
-    editedRow.getByRole("cell", { name: "No profession", exact: true })
+    editedRow.getByText("Copper Ingot", { exact: true })
   ).toBeVisible();
 
   // The slug changed, so the original public route must be gone...
@@ -362,7 +381,7 @@ test("recipe editing prefills ingredients and applies the transactional update",
 test("incomplete ingredient pairs are rejected in both directions", async ({
   page,
 }) => {
-  await page.goto("/admin/recipes");
+  await page.goto("/admin/recipes/new");
 
   // Item selected but quantity left empty.
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Incomplete");
@@ -375,7 +394,7 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?error=incomplete_ingredient");
+  await expect(page).toHaveURL("/admin/recipes/new?error=incomplete_ingredient");
   await expect(
     page
       .getByRole("alert")
@@ -394,7 +413,7 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?error=incomplete_ingredient");
+  await expect(page).toHaveURL("/admin/recipes/new?error=incomplete_ingredient");
   await expect(
     page
       .getByRole("alert")
@@ -408,7 +427,7 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
 test("ingredient quantities are guarded by browser-native validation with no upper bound", async ({
   page,
 }) => {
-  await page.goto("/admin/recipes");
+  await page.goto("/admin/recipes/new");
 
   // A complete form except for the quantity under test, so the quantity
   // input is the only invalid control.
@@ -428,21 +447,21 @@ test("ingredient quantities are guarded by browser-native validation with no upp
     await quantity.evaluate((el) => (el as HTMLInputElement).validity.rangeUnderflow)
   ).toBe(true);
   await page.getByRole("button", { name: "Create Recipe", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes");
+  await expect(page).toHaveURL("/admin/recipes/new");
 
   await quantity.fill("-2");
   expect(
     await quantity.evaluate((el) => (el as HTMLInputElement).validity.rangeUnderflow)
   ).toBe(true);
   await page.getByRole("button", { name: "Create Recipe", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes");
+  await expect(page).toHaveURL("/admin/recipes/new");
 
   await quantity.fill("1.5");
   expect(
     await quantity.evaluate((el) => (el as HTMLInputElement).validity.stepMismatch)
   ).toBe(true);
   await page.getByRole("button", { name: "Create Recipe", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes");
+  await expect(page).toHaveURL("/admin/recipes/new");
 
   // Nothing was written by the blocked submissions.
   expect(await countE2eTestRecipeRecords()).toBe(0);
@@ -468,7 +487,7 @@ test("ingredient quantities are guarded by browser-native validation with no upp
 test("selecting the same ingredient twice is rejected server-side", async ({
   page,
 }) => {
-  await page.goto("/admin/recipes");
+  await page.goto("/admin/recipes/new");
 
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Duplicate");
   await page.getByLabel(/^Slug/).fill("test-e2e-recipe-duplicate-ingredient");
@@ -483,7 +502,7 @@ test("selecting the same ingredient twice is rejected server-side", async ({
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?error=duplicate_ingredient");
+  await expect(page).toHaveURL("/admin/recipes/new?error=duplicate_ingredient");
   await expect(
     page
       .getByRole("alert")
@@ -498,7 +517,7 @@ test("selecting the same ingredient twice is rejected server-side", async ({
 test("the form supports exactly five ingredient rows and guards larger recipes", async ({
   page,
 }) => {
-  await page.goto("/admin/recipes");
+  await page.goto("/admin/recipes/new");
 
   // All five fixed rows accept unique items with valid quantities.
   await expect(ingredientGroup(page).getByRole("combobox")).toHaveCount(5);
@@ -556,12 +575,18 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
     page.getByRole("button", { name: "Save Changes", exact: true })
   ).toHaveCount(0);
   await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
+  // Deletion must never depend on the edit form being renderable — the
+  // toolbar's Delete Recipe link stays reachable even when the
+  // ingredient-count guard blocks the form itself.
+  await expect(
+    page.getByRole("link", { name: "Delete Recipe", exact: true })
+  ).toBeVisible();
 });
 
 test("recipe deletion removes the recipe and cascades its ingredient rows", async ({
   page,
 }) => {
-  await page.goto("/admin/recipes");
+  await page.goto("/admin/recipes/new");
   await createRecipeThroughForm(page, {
     name: "Test E2E Recipe Delete",
     slug: "test-e2e-recipe-delete",
@@ -569,9 +594,11 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
     ingredients: [{ item: "Iron Ore", quantity: "1" }],
   });
 
-  await adminRow(page, "Test E2E Recipe Delete")
-    .getByRole("link", { name: "Delete" })
-    .click();
+  // Quick switching opens the edit route; Delete is reached from its
+  // toolbar (the old table's per-row Delete link is gone).
+  await recordRow(page, "Test E2E Recipe Delete").click();
+  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-delete/edit");
+  await page.getByRole("link", { name: "Delete Recipe", exact: true }).click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-delete/delete");
   await expect(
     page.getByRole("heading", { level: 1, name: "Delete Recipe" })
@@ -588,9 +615,7 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
 
   await expect(page).toHaveURL("/admin/recipes?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Recipe deleted.");
-  await expect(
-    page.getByRole("cell", { name: "Test E2E Recipe Delete", exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, "Test E2E Recipe Delete")).toHaveCount(0);
 
   // Gone from the public site as well.
   const deletedResponse = await page.goto("/recipes/test-e2e-recipe-delete");
@@ -601,6 +626,111 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
   // The cascade removed the recipe's own ingredient rows and nothing else.
   expect(await countE2eTestRecipeRecords()).toBe(0);
   expect((await readFixtureCounts()).recipeIngredients).toBe(15);
+});
+
+test("record-list search filters, preserves the query across switching, and clears", async ({
+  page,
+}) => {
+  // Two temporary recipes sharing the test prefix, so one query matches
+  // both while seeded records stay out of the way.
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Search A",
+    slug: "test-e2e-recipe-search-a",
+    resultingItem: "Iron Ingot",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Search B",
+    slug: "test-e2e-recipe-search-b",
+    resultingItem: "Copper Ingot",
+    ingredients: [{ item: "Copper Ore", quantity: "1" }],
+  });
+
+  // --- Search by NAME (trimmed, case-insensitive) -----------------------
+  await page.goto("/admin/recipes");
+  await page
+    .getByRole("searchbox", { name: "Search recipes" })
+    .fill("  test e2e recipe search  ");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/recipes\?q=/);
+  await expect(recordRow(page, "Test E2E Recipe Search A")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Recipe Search B")).toBeVisible();
+  // Seeded records are filtered out server-side.
+  await expect(recordRow(page, "Iron Sword")).toHaveCount(0);
+  await expect(page.getByText("2 matches")).toBeVisible();
+
+  // --- Quick switching keeps the query applied --------------------------
+  // Row hrefs carry the TRIMMED query, %20-encoded by the server helper.
+  await recordRow(page, "Test E2E Recipe Search A").click();
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-search-a/edit?q=test%20e2e%20recipe%20search"
+  );
+  await expect(
+    recordRow(page, "Test E2E Recipe Search A")
+  ).toHaveAttribute("aria-current", "page");
+
+  // Switch directly to the second match: the list stays filtered, the
+  // selection follows, and the first record is no longer marked.
+  await recordRow(page, "Test E2E Recipe Search B").click();
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-search-b/edit?q=test%20e2e%20recipe%20search"
+  );
+  await expect(
+    recordRow(page, "Test E2E Recipe Search B")
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    recordRow(page, "Test E2E Recipe Search A")
+  ).not.toHaveAttribute("aria-current", "page");
+
+  // The create action, and this edit page's own Cancel/Delete links, keep
+  // the search context too.
+  await expect(
+    page.getByRole("link", { name: "+ New recipe", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/recipes/new?q=test%20e2e%20recipe%20search"
+  );
+  await expect(page.getByRole("link", { name: "Cancel", exact: true })).toHaveAttribute(
+    "href",
+    "/admin/recipes?q=test%20e2e%20recipe%20search"
+  );
+  await expect(
+    page.getByRole("link", { name: "Delete Recipe", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/recipes/test-e2e-recipe-search-b/delete?q=test%20e2e%20recipe%20search"
+  );
+
+  // --- Search by SLUG ---------------------------------------------------
+  await page.goto("/admin/recipes");
+  await page
+    .getByRole("searchbox", { name: "Search recipes" })
+    .fill("test-e2e-recipe-search-b");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(recordRow(page, "Test E2E Recipe Search B")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Recipe Search A")).toHaveCount(0);
+  await expect(page.getByText("1 match", { exact: true })).toBeVisible();
+
+  // --- No-match state (distinct from the no-recipes-at-all state) -------
+  await page
+    .getByRole("searchbox", { name: "Search recipes" })
+    .fill("zzz-no-such-recipe");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  const emptyRegion = page.locator(".admin-record-empty");
+  await expect(emptyRegion).toContainText("No recipes match");
+  await expect(emptyRegion).toContainText("zzz-no-such-recipe");
+  await expect(page.getByText("0 matches")).toBeVisible();
+
+  // --- Clear search returns the full list -------------------------------
+  await page.getByRole("link", { name: "Clear search", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes");
+  await expect(recordRow(page, "Iron Sword")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Recipe Search A")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Clear search", exact: true })
+  ).toHaveCount(0);
 });
 
 test("seeded fixtures are preserved and no test recipe remains", async () => {

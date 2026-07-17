@@ -57,6 +57,9 @@ test.describe("unauthenticated admin protection", () => {
     // timestamps and verification — is still strictly admin-only); the
     // seeded "iron-ore" slug is only ever read here, never modified.
     "/admin/items/iron-ore/metadata",
+    // The Slice 9C.1 dedicated Recipe creation route inside the Recipe
+    // workspace, following the Item workspace's Slice 9B.4 precedent.
+    "/admin/recipes/new",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

@@ -1,6 +1,12 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
+import {
+  RECIPE_LIST_PATH,
+  normalizeRecipeSearchQuery,
+  withRecipeSearchQuery,
+} from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
 import { deleteRecipeAction } from "../../actions";
 
@@ -12,7 +18,7 @@ const errorMessages: Record<string, string> = {
 
 type DeleteRecipePageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function DeleteRecipePage({
@@ -24,8 +30,9 @@ export default async function DeleteRecipePage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
+  const query = normalizeRecipeSearchQuery(q);
 
   const recipe = await prisma.recipe.findUnique({
     where: { slug },
@@ -50,26 +57,40 @@ export default async function DeleteRecipePage({
           .join(", ")
       : "None";
 
+  // The delete confirmation inside the Recipe workspace (Slice 9C.1,
+  // following the Item workspace's Slice 9B.4 precedent): the record
+  // list marks this recipe selected. The confirmation card, its summary,
+  // and the delete action are unchanged — only the navigation wrapper
+  // moved.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Delete Recipe"
-        description={`Review before permanently deleting "${recipe.name}".`}
-      />
+    <RecipeWorkspace
+      rawQuery={q}
+      selectedSlug={recipe.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Delete Recipe"
+            description={`Review before permanently deleting "${recipe.name}".`}
+          />
 
-      <p className="admin-toolbar">
-        <a href="/admin/recipes" className="link-accent">
-          &larr; Back to Recipe Management
-        </a>
-      </p>
+          <p className="admin-toolbar">
+            <a
+              href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+              className="link-accent"
+            >
+              &larr; Back to Recipe Management
+            </a>
+          </p>
 
-      {errorMessage ? (
-        <p role="alert" className="banner banner-error">
-          {errorMessage}
-        </p>
-      ) : null}
-
+          {errorMessage ? (
+            <p role="alert" className="banner banner-error">
+              {errorMessage}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       <div className="confirm-card">
         <p>
           You are about to permanently delete <strong>{recipe.name}</strong> (
@@ -102,11 +123,14 @@ export default async function DeleteRecipePage({
             </button>
           </form>
 
-          <a href="/admin/recipes" className="btn btn-secondary">
+          <a
+            href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+            className="btn btn-secondary"
+          >
             Cancel
           </a>
         </div>
       </div>
-    </>
+    </RecipeWorkspace>
   );
 }

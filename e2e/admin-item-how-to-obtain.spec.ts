@@ -308,8 +308,9 @@ test("a CRAFTING acquisition source coexists with the structured Produced by rec
   await createTemporaryItem(page, ITEM);
 
   // A real recipe that produces the item — the structured relation this
-  // section must never replace.
-  await page.goto("/admin/recipes");
+  // section must never replace. The creation form lives on
+  // /admin/recipes/new (Slice 9C.1).
+  await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill(RECIPE.name);
   await page.getByLabel(/^Slug/).fill(RECIPE.slug);
   await page

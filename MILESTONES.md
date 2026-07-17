@@ -351,6 +351,8 @@ and quick switching) complete; Slice 9B.5 (Item General editor) complete
 for the General tab; Slice 9B.6 (Acquisition Sources tab integration)
 complete; Slice 9B.7 (Used in Recipes tab) complete; Slice 9B.8 (Metadata
 tab) complete — the Item reference workspace is functionally complete;
+Slice 9C.1 (Recipe workspace navigation foundation) complete — the
+Recipe editor redesign (tabs/panels/sticky actions) remains pending;
 later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
@@ -760,9 +762,66 @@ workspace.
 - [x] The Item reference workspace (General, Acquisition Sources, Used in
       Recipes, Metadata) is now functionally complete
 
+### Slice 9C.1 — Recipe workspace navigation foundation (complete, 2026-07-18)
+
+- [x] Recipes are the SECOND production adoption of the shared
+      `AdminWorkspace`/`RecordList` pieces — a new, independent thin
+      wrapper, `RecipeWorkspace` (`src/components/admin/recipe-workspace.tsx`),
+      over new pure helpers (`src/lib/admin/recipe-workspace.ts`:
+      `recipeEditHref`, `recipeDeleteHref`, `normalizeRecipeSearchQuery`,
+      `withRecipeSearchQuery`), following the Item workspace's Slice 9B.4
+      precedent exactly but sharing no code with it — deliberately NOT a
+      generic multi-resource workspace framework
+- [x] `/admin/recipes` is the workspace landing state: the searchable
+      record list plus restrained guidance, with NO embedded creation
+      form; `/admin/recipes/new` is the dedicated creation route the form
+      moved to, fields and ingredient rows unchanged; `/admin/recipes/[slug]/edit`
+      and `/admin/recipes/[slug]/delete` render inside `RecipeWorkspace`
+      with their existing PageHeader/form/confirm-card presentation
+      unchanged — no Recipe tabs, no Ingredients split, no
+      EditorHeader/ImagePanel/VerificationPanel/TimestampsPanel/sticky
+      EditorActions adopted this pass
+- [x] The record list shows the recipe name as primary text and the
+      resulting item's name as concise secondary context; search matches
+      name OR slug (trimmed, case-insensitive, server-rendered `?q=`,
+      no live per-keystroke requests), preserved through record links,
+      the create link, and Cancel/Delete links; pagination is
+      deliberately deferred (small record count, matching the Item
+      precedent)
+- [x] The edit page's toolbar gained a "Delete Recipe" link (the old
+      table's per-row Delete action is gone) placed OUTSIDE the existing
+      too-many-ingredients guard, so deletion stays reachable even when
+      that guard hides the edit form entirely — a genuine behavior gap
+      the navigation move would otherwise have introduced
+- [x] Because the create form moved, `createRecipeAction`'s pre-creation
+      validation/duplicate-name/relation/verification/image error
+      redirects now target `/admin/recipes/new` instead of `/admin/recipes`
+      (mirroring exactly how `createItemAction` was changed for Slice
+      9B.4); the success redirect and every other action
+      (`updateRecipeAction`, `deleteRecipeAction`), the Prisma schema,
+      ingredient handling, image storage, and Game Version verification
+      are all byte-for-byte unchanged
+- [x] Tests: pure-function coverage for the new Recipe URL helpers (`q`
+      normalization/preservation, slug-based edit/delete hrefs); the
+      existing `admin-recipes.spec.ts`, `admin-recipe-images.spec.ts`, and
+      the Recipe case in `admin-name-feedback.spec.ts` updated (not
+      duplicated) for the new record-list rows, the moved creation route
+      and its shifted error redirects, and the toolbar Delete link; a new
+      record-list search/quick-switching/clear test mirroring the Item
+      precedent; the protection spec extended with `/admin/recipes/new`;
+      the full-suite run for this finalize pass also caught one more
+      spec relying on the old embedded creation form —
+      `admin-item-how-to-obtain.spec.ts`'s CRAFTING-source test navigated
+      to `/admin/recipes` directly to fill the Recipe form — updated to
+      navigate to `/admin/recipes/new` instead
+- [x] No other resource workspace, dashboard summary, or Route Hub work
+      was started; the Recipe editor redesign (tabs, panels, sticky
+      actions) remains pending
+
 ### Remaining (not started)
 
-- [ ] Every other resource workspace conversion, dashboard summaries, and
+- [ ] The Recipe editor redesign (tabs, panels, sticky actions), every
+      other resource workspace conversion, dashboard summaries, and
       Route Hubs — do not begin until explicitly instructed in the
       milestone conversation
 

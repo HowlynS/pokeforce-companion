@@ -64,7 +64,7 @@ const RESOURCES: ResourceCase[] = [
   },
   {
     label: "Recipe",
-    createUrl: "/admin/recipes",
+    createUrl: "/admin/recipes/new",
     editUrl: "/admin/recipes/iron-sword/edit",
     regionId: "#recipe-name-availability",
     seededName: "Iron Sword",
@@ -73,7 +73,7 @@ const RESOURCES: ResourceCase[] = [
     uniqueName: "Test E2E Unique Recipe Feedback",
     takenText: "A recipe with that name already exists.",
     createButton: "Create Recipe",
-    duplicateErrorUrl: "/admin/recipes?error=duplicate_name",
+    duplicateErrorUrl: "/admin/recipes/new?error=duplicate_name",
     // Recipe parsing requires a resulting item and one ingredient row
     // before the action's duplicate check runs; seeded records are only
     // REFERENCED, never modified.

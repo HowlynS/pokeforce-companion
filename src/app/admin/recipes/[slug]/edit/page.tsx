@@ -3,6 +3,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
+import {
+  RECIPE_LIST_PATH,
+  normalizeRecipeSearchQuery,
+  recipeDeleteHref,
+  withRecipeSearchQuery,
+} from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
@@ -49,7 +56,7 @@ const errorMessages: Record<string, string> = {
 
 type EditRecipePageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function EditRecipePage({
@@ -61,8 +68,9 @@ export default async function EditRecipePage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
+  const query = normalizeRecipeSearchQuery(q);
 
   const [recipe, items, professions] = await Promise.all([
     prisma.recipe.findUnique({
@@ -102,26 +110,51 @@ export default async function EditRecipePage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
+  // The edit route inside the Recipe workspace (Slice 9C.1, following the
+  // Item workspace's Slice 9B.4 precedent): the record list marks this
+  // recipe selected and keeps the active search applied for quick
+  // switching. Every field, redirect, server action, ingredient row,
+  // image behavior, and verification control is unchanged — only the
+  // navigation wrapper moved. Delete is now reached from this page's
+  // toolbar (the old table's per-row Delete link is gone), always
+  // rendered regardless of the ingredient-count guard below.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Edit Recipe"
-        description={`Update details for "${recipe.name}".`}
-      />
+    <RecipeWorkspace
+      rawQuery={q}
+      selectedSlug={recipe.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Edit Recipe"
+            description={`Update details for "${recipe.name}".`}
+          />
 
-      <p className="admin-toolbar">
-        <a href="/admin/recipes" className="link-accent">
-          &larr; Back to Recipe Management
-        </a>
-      </p>
+          <nav className="admin-toolbar" aria-label="Recipe editor actions">
+            <a
+              href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+              className="link-accent"
+            >
+              &larr; Back to Recipe Management
+            </a>
 
-      {errorMessage ? (
-        <p role="alert" className="banner banner-error">
-          {errorMessage}
-        </p>
-      ) : null}
+            {/* Reachable even when the ingredient-count guard below hides
+                the form entirely — deletion must never depend on the edit
+                form being renderable (the old table's per-row Delete link
+                had no such dependency either). */}
+            <a href={recipeDeleteHref(recipe.slug, query)} className="link-danger">
+              Delete Recipe
+            </a>
+          </nav>
 
+          {errorMessage ? (
+            <p role="alert" className="banner banner-error">
+              {errorMessage}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       {tooManyIngredients ? (
         <p role="alert" className="banner banner-error" style={{ margin: 0 }}>
           This recipe has {recipe.ingredients.length} ingredients, but the
@@ -377,12 +410,15 @@ export default async function EditRecipePage({
               Save Changes
             </button>
 
-            <a href="/admin/recipes" className="btn btn-secondary">
+            <a
+              href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+              className="btn btn-secondary"
+            >
               Cancel
             </a>
           </div>
         </form>
       )}
-    </>
+    </RecipeWorkspace>
   );
 }
