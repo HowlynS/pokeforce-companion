@@ -344,8 +344,8 @@ verification metadata.
 
 Status: In progress — Slice 9A complete (including the minimal Game
 Version picker on every verification form); Slice 9B.1 (shared admin
-shell and persistent navigation) complete; Slice 9B.2 and later slices
-not started
+shell and persistent navigation) complete; Slice 9B.2 (shared admin
+editor primitives) complete; Slice 9B.3 and later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -463,12 +463,46 @@ workspace.
       persistence with active marker across sections, child-route active
       state, settings-inside-shell, no shell on public pages)
 
+### Slice 9B.2 — Shared admin editor primitives (complete, 2026-07-17)
+
+- [x] Resource-agnostic presentational components in
+      `src/components/admin/`, following the approved dark admin mockup:
+      `EditorHeader` (title h1, optional back link/subtitle/status/
+      actions), `EditorTabs` (link-based tabs — route or query-state
+      targets, caller-supplied active flag, `aria-current` as both the
+      accessible marker and styling hook), `ContextPanel` (bordered
+      titled card with optional description/footer), `ImagePanel`
+      (structural wrapper giving every upload surface a pointer cursor —
+      upload/replace/remove/validation/storage behavior stays in the
+      existing controls), `VerificationPanel` (composes the existing
+      `GameVersionVerificationControls`; shows current version, verified
+      version/date, and an unverified/current/outdated badge classified
+      by the pure `src/lib/admin/verification-status.ts`),
+      `TimestampsPanel` (stable YYYY-MM-DD created/updated + optional
+      verified — no database ids), sticky `EditorActions` (real submit
+      button inside the form, cancel link, optional delete LINK to the
+      existing confirmation route; opaque bar so fields never hide
+      behind it)
+- [x] Purple admin editor accent (`--color-admin-accent` /
+      `adminAccent`) added deliberately as one token pair for editor
+      chrome; `--color-warning` added to keep globals.css and
+      design-tokens.ts in sync; public design system untouched
+- [x] Component testing extension: `.test.tsx` files render components
+      to static markup with `react-dom/server` — Node-only, no DOM
+      library added (27 new unit/component tests)
+- [x] Loading/empty/error presentation deliberately reuses the existing
+      `EmptyState` component and `banner` classes — no new primitives
+      needed
+- [x] No production adoption yet: no resource page was redesigned or
+      touched; Items becomes the first reference workspace in a later
+      slice; Game Version verification behavior unchanged
+
 ### Remaining (not started)
 
-- [ ] Slice 9B.2 and later Milestone 9 work (resource workspace
-      conversions, record lists, editor tabs, contextual panels,
-      dashboard summaries) — do not begin until explicitly instructed in
-      the milestone conversation
+- [ ] Slice 9B.3 and later Milestone 9 work (resource workspace
+      conversions starting with Items, searchable record lists, quick
+      record switching, dashboard summaries) — do not begin until
+      explicitly instructed in the milestone conversation
 
 ---
 

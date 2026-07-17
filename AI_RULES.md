@@ -20,9 +20,11 @@ Terminology: the contributor-facing term is "Game Version" everywhere. Never dis
 
 Slice 9B.1 (shared admin shell and persistent navigation) is complete: every admin route renders inside the shared `AdminShell` with exactly six primary sidebar destinations (Dashboard, Items, Recipes, Professions, Categories, Locations). Game Versions remain a secondary settings destination; Acquisition Sources remain contextual under their owning item. Resource workspace conversion is still pending.
 
-Slice 9B.2 and later Milestone 9 work have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+Slice 9B.2 (shared admin editor primitives) is complete: resource-agnostic editor header, tabs, context/image/verification/timestamps panels, and sticky actions exist in `src/components/admin/` — no resource page adopts them yet. Items will be the first reference workspace. Game Version behavior is unchanged.
 
-Do not begin Slice 9B.2+, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
+Slice 9B.3 and later Milestone 9 work have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+
+Do not begin Slice 9B.3+, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 

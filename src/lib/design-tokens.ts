@@ -11,6 +11,10 @@ export const designTokens = {
     success: "#22c55e",
     warning: "#f97316",
     danger: "#ef4444",
+    // Admin editor accent (Slice 9B.2): purple, per the approved dark
+    // admin mockup — editor chrome only, never the public design system.
+    adminAccent: "#8b5cf6",
+    adminAccentSoft: "#c4b5fd",
   },
   layout: {
     maxWidth: "1200px",

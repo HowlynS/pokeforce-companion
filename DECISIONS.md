@@ -1075,3 +1075,70 @@ Alternatives considered:
   and three body slots is all the approved design needs.
 - Adding a Settings entry to the sidebar — rejected; the brief keeps
   Game Versions reachable only through the existing secondary path.
+
+---
+
+### 2026-07-17 — Slice 9B.2: shared admin editor primitives
+
+Decision:
+
+The upcoming resource workspaces compose seven resource-agnostic
+presentational components (src/components/admin/) instead of each
+resource building its own editor chrome: EditorHeader, EditorTabs,
+ContextPanel, ImagePanel, VerificationPanel, TimestampsPanel, and the
+sticky EditorActions. Three decisions worth recording:
+
+- Behavior stays where it already lives. ImagePanel is a structural
+  wrapper around the EXISTING image controls (upload, replacement,
+  removal, validation, storage, and cleanup are untouched — the panel
+  only frames them and gives every upload surface a pointer cursor).
+  VerificationPanel composes the existing
+  GameVersionVerificationControls rather than duplicating any stamping
+  rule; its unverified/current/outdated badge comes from the pure
+  classification in src/lib/admin/verification-status.ts (a record
+  verified against any non-current version — including when nothing is
+  current — is "outdated"). EditorActions keeps plain HTML form
+  submission and links Delete to the existing confirmation route; no
+  client-side mutation architecture. EditorTabs are plain links with a
+  caller-supplied active flag, so route tabs and query-state tabs both
+  work without the component imposing a state architecture, and
+  aria-current="page" is simultaneously the accessible marker and the
+  styling hook (the same rule the admin sidebar uses).
+- One deliberate admin accent token pair. The approved dark admin
+  mockup uses purple for editor chrome, so --color-admin-accent /
+  --color-admin-accent-soft (mirrored as designTokens.colors.adminAccent
+  / adminAccentSoft) exist for selected tabs and editor highlights —
+  editor chrome only, never the public design system, and no other
+  one-off colors. --color-warning was also added to globals.css to keep
+  it in sync with the existing designTokens.colors.warning.
+- Component tests without a DOM library. .test.tsx files render the
+  presentational components to static HTML with react-dom/server and
+  assert on the markup (optional regions absent — not empty — when
+  props are omitted; exactly one aria-current; composition of the real
+  verification controls). This keeps the 2026-07-14 "no DOM library"
+  testing decision intact; the unit Vitest config now also collects
+  src/**/*.test.tsx.
+
+No resource page adopts the primitives in this slice — Items becomes
+the first reference workspace in a later slice. Loading/empty/error
+presentation deliberately reuses the existing EmptyState component and
+banner classes.
+
+Reason:
+
+The resource conversions ahead touch five editors; if the chrome is not
+shared first, each conversion invents its own header/tabs/panels and
+the workspaces drift apart. Wrapping instead of rewriting keeps every
+hard-won behavior (storage cleanup ordering, verification trust model,
+deletion confirmation flow) exactly where its tests already pin it.
+
+Alternatives considered:
+
+- A schema-driven generic form engine — rejected; five concrete
+  editors do not justify one, and the brief forbids it.
+- Adding a DOM testing library for component tests — rejected;
+  static-markup assertions cover presentational components fully, and
+  browser behavior stays with Playwright.
+- Reusing the public yellow accent for editor chrome — rejected; the
+  approved mockup separates admin editor identity, and one deliberate
+  token pair is cheap while scattered hex values are not.

@@ -13,7 +13,13 @@
   --color-accent: #facc15;
   --color-accent-soft: #fde68a;
   --color-success: #22c55e;
+  --color-warning: #f97316;
   --color-danger: #ef4444;
+  /* Admin editor accent (Slice 9B.2): the approved dark admin mockup uses
+     a purple accent for editor chrome (selected tabs, panel highlights).
+     Deliberately separate from the public yellow accent. */
+  --color-admin-accent: #8b5cf6;
+  --color-admin-accent-soft: #c4b5fd;
 }
 
 * {
@@ -463,4 +469,209 @@ input[type="checkbox"] {
 .admin-workspace-aside {
   flex: 0 0 280px;
   min-width: 0;
+}
+
+/* ---- Admin editor primitives (Slice 9B.2) -----------------------------
+   The shared presentational vocabulary for the upcoming resource
+   workspaces: editor header, tab navigation, contextual panels, status
+   badges, and the sticky save/cancel area. Purple admin accent per the
+   approved dark mockup; compact desktop density. No resource page uses
+   these yet — adoption is the next slice. */
+
+.admin-editor-header {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.admin-editor-header-back {
+  justify-self: start;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.admin-editor-header-back:hover {
+  color: var(--color-admin-accent-soft);
+}
+
+.admin-editor-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.admin-editor-header-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Compact editor title tier: denser than the 36px page title, still
+   clearly the page's one h1. */
+.admin-editor-title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.admin-editor-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 15px;
+}
+
+.admin-editor-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Editor tab navigation: link-based tabs under the header, active tab
+   marked with the admin accent AND aria-current (one hook for both the
+   visual and the accessible state). */
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 24px;
+}
+
+.admin-tab {
+  display: block;
+  padding: 10px 14px;
+  margin-bottom: -1px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.admin-tab:hover {
+  color: var(--color-text);
+}
+
+.admin-tab[aria-current="page"] {
+  color: var(--color-admin-accent-soft);
+  border-bottom-color: var(--color-admin-accent);
+  font-weight: 700;
+}
+
+/* Contextual panel/card: the right-column building block for image,
+   verification, and timestamp content. */
+.admin-panel {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-panel-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.admin-panel-description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.admin-panel-body {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-panel-footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+/* Key/value rows inside panels (timestamps, verification facts). */
+.admin-panel-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.admin-panel-row dt {
+  color: var(--color-text-muted);
+}
+
+.admin-panel-row dd {
+  margin: 0;
+  color: var(--color-text);
+  text-align: right;
+}
+
+/* Verification status badge: quiet pill, colored by state. */
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.admin-status-badge-current {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.admin-status-badge-outdated {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+/* Image panel body: every upload surface must read as interactive. The
+   wrapper only styles — upload/replace/remove behavior stays with the
+   existing controls placed inside it. */
+.admin-image-panel-body input[type="file"] {
+  cursor: pointer;
+}
+
+.admin-image-panel-body input[type="file"]::file-selector-button {
+  cursor: pointer;
+}
+
+/* Sticky editor actions: pinned to the bottom of the scrolling content
+   area, opaque with a top border so fields scroll UNDER it without ever
+   being unreadable behind it. Placed inside the form, so the submit
+   button keeps normal HTML form submission. */
+.admin-editor-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  margin-top: 24px;
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Pushes an optional delete action to the far edge, away from
+   save/cancel, so the destructive control is never a neighbor slip. */
+.admin-editor-actions-spacer {
+  flex: 1;
 }

@@ -18,7 +18,10 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    // .tsx test files (added in Slice 9B.2) are component tests that
+    // render presentational components to static markup with
+    // react-dom/server — still Node-only, still no DOM library.
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     // Integration and service tests hit the real isolated test project and
     // belong to vitest.integration.config.ts / vitest.service.config.ts
     // only — the unit suite must never collect them. Vitest's default
