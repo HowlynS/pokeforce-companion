@@ -172,7 +172,7 @@ test("the feedback region is accessible and works with keyboard input", async ({
 test("seeded fixtures are unchanged — the suite never wrote anything", async () => {
   expect(await readFixtureCounts()).toEqual({
     categories: 5,
-    professions: 2,
+    professions: 10,
     items: 16,
     recipes: 8,
     recipeIngredients: 15,

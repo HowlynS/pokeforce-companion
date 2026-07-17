@@ -4,9 +4,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
-import { EmptyState } from "@/components/ui/empty-state";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
+import {
+  buildAcquisitionSourceCard,
+  groupAcquisitionSourcesByType,
+} from "@/lib/validation/acquisition-source";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +45,10 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
         include: { recipe: true },
         orderBy: { recipe: { name: "asc" } },
       },
+      acquisitionSources: {
+        include: { location: true, profession: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
@@ -49,19 +56,24 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     notFound();
   }
 
+  // Grouped by type (enum order), any type with zero sources omitted
+  // entirely — the whole section below is skipped when there are none at
+  // all. Neither the grouping nor its order implies priority or
+  // completeness; it is simply a stable way to present more than one
+  // source without repeating the type on every card.
+  const acquisitionGroups = groupAcquisitionSourcesByType(item.acquisitionSources);
+
   // Only meaningful metadata is shown: unset optional fields are omitted
-  // rather than rendered as placeholder values.
+  // rather than rendered as placeholder values. The two booleans are
+  // required fields, so Yes/No is always a real answer.
   const details: string[] = [];
 
   if (item.category) {
     details.push(`Category: ${item.category.name}`);
   }
 
-  if (item.rarity) {
-    details.push(`Rarity: ${item.rarity}`);
-  }
-
   details.push(`Tradeable: ${item.tradeable ? "Yes" : "No"}`);
+  details.push(`Held item: ${item.heldItem ? "Yes" : "No"}`);
 
   if (item.baseValue !== null) {
     details.push(`Base value: ${item.baseValue}`);
@@ -83,13 +95,70 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
 
         <div className="detail-hero-facts">
           <Card title="Details" description={details.join(" · ")} />
+
+          {/* Rendered only when BOTH verification fields are populated —
+              never as an empty row. The date is formatted as a stable
+              YYYY-MM-DD server-side so output does not depend on the
+              server locale. */}
+          {item.verifiedAt && item.verifiedBuildId ? (
+            <p
+              style={{
+                margin: 0,
+                color: designTokens.colors.textMuted,
+                fontSize: "14px",
+              }}
+            >
+              Gameplay data verified for build {item.verifiedBuildId} on{" "}
+              {item.verifiedAt.toISOString().slice(0, 10)}.
+            </p>
+          ) : null}
         </div>
       </section>
 
-      <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <SectionHeading>Produced by</SectionHeading>
+      {/* Omitted entirely (heading included) when there are no acquisition
+          sources — never a public empty state. Grouped by type so more
+          than one source never repeats the type on every card; the
+          heading makes no claim that the list is complete. */}
+      {acquisitionGroups.length > 0 ? (
+        <section style={{ marginBottom: designTokens.layout.sectionGap }}>
+          <SectionHeading>How to obtain</SectionHeading>
 
-        {item.recipesProduced.length > 0 ? (
+          {acquisitionGroups.map((group) => (
+            <div key={group.type} style={{ marginBottom: "16px" }}>
+              <p
+                style={{
+                  margin: "0 0 8px",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                }}
+              >
+                {group.label}
+              </p>
+
+              <ContentGrid>
+                {group.sources.map((source) => {
+                  const card = buildAcquisitionSourceCard(source);
+                  return (
+                    <Card
+                      key={source.id}
+                      title={card.title}
+                      description={card.description}
+                      href={card.href}
+                    />
+                  );
+                })}
+              </ContentGrid>
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {/* Omitted entirely (heading included) when no recipe produces this
+          item — public detail pages never render empty optional sections. */}
+      {item.recipesProduced.length > 0 ? (
+        <section style={{ marginBottom: designTokens.layout.sectionGap }}>
+          <SectionHeading>Produced by</SectionHeading>
+
           <ContentGrid>
             {item.recipesProduced.map((recipe) => (
               <Card
@@ -100,18 +169,15 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               />
             ))}
           </ContentGrid>
-        ) : (
-          <EmptyState
-            title="No recipes produce this item"
-            description="No crafting recipe currently results in this item."
-          />
-        )}
-      </section>
+        </section>
+      ) : null}
 
-      <section>
-        <SectionHeading>Used as an ingredient in</SectionHeading>
+      {/* Omitted entirely (heading included) when no recipe uses this item
+          as an ingredient — never a public empty state. */}
+      {item.recipeIngredients.length > 0 ? (
+        <section>
+          <SectionHeading>Used as an ingredient in</SectionHeading>
 
-        {item.recipeIngredients.length > 0 ? (
           <ContentGrid>
             {item.recipeIngredients.map((ingredient) => (
               <Card
@@ -122,13 +188,8 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               />
             ))}
           </ContentGrid>
-        ) : (
-          <EmptyState
-            title="Not used in any recipes"
-            description="This item is not currently required by any crafting recipe."
-          />
-        )}
-      </section>
+        </section>
+      ) : null}
     </AppShell>
   );
 }

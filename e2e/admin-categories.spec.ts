@@ -106,12 +106,19 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
     page.getByRole("cell", { name: INITIAL.name, exact: true })
   ).toBeVisible();
 
-  // Public detail page renders the new category.
+  // Public detail page renders the new category. It holds no items, so
+  // the entire Items section (heading and empty state alike) is omitted;
+  // the Details card still says "Items: 0".
   await page.goto(`/categories/${INITIAL.slug}`);
   await expect(
     page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
+  await expect(page.getByText("Items: 0")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Items", exact: true })
+  ).toHaveCount(0);
+  await expect(page.getByText("No items yet")).toHaveCount(0);
 
   // Public list card appears and points at the detail route.
   await page.goto("/categories");
@@ -222,7 +229,7 @@ test("creating a category with a seeded name is rejected server-side", async ({
 test("seeded fixtures are preserved and no test category remains", async () => {
   expect(await readFixtureCounts()).toEqual({
     categories: 5,
-    professions: 2,
+    professions: 10,
     items: 16,
     recipes: 8,
     recipeIngredients: 15,

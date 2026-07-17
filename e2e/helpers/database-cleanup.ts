@@ -28,8 +28,8 @@ export const E2E_CATEGORY_SLUG_PREFIX = "test-e2e-category";
 
 // Covers every Profession slug the browser tests use (test-e2e-profession,
 // test-e2e-profession-updated, test-e2e-profession-duplicate,
-// test-e2e-profession-blocked) and can never match a seeded slug
-// (blacksmithing, alchemy).
+// test-e2e-profession-blocked) and can never match a seeded slug (e.g.
+// smithing, alchemy, foraging, ...).
 export const E2E_PROFESSION_SLUG_PREFIX = "test-e2e-profession";
 
 // Temporary Item/Recipe rows created ONLY so a Recipe can reference a
@@ -61,6 +61,20 @@ export const E2E_RECIPE_SLUG_PREFIX = "test-e2e-recipe";
 // still sweeps this prefix defensively.
 export const E2E_RECIPE_ITEM_SLUG_PREFIX = "test-e2e-recipe-item-";
 
+// Covers every Location slug the browser tests use (test-e2e-location,
+// test-e2e-location-updated, test-e2e-location-duplicate,
+// test-e2e-location-parent, test-e2e-location-child, ...) and can never
+// match a seeded slug. Unlike Profession/Item, Location's own admin form
+// can already assign one test Location as another's parent, so no separate
+// "relation" prefix or raw-SQL relation helper is needed for the
+// blocked-deletion test.
+export const E2E_LOCATION_SLUG_PREFIX = "test-e2e-location";
+
+// Covers every Location slug the image browser tests use — the same
+// sub-prefix arrangement (and the same run-order caveat) as the Item image
+// prefix below, relative to test-e2e-location.
+export const E2E_LOCATION_IMAGE_SLUG_PREFIX = "test-e2e-location-image";
+
 // Covers every Item slug the image browser tests use. It is deliberately a
 // sub-prefix of test-e2e-item, so the generic Item cleanup would still
 // catch a stranded row — but the image-aware cleanup below must always run
@@ -77,6 +91,14 @@ export const E2E_PROFESSION_IMAGE_SLUG_PREFIX = "test-e2e-profession-image";
 // sub-prefix arrangement (and the same run-order caveat) as the Item image
 // prefix above, relative to test-e2e-recipe.
 export const E2E_RECIPE_IMAGE_SLUG_PREFIX = "test-e2e-recipe-image";
+
+// Covers the temporary Item/Location/Profession rows the acquisition-source
+// browser tests create. AcquisitionSource has no slug of its own, so its
+// rows are matched through these relations rather than a dedicated prefix.
+export const E2E_ACQUISITION_ITEM_SLUG_PREFIX = "test-e2e-acqsrc-item";
+export const E2E_ACQUISITION_LOCATION_SLUG_PREFIX = "test-e2e-acqsrc-location";
+export const E2E_ACQUISITION_PROFESSION_SLUG_PREFIX =
+  "test-e2e-acqsrc-profession";
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -275,6 +297,160 @@ export async function removeTemporaryRecipeForProfession(): Promise<number> {
       [`${E2E_PROFESSION_RELATION_SLUG_PREFIX}%`]
     );
     return (recipes.rowCount ?? 0) + (items.rowCount ?? 0);
+  });
+}
+
+// Defense in depth for every Location helper below.
+function assertLocationPrefixIsSafe(): void {
+  if (E2E_LOCATION_SLUG_PREFIX.length < 5) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the browser-test Location slug prefix is suspiciously short."
+    );
+  }
+}
+
+/**
+ * Deletes ONLY the browser-test Location rows, regardless of how deep a
+ * parent/child chain the tests built. A single bulk DELETE against a
+ * self-referencing table is not safe here — with ON DELETE RESTRICT,
+ * whether removing a whole chain in one statement succeeds can depend on
+ * the (unspecified) order Postgres processes matching rows. Instead this
+ * repeatedly deletes only rows that are currently leaves among the
+ * prefixed set (no other prefixed row still points at them as parentId),
+ * which is safe regardless of chain depth or scan order. Returns how many
+ * rows were removed in total; throws loudly if the loop cannot make
+ * progress (which would indicate a real, unexpected cycle).
+ */
+export async function deleteE2eTestLocationRecords(): Promise<number> {
+  assertLocationPrefixIsSafe();
+
+  return withVerifiedDatabase(async (client) => {
+    let totalDeleted = 0;
+
+    for (let iteration = 0; iteration < 50; iteration += 1) {
+      const result = await client.query(
+        `delete from "Location"
+         where slug like $1
+           and id not in (
+             select "parentId" from "Location"
+             where "parentId" is not null and slug like $1
+           )`,
+        [`${E2E_LOCATION_SLUG_PREFIX}%`]
+      );
+      const deleted = result.rowCount ?? 0;
+      totalDeleted += deleted;
+
+      if (deleted === 0) {
+        break;
+      }
+    }
+
+    return totalDeleted;
+  });
+}
+
+/** Read-only count of leftover browser-test Location rows. */
+export async function countE2eTestLocationRecords(): Promise<number> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `select count(*)::int as n from "Location" where slug like $1`,
+      [`${E2E_LOCATION_SLUG_PREFIX}%`]
+    );
+    return result.rows[0].n as number;
+  });
+}
+
+/**
+ * Deletes ONLY the browser-test acquisition-source fixtures: RecipeIngredient
+ * and Recipe rows that reference a prefixed Item first (a Recipe's
+ * resultingItemId is ON DELETE RESTRICT, so it must be cleared before the
+ * Item can be deleted — the Slice 8E "crafting source coexists with a real
+ * recipe" test creates exactly such a Recipe), then AcquisitionSource rows
+ * matched through their Item/Location/Profession relation (the model has no
+ * slug of its own), then the prefixed Item/Location/Profession rows
+ * themselves. Returns how many rows were removed in total; throws loudly on
+ * a rejected delete.
+ */
+export async function deleteE2eTestAcquisitionRecords(): Promise<number> {
+  if (
+    E2E_ACQUISITION_ITEM_SLUG_PREFIX.length < 5 ||
+    E2E_ACQUISITION_LOCATION_SLUG_PREFIX.length < 5 ||
+    E2E_ACQUISITION_PROFESSION_SLUG_PREFIX.length < 5
+  ) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: an acquisition-source browser-test slug prefix is suspiciously short."
+    );
+  }
+
+  return withVerifiedDatabase(async (client) => {
+    const itemPrefix = `${E2E_ACQUISITION_ITEM_SLUG_PREFIX}%`;
+    const locationPrefix = `${E2E_ACQUISITION_LOCATION_SLUG_PREFIX}%`;
+    const professionPrefix = `${E2E_ACQUISITION_PROFESSION_SLUG_PREFIX}%`;
+
+    const ingredients = await client.query(
+      `delete from "RecipeIngredient"
+       where "recipeId" in (
+         select id from "Recipe" where "resultingItemId" in (select id from "Item" where slug like $1)
+       )
+          or "itemId" in (select id from "Item" where slug like $1)`,
+      [itemPrefix]
+    );
+    const recipes = await client.query(
+      `delete from "Recipe" where "resultingItemId" in (select id from "Item" where slug like $1)`,
+      [itemPrefix]
+    );
+    const sources = await client.query(
+      `delete from "AcquisitionSource"
+       where "itemId" in (select id from "Item" where slug like $1)
+          or "locationId" in (select id from "Location" where slug like $2)
+          or "professionId" in (select id from "Profession" where slug like $3)`,
+      [itemPrefix, locationPrefix, professionPrefix]
+    );
+    const items = await client.query(
+      `delete from "Item" where slug like $1`,
+      [itemPrefix]
+    );
+    const locations = await client.query(
+      `delete from "Location" where slug like $1`,
+      [locationPrefix]
+    );
+    const professions = await client.query(
+      `delete from "Profession" where slug like $1`,
+      [professionPrefix]
+    );
+
+    return (
+      (ingredients.rowCount ?? 0) +
+      (recipes.rowCount ?? 0) +
+      (sources.rowCount ?? 0) +
+      (items.rowCount ?? 0) +
+      (locations.rowCount ?? 0) +
+      (professions.rowCount ?? 0)
+    );
+  });
+}
+
+/** Read-only count of leftover browser-test acquisition-source fixtures. */
+export async function countE2eTestAcquisitionRecords(): Promise<number> {
+  return withVerifiedDatabase(async (client) => {
+    const itemPrefix = `${E2E_ACQUISITION_ITEM_SLUG_PREFIX}%`;
+    const locationPrefix = `${E2E_ACQUISITION_LOCATION_SLUG_PREFIX}%`;
+    const professionPrefix = `${E2E_ACQUISITION_PROFESSION_SLUG_PREFIX}%`;
+
+    const result = await client.query(
+      `select
+         (select count(*) from "Recipe"
+            where "resultingItemId" in (select id from "Item" where slug like $1))::int
+           + (select count(*) from "AcquisitionSource"
+            where "itemId" in (select id from "Item" where slug like $1)
+               or "locationId" in (select id from "Location" where slug like $2)
+               or "professionId" in (select id from "Profession" where slug like $3))::int
+           + (select count(*) from "Item" where slug like $1)::int
+           + (select count(*) from "Location" where slug like $2)::int
+           + (select count(*) from "Profession" where slug like $3)::int as n`,
+      [itemPrefix, locationPrefix, professionPrefix]
+    );
+    return result.rows[0].n as number;
   });
 }
 
@@ -612,15 +788,15 @@ export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
   });
 }
 
-// The Item, Profession, and Recipe image suites share one
+// The Item, Profession, Recipe, and Location image suites share one
 // folder-parameterized implementation; the per-entity exports below pin the
 // table, folder, and slug prefix together so a call can never mix entities.
 // The folder/table values are compile-time literals from this file — never
 // runtime input — so interpolating them into SQL identifiers and path
 // patterns is safe.
 type ImageSuite = {
-  folder: "items" | "professions" | "recipes";
-  table: "Item" | "Profession" | "Recipe";
+  folder: "items" | "professions" | "recipes" | "locations";
+  table: "Item" | "Profession" | "Recipe" | "Location";
   slugPrefix: string;
   parentPrefix: string;
 };
@@ -644,6 +820,13 @@ const RECIPE_IMAGE_SUITE: ImageSuite = {
   table: "Recipe",
   slugPrefix: E2E_RECIPE_IMAGE_SLUG_PREFIX,
   parentPrefix: E2E_RECIPE_SLUG_PREFIX,
+};
+
+const LOCATION_IMAGE_SUITE: ImageSuite = {
+  folder: "locations",
+  table: "Location",
+  slugPrefix: E2E_LOCATION_IMAGE_SLUG_PREFIX,
+  parentPrefix: E2E_LOCATION_SLUG_PREFIX,
 };
 
 // Defense in depth for every image helper below.
@@ -983,6 +1166,41 @@ export async function countE2eTestRecipeImageIngredientRows(): Promise<number> {
 
 export async function deleteE2eTestRecipeImageRecords(): Promise<number> {
   return deleteImageSuiteRecordsFor(RECIPE_IMAGE_SUITE);
+}
+
+// --- Location image suite exports ----------------------------------------
+
+export async function readLocationImagePath(
+  slug: string
+): Promise<string | null> {
+  return readImagePathFor(LOCATION_IMAGE_SUITE, slug);
+}
+
+/** True when the exact generated locations/ object currently exists. */
+export async function locationImageObjectExists(
+  objectPath: string
+): Promise<boolean> {
+  return withStorageAdmin((admin) =>
+    storageObjectExists(LOCATION_IMAGE_SUITE, admin, objectPath)
+  );
+}
+
+export async function fetchLocationImageContentType(
+  objectPath: string
+): Promise<string | null> {
+  return fetchImageContentTypeFor(LOCATION_IMAGE_SUITE, objectPath);
+}
+
+export async function countLocationFolderObjects(): Promise<number> {
+  return countFolderObjectsFor(LOCATION_IMAGE_SUITE);
+}
+
+export async function countE2eTestLocationImageRecords(): Promise<number> {
+  return countImageSuiteRecordsFor(LOCATION_IMAGE_SUITE);
+}
+
+export async function deleteE2eTestLocationImageRecords(): Promise<number> {
+  return deleteImageSuiteRecordsFor(LOCATION_IMAGE_SUITE);
 }
 
 /** Read-only snapshot of the seeded fixture counts for preservation checks. */

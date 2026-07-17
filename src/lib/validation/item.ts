@@ -4,7 +4,7 @@ export type ItemInput = {
   name: string;
   slug: string;
   description: string | null;
-  rarity: string | null;
+  heldItem: boolean;
   tradeable: boolean;
   baseValue: number | null;
   categoryId: string | null;
@@ -31,7 +31,9 @@ export function parseItemInput(formData: FormData): ItemParseResult {
   const name = String(formData.get("name") ?? "").trim();
   const rawSlug = String(formData.get("slug") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
-  const rarity = String(formData.get("rarity") ?? "").trim();
+  // Checkbox semantics: anything other than the browser's "on" (including a
+  // completely absent field) safely resolves to false.
+  const heldItem = formData.get("heldItem") === "on";
   const tradeable = formData.get("tradeable") === "on";
   const rawBaseValue = String(formData.get("baseValue") ?? "").trim();
   const rawCategoryId = String(formData.get("categoryId") ?? "").trim();
@@ -69,7 +71,7 @@ export function parseItemInput(formData: FormData): ItemParseResult {
       name,
       slug,
       description: description || null,
-      rarity: rarity || null,
+      heldItem,
       tradeable,
       baseValue,
       categoryId: rawCategoryId || null,

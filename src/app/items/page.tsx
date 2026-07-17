@@ -11,7 +11,6 @@ export const dynamic = "force-dynamic";
 function buildItemDescription(item: {
   description: string | null;
   category: { name: string } | null;
-  rarity: string | null;
   tradeable: boolean;
   baseValue: number | null;
 }): string {
@@ -21,10 +20,6 @@ function buildItemDescription(item: {
 
   if (item.category) {
     details.push(`Category: ${item.category.name}`);
-  }
-
-  if (item.rarity) {
-    details.push(`Rarity: ${item.rarity}`);
   }
 
   details.push(`Tradeable: ${item.tradeable ? "Yes" : "No"}`);

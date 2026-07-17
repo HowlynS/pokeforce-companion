@@ -89,8 +89,8 @@ const LIST_PAGES = [
   {
     path: "/professions",
     heading: "Professions",
-    seededName: "Blacksmithing",
-    detailHref: "/professions/blacksmithing",
+    seededName: "Smithing",
+    detailHref: "/professions/smithing",
   },
   {
     path: "/categories",
@@ -116,4 +116,61 @@ test.describe("public list pages", () => {
       await expect(card).toHaveAttribute("href", listPage.detailHref);
     });
   }
+});
+
+// Slice 8B: the deterministic profession set. "Blacksmithing" was renamed
+// to "Smithing" in place (same persisted row and recipe relations, see
+// migration 20260716152420) rather than existing alongside it.
+const EXPECTED_PROFESSIONS = [
+  { name: "Alchemy", slug: "alchemy" },
+  { name: "Archaeology", slug: "archaeology" },
+  { name: "Construction", slug: "construction" },
+  { name: "Cooking", slug: "cooking" },
+  { name: "Crafting", slug: "crafting" },
+  { name: "Farming", slug: "farming" },
+  { name: "Fishing", slug: "fishing" },
+  { name: "Foraging", slug: "foraging" },
+  { name: "Mining", slug: "mining" },
+  { name: "Smithing", slug: "smithing" },
+] as const;
+
+test.describe("profession coverage (Slice 8B)", () => {
+  test("all ten deterministic professions are seeded with correct public links", async ({
+    page,
+  }) => {
+    await page.goto("/professions");
+
+    for (const profession of EXPECTED_PROFESSIONS) {
+      const card = cardLink(page, profession.name);
+      await expect(card).toBeVisible();
+      await expect(card).toHaveAttribute(
+        "href",
+        `/professions/${profession.slug}`
+      );
+    }
+
+    // The renamed profession no longer exists under its old name.
+    await expect(cardLink(page, "Blacksmithing")).toHaveCount(0);
+  });
+
+  test("a sparse profession (no description, no recipes, no image) renders without empty optional content", async ({
+    page,
+  }) => {
+    await page.goto("/professions/foraging");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Foraging", exact: true })
+    ).toBeVisible();
+    // No description was seeded: the shared PageHeader omits the paragraph
+    // entirely rather than showing a placeholder.
+    await expect(page.getByText("No description available")).toHaveCount(0);
+    await expect(page.getByText("No image available")).toBeVisible();
+    // No recipes either: the entire Recipes section (heading and empty
+    // state alike) is omitted; the Details card still says "Recipes: 0".
+    await expect(page.getByText("Recipes: 0")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
+    ).toHaveCount(0);
+    await expect(page.getByText("No recipes yet")).toHaveCount(0);
+  });
 });

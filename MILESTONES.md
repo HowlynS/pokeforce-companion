@@ -305,7 +305,51 @@ The foundation protects current behavior; future features still need their own t
 
 ---
 
-## Milestone 8 - Deployment
+## Milestone 8 - Gameplay Data Expansion
+
+Status: Complete
+
+Numbering note: this file previously listed "Milestone 8 - Deployment".
+The milestone conversation ran Gameplay Data Expansion as Milestone 8, so
+that numbering is now authoritative. Deployment is renumbered to a later
+milestone (below); it is **not** complete and has not started.
+
+Goal:
+
+Expand the game-data model with the confirmed gameplay fields: item
+acquisition, locations, full profession coverage, and opt-in game-build
+verification metadata.
+
+### Completed
+
+- [x] `Item.rarity` removed; exact `Held item` Yes/No field added (required boolean, default No)
+- [x] Opt-in gameplay-verification metadata (`verifiedAt` / `verifiedBuildId`) on Item, Location, and AcquisitionSource: stamped only by the explicit "Mark gameplay data as verified for the current build." checkbox using the server-only `CURRENT_GAME_BUILD_ID` (fails loudly when unset); normal edits never touch these fields; shown publicly only when both fields are populated
+- [x] Full deterministic profession coverage (ten professions); "Blacksmithing" renamed to "Smithing" in place by a data migration (an `UPDATE`, preserving the row id and every recipe relation)
+- [x] Location model with a typed hierarchy (REGION, ROUTE, TOWN, BUILDING, DUNGEON, SUB_AREA, SPECIAL_AREA): parent/child self-relation with `onDelete: Restrict` so a location with children cannot be deleted (children are never silently detached), admin CRUD with image support, and public `/locations/[slug]` detail pages (no public locations index page exists yet — reaching locations by browsing is part of the deferred route-hub work)
+- [x] AcquisitionSource model (16 acquisition types): owned by its Item (`onDelete: Cascade` — deleted with it), optional Location/Profession references that survive their target's deletion via `SET NULL`, and a deliberately free-text quantity field
+- [x] Admin acquisition-source management nested under the owning item (`/admin/items/[slug]/sources`) with route-ownership enforcement: a source id that does not belong to the item in the URL is treated as missing (404)
+- [x] Public "How to obtain" section on item detail pages, grouped by acquisition type, rendered only when the item has at least one source
+- [x] Closing audit: public detail pages never render empty optional sections — for a record with zero related entries the entire section (heading and empty state alike) is omitted. Applied to How to obtain, Produced by, Used as an ingredient in, a category's Items, a profession's Recipes, a recipe's Ingredients, and a location's Sub-locations. Top-level collection pages (`/items`, `/recipes`, `/professions`, `/categories`) keep their useful empty states
+- [x] Migrations: `20260716074543_refine_item_gameplay_fields`, `20260716152420_rename_blacksmithing_to_smithing`, `20260716160417_add_location_model`, `20260716170040_add_acquisition_sources`
+- [x] Verified totals at milestone close: 273 unit / 89 integration / 9 service / 137 E2E — 508 automated tests, plus the passing `pnpm test:env:check` environment guard
+- [x] `pnpm lint`, `pnpm build`, and `git diff --check` passed
+
+### Deferred
+
+- Milestone 9 route-hub work remains deferred; do not begin Milestone 9 implementation until explicitly instructed in the milestone conversation
+
+---
+
+## Milestone 9 - Route Hubs
+
+Status: Not started (deferred)
+
+Route-hub work is Milestone 9. Do not begin it until explicitly instructed
+in the milestone conversation.
+
+---
+
+## Deployment (renumbered; previously Milestone 8)
 
 Status: Not started
 

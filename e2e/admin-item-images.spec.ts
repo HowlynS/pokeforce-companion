@@ -329,7 +329,7 @@ test("deleting the item also deletes its stored image object", async ({
 test("seeded fixtures are preserved and no suite row or object remains", async () => {
   expect(await readFixtureCounts()).toEqual({
     categories: 5,
-    professions: 2,
+    professions: 10,
     items: 16,
     recipes: 8,
     recipeIngredients: 15,

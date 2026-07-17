@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
-import { EmptyState } from "@/components/ui/empty-state";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -66,10 +65,13 @@ export default async function ProfessionDetailPage({ params }: ProfessionDetailP
         </div>
       </section>
 
-      <section>
-        <SectionHeading>Recipes</SectionHeading>
+      {/* Omitted entirely (heading included) when the profession has no
+          recipes — public detail pages never render empty optional sections.
+          The Details card above still states "Recipes: 0". */}
+      {profession.recipes.length > 0 ? (
+        <section>
+          <SectionHeading>Recipes</SectionHeading>
 
-        {profession.recipes.length > 0 ? (
           <ContentGrid>
             {profession.recipes.map((recipe) => (
               <Card
@@ -80,13 +82,8 @@ export default async function ProfessionDetailPage({ params }: ProfessionDetailP
               />
             ))}
           </ContentGrid>
-        ) : (
-          <EmptyState
-            title="No recipes yet"
-            description="No crafting recipes are currently linked to this profession."
-          />
-        )}
-      </section>
+        </section>
+      ) : null}
     </AppShell>
   );
 }

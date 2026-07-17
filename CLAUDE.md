@@ -13,13 +13,13 @@ Before making or suggesting changes, respect these documents:
 
 ## Current Phase
 
-Milestone 7 - Search and Polish is complete (see MILESTONES.md): global search, instant duplicate-name feedback, the Automated Testing Foundation, and the public and admin visual polish passes are all done and verified.
+Milestone 8 - Gameplay Data Expansion is complete (see MILESTONES.md and DECISIONS.md 2026-07-16): rarity removed and the exact `Held item` Yes/No field added; opt-in `verifiedAt`/`verifiedBuildId` verification stamping via the server-only `CURRENT_GAME_BUILD_ID`; full ten-profession coverage with the in-place Blacksmithing → Smithing rename; the Location hierarchy with restricted deletion; the AcquisitionSource model with the public "How to obtain" section; item/source route-ownership enforcement; and the rule that public detail pages never render empty optional sections.
 
-The automated test stack totals 236 unit / 64 integration / 9 service / 103 E2E — 412 automated tests, backed by an isolated Supabase test project and a fail-closed `.env.test.local` guard.
+Milestone numbering was resolved: Gameplay Data Expansion is Milestone 8. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started. Milestone 9 route-hub work remains deferred. Do not begin either until explicitly instructed in the milestone conversation.
+
+The automated test stack is backed by an isolated Supabase test project and a fail-closed `.env.test.local` guard (totals at Milestone 8 close are recorded in MILESTONES.md).
 
 The Supabase security warning is resolved: the Data API is disabled on both projects, and Prisma over direct PostgreSQL remains the only game-data access layer (see DECISIONS.md 2026-07-15).
-
-Milestone 8 - Deployment has not started — do not begin it until explicitly instructed in the milestone conversation.
 
 ## Test Commands
 

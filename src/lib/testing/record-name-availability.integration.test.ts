@@ -39,8 +39,8 @@ const RESOURCES = [
   {
     label: "Profession",
     isTaken: isProfessionNameTaken,
-    seededSlug: "blacksmithing",
-    seededName: "Blacksmithing",
+    seededSlug: "smithing",
+    seededName: "Smithing",
     otherSeededName: "Alchemy",
     findId: async (db: GameDataClient, slug: string) =>
       db.profession.findUnique({ where: { slug }, select: { id: true } }),

@@ -24,6 +24,8 @@ const errorMessages: Record<string, string> = {
   upload_failed: "The image could not be uploaded. Please try again.",
   conflicting_image_input:
     "Choose either a replacement image or Remove current image, not both.",
+  missing_build_id:
+    "The current game build is not configured on the server, so gameplay data cannot be marked as verified.",
 };
 
 type EditItemPageProps = {
@@ -63,11 +65,15 @@ export default async function EditItemPage({
         description={`Update details for "${item.name}".`}
       />
 
-      <p className="admin-toolbar">
+      <nav className="admin-toolbar" aria-label="Item edit">
         <a href="/admin/items" className="link-accent">
           &larr; Back to Item Management
         </a>
-      </p>
+
+        <a href={`/admin/items/${item.slug}/sources`} className="link-accent">
+          Manage acquisition sources
+        </a>
+      </nav>
 
       {errorMessage ? (
         <p role="alert" className="banner banner-error">
@@ -121,14 +127,13 @@ export default async function EditItemPage({
           </select>
         </label>
 
-        <label className="form-field">
-          <span className="form-field-label">Rarity (optional)</span>
+        <label className="form-checkbox-field">
           <input
-            type="text"
-            name="rarity"
-            defaultValue={item.rarity ?? ""}
-            className="form-input"
+            type="checkbox"
+            name="heldItem"
+            defaultChecked={item.heldItem}
           />
+          <span>Held item</span>
         </label>
 
         <label className="form-checkbox-field">
@@ -260,6 +265,15 @@ export default async function EditItemPage({
             accept="image/png,image/jpeg,image/webp"
             className="form-input"
           />
+        </label>
+
+        {/* Explicit per-save action, deliberately never pre-checked (even
+            when the record is already verified): the stamped timestamp and
+            build id come from the server, and an unchecked box leaves
+            existing verification metadata untouched. */}
+        <label className="form-checkbox-field">
+          <input type="checkbox" name="markVerified" />
+          <span>Mark gameplay data as verified for the current build.</span>
         </label>
 
         <div className="form-actions">

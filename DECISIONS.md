@@ -715,3 +715,88 @@ Alternatives considered:
 - Leaving the warning unaddressed — rejected; the anon key ships to every
   browser by design, so the exposed tables were a real risk, not a
   theoretical one.
+
+---
+
+### 2026-07-16 — Milestone 8 is Gameplay Data Expansion (complete); implemented decisions
+
+Decision:
+
+The milestone-numbering conflict is resolved: **Gameplay Data Expansion is
+Milestone 8 and is complete.** Deployment — previously listed in
+MILESTONES.md as Milestone 8 — is renumbered to a later milestone; it is
+not complete and has not started. Milestone 9 route-hub work remains
+deferred; no Milestone 9 implementation has begun.
+
+The decisions implemented during Milestone 8:
+
+- **Rarity removed; Held item added.** `Item.rarity` was dropped (never
+  part of the confirmed scope) and the exact `Held item` Yes/No field was
+  added as a required boolean defaulting to No (migration
+  `20260716074543_refine_item_gameplay_fields`).
+- **Opt-in game-build verification.** Item, Location, and
+  AcquisitionSource carry `verifiedAt` / `verifiedBuildId` metadata that is
+  stamped only by the explicit "Mark gameplay data as verified for the
+  current build." checkbox. The build id always comes from the server-only
+  `CURRENT_GAME_BUILD_ID` environment variable (`src/lib/game-build.ts`,
+  guarded by `server-only` and failing loudly when unset) — never from
+  client input. Normal edits never touch these fields, and the public
+  verification line renders only when both fields are populated.
+- **Profession coverage and in-place rename.** The full deterministic set
+  of ten professions is seeded, and "Blacksmithing" was renamed to
+  "Smithing" in place by a data migration
+  (`20260716152420_rename_blacksmithing_to_smithing`) — an `UPDATE`, not a
+  delete-and-recreate, so the row id and every `Recipe.professionId`
+  relation are preserved.
+- **Location hierarchy and deletion behavior.** The Location model
+  (migration `20260716160417_add_location_model`) has a typed hierarchy
+  via a parent/child self-relation with `onDelete: Restrict`: the database
+  itself refuses to delete a location that still has children, and the
+  admin delete action's `_count` pre-check exists only to show a friendly
+  message before that constraint would fire. Children are never silently
+  detached.
+- **AcquisitionSource model and referential actions.** The
+  AcquisitionSource model (migration
+  `20260716170040_add_acquisition_sources`, 16 acquisition types) is owned
+  by its Item (`onDelete: Cascade` — a source is meaningless without its
+  item, mirroring RecipeIngredient), while its optional Location and
+  Profession references use `SET NULL` so the acquisition fact survives
+  losing its location or profession. Quantity is deliberately a single
+  free-text field — no drop rates or structured conditions.
+- **Populated-only optional sections.** The public "How to obtain" section
+  renders only when an item has at least one acquisition source. The
+  Milestone 8 closing audit extended this to a general rule: public detail
+  pages never render empty optional sections — for a record with zero
+  related entries the entire section (heading and empty-state component
+  alike) is omitted. This now covers How to obtain, Produced by, Used as
+  an ingredient in, a category's Items, a profession's Recipes, a recipe's
+  Ingredients, and a location's Sub-locations. Top-level collection pages
+  (`/items`, `/recipes`, `/professions`, `/categories`) keep their useful
+  empty states when the whole collection is empty.
+- **Item/source route-ownership enforcement.** The nested admin source
+  routes (`/admin/items/[slug]/sources/[sourceId]/…`) treat a source id
+  that does not belong to the item named in the URL exactly like a missing
+  record (404), in both pages and server actions — a valid id from a
+  different item's URL is never honored.
+
+Reason:
+
+Recording the resolved numbering prevents the stale "Milestone 8 -
+Deployment" label from causing deployment work to be marked complete or
+started by mistake. The individual decisions follow the project's
+established postures: schema referential actions chosen by whether the
+child is an owned detail row (cascade) or an independent resource
+(restrict / set null); server-trusted values over client input for
+anything that stamps or targets a mutation; and omission over placeholder
+noise in public presentation.
+
+Alternatives considered:
+
+- Treating Deployment as still being Milestone 8 and renaming the gameplay
+  work to 8.5 or 7.5 — rejected; the milestone conversation ran Gameplay
+  Data Expansion as Milestone 8, and two things sharing one number is the
+  exact confusion this entry resolves.
+- Rendering empty optional sections with their empty states (the previous
+  behavior) — rejected by the confirmed rule; on a record detail page an
+  empty optional section is noise, unlike a collection page where the
+  empty state explains a genuinely empty collection.

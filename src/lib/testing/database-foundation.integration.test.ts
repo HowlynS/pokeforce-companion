@@ -25,7 +25,7 @@ import {
 // are generated per database and must never be hard-coded.
 const SEEDED_COUNTS = {
   categories: 5,
-  professions: 2,
+  professions: 10,
   items: 16,
   recipes: 8,
   recipeIngredients: 15,
@@ -41,6 +41,33 @@ const SEEDED_CATEGORY_SLUGS = [
 
 const SEEDED_ITEM_SLUG = "iron-ore";
 const SEEDED_RECIPE_SLUG = "iron-ingot";
+
+// Slice 8B: the full deterministic profession set. "Blacksmithing" was
+// renamed to "Smithing" in place by migration 20260716152420 — the row
+// keeps its original id and every Recipe.professionId relation that
+// pointed at it, so it is never re-listed under its old slug.
+const SEEDED_PROFESSION_SLUGS = [
+  "alchemy",
+  "archaeology",
+  "construction",
+  "cooking",
+  "crafting",
+  "farming",
+  "fishing",
+  "foraging",
+  "mining",
+  "smithing",
+] as const;
+
+// The five Recipes assigned to Smithing since prisma/seed.ts was first
+// written (as "Blacksmithing"); the rename must never have detached them.
+const SMITHING_RECIPE_SLUGS = [
+  "copper-dagger",
+  "copper-ingot",
+  "iron-ingot",
+  "iron-sword",
+  "reinforced-shield",
+] as const;
 
 // Test-created rows. All slugs carry the approved prefix so prefix-scoped
 // cleanup always catches them, even after an interrupted run.
@@ -115,6 +142,39 @@ describe("database foundation (integration)", () => {
       });
       expect(item).not.toBeNull();
       expect(item?.name).toBe("Iron Ore");
+    });
+
+    it("holds exactly the ten deterministic professions, by slug", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const professions = await prisma.profession.findMany({
+        select: { slug: true },
+        orderBy: { slug: "asc" },
+      });
+      expect(professions.map((profession) => profession.slug)).toEqual([
+        ...SEEDED_PROFESSION_SLUGS,
+      ]);
+    });
+
+    it("no longer has a profession under the retired 'blacksmithing' slug", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const blacksmithing = await prisma.profession.findUnique({
+        where: { slug: "blacksmithing" },
+      });
+      expect(blacksmithing).toBeNull();
+    });
+
+    it("keeps every formerly-Blacksmithing recipe linked to the renamed Smithing profession", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const smithing = await prisma.profession.findUnique({
+        where: { slug: "smithing" },
+        include: { recipes: { select: { slug: true } } },
+      });
+
+      expect(smithing).not.toBeNull();
+      expect(smithing?.name).toBe("Smithing");
+      expect(
+        (smithing?.recipes ?? []).map((recipe) => recipe.slug).sort()
+      ).toEqual([...SMITHING_RECIPE_SLUGS]);
     });
 
     it("finds the seeded recipe by its stable slug", async () => {

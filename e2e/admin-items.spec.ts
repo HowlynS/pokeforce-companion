@@ -22,12 +22,15 @@ import {
   removeTemporaryItemRelationRecords,
 } from "./helpers/database-cleanup";
 
+// The lifecycle flips both booleans between create and edit (tradeable
+// Yes -> No, held item No -> Yes), which also keeps every row's "Yes" and
+// "No" cells unique so exact-name cell locators never hit strict-mode
+// collisions.
 const INITIAL = {
   name: "Test E2E Item",
   slug: "test-e2e-item",
   description: "Created by the authenticated Item browser test.",
   category: "Materials",
-  rarity: "Common",
   baseValue: "5",
 } as const;
 
@@ -36,9 +39,20 @@ const EDITED = {
   slug: "test-e2e-item-updated",
   description: "Updated by the authenticated Item browser test.",
   category: "Tools",
-  rarity: "Rare",
   baseValue: "12",
 } as const;
+
+// Deterministic test build id from .env.test.local; the verification test
+// asserts this exact server-side value is stamped and rendered.
+const TEST_BUILD_ID = "test-build-001";
+
+const VERIFY_ITEM = {
+  name: "Test E2E Item Verified",
+  slug: "test-e2e-item-verified",
+} as const;
+
+const VERIFICATION_CHECKBOX_LABEL =
+  "Mark gameplay data as verified for the current build.";
 
 // Separate temporary Items for the two relation-blocked deletion tests, so
 // neither depends on the lifecycle test's data or on each other.
@@ -156,9 +170,12 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await page
     .getByRole("combobox", { name: "Category", exact: true })
     .selectOption({ label: INITIAL.category });
-  await page.getByLabel(/^Rarity/).fill(INITIAL.rarity);
+  // Held item stays unchecked: the omitted checkbox must resolve to false.
   await page.getByLabel("Tradeable").check();
   await page.getByLabel(/^Base value/).fill(INITIAL.baseValue);
+  // The verification checkbox must render unchecked by default and stays
+  // untouched here: a normal create must leave verification fields NULL.
+  await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page.getByRole("button", { name: "Create Item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=created");
@@ -174,8 +191,9 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(
     createdRow.getByRole("cell", { name: INITIAL.category, exact: true })
   ).toBeVisible();
+  // Held Item column: No; Tradeable column: Yes — one of each per row.
   await expect(
-    createdRow.getByRole("cell", { name: INITIAL.rarity, exact: true })
+    createdRow.getByRole("cell", { name: "No", exact: true })
   ).toBeVisible();
   await expect(
     createdRow.getByRole("cell", { name: "Yes", exact: true })
@@ -184,8 +202,9 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
     createdRow.getByRole("cell", { name: INITIAL.baseValue, exact: true })
   ).toBeVisible();
 
-  // Public detail page renders every field the UI shows for an item,
-  // plus the no-image fallback and both empty recipe-relation states.
+  // Public detail page renders every field the UI shows for an item, plus
+  // the no-image fallback. It has no recipe relations, so both optional
+  // recipe sections (heading and empty state alike) are omitted.
   await page.goto(`/items/${INITIAL.slug}`);
   await expect(
     page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
@@ -193,12 +212,25 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText(INITIAL.description)).toBeVisible();
   await expect(
     page.getByText(
-      `Category: ${INITIAL.category} · Rarity: ${INITIAL.rarity} · Tradeable: Yes · Base value: ${INITIAL.baseValue}`
+      `Category: ${INITIAL.category} · Tradeable: Yes · Held item: No · Base value: ${INITIAL.baseValue}`
     )
   ).toBeVisible();
+  // A newly created, never-verified item must not render a verification
+  // line (both metadata fields are NULL).
+  await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
   await expect(page.getByText("No image available")).toBeVisible();
-  await expect(page.getByText("No recipes produce this item")).toBeVisible();
-  await expect(page.getByText("Not used in any recipes")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Produced by", exact: true })
+  ).toHaveCount(0);
+  await expect(page.getByText("No recipes produce this item")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", {
+      level: 2,
+      name: "Used as an ingredient in",
+      exact: true,
+    })
+  ).toHaveCount(0);
+  await expect(page.getByText("Not used in any recipes")).toHaveCount(0);
 
   // Public list card appears and points at the detail route.
   await page.goto("/items");
@@ -206,7 +238,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(createdCard).toBeVisible();
   await expect(createdCard).toHaveAttribute("href", `/items/${INITIAL.slug}`);
 
-  // --- Edit (name, slug, description, Category reassignment, rarity,
+  // --- Edit (name, slug, description, Category reassignment, held item,
   // --- tradeable, base value; image untouched) --------------------------
   await page.goto("/admin/items");
   await adminRow(page, INITIAL.name).getByRole("link", { name: "Edit" }).click();
@@ -224,9 +256,12 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await page
     .getByRole("combobox", { name: "Category", exact: true })
     .selectOption({ label: EDITED.category });
-  await page.getByLabel(/^Rarity/).fill(EDITED.rarity);
+  await page.getByLabel("Held item").check();
   await page.getByLabel("Tradeable").uncheck();
   await page.getByLabel(/^Base value/).fill(EDITED.baseValue);
+  // Unchecked by default on the edit form too, and left untouched: this
+  // normal edit must not stamp verification metadata.
+  await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=updated");
@@ -237,8 +272,9 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(
     editedRow.getByRole("cell", { name: EDITED.category, exact: true })
   ).toBeVisible();
+  // Held Item column: Yes; Tradeable column: No — flipped from creation.
   await expect(
-    editedRow.getByRole("cell", { name: EDITED.rarity, exact: true })
+    editedRow.getByRole("cell", { name: "Yes", exact: true })
   ).toBeVisible();
   await expect(
     editedRow.getByRole("cell", { name: "No", exact: true })
@@ -257,9 +293,12 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText(EDITED.description)).toBeVisible();
   await expect(
     page.getByText(
-      `Category: ${EDITED.category} · Rarity: ${EDITED.rarity} · Tradeable: No · Base value: ${EDITED.baseValue}`
+      `Category: ${EDITED.category} · Tradeable: No · Held item: Yes · Base value: ${EDITED.baseValue}`
     )
   ).toBeVisible();
+  // The normal edit above never touched the verification checkbox, so the
+  // item must still render as unverified.
+  await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
   await page.goto("/items");
   const editedCard = cardLink(page, EDITED.name);
@@ -296,6 +335,56 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
 
   await page.goto("/items");
   await expect(cardLink(page, EDITED.name)).toHaveCount(0);
+});
+
+test("gameplay verification stamps the server build id and survives normal edits", async ({
+  page,
+}) => {
+  // --- Create unverified (checkbox untouched) ---------------------------
+  await page.goto("/admin/items");
+  await createMinimalItemThroughForm(page, VERIFY_ITEM);
+
+  await page.goto(`/items/${VERIFY_ITEM.slug}`);
+  await expect(
+    page.getByRole("heading", { level: 1, name: VERIFY_ITEM.name, exact: true })
+  ).toBeVisible();
+  await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
+
+  // --- Verify via the explicit opt-in checkbox --------------------------
+  await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
+  const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
+  await expect(verifyCheckbox).not.toBeChecked();
+  await verifyCheckbox.check();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/items?success=updated");
+
+  // The rendered line carries the deterministic SERVER-side build id from
+  // .env.test.local — the browser never submitted a build value.
+  await page.goto(`/items/${VERIFY_ITEM.slug}`);
+  const verificationLine = page.getByText(
+    `Gameplay data verified for build ${TEST_BUILD_ID} on`
+  );
+  await expect(verificationLine).toBeVisible();
+  const stampedText = await verificationLine.textContent();
+
+  // --- A later NORMAL edit must not alter the stamp ---------------------
+  await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
+  // Unchecked by default on every render, even for an already-verified
+  // item: verification is a per-save action, not persistent form state.
+  await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
+  await page
+    .getByLabel(/^Description/)
+    .fill("Edited without touching verification.");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/items?success=updated");
+
+  await page.goto(`/items/${VERIFY_ITEM.slug}`);
+  await expect(page.getByText("Edited without touching verification.")).toBeVisible();
+  const preservedLine = page.getByText(
+    `Gameplay data verified for build ${TEST_BUILD_ID} on`
+  );
+  await expect(preservedLine).toBeVisible();
+  expect(await preservedLine.textContent()).toBe(stampedText);
 });
 
 test("creating an item with a seeded name is rejected server-side", async ({
@@ -490,7 +579,7 @@ test("deletion is blocked while the item is a recipe ingredient", async ({
 test("seeded fixtures are preserved and no test item remains", async () => {
   expect(await readFixtureCounts()).toEqual({
     categories: 5,
-    professions: 2,
+    professions: 10,
     items: 16,
     recipes: 8,
     recipeIngredients: 15,

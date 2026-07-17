@@ -37,7 +37,7 @@ import {
 // suite; re-checked here after write-heavy tests).
 const SEEDED_COUNTS = {
   categories: 5,
-  professions: 2,
+  professions: 10,
   items: 16,
   recipes: 8,
   recipeIngredients: 15,
@@ -112,6 +112,70 @@ describe("database relations (integration)", () => {
         "P2025"
       );
       expect(isMissingRecordError(caught)).toBe(true);
+    });
+  });
+
+  describe("item gameplay fields (Slice 8A shape)", () => {
+    it("defaults heldItem to false and leaves verification fields NULL on create", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const item = await prisma.item.create({
+        data: { name: "Relations Test Plain Item", slug: `${P}plain-item` },
+      });
+
+      expect(item.heldItem).toBe(false);
+      expect(item.verifiedAt).toBeNull();
+      expect(item.verifiedBuildId).toBeNull();
+    });
+
+    it("stores explicit heldItem values on create and update", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const item = await prisma.item.create({
+        data: {
+          name: "Relations Test Held Item",
+          slug: `${P}held-item`,
+          heldItem: true,
+        },
+      });
+      expect(item.heldItem).toBe(true);
+
+      const updated = await prisma.item.update({
+        where: { id: item.id },
+        data: { heldItem: false },
+      });
+      expect(updated.heldItem).toBe(false);
+    });
+
+    it("preserves verification metadata through a normal edit and advances updatedAt", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const created = await prisma.item.create({
+        data: { name: "Relations Test Verified Item", slug: `${P}verified-item` },
+      });
+
+      // The exact write shape updateItemAction uses when the opt-in
+      // checkbox is checked: both fields stamped together.
+      const stampedAt = new Date();
+      const stamped = await prisma.item.update({
+        where: { id: created.id },
+        data: { verifiedAt: stampedAt, verifiedBuildId: "test-build-001" },
+      });
+      expect(stamped.verifiedAt?.getTime()).toBe(stampedAt.getTime());
+      expect(stamped.verifiedBuildId).toBe("test-build-001");
+
+      // The exact write shape of a NORMAL edit: verification fields are
+      // omitted entirely, so Prisma must leave them untouched while the
+      // automatic updatedAt still advances.
+      const edited = await prisma.item.update({
+        where: { id: created.id },
+        data: { name: "Relations Test Verified Item Renamed" },
+      });
+      expect(edited.verifiedAt?.getTime()).toBe(stampedAt.getTime());
+      expect(edited.verifiedBuildId).toBe("test-build-001");
+      expect(edited.updatedAt.getTime()).toBeGreaterThan(
+        stamped.updatedAt.getTime()
+      );
     });
   });
 

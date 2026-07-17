@@ -11,6 +11,7 @@ import {
 } from "@/lib/prisma-errors";
 import { parseItemInput } from "@/lib/validation/item";
 import { isItemNameTaken } from "@/lib/items/item-name";
+import { getCurrentGameBuildId } from "@/lib/game-build";
 import {
   deleteImage,
   uploadImage,
@@ -27,6 +28,29 @@ function getSubmittedImageFile(formData: FormData): File | null {
   }
 
   return value;
+}
+
+// The explicit opt-in verification action. The checkbox only ever carries
+// intent ("on" or absent); both stamped values come exclusively from the
+// server — the timestamp from the clock, the build id from the validated
+// CURRENT_GAME_BUILD_ID environment value — so the browser can never submit
+// an arbitrary build identifier. Returns null when the box was unchecked,
+// and null with `failed: true` when the server has no configured build id.
+function resolveVerificationStamp(formData: FormData):
+  | { stamp: { verifiedAt: Date; verifiedBuildId: string } | null; failed: false }
+  | { stamp: null; failed: true } {
+  if (formData.get("markVerified") !== "on") {
+    return { stamp: null, failed: false };
+  }
+
+  try {
+    return {
+      stamp: { verifiedAt: new Date(), verifiedBuildId: getCurrentGameBuildId() },
+      failed: false,
+    };
+  } catch {
+    return { stamp: null, failed: true };
+  }
 }
 
 // Best-effort storage cleanup. Storage and the database cannot share a
@@ -67,6 +91,14 @@ export async function createItemAction(formData: FormData) {
     redirect("/admin/items?error=duplicate_name");
   }
 
+  // Resolved before any upload so a misconfigured build id rejects the
+  // submission without leaving an orphaned file behind.
+  const verification = resolveVerificationStamp(formData);
+
+  if (verification.failed) {
+    redirect("/admin/items?error=missing_build_id");
+  }
+
   // A submitted category ID is never trusted blindly: it must correspond to
   // an existing Category before the item is created.
   let categorySlug: string | null = null;
@@ -103,16 +135,19 @@ export async function createItemAction(formData: FormData) {
   }
 
   try {
+    // Without the opt-in stamp both verification fields stay NULL — a newly
+    // created item is unverified by default.
     await prisma.item.create({
       data: {
         name: parsed.value.name,
         slug: parsed.value.slug,
         description: parsed.value.description,
-        rarity: parsed.value.rarity,
+        heldItem: parsed.value.heldItem,
         tradeable: parsed.value.tradeable,
         baseValue: parsed.value.baseValue,
         categoryId: parsed.value.categoryId,
         image: imagePath,
+        ...(verification.stamp ?? {}),
       },
     });
   } catch (error) {
@@ -174,6 +209,14 @@ export async function updateItemAction(formData: FormData) {
     redirect(`${editPath ?? "/admin/items"}?error=duplicate_name`);
   }
 
+  // Resolved before any upload so a misconfigured build id rejects the
+  // submission without leaving an orphaned file behind.
+  const verification = resolveVerificationStamp(formData);
+
+  if (verification.failed) {
+    redirect(`${editPath ?? "/admin/items"}?error=missing_build_id`);
+  }
+
   // A submitted category ID is never trusted blindly: it must correspond to
   // an existing Category before the item is updated.
   let newCategorySlug: string | null = null;
@@ -226,17 +269,21 @@ export async function updateItemAction(formData: FormData) {
   try {
     // Located by the stable cuid `id`, not the editable slug, so changing
     // the slug in this same submission cannot lose the target record.
+    // Verification fields are included ONLY when the opt-in checkbox was
+    // checked — a normal edit never alters or clears existing verification
+    // metadata, because Prisma leaves omitted fields untouched.
     await prisma.item.update({
       where: { id },
       data: {
         name: parsed.value.name,
         slug: parsed.value.slug,
         description: parsed.value.description,
-        rarity: parsed.value.rarity,
+        heldItem: parsed.value.heldItem,
         tradeable: parsed.value.tradeable,
         baseValue: parsed.value.baseValue,
         categoryId: parsed.value.categoryId,
         image: imageValue,
+        ...(verification.stamp ?? {}),
       },
     });
   } catch (error) {

@@ -3,7 +3,6 @@ import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
-import { EmptyState } from "@/components/ui/empty-state";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -26,21 +25,8 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-function buildItemCardDescription(item: {
-  rarity: string | null;
-  tradeable: boolean;
-}): string {
-  // Only meaningful metadata makes it onto the card: an unset rarity is
-  // omitted rather than rendered as "Unknown".
-  const details: string[] = [];
-
-  if (item.rarity) {
-    details.push(`Rarity: ${item.rarity}`);
-  }
-
-  details.push(`Tradeable: ${item.tradeable ? "Yes" : "No"}`);
-
-  return details.join(" · ");
+function buildItemCardDescription(item: { tradeable: boolean }): string {
+  return `Tradeable: ${item.tradeable ? "Yes" : "No"}`;
 }
 
 export default async function CategoryDetailPage({ params }: CategoryDetailPageProps) {
@@ -76,10 +62,13 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
         </div>
       </section>
 
-      <section>
-        <SectionHeading>Items</SectionHeading>
+      {/* Omitted entirely (heading included) when the category holds no
+          items — public detail pages never render empty optional sections.
+          The Details card above still states "Items: 0". */}
+      {category.items.length > 0 ? (
+        <section>
+          <SectionHeading>Items</SectionHeading>
 
-        {category.items.length > 0 ? (
           <ContentGrid>
             {category.items.map((item) => (
               <Card
@@ -90,13 +79,8 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
               />
             ))}
           </ContentGrid>
-        ) : (
-          <EmptyState
-            title="No items yet"
-            description="No items are currently linked to this category."
-          />
-        )}
-      </section>
+        </section>
+      ) : null}
     </AppShell>
   );
 }

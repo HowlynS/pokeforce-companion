@@ -119,9 +119,11 @@ test("authenticated profession admin access uses the saved storage state", async
     page.getByRole("button", { name: "Create Profession", exact: true })
   ).toBeVisible();
 
-  // Both seeded professions appear in the admin table.
+  // A representative pair of seeded professions appear in the admin table
+  // (the full deterministic set of ten is asserted by the dedicated
+  // profession-coverage test below).
   await expect(
-    page.getByRole("cell", { name: "Blacksmithing", exact: true })
+    page.getByRole("cell", { name: "Smithing", exact: true })
   ).toBeVisible();
   await expect(
     page.getByRole("cell", { name: "Alchemy", exact: true })
@@ -142,14 +144,20 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   await createProfessionThroughForm(page, INITIAL);
 
   // Public detail page renders the new profession with the no-image
-  // fallback and the empty recipes state.
+  // fallback. It has no recipes, so the entire Recipes section (heading
+  // and empty state alike) is omitted; the Details card still says
+  // "Recipes: 0".
   await page.goto(`/professions/${INITIAL.slug}`);
   await expect(
     page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
   await expect(page.getByText("No image available")).toBeVisible();
-  await expect(page.getByText("No recipes yet")).toBeVisible();
+  await expect(page.getByText("Recipes: 0")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
+  ).toHaveCount(0);
+  await expect(page.getByText("No recipes yet")).toHaveCount(0);
 
   // Public list card appears and points at the detail route.
   await page.goto("/professions");
@@ -235,11 +243,11 @@ test("creating a profession with a seeded name is rejected server-side", async (
 }) => {
   await page.goto("/admin/professions");
 
-  // Seeded name "Blacksmithing" in different casing with surrounding
+  // Seeded name "Smithing" in different casing with surrounding
   // whitespace: the server trims the name and its duplicate check is
   // case-insensitive, so this must be rejected. The slug carries the test
   // prefix so cleanup would catch the row if creation ever slipped through.
-  await page.getByLabel("Name", { exact: true }).fill("  blacksmithing  ");
+  await page.getByLabel("Name", { exact: true }).fill("  sMiThInG  ");
   await page.getByLabel(/^Slug/).fill("test-e2e-profession-duplicate");
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
@@ -345,7 +353,7 @@ test("deletion is blocked while a recipe references the profession", async ({
 test("seeded fixtures are preserved and no test profession remains", async () => {
   expect(await readFixtureCounts()).toEqual({
     categories: 5,
-    professions: 2,
+    professions: 10,
     items: 16,
     recipes: 8,
     recipeIngredients: 15,

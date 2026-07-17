@@ -117,7 +117,7 @@ describe("global search (integration)", () => {
 
     const results = await searchGameData(prisma, "gear");
 
-    // No item name/description/rarity contains "gear"; the three Gear
+    // No item name/description contains "gear"; the three Gear
     // items match relationally and say so. The category itself matches
     // directly with no context.
     expect(results.items.map((item) => item.slug)).toEqual([

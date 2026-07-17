@@ -23,33 +23,40 @@ model Category {
 }
 
 model Item {
-  id                 String             @id @default(cuid())
-  slug               String             @unique
+  id                 String              @id @default(cuid())
+  slug               String              @unique
   name               String
   description        String?
   image              String?
-  rarity             String?
-  tradeable          Boolean            @default(false)
+  heldItem           Boolean             @default(false)
+  tradeable          Boolean             @default(false)
   baseValue          Int?
   categoryId         String?
-  category           Category?          @relation(fields: [categoryId], references: [id])
-  recipesProduced    Recipe[]           @relation("RecipeResultItem")
+  category           Category?           @relation(fields: [categoryId], references: [id])
+  recipesProduced    Recipe[]            @relation("RecipeResultItem")
   recipeIngredients  RecipeIngredient[]
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  acquisitionSources AcquisitionSource[]
+  // Gameplay-verification metadata: stamped only by the explicit opt-in
+  // "Mark gameplay data as verified for the current build." action; normal
+  // edits never touch these fields.
+  verifiedAt         DateTime?
+  verifiedBuildId    String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([categoryId])
 }
 
 model Profession {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  description String?
-  image       String?
-  recipes     Recipe[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String              @id @default(cuid())
+  slug               String              @unique
+  name               String
+  description        String?
+  image              String?
+  recipes            Recipe[]
+  acquisitionSources AcquisitionSource[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model Recipe {
@@ -82,4 +89,94 @@ model RecipeIngredient {
   @@unique([recipeId, itemId])
   @@index([recipeId])
   @@index([itemId])
+}
+
+enum LocationType {
+  REGION
+  ROUTE
+  TOWN
+  BUILDING
+  DUNGEON
+  SUB_AREA
+  SPECIAL_AREA
+}
+
+model Location {
+  id                 String              @id @default(cuid())
+  slug               String              @unique
+  name               String
+  type               LocationType
+  parentId           String?
+  // Named self-relation for the location hierarchy. onDelete: Restrict means
+  // the database itself refuses to delete a location while any row still
+  // references it as parentId — children are never silently detached, and
+  // the admin action's own _count pre-check exists only to give a friendly
+  // message before that database constraint would ever fire.
+  parent             Location?           @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children           Location[]          @relation("LocationHierarchy")
+  description        String?
+  image              String?
+  accessNote         String?
+  acquisitionSources AcquisitionSource[]
+  // Gameplay-verification metadata: stamped only by the explicit opt-in
+  // "Mark gameplay data as verified for the current build." action; normal
+  // edits never touch these fields.
+  verifiedAt         DateTime?
+  verifiedBuildId    String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([parentId])
+}
+
+enum AcquisitionType {
+  FORAGING
+  FISHING
+  FARMING
+  CRAFTING
+  MINING
+  ARCHAEOLOGY
+  COOKING
+  CONSTRUCTION
+  SMITHING
+  NPC_OR_SHOP
+  ENEMY_DROP
+  REWARD
+  CONTAINER
+  EXCHANGE
+  EVENT
+  OTHER
+}
+
+// A restrained record of one way an Item can be obtained. Deliberately
+// shallow: no drop rates, min/max quantities, conditions, or NPC catalogue —
+// `sourceLabel` is free text so a value like "Seed Merchant" or "Vendor on
+// Route 4" is valid without any named-NPC model existing.
+model AcquisitionSource {
+  id              String          @id @default(cuid())
+  itemId          String
+  // The source is meaningless without its item, so it is deleted along with
+  // it — mirroring RecipeIngredient's ON DELETE CASCADE on its own Recipe.
+  item            Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type            AcquisitionType
+  locationId      String?
+  // Optional relations: the acquisition fact survives losing its location
+  // or profession, matching Item.categoryId / Recipe.professionId.
+  location        Location?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  professionId    String?
+  profession      Profession?     @relation(fields: [professionId], references: [id], onDelete: SetNull)
+  sourceLabel     String?
+  notes           String?
+  quantity        String?
+  // Gameplay-verification metadata: stamped only by the explicit opt-in
+  // "Mark gameplay data as verified for the current build." action; normal
+  // edits never touch these fields.
+  verifiedAt      DateTime?
+  verifiedBuildId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([itemId])
+  @@index([locationId])
+  @@index([professionId])
 }

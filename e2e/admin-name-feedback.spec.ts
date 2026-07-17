@@ -52,10 +52,10 @@ const RESOURCES: ResourceCase[] = [
   {
     label: "Profession",
     createUrl: "/admin/professions",
-    editUrl: "/admin/professions/blacksmithing/edit",
+    editUrl: "/admin/professions/smithing/edit",
     regionId: "#profession-name-availability",
-    seededName: "Blacksmithing",
-    seededVariant: "  bLaCkSmItHiNg  ",
+    seededName: "Smithing",
+    seededVariant: "  sMiThInG  ",
     otherSeededName: "Alchemy",
     uniqueName: "Test E2E Unique Profession Feedback",
     takenText: "A profession with that name already exists.",
@@ -192,7 +192,7 @@ for (const resource of RESOURCES) {
 test("seeded fixtures are unchanged — the suite never wrote anything", async () => {
   expect(await readFixtureCounts()).toEqual({
     categories: 5,
-    professions: 2,
+    professions: 10,
     items: 16,
     recipes: 8,
     recipeIngredients: 15,

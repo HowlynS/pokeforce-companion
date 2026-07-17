@@ -61,7 +61,7 @@ describe("parseItemInput", () => {
         name: "Wood",
         slug: "wood",
         description: null,
-        rarity: null,
+        heldItem: false,
         tradeable: false,
         baseValue: null,
         categoryId: null,
@@ -74,7 +74,6 @@ describe("parseItemInput", () => {
       formDataFrom({
         name: "Wood",
         description: " A log. ",
-        rarity: " Common ",
         categoryId: " cat123 ",
       })
     );
@@ -82,8 +81,18 @@ describe("parseItemInput", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.description).toBe("A log.");
-      expect(result.value.rarity).toBe("Common");
       expect(result.value.categoryId).toBe("cat123");
+    }
+  });
+
+  it("ignores a submitted rarity field: rarity is no longer part of the item model", () => {
+    const result = parseItemInput(
+      formDataFrom({ name: "Wood", rarity: "Common" })
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).not.toHaveProperty("rarity");
     }
   });
 
@@ -95,6 +104,21 @@ describe("parseItemInput", () => {
 
     expect(checked.ok && checked.value.tradeable).toBe(true);
     expect(unchecked.ok && unchecked.value.tradeable).toBe(false);
+  });
+
+  it("parses the held-item checkbox: 'on' means true, absent means false", () => {
+    const checked = parseItemInput(
+      formDataFrom({ name: "Wood", heldItem: "on" })
+    );
+    const unchecked = parseItemInput(formDataFrom({ name: "Wood" }));
+    const otherValue = parseItemInput(
+      formDataFrom({ name: "Wood", heldItem: "true" })
+    );
+
+    expect(checked.ok && checked.value.heldItem).toBe(true);
+    expect(unchecked.ok && unchecked.value.heldItem).toBe(false);
+    // Only the browser's literal "on" counts; anything else stays false.
+    expect(otherValue.ok && otherValue.value.heldItem).toBe(false);
   });
 
   describe("base value parsing", () => {

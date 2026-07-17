@@ -7,8 +7,8 @@
 // guard-first order for test database access.
 //
 // Matching is deliberately simple: case-insensitive substring matching on
-// each resource's own text fields (name, description where the field
-// exists, and Item.rarity), plus relational NAME matching through Prisma
+// each resource's own text fields (name, and description where the field
+// exists), plus relational NAME matching through Prisma
 // relation filters — an Item matches through its Category name, and a
 // Recipe matches through its resulting Item name, its Profession name, or
 // any of its ingredient Item names. Relation descriptions are deliberately
@@ -124,7 +124,6 @@ export async function searchGameData(
         OR: [
           { name: contains },
           { description: contains },
-          { rarity: contains },
           { category: { name: contains } },
         ],
       },
@@ -132,7 +131,6 @@ export async function searchGameData(
         slug: true,
         name: true,
         description: true,
-        rarity: true,
         category: { select: { name: true } },
       },
       orderBy: ordering,
@@ -187,7 +185,7 @@ export async function searchGameData(
       description: item.description,
       context: buildMatchContext(
         query,
-        [item.name, item.description, item.rarity],
+        [item.name, item.description],
         [{ label: "Category", value: item.category?.name }]
       ),
     })),

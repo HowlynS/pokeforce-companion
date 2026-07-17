@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
-import { EmptyState } from "@/components/ui/empty-state";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
 
@@ -85,10 +84,14 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
         </div>
       </section>
 
-      <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <SectionHeading>Ingredients</SectionHeading>
+      {/* Omitted entirely (heading included) when the recipe has no
+          ingredients — public detail pages never render empty optional
+          sections. Validation requires at least one ingredient, so this
+          only guards data reached outside the admin UI. */}
+      {recipe.ingredients.length > 0 ? (
+        <section style={{ marginBottom: designTokens.layout.sectionGap }}>
+          <SectionHeading>Ingredients</SectionHeading>
 
-        {recipe.ingredients.length > 0 ? (
           <ContentGrid>
             {recipe.ingredients.map((ingredient) => (
               <Card
@@ -99,13 +102,8 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
               />
             ))}
           </ContentGrid>
-        ) : (
-          <EmptyState
-            title="No ingredients"
-            description="This recipe does not currently require any ingredients."
-          />
-        )}
-      </section>
+        </section>
+      ) : null}
     </AppShell>
   );
 }

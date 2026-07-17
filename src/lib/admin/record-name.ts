@@ -118,3 +118,26 @@ export async function isRecipeNameTaken(
 
   return existing !== null;
 }
+
+/** Location twin of isCategoryNameTaken — identical rule and guarantees. */
+export async function isLocationNameTaken(
+  db: GameDataClient,
+  rawName: string,
+  excludeId?: string
+): Promise<boolean> {
+  const name = normalizeRecordNameInput(rawName);
+
+  if (name === "") {
+    return false;
+  }
+
+  const existing = await db.location.findFirst({
+    where: {
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
+    select: { id: true },
+  });
+
+  return existing !== null;
+}

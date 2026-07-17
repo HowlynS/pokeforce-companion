@@ -176,7 +176,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     slug: "test-e2e-recipe",
     resultingItem: "Iron Ingot",
     resultingQuantity: "2",
-    profession: "Blacksmithing",
+    profession: "Smithing",
     requiredLevel: "3",
     ingredients: [
       { item: "Iron Ore", quantity: "2" },
@@ -194,7 +194,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     createdRow.getByRole("cell", { name: "2x Iron Ingot", exact: true })
   ).toBeVisible();
   await expect(
-    createdRow.getByRole("cell", { name: "Blacksmithing", exact: true })
+    createdRow.getByRole("cell", { name: "Smithing", exact: true })
   ).toBeVisible();
   await expect(
     createdRow.getByRole("cell", { name: "2", exact: true })
@@ -208,7 +208,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   await expect(createdCard).toHaveAttribute("href", "/recipes/test-e2e-recipe");
   await expect(
     createdCard.getByText(
-      "Crafts 2x Iron Ingot (Components) · Profession: Blacksmithing · Required level: 3 · Requires: 1x Charcoal, 2x Iron Ore"
+      "Crafts 2x Iron Ingot (Components) · Profession: Smithing · Required level: 3 · Requires: 1x Charcoal, 2x Iron Ore"
     )
   ).toBeVisible();
 
@@ -224,7 +224,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     )
   ).toBeVisible();
   await expect(
-    page.getByText("Profession: Blacksmithing · Required level: 3")
+    page.getByText("Profession: Smithing · Required level: 3")
   ).toBeVisible();
   await expect(
     cardLink(page, "Charcoal").getByText("1x required.")
@@ -243,7 +243,7 @@ test("recipe editing prefills ingredients and applies the transactional update",
     name: "Test E2E Recipe",
     slug: "test-e2e-recipe",
     resultingItem: "Iron Ingot",
-    profession: "Blacksmithing",
+    profession: "Smithing",
     requiredLevel: "3",
     ingredients: [
       { item: "Iron Ore", quantity: "2" },
@@ -281,7 +281,7 @@ test("recipe editing prefills ingredients and applies the transactional update",
     await selectedOptionLabel(
       page.getByRole("combobox", { name: "Profession", exact: true })
     )
-  ).toBe("Blacksmithing");
+  ).toBe("Smithing");
   await expect(page.getByLabel(/^Required level/)).toHaveValue("3");
 
   // Ingredient rows prefill in item-name order: Charcoal, then Iron Ore,
@@ -606,7 +606,7 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
 test("seeded fixtures are preserved and no test recipe remains", async () => {
   expect(await readFixtureCounts()).toEqual({
     categories: 5,
-    professions: 2,
+    professions: 10,
     items: 16,
     recipes: 8,
     recipeIngredients: 15,

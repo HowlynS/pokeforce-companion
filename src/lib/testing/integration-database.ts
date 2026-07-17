@@ -24,6 +24,8 @@ type TestPrismaClient = (typeof import("@/lib/db"))["prisma"];
 // fixtures can never be touched by mistake.
 export const INTEGRATION_TEST_SLUG_PREFIX = "test-integration-";
 export const RELATIONS_TEST_SLUG_PREFIX = "test-relations-";
+export const LOCATIONS_TEST_SLUG_PREFIX = "test-integration-location-";
+export const ACQUISITION_TEST_SLUG_PREFIX = "test-acquisition-";
 
 // Memoized as a promise: the first caller triggers guard + import exactly
 // once, and a guard failure stays failed for every later caller instead of
@@ -111,6 +113,95 @@ export async function deleteRelationsTestRecords(): Promise<number> {
     professions.count +
     categories.count
   );
+}
+
+/**
+ * Deletes ONLY Location rows carrying the locations-test slug prefix,
+ * regardless of how deep a parent/child chain a test built. A single bulk
+ * deleteMany against a self-referencing table with onDelete: Restrict is not
+ * safe here — whether it succeeds can depend on the (unspecified) order
+ * Postgres processes matching rows. Instead this repeatedly deletes only
+ * rows that are currently leaves among the prefixed set (no other prefixed
+ * row still points at them as parentId), which is safe regardless of chain
+ * depth. Returns how many rows were removed in total; throws (failing the
+ * calling test or hook loudly) if the database rejects a delete.
+ */
+export async function deleteLocationsTestRecords(): Promise<number> {
+  // Defense in depth: a broad deleteMany must be impossible even if the
+  // prefix constant is ever edited carelessly.
+  if (LOCATIONS_TEST_SLUG_PREFIX.length < 5) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the locations-test slug prefix is suspiciously short."
+    );
+  }
+
+  const prisma = await getVerifiedTestPrisma();
+  const startsWithPrefix = { startsWith: LOCATIONS_TEST_SLUG_PREFIX };
+
+  let totalDeleted = 0;
+
+  for (let iteration = 0; iteration < 50; iteration += 1) {
+    const leaves = await prisma.location.findMany({
+      where: {
+        slug: startsWithPrefix,
+        children: { none: { slug: startsWithPrefix } },
+      },
+      select: { id: true },
+    });
+
+    if (leaves.length === 0) {
+      break;
+    }
+
+    const result = await prisma.location.deleteMany({
+      where: { id: { in: leaves.map((leaf) => leaf.id) } },
+    });
+    totalDeleted += result.count;
+  }
+
+  return totalDeleted;
+}
+
+/**
+ * Deletes ONLY rows created by the acquisition-source integration tests:
+ * AcquisitionSource rows are matched through their Item/Location/Profession
+ * relation (the model has no slug of its own), removed first, then the
+ * test-acquisition- prefixed Item/Location/Profession rows themselves.
+ * Returns how many rows were removed in total. Throws (failing the calling
+ * test or hook loudly) if the database rejects a delete.
+ */
+export async function deleteAcquisitionTestRecords(): Promise<number> {
+  // Defense in depth: a broad deleteMany must be impossible even if the
+  // prefix constant is ever edited carelessly.
+  if (ACQUISITION_TEST_SLUG_PREFIX.length < 5) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the acquisition-test slug prefix is suspiciously short."
+    );
+  }
+
+  const prisma = await getVerifiedTestPrisma();
+  const startsWithPrefix = { startsWith: ACQUISITION_TEST_SLUG_PREFIX };
+
+  const sources = await prisma.acquisitionSource.deleteMany({
+    where: {
+      OR: [
+        { item: { slug: startsWithPrefix } },
+        { location: { slug: startsWithPrefix } },
+        { profession: { slug: startsWithPrefix } },
+      ],
+    },
+  });
+  const items = await prisma.item.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
+  const locations = await prisma.location.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
+  const professions = await prisma.profession.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
+
+  return sources.count + items.count + locations.count + professions.count;
 }
 
 /**

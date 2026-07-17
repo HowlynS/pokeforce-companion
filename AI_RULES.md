@@ -14,11 +14,11 @@ AI tools must not invent features, architecture, database tables, or design syst
 
 The current phase is:
 
-Milestone 7 - Search and Polish is in progress.
+Milestone 8 - Gameplay Data Expansion is complete (see MILESTONES.md and DECISIONS.md 2026-07-16).
 
-The Automated Testing Foundation is complete, and the Supabase security warning is resolved (Data API disabled on both projects — see DECISIONS.md).
+Milestone numbering was resolved: Gameplay Data Expansion is Milestone 8. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started. Milestone 9 route-hub work remains deferred.
 
-Search and Polish have not started yet. Do not start that work until explicitly instructed in the milestone conversation.
+Do not begin Deployment or Milestone 9 work until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 

@@ -2,7 +2,7 @@
 // navigation between them, and the no-image fallback. Read-only against the
 // deterministic seed from prisma/seed.ts:
 //   Recipe "Iron Sword" -> results in Item "Iron Sword" (category Gear),
-//   ingredients Iron Ingot x2 and Leather Strap x1, profession Blacksmithing.
+//   ingredients Iron Ingot x2 and Leather Strap x1, profession Smithing.
 //   Category "Materials" holds Iron Ore; no seeded record has an image.
 
 import { expect, test, type Page } from "@playwright/test";
@@ -68,10 +68,10 @@ test.describe("public detail pages", () => {
   });
 
   test("profession detail links its recipes", async ({ page }) => {
-    await page.goto("/professions/blacksmithing");
+    await page.goto("/professions/smithing");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "Blacksmithing", exact: true })
+      page.getByRole("heading", { level: 1, name: "Smithing", exact: true })
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
@@ -126,7 +126,7 @@ test.describe("relational navigation journeys", () => {
   });
 
   test("profession detail -> recipe detail", async ({ page }) => {
-    await page.goto("/professions/blacksmithing");
+    await page.goto("/professions/smithing");
     await cardLink(page, "Iron Sword").click();
     await expect(page).toHaveURL("/recipes/iron-sword");
     await expect(

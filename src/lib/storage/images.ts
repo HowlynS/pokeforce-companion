@@ -25,7 +25,7 @@ export type AllowedImageMimeType = (typeof ALLOWED_IMAGE_MIME_TYPES)[number];
  * The only resource folders an object path may start with. Callers pick one
  * of these; arbitrary folder names are never accepted.
  */
-export type ImageResourceType = "items" | "recipes" | "professions";
+export type ImageResourceType = "items" | "recipes" | "professions" | "locations";
 
 // Controlled extensions derived from the validated MIME type. The client
 // filename (and its extension) is never used for anything.
@@ -41,7 +41,7 @@ const MIME_EXTENSIONS: Record<AllowedImageMimeType, string> = {
 // empty strings — fails to match. No normalization is applied before the
 // check, so an unsafe path can never be rewritten into an allowed one.
 const SAFE_OBJECT_PATH_PATTERN =
-  /^(items|recipes|professions)\/[a-z0-9-]+\.(png|jpg|webp)$/;
+  /^(items|recipes|professions|locations)\/[a-z0-9-]+\.(png|jpg|webp)$/;
 
 export type ImageStorageErrorKind =
   | "validation"

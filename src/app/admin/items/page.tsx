@@ -25,6 +25,8 @@ const errorMessages: Record<string, string> = {
   upload_failed: "The image could not be uploaded. Please try again.",
   conflicting_image_input:
     "Choose either a replacement image or Remove current image, not both.",
+  missing_build_id:
+    "The current game build is not configured on the server, so gameplay data cannot be marked as verified.",
 };
 
 const successMessages: Record<string, string> = {
@@ -104,7 +106,7 @@ export default async function AdminItemsPage({
                     "Name",
                     "Slug",
                     "Category",
-                    "Rarity",
+                    "Held Item",
                     "Tradeable",
                     "Base Value",
                     "Actions",
@@ -119,7 +121,7 @@ export default async function AdminItemsPage({
                     <td>{item.name}</td>
                     <td>{item.slug}</td>
                     <td>{item.category?.name ?? "Uncategorized"}</td>
-                    <td>{item.rarity ?? "—"}</td>
+                    <td>{item.heldItem ? "Yes" : "No"}</td>
                     <td>{item.tradeable ? "Yes" : "No"}</td>
                     <td>{item.baseValue ?? "—"}</td>
                     <td>
@@ -129,6 +131,12 @@ export default async function AdminItemsPage({
                           className="link-accent"
                         >
                           Edit
+                        </a>
+                        <a
+                          href={`/admin/items/${item.slug}/sources`}
+                          className="link-accent"
+                        >
+                          Sources
                         </a>
                         <a
                           href={`/admin/items/${item.slug}/delete`}
@@ -184,9 +192,9 @@ export default async function AdminItemsPage({
             </select>
           </label>
 
-          <label className="form-field">
-            <span className="form-field-label">Rarity (optional)</span>
-            <input type="text" name="rarity" className="form-input" />
+          <label className="form-checkbox-field">
+            <input type="checkbox" name="heldItem" />
+            <span>Held item</span>
           </label>
 
           <label className="form-checkbox-field">
@@ -215,6 +223,14 @@ export default async function AdminItemsPage({
               accept="image/png,image/jpeg,image/webp"
               className="form-input"
             />
+          </label>
+
+          {/* Explicit per-save action, deliberately never pre-checked: the
+              stamped timestamp and build id come from the server, and an
+              unchecked box leaves verification metadata untouched. */}
+          <label className="form-checkbox-field">
+            <input type="checkbox" name="markVerified" />
+            <span>Mark gameplay data as verified for the current build.</span>
           </label>
 
           <div className="form-actions">

@@ -40,9 +40,24 @@ const categories: CategorySeed[] = [
   { slug: "gear", name: "Gear", description: "Equippable weapons and armor." },
 ];
 
+// Slice 8B: the deterministic project data spans all confirmed
+// professions. The persisted "Blacksmithing" row was renamed to
+// "Smithing" IN PLACE by migration 20260716152420 (same id, same slug
+// "smithing" this upsert now matches), so its existing recipes stay
+// associated with it — this list never recreates that row. The other new
+// professions are sparse by design: no description/image is invented,
+// and none require recipes or locations to be valid.
 const professions: ProfessionSeed[] = [
-  { slug: "blacksmithing", name: "Blacksmithing", description: "Smelting and forging metal goods." },
   { slug: "alchemy", name: "Alchemy", description: "Brewing tonics and potions." },
+  { slug: "foraging", name: "Foraging" },
+  { slug: "fishing", name: "Fishing" },
+  { slug: "farming", name: "Farming" },
+  { slug: "crafting", name: "Crafting" },
+  { slug: "mining", name: "Mining" },
+  { slug: "archaeology", name: "Archaeology" },
+  { slug: "cooking", name: "Cooking" },
+  { slug: "construction", name: "Construction" },
+  { slug: "smithing", name: "Smithing", description: "Smelting and forging metal goods." },
 ];
 
 const items: ItemSeed[] = [
@@ -75,7 +90,7 @@ const recipes: RecipeSeed[] = [
     slug: "iron-ingot",
     name: "Iron Ingot",
     resultSlug: "iron-ingot",
-    professionSlug: "blacksmithing",
+    professionSlug: "smithing",
     ingredients: [
       { itemSlug: "iron-ore", quantity: 2 },
       { itemSlug: "charcoal", quantity: 1 },
@@ -85,7 +100,7 @@ const recipes: RecipeSeed[] = [
     slug: "copper-ingot",
     name: "Copper Ingot",
     resultSlug: "copper-ingot",
-    professionSlug: "blacksmithing",
+    professionSlug: "smithing",
     ingredients: [
       { itemSlug: "copper-ore", quantity: 2 },
       { itemSlug: "charcoal", quantity: 1 },
@@ -95,7 +110,7 @@ const recipes: RecipeSeed[] = [
     slug: "iron-sword",
     name: "Iron Sword",
     resultSlug: "iron-sword",
-    professionSlug: "blacksmithing",
+    professionSlug: "smithing",
     ingredients: [
       { itemSlug: "iron-ingot", quantity: 2 },
       { itemSlug: "leather-strap", quantity: 1 },
@@ -105,7 +120,7 @@ const recipes: RecipeSeed[] = [
     slug: "copper-dagger",
     name: "Copper Dagger",
     resultSlug: "copper-dagger",
-    professionSlug: "blacksmithing",
+    professionSlug: "smithing",
     ingredients: [
       { itemSlug: "copper-ingot", quantity: 1 },
       { itemSlug: "leather-strap", quantity: 1 },
@@ -115,7 +130,7 @@ const recipes: RecipeSeed[] = [
     slug: "reinforced-shield",
     name: "Reinforced Shield",
     resultSlug: "reinforced-shield",
-    professionSlug: "blacksmithing",
+    professionSlug: "smithing",
     ingredients: [
       { itemSlug: "iron-ingot", quantity: 3 },
       { itemSlug: "leather-strap", quantity: 1 },

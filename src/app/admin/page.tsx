@@ -29,6 +29,11 @@ const managementAreas = [
     description: "Create, edit, and delete crafting recipes.",
     href: "/admin/recipes",
   },
+  {
+    title: "Manage Locations",
+    description: "Create, edit, and delete locations and their images.",
+    href: "/admin/locations",
+  },
 ];
 
 export default async function AdminPage() {
@@ -38,7 +43,7 @@ export default async function AdminPage() {
     <AppShell>
       <PageHeader
         title="Admin"
-        description="Manage the wiki's game data: create, edit, and delete categories, professions, items, and recipes."
+        description="Manage the wiki's game data: create, edit, and delete categories, professions, items, recipes, and locations."
       />
 
       <section className="admin-toolbar">
