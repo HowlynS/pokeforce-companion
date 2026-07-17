@@ -7,6 +7,7 @@ import {
   itemEditorTabs,
   itemSourceDeleteHref,
   itemSourceEditHref,
+  itemMetadataHref,
   itemSourcesHref,
   itemUsedInRecipesHref,
   normalizeItemSearchQuery,
@@ -92,10 +93,19 @@ describe("item workspace hrefs", () => {
       "/admin/items/iron-ore/recipes?q=iron"
     );
   });
+
+  it("builds the Metadata tab route, preserving the query", () => {
+    expect(itemMetadataHref("iron-ore", "")).toBe(
+      "/admin/items/iron-ore/metadata"
+    );
+    expect(itemMetadataHref("iron-ore", "iron")).toBe(
+      "/admin/items/iron-ore/metadata?q=iron"
+    );
+  });
 });
 
 describe("itemEditorTabs", () => {
-  it("marks General active and links Acquisition Sources and Used in Recipes as real tabs", () => {
+  it("marks General active and links every other tab as a real destination", () => {
     const tabs = itemEditorTabs("iron-ore", "", "general");
 
     expect(tabs).toEqual([
@@ -110,7 +120,11 @@ describe("itemEditorTabs", () => {
         href: "/admin/items/iron-ore/recipes",
         active: false,
       },
-      { label: "Metadata", href: "", active: false, disabled: true },
+      {
+        label: "Metadata",
+        href: "/admin/items/iron-ore/metadata",
+        active: false,
+      },
     ]);
   });
 
@@ -139,25 +153,34 @@ describe("itemEditorTabs", () => {
     });
     expect(tabs[0].active).toBe(false);
     expect(tabs[1].active).toBe(false);
+    expect(tabs[3].active).toBe(false);
   });
 
-  it("always renders Metadata as a disabled placeholder", () => {
-    for (const active of ["general", "sources", "recipes"] as const) {
-      const tabs = itemEditorTabs("iron-ore", "", active);
+  it("marks Metadata active when that is the current tab", () => {
+    const tabs = itemEditorTabs("iron-ore", "iron", "metadata");
 
-      expect(tabs[3]).toEqual({
-        label: "Metadata",
-        href: "",
-        active: false,
-        disabled: true,
-      });
-    }
+    expect(tabs[3]).toEqual({
+      label: "Metadata",
+      href: "/admin/items/iron-ore/metadata?q=iron",
+      active: true,
+    });
+    expect(tabs[0].active).toBe(false);
+    expect(tabs[1].active).toBe(false);
+    expect(tabs[2].active).toBe(false);
   });
 
   it("marks exactly one tab active for every valid key", () => {
-    for (const active of ["general", "sources", "recipes"] as const) {
+    for (const active of ["general", "sources", "recipes", "metadata"] as const) {
       const tabs = itemEditorTabs("iron-ore", "", active);
       expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+    }
+  });
+
+  it("renders no disabled tabs — every Item tab is now a real destination", () => {
+    for (const active of ["general", "sources", "recipes", "metadata"] as const) {
+      const tabs = itemEditorTabs("iron-ore", "", active);
+      expect(tabs.every((tab) => !tab.disabled)).toBe(true);
+      expect(tabs.every((tab) => tab.href !== "")).toBe(true);
     }
   });
 });

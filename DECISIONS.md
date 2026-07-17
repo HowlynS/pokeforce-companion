@@ -1376,3 +1376,51 @@ Alternatives considered:
   entirely — rejected; the task explicitly allowed including the
   produced-by direction when it is "useful and clearly distinguishable,"
   and the public page already proves it is both.
+
+---
+
+### 2026-07-18 — Slice 9B.8: VerificationPanel gains a `readOnly` option instead of a parallel read-only composition
+
+Decision:
+
+The Item Metadata tab (`/admin/items/[slug]/metadata`) needed to show
+the exact same verification facts (status badge, current version,
+verified-against/verified-on rows) the General editor's aside already
+shows, but with NO composed picker/checkbox — this tab has no `<form>`
+at all. Rather than write a second component that reimplements
+`VerificationPanel`'s status classification and row rendering, one new
+optional prop, `readOnly?: boolean` (default `false`), was added to the
+existing `VerificationPanel`. When `true`, the panel skips rendering
+`GameVersionVerificationControls` entirely; every other row (status
+badge, Current version, and the conditionally-shown Verified
+against/Verified on pair) renders exactly as before. `VerificationPanel`'s
+four existing call sites (the Item create/edit forms and the Acquisition
+Source list/edit forms) all omit the prop and are therefore
+byte-for-byte unaffected — this is a strictly additive, backward-
+compatible change verified by the existing `VerificationPanel` component
+tests continuing to pass unmodified, plus two new tests asserting the
+picker/checkbox are absent in `readOnly` mode. (Location, Recipe, and
+Profession verification forms call `GameVersionVerificationControls`
+directly rather than through `VerificationPanel`, so they are untouched
+by this change regardless.)
+
+Reason:
+
+The task explicitly warned against duplicating server verification
+logic, and `classifyVerificationStatus` plus the stamp-row rendering
+already lived in exactly one place. Adding a boolean prop keeps that
+single source of truth intact; a parallel "ReadOnlyVerificationPanel"
+component would have needed to be kept in sync with every future change
+to the status rules or row formatting by hand.
+
+Alternatives considered:
+
+- A separate `ReadOnlyVerificationPanel` component — rejected; it would
+  duplicate the status classification call and the stamp-row JSX,
+  creating exactly the kind of drift risk the shared panel was built to
+  avoid in Slice 9B.2.
+- Passing `formId={undefined}` and hoping `GameVersionVerificationControls`
+  degrades gracefully — rejected; the controls would still render a live
+  picker and an unchecked mutation checkbox with no form to submit
+  into, directly violating the "no mutation control" requirement rather
+  than merely making it inert.

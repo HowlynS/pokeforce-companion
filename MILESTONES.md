@@ -349,8 +349,9 @@ editor primitives) complete; Slice 9B.3 (shared searchable record-list
 foundation) complete; Slice 9B.4 (Item workspace routes, record list,
 and quick switching) complete; Slice 9B.5 (Item General editor) complete
 for the General tab; Slice 9B.6 (Acquisition Sources tab integration)
-complete; Slice 9B.7 (Used in Recipes tab) complete — Metadata tab
-content remains pending; later slices not started
+complete; Slice 9B.7 (Used in Recipes tab) complete; Slice 9B.8 (Metadata
+tab) complete — the Item reference workspace is functionally complete;
+later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -700,17 +701,70 @@ workspace.
       `admin-item-recipes.spec.ts` E2E suite (direct tab access, both
       relationship directions rendering, the Recipe edit link, item
       switching preserving the tab and `q`, the empty state, General/
-      Acquisition Sources still working from this tab, Metadata staying
-      inert, an unknown item slug 404ing) plus the existing Item tab
-      tests in `admin-items.spec.ts`/`admin-item-sources.spec.ts` and the
+      Acquisition Sources still working from this tab, an unknown item
+      slug 404ing) plus the existing Item tab tests in
+      `admin-items.spec.ts`/`admin-item-sources.spec.ts` and the
       protection spec updated for the tab no longer being disabled
-- [ ] Metadata tab content beyond `TimestampsPanel` remains unimplemented
+      (Metadata's own "stays inert" assertion in this suite was updated
+      in Slice 9B.8, below, once Metadata became a real tab)
+
+### Slice 9B.8 — Metadata tab (complete, 2026-07-18)
+
+- [x] `/admin/items/[slug]/metadata` is a new, real, read-only Item tab
+      rendering inside `ItemWorkspace` exactly like General/Acquisition
+      Sources/Used in Recipes: the record list stays visible with the
+      current item selected, `EditorHeader` shows the item's own name,
+      `EditorTabs` marks Metadata active
+- [x] `ItemEditorTabKey` gained a `"metadata"` variant and `itemEditorTabs`
+      now links Metadata as a real tab via the new
+      `itemMetadataHref(slug, query)` helper — every one of the four Item
+      tabs is now a real link; NO Item tab renders as a disabled
+      placeholder any more; exactly one tab is active on every route
+- [x] `VerificationPanel` gained a `readOnly?: boolean` prop (default
+      `false`, so its four existing callers are unaffected) that omits
+      the composed `GameVersionVerificationControls` picker/checkbox
+      entirely while keeping the status badge and the Verified-against/
+      Verified-on/Current-version rows — each still hidden when its own
+      data is absent, exactly as before; no server verification logic was
+      duplicated
+- [x] Content is strictly read-only and administrative: the Metadata tab
+      renders `VerificationPanel` (with `readOnly`) and `TimestampsPanel`
+      directly as the workspace's main content — no aside, no `<form>`,
+      no picker, no checkbox, no submit button, no delete action, no
+      image control; neither panel ever shows the record's database id,
+      a foreign key, or a storage path; the Item's own slug is already
+      visible via the existing header subtitle
+- [x] `ItemWorkspace`'s existing `recordHref` prop takes `itemMetadataHref`
+      (no component changes needed), so quick-switching items while on
+      this tab opens the next item's Metadata tab — not General — with
+      `q` preserved, the same mechanism Slice 9B.6/9B.7 established
+- [x] Item CRUD, the Prisma schema, storage, and authorization are
+      unchanged; `notFound()` still applies for unknown item slugs
+- [x] Tests: pure-function coverage for `itemMetadataHref`, the extended
+      `itemEditorTabs` (Metadata active state, exactly-one-active across
+      all four tabs, and a "no disabled tabs remain" invariant); two new
+      `VerificationPanel` component tests for the `readOnly` option
+      (omits the picker/checkbox while keeping status/stamp rows, for
+      both a verified and an unverified record); a new focused
+      `admin-item-metadata.spec.ts` E2E suite (direct tab access, created/
+      updated dates, Unverified status with no fabricated rows, current
+      Game Version rendering regardless of verification, a verified
+      item's Verified-against/Verified-on rows, no form/picker/checkbox/
+      submit-button/id/foreign-key/storage-path anywhere in the main
+      content region, item switching preserving the tab and `q`, General/
+      Acquisition Sources/Used in Recipes still working from this tab, an
+      unknown item slug 404ing) plus the existing Item tab tests in
+      `admin-items.spec.ts`/`admin-item-sources.spec.ts`/
+      `admin-item-recipes.spec.ts` and the protection spec updated for
+      the tab no longer being disabled
+- [x] The Item reference workspace (General, Acquisition Sources, Used in
+      Recipes, Metadata) is now functionally complete
 
 ### Remaining (not started)
 
-- [ ] Metadata tab content beyond `TimestampsPanel`, every other resource
-      workspace conversion, dashboard summaries, and Route Hubs — do not
-      begin until explicitly instructed in the milestone conversation
+- [ ] Every other resource workspace conversion, dashboard summaries, and
+      Route Hubs — do not begin until explicitly instructed in the
+      milestone conversation
 
 ---
 

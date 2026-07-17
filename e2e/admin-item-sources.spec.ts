@@ -282,7 +282,7 @@ test("the item edit page's Acquisition Sources tab opens the sources tab, and th
   ).toBeVisible();
 });
 
-test("Item editor tabs: Acquisition Sources is a real link, General returns, deferred tabs stay inert, and exactly one tab is active", async ({
+test("Item editor tabs: Acquisition Sources is a real link, General returns, every tab is a real destination, and exactly one tab is active", async ({
   page,
 }) => {
   const ITEM = {
@@ -302,17 +302,15 @@ test("Item editor tabs: Acquisition Sources is a real link, General returns, def
   await expect(
     tabNav().getByRole("link", { name: "Acquisition Sources", exact: true })
   ).toBeVisible();
-  // Used in Recipes is a real tab since Slice 9B.7; Metadata is still the
-  // only deferred, inert placeholder.
+  // Used in Recipes is a real tab since Slice 9B.7; Metadata is a real
+  // tab since Slice 9B.8 — no Item tab remains a disabled placeholder.
   await expect(
     tabNav().getByRole("link", { name: "Used in Recipes", exact: true })
   ).toBeVisible();
   await expect(
-    tabNav().getByText("Metadata", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
     tabNav().getByRole("link", { name: "Metadata", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
+  await expect(tabNav().locator('[aria-disabled="true"]')).toHaveCount(0);
   await expect(tabNav().locator('[aria-current="page"]')).toHaveCount(1);
 
   // --- Following the Acquisition Sources tab marks IT active instead -----

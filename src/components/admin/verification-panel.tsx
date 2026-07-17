@@ -28,6 +28,10 @@ type VerificationPanelProps = {
   /** Forwarded to the composed controls — needed when this panel renders
       in an editor's aside column, outside the resource's own <form>. */
   formId?: string;
+  /** Omits the composed picker/checkbox entirely, leaving only the
+      status badge and the read-only rows below it (Slice 9B.8's Item
+      Metadata tab: administrative display with no mutation control). */
+  readOnly?: boolean;
 };
 
 const STATUS_BADGE_CLASSES = {
@@ -41,6 +45,7 @@ export function VerificationPanel({
   verifiedAt,
   verifiedGameVersion,
   formId,
+  readOnly = false,
 }: VerificationPanelProps) {
   const currentVersion = gameVersions.find((version) => version.isCurrent);
 
@@ -81,10 +86,12 @@ export function VerificationPanel({
         ) : null}
       </dl>
 
-      <GameVersionVerificationControls
-        gameVersions={gameVersions}
-        formId={formId}
-      />
+      {readOnly ? null : (
+        <GameVersionVerificationControls
+          gameVersions={gameVersions}
+          formId={formId}
+        />
+      )}
     </ContextPanel>
   );
 }

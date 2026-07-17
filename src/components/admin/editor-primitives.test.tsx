@@ -287,6 +287,44 @@ describe("VerificationPanel", () => {
 
     expect(html).not.toContain("form=");
   });
+
+  it("omits the composed picker and checkbox entirely when readOnly, keeping the status and stamp rows", () => {
+    const html = renderToStaticMarkup(
+      <VerificationPanel
+        gameVersions={versions}
+        verifiedAt={new Date("2026-07-17T10:30:00.000Z")}
+        verifiedGameVersion={{ id: "v2", name: "Summer Update" }}
+        readOnly
+      />
+    );
+
+    expect(html).toContain("Verified — current version");
+    expect(html).toContain("Verified against");
+    expect(html).toContain("Summer Update");
+    expect(html).toContain("2026-07-17");
+    expect(html).toContain("Current version");
+    expect(html).not.toContain('name="verifiedGameVersionId"');
+    expect(html).not.toContain('name="markVerified"');
+    expect(html).not.toContain("<select");
+    expect(html).not.toContain('type="checkbox"');
+  });
+
+  it("still shows Current version and Unverified in readOnly mode for an unverified record", () => {
+    const html = renderToStaticMarkup(
+      <VerificationPanel
+        gameVersions={versions}
+        verifiedAt={null}
+        verifiedGameVersion={null}
+        readOnly
+      />
+    );
+
+    expect(html).toContain("Unverified");
+    expect(html).toContain("Current version");
+    expect(html).toContain("Summer Update");
+    expect(html).not.toContain("Verified against");
+    expect(html).not.toContain('name="verifiedGameVersionId"');
+  });
 });
 
 describe("TimestampsPanel", () => {

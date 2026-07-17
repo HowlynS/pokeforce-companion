@@ -32,9 +32,11 @@ Slice 9B.6 (Acquisition Sources tab integration) is complete: Acquisition Source
 
 Slice 9B.7 (Used in Recipes tab) is complete: `/admin/items/[slug]/recipes` is a real, read-only Item tab showing every Recipe relationship for the selected Item — "Used as an ingredient in" and "Produced by," never conflated, each row linking to the existing Recipe admin edit route with no inline editing. `itemEditorTabs` now marks Used in Recipes active on this route; only Metadata remains a disabled placeholder. Quick switching between items while on this tab opens the next item's Used in Recipes tab via the same `recordHref` mechanism from Slice 9B.6.
 
-The rest of Slice 9B.5/9B.6/9B.7 (Metadata tab content beyond `TimestampsPanel`), every other resource workspace conversion, dashboard summaries, and Route Hubs remain unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+Slice 9B.8 (Metadata tab) is complete: `/admin/items/[slug]/metadata` is the fourth and final real Item tab, showing restrained, read-only administrative information — `VerificationPanel` (now supporting a `readOnly` option that omits the composed picker/checkbox entirely) for status/verified-version/verified-date/current-version, and `TimestampsPanel` for created/updated/verified dates. No form, picker, checkbox, submit button, delete action, or image control exists on this tab; no database id, foreign key, or storage path is ever shown. `itemEditorTabs` now links every Item tab as a real destination — no Item tab remains disabled. The Item reference workspace (General, Acquisition Sources, Used in Recipes, Metadata) is functionally complete.
 
-Do not begin Metadata tab content, any other resource workspace, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
+Every other resource workspace conversion, dashboard summaries, and Route Hubs remain unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+
+Do not begin any other resource workspace conversion, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 
