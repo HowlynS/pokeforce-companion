@@ -1,6 +1,12 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
+import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import {
+  itemEditHref,
+  normalizeItemSearchQuery,
+  withItemSearchQuery,
+} from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 import { deleteItemAction } from "../../actions";
 
@@ -8,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 type DeleteItemPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 function describeRecipeReferences(
@@ -43,7 +49,8 @@ export default async function DeleteItemPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
+  const query = normalizeItemSearchQuery(q);
 
   const item = await prisma.item.findUnique({
     where: { slug },
@@ -61,31 +68,45 @@ export default async function DeleteItemPage({
   const ingredientCount = item._count.recipeIngredients;
   const canDelete = resultCount === 0 && ingredientCount === 0;
 
+  // Inside the Item workspace (Slice 9B.4): the record list marks the
+  // item being deleted; Cancel returns to its edit page and the back link
+  // to the (still-filtered) list. The confirmation flow itself — live
+  // reference counts, the withheld delete button, the re-checked server
+  // action — is unchanged.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Delete Item"
-        description={`Review before permanently deleting "${item.name}".`}
-      />
+    <ItemWorkspace
+      rawQuery={q}
+      selectedSlug={item.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Delete Item"
+            description={`Review before permanently deleting "${item.name}".`}
+          />
 
-      <p className="admin-toolbar">
-        <a href="/admin/items" className="link-accent">
-          &larr; Back to Item Management
-        </a>
-      </p>
+          <p className="admin-toolbar">
+            <a
+              href={withItemSearchQuery("/admin/items", query)}
+              className="link-accent"
+            >
+              &larr; Back to Item Management
+            </a>
+          </p>
 
-      {error ? (
-        <p role="alert" className="banner banner-error">
-          {error === "linked_recipes"
-            ? `This item cannot be deleted because it is used as ${describeRecipeReferences(
-                resultCount,
-                ingredientCount
-              )}.`
-            : "Something went wrong."}
-        </p>
-      ) : null}
-
+          {error ? (
+            <p role="alert" className="banner banner-error">
+              {error === "linked_recipes"
+                ? `This item cannot be deleted because it is used as ${describeRecipeReferences(
+                    resultCount,
+                    ingredientCount
+                  )}.`
+                : "Something went wrong."}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       <div className="confirm-card">
         <p>
           You are about to permanently delete <strong>{item.name}</strong> (
@@ -121,11 +142,14 @@ export default async function DeleteItemPage({
             </form>
           ) : null}
 
-          <a href="/admin/items" className="btn btn-secondary">
+          <a
+            href={itemEditHref(item.slug, query)}
+            className="btn btn-secondary"
+          >
             Cancel
           </a>
         </div>
       </div>
-    </>
+    </ItemWorkspace>
   );
 }

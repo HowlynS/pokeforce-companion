@@ -346,7 +346,8 @@ Status: In progress — Slice 9A complete (including the minimal Game
 Version picker on every verification form); Slice 9B.1 (shared admin
 shell and persistent navigation) complete; Slice 9B.2 (shared admin
 editor primitives) complete; Slice 9B.3 (shared searchable record-list
-foundation) complete; Slice 9B.4 and later slices not started
+foundation) complete; Slice 9B.4 (Item workspace routes, record list,
+and quick switching) complete; Slice 9B.5 and later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -528,12 +529,57 @@ workspace.
 - [x] No production adoption: no resource route renders the list yet —
       quick switching arrives with the Items workspace conversion
 
+### Slice 9B.4 — Item workspace routes, record list, quick switching (complete, 2026-07-17)
+
+- [x] Items are the first production workspace adoption. Route structure:
+      `/admin/items` (workspace landing: the searchable record list
+      beside a restrained guidance state — the embedded create form is
+      gone), `/admin/items/new` (the dedicated creation page; the create
+      action's error redirects target it, success still returns to the
+      list), `/admin/items/[slug]/edit` and `/admin/items/[slug]/delete`
+      (existing behavior inside the workspace). The Item URL identifier
+      remains the SLUG — consistent with the public site and the nested
+      sources routes; database ids never appear in URLs
+- [x] `ItemWorkspace` (`src/components/admin/item-workspace.tsx`): the
+      thin Item-specific wrapper composing `AdminWorkspace` +
+      `RecordList` and owning the Item list query and URL construction
+      (pure helpers + unit tests in `src/lib/admin/item-workspace.ts`) —
+      deliberately not a generic resource-query framework
+- [x] Search: `?q=` URL parameter, trimmed, case-insensitive,
+      server-side over name OR slug; `q` preserved across record links,
+      the create link, and back/cancel links (action redirects
+      deliberately return to the unfiltered list); Clear link while a
+      query is active; distinct empty states for "no items" and "no
+      matches"; no per-keystroke requests
+- [x] Quick switching: record rows link to the edit route; the open
+      record (edit or delete) is marked `aria-current`; the category name
+      is the row's secondary context
+- [x] Delete confirmation is reached from the edit page's toolbar (the
+      old table's per-row Edit/Sources/Delete links went with the table;
+      sources stay linked from the edit page); the confirmation flow and
+      protections are unchanged
+- [x] Pagination deliberately deferred: current record counts are small
+      and the shared `RecordListPagination` primitive exists ready for
+      adoption when a real page-parameter convention is justified
+- [x] Preserved unchanged: create/update/delete actions and validation,
+      redirects and error handling (create errors now land on the
+      creation page), image upload/replace/remove behavior, Game Version
+      verification behavior, deletion protections, route ownership, and
+      the database schema
+- [x] Tests: 7 unit tests for the pure URL/search helpers; reworked Item
+      E2E suites (record-list locators, `/admin/items/new` creation
+      flows, delete-via-editor) plus a new workspace E2E test covering
+      search by name and slug, no-match state, clear, quick switching
+      with `q` preserved, and selected-state movement;
+      `/admin/items/new` added to the protection spec
+
 ### Remaining (not started)
 
-- [ ] Slice 9B.4 and later Milestone 9 work (resource workspace
-      conversions starting with Items, quick record switching on
-      production routes, dashboard summaries) — do not begin until
-      explicitly instructed in the milestone conversation
+- [ ] Slice 9B.5 and later Milestone 9 work (the full Item editor
+      redesign — tabs, image/verification/timestamps panels, sticky
+      actions, sources integration — the other resource workspaces, and
+      dashboard summaries) — do not begin until explicitly instructed in
+      the milestone conversation
 
 ---
 

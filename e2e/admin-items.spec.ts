@@ -117,30 +117,32 @@ function cardLink(page: Page, name: string) {
     .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
 }
 
-// The admin table row for an item, located by its exact Name cell.
-function adminRow(page: Page, name: string) {
+// One row of the shared Item record list (Slice 9B.4), located by its
+// exact primary text inside the list's navigation landmark.
+function recordRow(page: Page, name: string) {
   return page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name, exact: true }) });
+    .getByRole("navigation", { name: "Items records" })
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
-// Fills the create form on /admin/items (the page must already be open)
-// with name, slug, and description only, and submits it. The optional
-// image input is deliberately left untouched: creation must succeed with
-// no image.
+// Creates an item through the dedicated /admin/items/new page (navigating
+// there itself) with name, slug, and description only, and submits. The
+// optional image input is deliberately left untouched: creation must
+// succeed with no image. Lands back on the workspace list with the new
+// record visible.
 async function createMinimalItemThroughForm(
   page: Page,
   data: { name: string; slug: string }
 ) {
+  await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
   await page.getByRole("button", { name: "Create Item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=created");
   await expect(page.getByRole("status")).toHaveText("Item created.");
-  await expect(
-    page.getByRole("cell", { name: data.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, data.name)).toBeVisible();
 }
 
 test("authenticated item admin access uses the saved storage state", async ({
@@ -153,17 +155,19 @@ test("authenticated item admin access uses the saved storage state", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: "Item Management" })
   ).toBeVisible();
+
+  // The workspace landing state: the record list with its create link —
+  // the embedded creation form is gone from this page (Slice 9B.4).
+  await expect(
+    page.getByRole("link", { name: "+ New item", exact: true })
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Item", exact: true })
-  ).toBeVisible();
+  ).toHaveCount(0);
 
-  // Seeded items appear in the admin table.
-  await expect(
-    page.getByRole("cell", { name: "Iron Ore", exact: true })
-  ).toBeVisible();
-  await expect(
-    page.getByRole("cell", { name: "Iron Sword", exact: true })
-  ).toBeVisible();
+  // Seeded items appear as record-list rows.
+  await expect(recordRow(page, "Iron Ore")).toBeVisible();
+  await expect(recordRow(page, "Iron Sword")).toBeVisible();
 });
 
 test("item create/edit/delete lifecycle through the real admin UI", async ({
@@ -175,6 +179,14 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page).toHaveURL("/admin/items");
   await expect(
     page.getByRole("heading", { level: 1, name: "Item Management" })
+  ).toBeVisible();
+
+  // The create form lives on its own page since Slice 9B.4, reached
+  // through the record list's create action.
+  await page.getByRole("link", { name: "+ New item", exact: true }).click();
+  await expect(page).toHaveURL("/admin/items/new");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Create Item" })
   ).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(INITIAL.name);
@@ -196,25 +208,13 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page).toHaveURL("/admin/items?success=created");
   await expect(page.getByRole("status")).toHaveText("Item created.");
 
-  // The admin row shows every submitted field, including the assigned
-  // seeded Category.
-  const createdRow = adminRow(page, INITIAL.name);
+  // The record list shows the new row with its Category as the secondary
+  // context; the remaining submitted fields are asserted on the public
+  // detail page below, which renders them all.
+  const createdRow = recordRow(page, INITIAL.name);
   await expect(createdRow).toBeVisible();
   await expect(
-    createdRow.getByRole("cell", { name: INITIAL.slug, exact: true })
-  ).toBeVisible();
-  await expect(
-    createdRow.getByRole("cell", { name: INITIAL.category, exact: true })
-  ).toBeVisible();
-  // Held Item column: No; Tradeable column: Yes — one of each per row.
-  await expect(
-    createdRow.getByRole("cell", { name: "No", exact: true })
-  ).toBeVisible();
-  await expect(
-    createdRow.getByRole("cell", { name: "Yes", exact: true })
-  ).toBeVisible();
-  await expect(
-    createdRow.getByRole("cell", { name: INITIAL.baseValue, exact: true })
+    createdRow.getByText(INITIAL.category, { exact: true })
   ).toBeVisible();
 
   // Public detail page renders every field the UI shows for an item, plus
@@ -255,8 +255,10 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
 
   // --- Edit (name, slug, description, Category reassignment, held item,
   // --- tradeable, base value; image untouched) --------------------------
+  // Quick switching: the record-list row itself is the edit link, and the
+  // open record is marked selected (aria-current) in the list.
   await page.goto("/admin/items");
-  await adminRow(page, INITIAL.name).getByRole("link", { name: "Edit" }).click();
+  await recordRow(page, INITIAL.name).click();
   await expect(page).toHaveURL(`/admin/items/${INITIAL.slug}/edit`);
   await expect(
     page.getByRole("heading", { level: 1, name: "Edit Item" })
@@ -264,6 +266,10 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(
     page.getByText(`Update details for "${INITIAL.name}".`)
   ).toBeVisible();
+  await expect(recordRow(page, INITIAL.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);
@@ -282,17 +288,12 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page).toHaveURL("/admin/items?success=updated");
   await expect(page.getByRole("status")).toHaveText("Item updated.");
 
-  const editedRow = adminRow(page, EDITED.name);
+  // The list reflects the rename and the reassigned Category; the flipped
+  // booleans and new base value are asserted on the public page below.
+  const editedRow = recordRow(page, EDITED.name);
   await expect(editedRow).toBeVisible();
   await expect(
-    editedRow.getByRole("cell", { name: EDITED.category, exact: true })
-  ).toBeVisible();
-  // Held Item column: Yes; Tradeable column: No — flipped from creation.
-  await expect(
-    editedRow.getByRole("cell", { name: "Yes", exact: true })
-  ).toBeVisible();
-  await expect(
-    editedRow.getByRole("cell", { name: "No", exact: true })
+    editedRow.getByText(EDITED.category, { exact: true })
   ).toBeVisible();
 
   // The slug changed, so the original public route must be gone...
@@ -321,8 +322,12 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(editedCard).toHaveAttribute("href", `/items/${EDITED.slug}`);
 
   // --- Delete -----------------------------------------------------------
+  // The per-row Delete links went with the old table; the confirmation
+  // route is reached from the edit page's toolbar since Slice 9B.4.
   await page.goto("/admin/items");
-  await adminRow(page, EDITED.name).getByRole("link", { name: "Delete" }).click();
+  await recordRow(page, EDITED.name).click();
+  await expect(page).toHaveURL(`/admin/items/${EDITED.slug}/edit`);
+  await page.getByRole("link", { name: "Delete", exact: true }).click();
   await expect(page).toHaveURL(`/admin/items/${EDITED.slug}/delete`);
   await expect(
     page.getByRole("heading", { level: 1, name: "Delete Item" })
@@ -340,9 +345,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
 
   await expect(page).toHaveURL("/admin/items?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Item deleted.");
-  await expect(
-    page.getByRole("cell", { name: EDITED.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, EDITED.name)).toHaveCount(0);
 
   // Gone from the public site as well.
   const deletedResponse = await page.goto(`/items/${EDITED.slug}`);
@@ -359,7 +362,6 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await createE2eTestGameVersion(HISTORICAL_VERSION_NAME);
 
   // --- Create unverified (picker and checkbox untouched) ----------------
-  await page.goto("/admin/items");
   await createMinimalItemThroughForm(page, VERIFY_ITEM);
 
   await page.goto(`/items/${VERIFY_ITEM.slug}`);
@@ -449,7 +451,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
 test("creating an item with a seeded name is rejected server-side", async ({
   page,
 }) => {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
 
   // Seeded name "Iron Ore" in different casing with surrounding
   // whitespace: the server trims the name and its duplicate check is
@@ -459,7 +461,8 @@ test("creating an item with a seeded name is rejected server-side", async ({
   await page.getByLabel(/^Slug/).fill("test-e2e-item-duplicate");
   await page.getByRole("button", { name: "Create Item", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?error=duplicate_name");
+  // Rejections land back on the creation page, where the form lives.
+  await expect(page).toHaveURL("/admin/items/new?error=duplicate_name");
   // Next.js injects a hidden route-announcer div that also has role=alert,
   // so the application's alert is located by its exact readable text.
   await expect(
@@ -482,7 +485,6 @@ test("deletion is blocked while a recipe produces the item", async ({
   // producing Recipe is set up through the guarded database helper,
   // because Recipe admin browser workflows are out of scope for this
   // suite.
-  await page.goto("/admin/items");
   await createMinimalItemThroughForm(page, BLOCKED_RESULT);
 
   // Open the confirmation page while the item is still unreferenced: both
@@ -524,12 +526,10 @@ test("deletion is blocked while a recipe produces the item", async ({
   ).toBeVisible();
   await expect(deleteButton).toHaveCount(0);
 
-  // The item survived, in the admin list and on the public site, where the
-  // temporary recipe is rendered through the real relation.
+  // The item survived, in the admin record list and on the public site,
+  // where the temporary recipe is rendered through the real relation.
   await page.goto("/admin/items");
-  await expect(
-    page.getByRole("cell", { name: BLOCKED_RESULT.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, BLOCKED_RESULT.name)).toBeVisible();
   await page.goto(`/items/${BLOCKED_RESULT.slug}`);
   await expect(
     page.getByRole("heading", {
@@ -554,9 +554,7 @@ test("deletion is blocked while a recipe produces the item", async ({
 
   await expect(page).toHaveURL("/admin/items?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Item deleted.");
-  await expect(
-    page.getByRole("cell", { name: BLOCKED_RESULT.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, BLOCKED_RESULT.name)).toHaveCount(0);
 
   const deletedResponse = await page.goto(`/items/${BLOCKED_RESULT.slug}`);
   expect(deletedResponse?.status()).toBe(404);
@@ -565,7 +563,6 @@ test("deletion is blocked while a recipe produces the item", async ({
 test("deletion is blocked while the item is a recipe ingredient", async ({
   page,
 }) => {
-  await page.goto("/admin/items");
   await createMinimalItemThroughForm(page, BLOCKED_INGREDIENT);
 
   await page.goto(`/admin/items/${BLOCKED_INGREDIENT.slug}/delete`);
@@ -625,14 +622,94 @@ test("deletion is blocked while the item is a recipe ingredient", async ({
 
   await expect(page).toHaveURL("/admin/items?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Item deleted.");
-  await expect(
-    page.getByRole("cell", { name: BLOCKED_INGREDIENT.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, BLOCKED_INGREDIENT.name)).toHaveCount(0);
 
   const deletedResponse = await page.goto(
     `/items/${BLOCKED_INGREDIENT.slug}`
   );
   expect(deletedResponse?.status()).toBe(404);
+});
+
+test("record-list search filters, preserves the query across switching, and clears", async ({
+  page,
+}) => {
+  // Two temporary items sharing the test prefix, so one query matches
+  // both while seeded records stay out of the way.
+  await createMinimalItemThroughForm(page, INITIAL);
+  await createMinimalItemThroughForm(page, VERIFY_ITEM);
+
+  // --- Search by NAME (trimmed, case-insensitive) -----------------------
+  await page.goto("/admin/items");
+  await page
+    .getByRole("searchbox", { name: "Search items" })
+    .fill("  test e2e item  ");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/items\?q=/);
+  await expect(recordRow(page, INITIAL.name)).toBeVisible();
+  await expect(recordRow(page, VERIFY_ITEM.name)).toBeVisible();
+  // Seeded records are filtered out server-side.
+  await expect(recordRow(page, "Iron Ore")).toHaveCount(0);
+  await expect(page.getByText("2 matches")).toBeVisible();
+
+  // --- Quick switching keeps the query applied --------------------------
+  // Row hrefs carry the TRIMMED query, %20-encoded by the server helper.
+  await recordRow(page, INITIAL.name).click();
+  await expect(page).toHaveURL(
+    `/admin/items/${INITIAL.slug}/edit?q=test%20e2e%20item`
+  );
+  await expect(recordRow(page, INITIAL.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+
+  // Switch directly to the second match: the list stays filtered, the
+  // selection follows, and the first record is no longer marked.
+  await recordRow(page, VERIFY_ITEM.name).click();
+  await expect(page).toHaveURL(
+    `/admin/items/${VERIFY_ITEM.slug}/edit?q=test%20e2e%20item`
+  );
+  await expect(recordRow(page, VERIFY_ITEM.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  await expect(recordRow(page, INITIAL.name)).not.toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+
+  // The create action keeps the search context too.
+  await expect(
+    page.getByRole("link", { name: "+ New item", exact: true })
+  ).toHaveAttribute("href", "/admin/items/new?q=test%20e2e%20item");
+
+  // --- Search by SLUG ---------------------------------------------------
+  await page.goto("/admin/items");
+  await page
+    .getByRole("searchbox", { name: "Search items" })
+    .fill(VERIFY_ITEM.slug);
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(recordRow(page, VERIFY_ITEM.name)).toBeVisible();
+  await expect(recordRow(page, INITIAL.name)).toHaveCount(0);
+  await expect(page.getByText("1 match", { exact: true })).toBeVisible();
+
+  // --- No-match state (distinct from the no-items-at-all state) ---------
+  await page
+    .getByRole("searchbox", { name: "Search items" })
+    .fill("zzz-no-such-item");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  const emptyRegion = page.locator(".admin-record-empty");
+  await expect(emptyRegion).toContainText("No items match");
+  await expect(emptyRegion).toContainText("zzz-no-such-item");
+  await expect(page.getByText("0 matches")).toBeVisible();
+
+  // --- Clear search returns the full list -------------------------------
+  await page.getByRole("link", { name: "Clear search", exact: true }).click();
+  await expect(page).toHaveURL("/admin/items");
+  await expect(recordRow(page, "Iron Ore")).toBeVisible();
+  await expect(recordRow(page, INITIAL.name)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Clear search", exact: true })
+  ).toHaveCount(0);
 });
 
 test("seeded fixtures are preserved and no test item remains", async () => {

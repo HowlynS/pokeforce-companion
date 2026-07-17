@@ -59,13 +59,13 @@ export async function createItemAction(formData: FormData) {
   const parsed = parseItemInput(formData);
 
   if (!parsed.ok) {
-    redirect(`/admin/items?error=${parsed.error}`);
+    redirect(`/admin/items/new?error=${parsed.error}`);
   }
 
   // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
   // live availability feedback queries, so the two can never disagree.
   if (await isItemNameTaken(prisma, parsed.value.name)) {
-    redirect("/admin/items?error=duplicate_name");
+    redirect("/admin/items/new?error=duplicate_name");
   }
 
   // Resolved before any upload so a missing current Game Version rejects
@@ -77,7 +77,7 @@ export async function createItemAction(formData: FormData) {
   const verification = await resolveVerificationStamp(prisma, formData);
 
   if (verification.failed) {
-    redirect(`/admin/items?error=${verification.error}`);
+    redirect(`/admin/items/new?error=${verification.error}`);
   }
 
   // A submitted category ID is never trusted blindly: it must correspond to
@@ -90,7 +90,7 @@ export async function createItemAction(formData: FormData) {
     });
 
     if (!category) {
-      redirect("/admin/items?error=invalid_category");
+      redirect("/admin/items/new?error=invalid_category");
     }
 
     categorySlug = category.slug;
@@ -105,13 +105,13 @@ export async function createItemAction(formData: FormData) {
     const imageValidation = validateImageFile(imageFile);
 
     if (!imageValidation.ok) {
-      redirect(`/admin/items?error=${imageValidation.error}`);
+      redirect(`/admin/items/new?error=${imageValidation.error}`);
     }
 
     try {
       imagePath = await uploadImage("items", imageFile);
     } catch {
-      redirect("/admin/items?error=upload_failed");
+      redirect("/admin/items/new?error=upload_failed");
     }
   }
 
@@ -137,7 +137,7 @@ export async function createItemAction(formData: FormData) {
     await tryDeleteImage(imagePath);
 
     if (isUniqueConstraintError(error)) {
-      redirect("/admin/items?error=duplicate");
+      redirect("/admin/items/new?error=duplicate");
     }
     throw error;
   }

@@ -70,12 +70,6 @@ test.afterAll(async () => {
 });
 
 // The admin table row for an item, located by its exact Name cell.
-function adminRow(page: Page, name: string) {
-  return page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name, exact: true }) });
-}
-
 // Asserts a real rendered image: visible AND actually decoded (non-zero
 // natural width), which fails on a broken or unreadable source. Scrolling
 // first satisfies lazy loading on long list pages.
@@ -99,7 +93,7 @@ async function createItemWithImage(
   data: { name: string; slug: string },
   imageFile: string
 ) {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
   await page
@@ -111,7 +105,10 @@ async function createItemWithImage(
   await expect(page).toHaveURL("/admin/items?success=created");
   await expect(page.getByRole("status")).toHaveText("Item created.");
   await expect(
-    page.getByRole("cell", { name: data.name, exact: true })
+    page
+      .getByRole("navigation", { name: "Items records" })
+      .getByRole("link")
+      .filter({ has: page.getByText(data.name, { exact: true }) })
   ).toBeVisible();
 }
 
@@ -234,7 +231,7 @@ test("removing the image clears the row, deletes the object, and restores the fa
 test("an unsupported file type is rejected and nothing is written", async ({
   page,
 }) => {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
   await page
     .getByLabel("Name", { exact: true })
     .fill("Test E2E Item Image Invalid");
@@ -244,7 +241,7 @@ test("an unsupported file type is rejected and nothing is written", async ({
   await page.getByLabel(/^Image \(optional/).setInputFiles(TEXT_FIXTURE);
   await page.getByRole("button", { name: "Create Item", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?error=invalid_image_type");
+  await expect(page).toHaveURL("/admin/items/new?error=invalid_image_type");
   await expect(
     page
       .getByRole("alert")
@@ -271,7 +268,7 @@ test("an oversized image is rejected and nothing is written", async ({
   fs.writeFileSync(oversizedPath, Buffer.alloc(5 * 1024 * 1024 + 1));
 
   try {
-    await page.goto("/admin/items");
+    await page.goto("/admin/items/new");
     await page
       .getByLabel("Name", { exact: true })
       .fill("Test E2E Item Image Oversized");
@@ -281,7 +278,7 @@ test("an oversized image is rejected and nothing is written", async ({
       .getByRole("button", { name: "Create Item", exact: true })
       .click();
 
-    await expect(page).toHaveURL("/admin/items?error=image_too_large");
+    await expect(page).toHaveURL("/admin/items/new?error=image_too_large");
     await expect(
       page
         .getByRole("alert")
@@ -307,10 +304,11 @@ test("deleting the item also deletes its stored image object", async ({
   expect(objectPath !== null).toBe(true);
   expect(await itemImageObjectExists(objectPath as string)).toBe(true);
 
-  // Real confirmation flow; the plain "Item deleted." message also proves
-  // the image cleanup succeeded (a failed cleanup uses a distinct message).
-  await adminRow(page, ITEM.name).getByRole("link", { name: "Delete" }).click();
-  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/delete`);
+  // Real confirmation flow, reached through the workspace: the record-list
+  // row opens the editor, whose toolbar links to the delete confirmation
+  // (Slice 9B.4). The plain "Item deleted." message also proves the image
+  // cleanup succeeded (a failed cleanup uses a distinct message).
+  await page.goto(`/admin/items/${ITEM.slug}/delete`);
   await page
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
@@ -318,7 +316,10 @@ test("deleting the item also deletes its stored image object", async ({
   await expect(page).toHaveURL("/admin/items?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Item deleted.");
   await expect(
-    page.getByRole("cell", { name: ITEM.name, exact: true })
+    page
+      .getByRole("navigation", { name: "Items records" })
+      .getByRole("link")
+      .filter({ has: page.getByText(ITEM.name, { exact: true }) })
   ).toHaveCount(0);
 
   // The row is gone and so is its exact Storage object.

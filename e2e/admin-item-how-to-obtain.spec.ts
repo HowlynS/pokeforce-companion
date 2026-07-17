@@ -50,7 +50,7 @@ function cardLink(page: Page, name: string) {
 }
 
 async function createTemporaryItem(page: Page, data: { name: string; slug: string }) {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
   await page.getByRole("button", { name: "Create Item", exact: true }).click();

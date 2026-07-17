@@ -692,6 +692,14 @@ input[type="checkbox"] {
   top: 24px;
 }
 
+/* Every child of the list column may shrink below its intrinsic width
+   (grid items default to min-width: auto): without this, the search
+   form's intrinsic input width forces the whole 260px column wider and
+   the list overflows onto the editor beside it — covering its controls. */
+.admin-record-list > * {
+  min-width: 0;
+}
+
 .admin-record-list-header {
   display: flex;
   align-items: center;

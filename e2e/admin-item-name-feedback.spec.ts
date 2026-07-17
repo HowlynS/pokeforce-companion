@@ -44,7 +44,7 @@ function feedback(page: Page) {
 test("the create form reports a unique name as available", async ({
   page,
 }) => {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
 
   await nameInput(page).fill(UNIQUE_NAME);
 
@@ -54,7 +54,7 @@ test("the create form reports a unique name as available", async ({
 test("the create form reports a seeded name with different casing and whitespace as taken", async ({
   page,
 }) => {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
 
   await nameInput(page).fill("  iRoN oRe  ");
 
@@ -62,7 +62,7 @@ test("the create form reports a seeded name with different casing and whitespace
 });
 
 test("a blank name produces no availability result", async ({ page }) => {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
 
   // Fresh form: no request, empty region.
   await expect(feedback(page)).toHaveText("");
@@ -107,7 +107,7 @@ test("the edit form detects the name of another existing item", async ({
 });
 
 test("rapid typing resolves to the latest entered value", async ({ page }) => {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
 
   // Duplicate immediately followed by a unique name: the final state must
   // reflect the LATEST value and stay stable (stale responses are dropped).
@@ -128,7 +128,7 @@ test("rapid typing resolves to the latest entered value", async ({ page }) => {
 test("a duplicate submission remains rejected by the authoritative server check", async ({
   page,
 }) => {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
 
   // Submit despite the live warning: the server action, not the client
   // feedback, is the protection — and it rejects the trimmed,
@@ -137,7 +137,7 @@ test("a duplicate submission remains rejected by the authoritative server check"
   await expect(feedback(page)).toHaveText(TAKEN_TEXT);
   await page.getByRole("button", { name: "Create Item", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?error=duplicate_name");
+  await expect(page).toHaveURL("/admin/items/new?error=duplicate_name");
   await expect(
     page
       .getByRole("alert")
@@ -148,7 +148,7 @@ test("a duplicate submission remains rejected by the authoritative server check"
 test("the feedback region is accessible and works with keyboard input", async ({
   page,
 }) => {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
 
   // The input names its live region; the region is polite and present
   // before any content arrives.

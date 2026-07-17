@@ -1187,3 +1187,54 @@ Alternatives considered:
   rejected; that is the generic data-fetching framework the brief
   excludes, and it would couple a presentational component to the
   database client.
+
+---
+
+### 2026-07-17 — Slice 9B.4: Item workspace routes and slug-based identifiers
+
+Decision:
+
+Items adopted the shared workspace as the first production reference.
+Two route decisions worth recording:
+
+- The dedicated creation route is /admin/items/new, and the create
+  action's ERROR redirects follow the form there while SUCCESS still
+  returns to the list — an admin who fails validation stays on the form
+  with the message; an admin who succeeds lands on the refreshed list.
+  The static "new" segment cannot collide with an item, because no page
+  exists at /admin/items/[slug] itself — records are reached only at
+  /admin/items/[slug]/edit and deeper.
+- The Item URL identifier REMAINS the slug, even though workspace-style
+  editors often use database ids. Slugs are already the record
+  identifier everywhere (public detail pages, the nested acquisition-
+  sources routes, route-ownership checks, every existing test), and the
+  server actions locate records by stable cuid ids from hidden form
+  fields — never by the URL — so slugs in URLs cost nothing in
+  correctness while keeping one identifier scheme across the site.
+
+The active search query travels only through LINKS (?q= on record rows,
+the create link, back/cancel links), never through action redirects:
+after a save or delete the admin returns to the unfiltered list.
+Threading q through every server action's redirects would touch all
+three mutations for a convenience the workspace does not need yet.
+Pagination is deferred: with sixteen seeded items plus test records, a
+page parameter would be speculative; the shared RecordListPagination
+primitive already exists for the moment a real need arrives.
+
+Reason:
+
+The smallest conversion that makes quick switching real: one thin
+Item-specific wrapper over the shared pieces, the existing forms moved —
+not modified — and every CRUD, image, verification, and deletion
+protection left exactly where its tests pin it.
+
+Alternatives considered:
+
+- Switching edit/delete URLs to database ids — rejected; it would split
+  the identifier scheme mid-resource (sources stay slug-nested), break
+  public/admin consistency, and buy nothing the hidden-id form fields
+  do not already provide.
+- Keeping the create form embedded on the landing page alongside the
+  record list — rejected; the milestone's workspace direction needs the
+  landing to be a list-plus-editor surface, and a dedicated creation
+  page gives validation errors a stable home.

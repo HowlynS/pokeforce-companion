@@ -4,6 +4,12 @@ import { ItemNameField } from "@/components/admin/item-name-field";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { ItemWorkspace } from "@/components/admin/item-workspace";
+import {
+  itemDeleteHref,
+  normalizeItemSearchQuery,
+  withItemSearchQuery,
+} from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { updateItemAction } from "../../actions";
@@ -32,7 +38,7 @@ const errorMessages: Record<string, string> = {
 
 type EditItemPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function EditItemPage({
@@ -44,8 +50,9 @@ export default async function EditItemPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
+  const query = normalizeItemSearchQuery(q);
 
   const [item, categories] = await Promise.all([
     prisma.item.findUnique({
@@ -70,30 +77,56 @@ export default async function EditItemPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
+  // The edit route inside the Item workspace (Slice 9B.4): the record
+  // list marks this item selected and keeps the active search applied
+  // for quick switching; the form itself is unchanged.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Edit Item"
-        description={`Update details for "${item.name}".`}
-      />
+    <ItemWorkspace
+      rawQuery={q}
+      selectedSlug={item.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Edit Item"
+            description={`Update details for "${item.name}".`}
+          />
 
-      <nav className="admin-toolbar" aria-label="Item edit">
-        <a href="/admin/items" className="link-accent">
-          &larr; Back to Item Management
-        </a>
+          <nav className="admin-toolbar" aria-label="Item edit">
+            <a
+              href={withItemSearchQuery("/admin/items", query)}
+              className="link-accent"
+            >
+              &larr; Back to Item Management
+            </a>
 
-        <a href={`/admin/items/${item.slug}/sources`} className="link-accent">
-          Manage acquisition sources
-        </a>
-      </nav>
+            <span className="row-actions">
+              <a
+                href={`/admin/items/${item.slug}/sources`}
+                className="link-accent"
+              >
+                Manage acquisition sources
+              </a>
 
-      {errorMessage ? (
-        <p role="alert" className="banner banner-error">
-          {errorMessage}
-        </p>
-      ) : null}
+              {/* The record table that used to carry per-row Delete links
+                  is gone; the confirmation route is reached from here. */}
+              <a
+                href={itemDeleteHref(item.slug, query)}
+                className="link-danger"
+              >
+                Delete
+              </a>
+            </span>
+          </nav>
 
+          {errorMessage ? (
+            <p role="alert" className="banner banner-error">
+              {errorMessage}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       <form action={updateItemAction} className="form-grid">
         <input type="hidden" name="id" value={item.id} />
         <input type="hidden" name="originalSlug" value={item.slug} />
@@ -298,11 +331,14 @@ export default async function EditItemPage({
             Save Changes
           </button>
 
-          <a href="/admin/items" className="btn btn-secondary">
+          <a
+            href={withItemSearchQuery("/admin/items", query)}
+            className="btn btn-secondary"
+          >
             Cancel
           </a>
         </div>
       </form>
-    </>
+    </ItemWorkspace>
   );
 }

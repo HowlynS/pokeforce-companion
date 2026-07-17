@@ -47,6 +47,8 @@ test.describe("unauthenticated admin protection", () => {
   const PROTECTED_ROUTES = [
     "/admin",
     "/admin/items",
+    // The Slice 9B.4 dedicated creation route inside the Item workspace.
+    "/admin/items/new",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

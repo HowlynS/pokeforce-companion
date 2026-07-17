@@ -287,8 +287,9 @@ test("a deletable current version warns that no version will remain current", as
 
   // With versions existing but NONE current, the verification picker on a
   // gameplay form renders safely with its explicit unselected placeholder
-  // — a historical version is never silently preselected.
-  await page.goto("/admin/items");
+  // — a historical version is never silently preselected. (The item
+  // creation form lives on /admin/items/new since Slice 9B.4.)
+  await page.goto("/admin/items/new");
   const picker = page.getByLabel("Game version to verify against");
   await expect(picker).toBeVisible();
   await expect(picker).toHaveValue("");

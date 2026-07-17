@@ -49,16 +49,19 @@ test.afterAll(async () => {
 
 // The admin table row for a record, located by its exact Name cell (first
 // column) — not just any cell.
-function adminRow(page: Page, name: string) {
-  return page.getByRole("row").filter({
-    has: page.getByRole("cell", { name, exact: true }),
-  });
+// One row of the shared Item record list (Slice 9B.4), located by its
+// exact primary text inside the list's navigation landmark.
+function recordRow(page: Page, name: string) {
+  return page
+    .getByRole("navigation", { name: "Items records" })
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
-// Creates a minimal temporary Item through the real admin form and returns
-// its slug.
+// Creates a minimal temporary Item through the real admin form (on the
+// dedicated /admin/items/new page since Slice 9B.4).
 async function createTemporaryItem(page: Page, data: { name: string; slug: string }) {
-  await page.goto("/admin/items");
+  await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
   await page.getByRole("button", { name: "Create Item", exact: true }).click();
@@ -116,9 +119,15 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
     .click();
   await expect(page).toHaveURL("/admin/professions?success=created");
 
-  // --- Navigate to the item's Sources page via the real Sources link -----
+  // --- Navigate to the item's Sources page via the real links: the
+  // record-list row opens the editor, whose toolbar links to sources
+  // (the old table's per-row Sources link went with the table, 9B.4). ----
   await page.goto("/admin/items");
-  await adminRow(page, ITEM.name).getByRole("link", { name: "Sources" }).click();
+  await recordRow(page, ITEM.name).click();
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
+  await page
+    .getByRole("link", { name: "Manage acquisition sources", exact: true })
+    .click();
   await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/sources`);
   await expect(
     page.getByRole("heading", { level: 1, name: "Acquisition Sources" })

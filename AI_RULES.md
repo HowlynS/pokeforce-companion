@@ -24,9 +24,11 @@ Slice 9B.2 (shared admin editor primitives) is complete: resource-agnostic edito
 
 Slice 9B.3 (shared searchable record-list foundation) is complete: the resource-agnostic `RecordList` and `RecordListPagination` components exist with URL-driven search and caller-owned filtering — no production route adopts them yet. Items remains the first reference workspace.
 
-Slice 9B.4 and later Milestone 9 work have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+Slice 9B.4 (Item workspace adoption) is complete: `/admin/items` is the searchable record-list landing, `/admin/items/new` the dedicated creation route, and Item edit/delete render inside the workspace with URL-driven (`?q=`) server-rendered search and quick switching. Item forms, CRUD actions, images, and verification behavior are unchanged; the full Item editor redesign (tabs/panels/sticky actions) is still pending.
 
-Do not begin Slice 9B.4+, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
+Slice 9B.5 and later Milestone 9 work have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+
+Do not begin Slice 9B.5+, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 
