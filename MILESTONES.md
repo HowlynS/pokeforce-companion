@@ -343,7 +343,9 @@ verification metadata.
 ## Milestone 9 - Admin Workspace & Game Version Management
 
 Status: In progress — Slice 9A complete (including the minimal Game
-Version picker on every verification form); Slices 9B–9E not started
+Version picker on every verification form); Slice 9B.1 (shared admin
+shell and persistent navigation) complete; Slice 9B.2 and later slices
+not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -430,10 +432,43 @@ workspace.
       AcquisitionSource; new `admin-game-versions` browser suite; admin
       protection coverage for the settings route
 
+### Slice 9B.1 — Shared admin shell and persistent navigation (complete, 2026-07-17)
+
+- [x] Shared desktop-first admin shell (`AdminShell`): persistent left
+      sidebar plus scrolling content area, rendered ONCE by the `/admin`
+      layout after its unchanged `requireAdminUser()` gate — admin pages
+      no longer wrap themselves in the public `AppShell`
+- [x] Primary sidebar navigation (`AdminNav` over the pure
+      `src/lib/admin/admin-nav.ts` module): exactly six destinations —
+      Dashboard, Items, Recipes, Professions, Categories, Locations. Game
+      Versions deliberately stay a secondary settings destination reached
+      from the dashboard; Acquisition Sources stay contextual under their
+      owning item; no users/roles/audit/route-hub entries; no collapsed
+      mode
+- [x] Active-state rule: Dashboard on exactly `/admin`; each resource on
+      its list route and every child route (segment-boundary match);
+      nothing active on the settings routes. `aria-current="page"` is
+      both the accessible marker and the CSS styling hook
+- [x] Structural workspace API (`AdminWorkspace`): header region plus
+      optional record-list column, primary region, and optional
+      contextual aside — slots only, nothing fills the optional ones yet;
+      the dashboard is the reference composition
+- [x] Shell/workspace CSS vocabulary added to globals.css using the
+      existing token variables; content column uses `min-width: 0` so
+      wide admin tables keep scrolling inside their wrappers at narrower
+      desktop widths (dedicated mobile design remains out of scope)
+- [x] Tests: admin-nav unit suite (six destinations, exclusions,
+      active-state mapping incl. child routes, boundary and settings
+      cases); `admin-shell` browser suite (sidebar contents and targets,
+      persistence with active marker across sections, child-route active
+      state, settings-inside-shell, no shell on public pages)
+
 ### Remaining (not started)
 
-- [ ] Slices 9B–9E, including the shared admin workspace redesign — do not
-      begin until explicitly instructed in the milestone conversation
+- [ ] Slice 9B.2 and later Milestone 9 work (resource workspace
+      conversions, record lists, editor tabs, contextual panels,
+      dashboard summaries) — do not begin until explicitly instructed in
+      the milestone conversation
 
 ---
 

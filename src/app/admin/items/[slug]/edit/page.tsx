@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { ItemNameField } from "@/components/admin/item-name-field";
 import { designTokens } from "@/lib/design-tokens";
@@ -72,7 +71,7 @@ export default async function EditItemPage({
   });
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Admin"
         title="Edit Item"
@@ -304,6 +303,6 @@ export default async function EditItemPage({
           </a>
         </div>
       </form>
-    </AppShell>
+    </>
   );
 }

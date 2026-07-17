@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -52,7 +51,7 @@ export default async function DeleteRecipePage({
       : "None";
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Admin"
         title="Delete Recipe"
@@ -108,6 +107,6 @@ export default async function DeleteRecipePage({
           </a>
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }

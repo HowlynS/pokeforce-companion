@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
@@ -104,7 +103,7 @@ export default async function EditRecipePage({
   });
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Admin"
         title="Edit Recipe"
@@ -384,6 +383,6 @@ export default async function EditRecipePage({
           </div>
         </form>
       )}
-    </AppShell>
+    </>
   );
 }

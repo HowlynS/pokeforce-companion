@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { designTokens } from "@/lib/design-tokens";
@@ -57,7 +56,7 @@ export default async function GameVersionSettingsPage({
   });
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Admin · Settings"
         title="Game Versions"
@@ -179,6 +178,6 @@ export default async function GameVersionSettingsPage({
           </div>
         </form>
       </section>
-    </AppShell>
+    </>
   );
 }

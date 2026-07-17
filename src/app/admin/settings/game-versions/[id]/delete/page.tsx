@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -43,7 +42,7 @@ export default async function DeleteGameVersionPage({
   const canDelete = referenceCount === 0;
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Admin · Settings"
         title="Delete Game Version"
@@ -119,6 +118,6 @@ export default async function DeleteGameVersionPage({
           </a>
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }

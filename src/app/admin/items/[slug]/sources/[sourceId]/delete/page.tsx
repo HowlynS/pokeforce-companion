@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -39,7 +38,7 @@ export default async function DeleteAcquisitionSourcePage({
   }
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Admin"
         title="Delete Acquisition Source"
@@ -83,6 +82,6 @@ export default async function DeleteAcquisitionSourcePage({
           </a>
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }

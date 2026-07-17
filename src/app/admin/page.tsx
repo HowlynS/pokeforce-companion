@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { designTokens } from "@/lib/design-tokens";
@@ -39,28 +39,35 @@ const managementAreas = [
 export default async function AdminPage() {
   const user = await requireAdminUser();
 
+  // The dashboard is the reference AdminWorkspace composition: header slot
+  // plus the primary region only — the optional record-list and aside
+  // slots stay empty until later Slice 9B work fills them.
   return (
-    <AppShell>
-      <PageHeader
-        title="Admin"
-        description="Manage the wiki's game data: create, edit, and delete categories, professions, items, recipes, and locations."
-      />
+    <AdminWorkspace
+      header={
+        <>
+          <PageHeader
+            title="Admin"
+            description="Manage the wiki's game data: create, edit, and delete categories, professions, items, recipes, and locations."
+          />
 
-      <section className="admin-toolbar">
-        <p>
-          Signed in as{" "}
-          <strong style={{ color: designTokens.colors.accent }}>
-            {user.email}
-          </strong>
-        </p>
+          <section className="admin-toolbar">
+            <p>
+              Signed in as{" "}
+              <strong style={{ color: designTokens.colors.accent }}>
+                {user.email}
+              </strong>
+            </p>
 
-        <form action={signOutAction}>
-          <button type="submit" className="btn btn-secondary btn-compact">
-            Sign out
-          </button>
-        </form>
-      </section>
-
+            <form action={signOutAction}>
+              <button type="submit" className="btn btn-secondary btn-compact">
+                Sign out
+              </button>
+            </form>
+          </section>
+        </>
+      }
+    >
       <ContentGrid>
         {managementAreas.map((area) => (
           <Card
@@ -86,6 +93,6 @@ export default async function AdminPage() {
           </span>
         </p>
       </section>
-    </AppShell>
+    </AdminWorkspace>
   );
 }

@@ -1016,3 +1016,62 @@ Reason:
 Historical-version verification had a tested server path but no way for
 an administrator to reach it; a restrained picker inside the existing
 forms closes that gap without starting the workspace redesign.
+
+---
+
+### 2026-07-17 — Slice 9B.1: shared admin shell architecture
+
+Decision:
+
+Every authenticated admin route now renders inside one shared,
+desktop-first admin shell, applied exactly once by the /admin layout
+after its unchanged requireAdminUser() gate. Three components carry the
+architecture:
+
+- AdminShell (src/components/admin/admin-shell.tsx): a persistent left
+  sidebar (brand lockup linking to the public site, plus the primary
+  navigation) beside a scrolling content area. Rendered at layout level,
+  so it stays stable while navigating between admin sections; admin pages
+  no longer wrap themselves in the public AppShell (which remains the
+  public/login shell).
+- AdminNav (src/components/admin/admin-nav.tsx) over the pure module
+  src/lib/admin/admin-nav.ts: exactly six primary destinations —
+  Dashboard, Items, Recipes, Professions, Categories, Locations. The
+  active rule is pure and unit-tested: Dashboard on exactly /admin, each
+  resource on its list route and every child route (path-segment
+  boundary match), nothing on the secondary settings routes.
+  aria-current="page" is simultaneously the accessible marker and the
+  CSS styling hook, so the visual and accessible states cannot drift.
+- AdminWorkspace (src/components/admin/admin-workspace.tsx): the
+  structural composition later resource workspaces build on — a header
+  region plus optional record-list column, primary region, and optional
+  contextual aside. Slots only in this slice; absent slots render no
+  reserved space. The dashboard is the reference composition; the five
+  resource editors are deliberately unconverted.
+
+Deliberately excluded from primary navigation: Game Versions (still the
+dashboard's secondary settings link), Acquisition Sources (contextual
+under their owning item — their routes light up Items), and any
+users/roles/audit/route-hub destinations. No collapsed-sidebar mode. The
+shell's styles live in globals.css using the existing token variables;
+the content column uses min-width: 0 so wide tables keep scrolling in
+their own wrappers at narrower desktop widths, and dedicated mobile
+design stays out of scope.
+
+Reason:
+
+Later Slice 9B work converts each resource to a workspace; putting the
+frame, navigation, and slot structure in one place first means those
+conversions compose existing pieces instead of five pages each inventing
+their own shell. Layout-level placement gives the persistence the
+milestone asks for and keeps authorization exactly where it was.
+
+Alternatives considered:
+
+- Keeping per-page AppShell wrappers and adding a sidebar inside each
+  page — rejected; the sidebar would remount per page and every future
+  workspace would re-assemble its own frame.
+- A configurable generic layout framework — rejected; exactly one header
+  and three body slots is all the approved design needs.
+- Adding a Settings entry to the sidebar — rejected; the brief keeps
+  Game Versions reachable only through the existing secondary path.

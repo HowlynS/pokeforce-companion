@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { designTokens } from "@/lib/design-tokens";
@@ -76,7 +75,7 @@ export default async function AdminItemSourcesPage({
   });
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Admin"
         title="Acquisition Sources"
@@ -232,6 +231,6 @@ export default async function AdminItemSourcesPage({
           </div>
         </form>
       </section>
-    </AppShell>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
@@ -70,7 +69,7 @@ export default async function EditAcquisitionSourcePage({
   });
 
   return (
-    <AppShell>
+    <>
       <PageHeader
         eyebrow="Admin"
         title="Edit Acquisition Source"
@@ -197,6 +196,6 @@ export default async function EditAcquisitionSourcePage({
           </a>
         </div>
       </form>
-    </AppShell>
+    </>
   );
 }
