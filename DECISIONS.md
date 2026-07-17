@@ -1281,3 +1281,53 @@ Alternatives considered:
 - Duplicating the image/verification fields inside the main-column
   `<form>` and hiding the aside copies — rejected; two copies of the
   same inputs risk drifting out of sync and double-submitting.
+
+---
+
+### 2026-07-17 — Slice 9B.6: a route-builder prop instead of a generic routing framework
+
+Decision:
+
+`ItemWorkspace` gained one new optional prop, `recordHref?: (slug, query)
+=> string`, defaulting to `itemEditHref`. The Acquisition Sources routes
+pass `itemSourcesHref` instead, so quick-switching records while on the
+Acquisition Sources tab opens the NEXT item's Acquisition Sources tab —
+not its General tab, which is what the existing hardcoded `itemEditHref`
+call would have produced. This is deliberately a single function prop,
+not a resource-registry, a route-config object, or a generic "current
+section" concept threaded through the whole workspace — `ItemWorkspace`
+still only knows about the one axis it actually needs (which route a row
+should link to), decided by whichever page renders it.
+
+Alongside it, `itemEditorTabs(slug, query, active)` — one function in
+`src/lib/admin/item-workspace.ts` — builds the tab strip (General,
+Acquisition Sources, and the two disabled placeholders) for every route
+in the Item workspace that shows tabs, so the two real tabs' hrefs and
+active state are computed in exactly one place rather than five
+independent copies (edit, sources list, source edit, source delete, plus
+the create page's own single-tab case, which does not use this helper
+because Acquisition Sources cannot exist before the record does).
+
+Reason:
+
+The task explicitly asked for a "route-builder strategy... kept
+Item-specific and simple," not a generic routing framework. A single
+optional prop with a sensible default meets that: existing callers
+(Item edit/delete/create, which never pass `recordHref`) are completely
+unaffected, and the one thing that actually varies across the Item
+workspace's routes — which destination a record row reopens — is now
+correct without duplicating the record-list query logic per route.
+
+Alternatives considered:
+
+- A generic `currentSection`/`activeTab` concept passed through
+  `ItemWorkspace` that internally maps to a route — rejected; it would
+  require `ItemWorkspace` to know about every possible section ahead of
+  time (including ones with no route yet, like Used in Recipes), which
+  is exactly the generic framework the task said not to build.
+- Inlining `itemSourcesHref(item.slug, query)` directly in each Sources
+  page's row-mapping logic (duplicating `ItemWorkspace`'s query
+  handling) instead of a prop — rejected; it would either duplicate the
+  Item list query in every Sources-route page or require exporting
+  `ItemWorkspace`'s row-building logic separately, both worse than one
+  parameterized prop.

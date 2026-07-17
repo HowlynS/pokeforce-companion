@@ -4,6 +4,10 @@ import {
   ITEM_LIST_PATH,
   itemDeleteHref,
   itemEditHref,
+  itemEditorTabs,
+  itemSourceDeleteHref,
+  itemSourceEditHref,
+  itemSourcesHref,
   normalizeItemSearchQuery,
   withItemSearchQuery,
 } from "@/lib/admin/item-workspace";
@@ -53,5 +57,80 @@ describe("item workspace hrefs", () => {
     expect(itemDeleteHref("iron-ore", "iron")).toBe(
       "/admin/items/iron-ore/delete?q=iron"
     );
+  });
+
+  it("builds the Acquisition Sources tab route, preserving the query", () => {
+    expect(itemSourcesHref("iron-ore", "")).toBe(
+      "/admin/items/iron-ore/sources"
+    );
+    expect(itemSourcesHref("iron-ore", "iron")).toBe(
+      "/admin/items/iron-ore/sources?q=iron"
+    );
+  });
+
+  it("builds source edit/delete routes, preserving the query", () => {
+    expect(itemSourceEditHref("iron-ore", "src-1", "")).toBe(
+      "/admin/items/iron-ore/sources/src-1/edit"
+    );
+    expect(itemSourceEditHref("iron-ore", "src-1", "iron")).toBe(
+      "/admin/items/iron-ore/sources/src-1/edit?q=iron"
+    );
+    expect(itemSourceDeleteHref("iron-ore", "src-1", "")).toBe(
+      "/admin/items/iron-ore/sources/src-1/delete"
+    );
+    expect(itemSourceDeleteHref("iron-ore", "src-1", "iron")).toBe(
+      "/admin/items/iron-ore/sources/src-1/delete?q=iron"
+    );
+  });
+});
+
+describe("itemEditorTabs", () => {
+  it("marks General active and links Acquisition Sources as a real tab", () => {
+    const tabs = itemEditorTabs("iron-ore", "", "general");
+
+    expect(tabs).toEqual([
+      { label: "General", href: "/admin/items/iron-ore/edit", active: true },
+      {
+        label: "Acquisition Sources",
+        href: "/admin/items/iron-ore/sources",
+        active: false,
+      },
+      { label: "Used in Recipes", href: "", active: false, disabled: true },
+      { label: "Metadata", href: "", active: false, disabled: true },
+    ]);
+  });
+
+  it("marks Acquisition Sources active when that is the current tab", () => {
+    const tabs = itemEditorTabs("iron-ore", "iron", "sources");
+
+    expect(tabs[0]).toEqual({
+      label: "General",
+      href: "/admin/items/iron-ore/edit?q=iron",
+      active: false,
+    });
+    expect(tabs[1]).toEqual({
+      label: "Acquisition Sources",
+      href: "/admin/items/iron-ore/sources?q=iron",
+      active: true,
+    });
+  });
+
+  it("always renders Used in Recipes and Metadata as disabled placeholders", () => {
+    for (const active of ["general", "sources"] as const) {
+      const tabs = itemEditorTabs("iron-ore", "", active);
+      const deferred = tabs.slice(2);
+
+      expect(deferred).toEqual([
+        { label: "Used in Recipes", href: "", active: false, disabled: true },
+        { label: "Metadata", href: "", active: false, disabled: true },
+      ]);
+    }
+  });
+
+  it("marks exactly one tab active for every valid key", () => {
+    for (const active of ["general", "sources"] as const) {
+      const tabs = itemEditorTabs("iron-ore", "", active);
+      expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+    }
   });
 });

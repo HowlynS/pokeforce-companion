@@ -1,9 +1,20 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs } from "@/components/admin/editor-tabs";
+import { ContextPanel } from "@/components/admin/context-panel";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { ItemWorkspace } from "@/components/admin/item-workspace";
+import {
+  ITEM_LIST_PATH,
+  itemEditorTabs,
+  itemSourceDeleteHref,
+  itemSourceEditHref,
+  itemSourcesHref,
+  normalizeItemSearchQuery,
+  withItemSearchQuery,
+} from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 import {
   ACQUISITION_TYPES,
@@ -34,7 +45,7 @@ const successMessages: Record<string, string> = {
 
 type AdminItemSourcesPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{ q?: string; error?: string; success?: string }>;
 };
 
 export default async function AdminItemSourcesPage({
@@ -46,9 +57,10 @@ export default async function AdminItemSourcesPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error, success } = await searchParams;
+  const { q, error, success } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const successMessage = success ? successMessages[success] ?? null : null;
+  const query = normalizeItemSearchQuery(q);
 
   const [item, locations, professions] = await Promise.all([
     prisma.item.findUnique({
@@ -74,35 +86,44 @@ export default async function AdminItemSourcesPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
+  const tabs = itemEditorTabs(item.slug, query, "sources");
+
+  // The Acquisition Sources tab landing page (Slice 9B.6): the tab's own
+  // list + quick-add page, integrated into the Item workspace exactly
+  // like General — the record list stays visible and selected, and
+  // switching records here (recordHref) keeps the NEXT item's Acquisition
+  // Sources tab open, rather than dropping back to its General tab.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Acquisition Sources"
-        description={`Manage how "${item.name}" can be obtained.`}
-      />
+    <ItemWorkspace
+      rawQuery={q}
+      selectedSlug={item.slug}
+      recordHref={itemSourcesHref}
+      header={
+        <>
+          <EditorHeader
+            title={item.name}
+            subtitle={item.slug}
+            backHref={withItemSearchQuery(ITEM_LIST_PATH, query)}
+            backLabel="Back to Item Management"
+          />
 
-      <p className="admin-toolbar">
-        <a href={`/admin/items/${item.slug}/edit`} className="link-accent">
-          &larr; Back to Edit Item
-        </a>
-      </p>
+          <EditorTabs label="Item editor sections" tabs={tabs} />
 
-      {errorMessage ? (
-        <p role="alert" className="banner banner-error">
-          {errorMessage}
-        </p>
-      ) : null}
+          {errorMessage ? (
+            <p role="alert" className="banner banner-error">
+              {errorMessage}
+            </p>
+          ) : null}
 
-      {successMessage ? (
-        <p role="status" className="banner banner-success">
-          {successMessage}
-        </p>
-      ) : null}
-
-      <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <h2 className="section-title">Existing Sources</h2>
-
+          {successMessage ? (
+            <p role="status" className="banner banner-success">
+              {successMessage}
+            </p>
+          ) : null}
+        </>
+      }
+    >
+      <ContextPanel title="Existing Sources">
         {item.acquisitionSources.length > 0 ? (
           <div className="admin-table-wrap">
             <table className="admin-table">
@@ -133,13 +154,17 @@ export default async function AdminItemSourcesPage({
                     <td>
                       <span className="row-actions">
                         <a
-                          href={`/admin/items/${item.slug}/sources/${source.id}/edit`}
+                          href={itemSourceEditHref(item.slug, source.id, query)}
                           className="link-accent"
                         >
                           Edit
                         </a>
                         <a
-                          href={`/admin/items/${item.slug}/sources/${source.id}/delete`}
+                          href={itemSourceDeleteHref(
+                            item.slug,
+                            source.id,
+                            query
+                          )}
                           className="link-danger"
                         >
                           Delete
@@ -157,11 +182,9 @@ export default async function AdminItemSourcesPage({
             description="Add the first source using the form below."
           />
         )}
-      </section>
+      </ContextPanel>
 
-      <section id="create-source">
-        <h2 className="section-title">Add Acquisition Source</h2>
-
+      <ContextPanel title="Add Acquisition Source">
         <form action={createAcquisitionSourceAction} className="form-grid">
           <input type="hidden" name="itemId" value={item.id} />
           <input type="hidden" name="itemSlug" value={item.slug} />
@@ -222,7 +245,14 @@ export default async function AdminItemSourcesPage({
             <textarea name="notes" rows={3} className="form-input" />
           </label>
 
-          <GameVersionVerificationControls gameVersions={gameVersions} />
+          {/* No fake existing verification state on create: both fields
+              are null, so the panel renders Unverified with no stamp
+              rows — exactly the state a brand-new source actually has. */}
+          <VerificationPanel
+            gameVersions={gameVersions}
+            verifiedAt={null}
+            verifiedGameVersion={null}
+          />
 
           <div className="form-actions">
             <button type="submit" className="btn btn-primary">
@@ -230,7 +260,7 @@ export default async function AdminItemSourcesPage({
             </button>
           </div>
         </form>
-      </section>
-    </>
+      </ContextPanel>
+    </ItemWorkspace>
   );
 }

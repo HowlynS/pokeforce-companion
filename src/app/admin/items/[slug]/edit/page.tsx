@@ -3,7 +3,7 @@ import { ItemNameField } from "@/components/admin/item-name-field";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
-import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
@@ -11,7 +11,7 @@ import { EditorActions } from "@/components/admin/editor-actions";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   itemDeleteHref,
-  itemEditHref,
+  itemEditorTabs,
   normalizeItemSearchQuery,
   withItemSearchQuery,
 } from "@/lib/admin/item-workspace";
@@ -88,21 +88,20 @@ export default async function EditItemPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  // General is the only implemented section; the rest describe content
-  // that doesn't exist yet (Slice 9B.5) and render as inert placeholders
-  // rather than links to empty pages.
-  const tabs: EditorTab[] = [
-    { label: "General", href: itemEditHref(item.slug, query), active: true },
-    { label: "Acquisition Sources", href: "", active: false, disabled: true },
-    { label: "Used in Recipes", href: "", active: false, disabled: true },
-    { label: "Metadata", href: "", active: false, disabled: true },
-  ];
+  // General is the only implemented section; Acquisition Sources is a
+  // real tab since Slice 9B.6 (its own workspace-integrated destination).
+  // Used in Recipes and Metadata still describe content that doesn't
+  // exist yet and render as inert placeholders rather than links to
+  // empty pages.
+  const tabs = itemEditorTabs(item.slug, query, "general");
 
   // The edit route inside the Item workspace (Slice 9B.4), now composed
   // from the shared editor primitives (Slice 9B.5): the record list marks
   // this item selected and keeps the active search applied for quick
   // switching; every field, redirect, and server action is unchanged —
   // only the presentation moved into EditorHeader/Tabs/Panels/Actions.
+  // The header's former "Manage acquisition sources" action is gone
+  // (Slice 9B.6) — the Acquisition Sources tab replaces it.
   return (
     <ItemWorkspace
       rawQuery={q}
@@ -114,14 +113,6 @@ export default async function EditItemPage({
             subtitle={item.slug}
             backHref={withItemSearchQuery("/admin/items", query)}
             backLabel="Back to Item Management"
-            actions={
-              <a
-                href={`/admin/items/${item.slug}/sources`}
-                className="link-accent"
-              >
-                Manage acquisition sources
-              </a>
-            }
           />
 
           <EditorTabs label="Item editor sections" tabs={tabs} />

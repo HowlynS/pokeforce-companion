@@ -36,6 +36,11 @@ type ItemWorkspaceProps = {
       timestamps) — passed straight through to AdminWorkspace's aside
       slot. Absent on the landing and delete-confirmation pages. */
   aside?: React.ReactNode;
+  /** Builds each record row's link (Slice 9B.6) — defaults to the
+      General edit route. Acquisition Sources routes pass
+      `itemSourcesHref` so quick switching between items stays on the
+      Acquisition Sources tab instead of dropping back to General. */
+  recordHref?: (slug: string, query: string) => string;
 };
 
 export async function ItemWorkspace({
@@ -44,6 +49,7 @@ export async function ItemWorkspace({
   header,
   children,
   aside,
+  recordHref = itemEditHref,
 }: ItemWorkspaceProps) {
   const query = normalizeItemSearchQuery(rawQuery);
 
@@ -64,7 +70,7 @@ export async function ItemWorkspace({
   });
 
   const rows = items.map((item) => ({
-    href: itemEditHref(item.slug, query),
+    href: recordHref(item.slug, query),
     primary: item.name,
     secondary: item.category?.name ?? undefined,
     selected: item.slug === selectedSlug,

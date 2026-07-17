@@ -120,17 +120,29 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   await expect(page).toHaveURL("/admin/professions?success=created");
 
   // --- Navigate to the item's Sources page via the real links: the
-  // record-list row opens the editor, whose toolbar links to sources
-  // (the old table's per-row Sources link went with the table, 9B.4). ----
+  // record-list row opens the editor, whose Acquisition Sources tab is a
+  // real working link (Slice 9B.6 — the old "Manage acquisition sources"
+  // header action is gone, replaced by the tab itself). ------------------
   await page.goto("/admin/items");
   await recordRow(page, ITEM.name).click();
   await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
   await page
-    .getByRole("link", { name: "Manage acquisition sources", exact: true })
+    .getByRole("navigation", { name: "Item editor sections" })
+    .getByRole("link", { name: "Acquisition Sources", exact: true })
     .click();
   await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/sources`);
+  // The tab landing page's one h1 is the item's own name; the tab itself
+  // is marked active, and the record list stays visible beside it.
   await expect(
-    page.getByRole("heading", { level: 1, name: "Acquisition Sources" })
+    page.getByRole("heading", { level: 1, name: ITEM.name, exact: true })
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Item editor sections" })
+      .getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByRole("navigation", { name: "Items records" })
   ).toBeVisible();
   await expect(page.getByText("No acquisition sources yet")).toBeVisible();
 
@@ -244,7 +256,9 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   await expect(page.getByText("No acquisition sources yet")).toBeVisible();
 });
 
-test("the item edit page links to its acquisition sources", async ({ page }) => {
+test("the item edit page's Acquisition Sources tab opens the sources tab, and the old header action is gone", async ({
+  page,
+}) => {
   const ITEM = {
     name: "Test E2E Acqsrc Item Link",
     slug: "test-e2e-acqsrc-item-link",
@@ -252,11 +266,138 @@ test("the item edit page links to its acquisition sources", async ({ page }) => 
   await createTemporaryItem(page, ITEM);
 
   await page.goto(`/admin/items/${ITEM.slug}/edit`);
-  await page.getByRole("link", { name: "Manage acquisition sources" }).click();
+  // The redundant "Manage acquisition sources" header action is gone
+  // (Slice 9B.6) — the Acquisition Sources tab is the real, working link.
+  await expect(
+    page.getByRole("link", { name: "Manage acquisition sources" })
+  ).toHaveCount(0);
+
+  await page
+    .getByRole("navigation", { name: "Item editor sections" })
+    .getByRole("link", { name: "Acquisition Sources", exact: true })
+    .click();
   await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/sources`);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Acquisition Sources" })
+    page.getByRole("heading", { level: 1, name: ITEM.name, exact: true })
   ).toBeVisible();
+});
+
+test("Item editor tabs: Acquisition Sources is a real link, General returns, deferred tabs stay inert, and exactly one tab is active", async ({
+  page,
+}) => {
+  const ITEM = {
+    name: "Test E2E Acqsrc Item Tabs",
+    slug: "test-e2e-acqsrc-item-tabs",
+  };
+  await createTemporaryItem(page, ITEM);
+
+  const tabNav = () =>
+    page.getByRole("navigation", { name: "Item editor sections" });
+
+  // --- On the General (edit) route ---------------------------------------
+  await page.goto(`/admin/items/${ITEM.slug}/edit`);
+  await expect(
+    tabNav().getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    tabNav().getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toBeVisible();
+  for (const deferred of ["Used in Recipes", "Metadata"]) {
+    await expect(
+      tabNav().getByText(deferred, { exact: true })
+    ).toHaveAttribute("aria-disabled", "true");
+    await expect(
+      tabNav().getByRole("link", { name: deferred, exact: true })
+    ).toHaveCount(0);
+  }
+  await expect(tabNav().locator('[aria-current="page"]')).toHaveCount(1);
+
+  // --- Following the Acquisition Sources tab marks IT active instead -----
+  await tabNav()
+    .getByRole("link", { name: "Acquisition Sources", exact: true })
+    .click();
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/sources`);
+  await expect(
+    tabNav().getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    tabNav().getByRole("link", { name: "General", exact: true })
+  ).not.toHaveAttribute("aria-current", "page");
+  await expect(tabNav().locator('[aria-current="page"]')).toHaveCount(1);
+
+  // --- General still links back correctly --------------------------------
+  await tabNav().getByRole("link", { name: "General", exact: true }).click();
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
+  await expect(
+    tabNav().getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+});
+
+test("switching items while on the Acquisition Sources tab preserves the tab and q", async ({
+  page,
+}) => {
+  const ITEM_A = {
+    name: "Test E2E Acqsrc Item Switch A",
+    slug: "test-e2e-acqsrc-item-switch-a",
+  };
+  const ITEM_B = {
+    name: "Test E2E Acqsrc Item Switch B",
+    slug: "test-e2e-acqsrc-item-switch-b",
+  };
+  await createTemporaryItem(page, ITEM_A);
+  await createTemporaryItem(page, ITEM_B);
+
+  // A shared, distinguishing query so only these two temporary items match.
+  await page.goto("/admin/items");
+  await page
+    .getByRole("searchbox", { name: "Search items" })
+    .fill("test e2e acqsrc item switch");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(recordRow(page, ITEM_A.name)).toBeVisible();
+  await expect(recordRow(page, ITEM_B.name)).toBeVisible();
+
+  await recordRow(page, ITEM_A.name).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/items/${ITEM_A.slug}/edit\\?q=`)
+  );
+
+  // Move to A's Acquisition Sources tab, keeping q.
+  await page
+    .getByRole("navigation", { name: "Item editor sections" })
+    .getByRole("link", { name: "Acquisition Sources", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/items/${ITEM_A.slug}/sources\\?q=`)
+  );
+  await expect(recordRow(page, ITEM_A.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+
+  // Switching records while ON the Acquisition Sources tab opens the OTHER
+  // item's Acquisition Sources tab — not its General tab — with q intact.
+  await recordRow(page, ITEM_B.name).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/items/${ITEM_B.slug}/sources\\?q=`)
+  );
+  await expect(
+    page.getByRole("heading", { level: 1, name: ITEM_B.name, exact: true })
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Item editor sections" })
+      .getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(recordRow(page, ITEM_B.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  await expect(recordRow(page, ITEM_A.name)).not.toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  // Item B has no sources yet: a valid empty tab state, not an error.
+  await expect(page.getByText("No acquisition sources yet")).toBeVisible();
 });
 
 test("deleting the item cascades its acquisition sources", async ({ page }) => {

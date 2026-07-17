@@ -1,7 +1,15 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs } from "@/components/admin/editor-tabs";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
+import { ItemWorkspace } from "@/components/admin/item-workspace";
+import {
+  itemEditorTabs,
+  itemSourcesHref,
+  normalizeItemSearchQuery,
+} from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 import {
   ACQUISITION_TYPES,
@@ -10,6 +18,13 @@ import {
 import { updateAcquisitionSourceAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
+
+// Associates the verification controls — rendered in the aside column,
+// outside this <form> element — with this form via the standard HTML
+// `form` attribute, so every field still submits together with one
+// ordinary form submission (the same pattern the Item General editor
+// uses, Slice 9B.5).
+const SOURCE_EDIT_FORM_ID = "acquisition-source-edit-form";
 
 const errorMessages: Record<string, string> = {
   missing_type: "Select an acquisition type.",
@@ -24,7 +39,7 @@ const errorMessages: Record<string, string> = {
 
 type EditAcquisitionSourcePageProps = {
   params: Promise<{ slug: string; sourceId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function EditAcquisitionSourcePage({
@@ -36,8 +51,9 @@ export default async function EditAcquisitionSourcePage({
   await requireAdminUser();
 
   const { slug, sourceId } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
+  const query = normalizeItemSearchQuery(q);
 
   const [item, locations, professions] = await Promise.all([
     prisma.item.findUnique({ where: { slug } }),
@@ -68,27 +84,50 @@ export default async function EditAcquisitionSourcePage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
+  const tabs = itemEditorTabs(item.slug, query, "sources");
+
+  // Inside the Item workspace (Slice 9B.6): the record list marks this
+  // item selected and keeps quick switching on the Acquisition Sources
+  // tab. The source itself has no name of its own, so the page's title
+  // stays the existing task-oriented heading; the item's name is the
+  // subtitle context underneath.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Edit Acquisition Source"
-        description={`Update how "${item.name}" can be obtained.`}
-      />
+    <ItemWorkspace
+      rawQuery={q}
+      selectedSlug={item.slug}
+      recordHref={itemSourcesHref}
+      header={
+        <>
+          <EditorHeader
+            title="Edit Acquisition Source"
+            subtitle={item.name}
+            backHref={itemSourcesHref(item.slug, query)}
+            backLabel="Back to Acquisition Sources"
+          />
 
-      <p className="admin-toolbar">
-        <a href={`/admin/items/${item.slug}/sources`} className="link-accent">
-          &larr; Back to Acquisition Sources
-        </a>
-      </p>
+          <EditorTabs label="Item editor sections" tabs={tabs} />
 
-      {errorMessage ? (
-        <p role="alert" className="banner banner-error">
-          {errorMessage}
-        </p>
-      ) : null}
-
-      <form action={updateAcquisitionSourceAction} className="form-grid">
+          {errorMessage ? (
+            <p role="alert" className="banner banner-error">
+              {errorMessage}
+            </p>
+          ) : null}
+        </>
+      }
+      aside={
+        <VerificationPanel
+          gameVersions={gameVersions}
+          verifiedAt={source.verifiedAt}
+          verifiedGameVersion={source.verifiedGameVersion}
+          formId={SOURCE_EDIT_FORM_ID}
+        />
+      }
+    >
+      <form
+        id={SOURCE_EDIT_FORM_ID}
+        action={updateAcquisitionSourceAction}
+        className="form-grid"
+      >
         <input type="hidden" name="id" value={source.id} />
         <input type="hidden" name="itemSlug" value={item.slug} />
 
@@ -173,29 +212,11 @@ export default async function EditAcquisitionSourcePage({
           />
         </label>
 
-        {/* Admin-only verification status (public pages never show it).
-            Rendered only when BOTH fields are populated — never as an
-            empty row; the stable YYYY-MM-DD date never depends on the
-            server locale. */}
-        {source.verifiedAt && source.verifiedGameVersion ? (
-          <p className="text-muted">
-            Gameplay data verified for {source.verifiedGameVersion.name} on{" "}
-            {source.verifiedAt.toISOString().slice(0, 10)}.
-          </p>
-        ) : null}
-
-        <GameVersionVerificationControls gameVersions={gameVersions} />
-
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Save Changes
-          </button>
-
-          <a href={`/admin/items/${item.slug}/sources`} className="btn btn-secondary">
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Save Changes"
+          cancelHref={itemSourcesHref(item.slug, query)}
+        />
       </form>
-    </>
+    </ItemWorkspace>
   );
 }

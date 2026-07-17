@@ -45,3 +45,79 @@ export function itemEditHref(slug: string, query: string): string {
 export function itemDeleteHref(slug: string, query: string): string {
   return withItemSearchQuery(`${ITEM_LIST_PATH}/${slug}/delete`, query);
 }
+
+/** The Acquisition Sources tab route for one item, preserving the query
+    (Slice 9B.6) — the tab landing page (list + create). */
+export function itemSourcesHref(slug: string, query: string): string {
+  return withItemSearchQuery(`${ITEM_LIST_PATH}/${slug}/sources`, query);
+}
+
+/** The edit route for one acquisition source, preserving the query. */
+export function itemSourceEditHref(
+  slug: string,
+  sourceId: string,
+  query: string
+): string {
+  return withItemSearchQuery(
+    `${ITEM_LIST_PATH}/${slug}/sources/${sourceId}/edit`,
+    query
+  );
+}
+
+/** The delete-confirmation route for one acquisition source, preserving
+    the query. */
+export function itemSourceDeleteHref(
+  slug: string,
+  sourceId: string,
+  query: string
+): string {
+  return withItemSearchQuery(
+    `${ITEM_LIST_PATH}/${slug}/sources/${sourceId}/delete`,
+    query
+  );
+}
+
+/** Which Item editor tab is active — General (the record's own fields)
+    or Acquisition Sources (Slice 9B.6). Used in Recipes and Metadata
+    have no content yet, so `itemEditorTabs` always renders them as inert
+    placeholders regardless of this value. */
+export type ItemEditorTabKey = "general" | "sources";
+
+/** Structurally compatible with the shared `EditorTab` type
+    (`src/components/admin/editor-tabs.tsx`) without importing a
+    component into this pure, React-free module. */
+export type ItemEditorTab = {
+  label: string;
+  href: string;
+  active: boolean;
+  disabled?: boolean;
+};
+
+/**
+ * The Item editor's tab strip, shared by every route inside the Item
+ * workspace that renders tabs (General edit/create, and every
+ * Acquisition Sources route) — one function so General's and Acquisition
+ * Sources' hrefs/active state can never drift out of sync between pages.
+ * Used in Recipes and Metadata have no destination yet, so they render
+ * as disabled placeholders — never fake links to empty pages.
+ */
+export function itemEditorTabs(
+  slug: string,
+  query: string,
+  active: ItemEditorTabKey
+): ItemEditorTab[] {
+  return [
+    {
+      label: "General",
+      href: itemEditHref(slug, query),
+      active: active === "general",
+    },
+    {
+      label: "Acquisition Sources",
+      href: itemSourcesHref(slug, query),
+      active: active === "sources",
+    },
+    { label: "Used in Recipes", href: "", active: false, disabled: true },
+    { label: "Metadata", href: "", active: false, disabled: true },
+  ];
+}

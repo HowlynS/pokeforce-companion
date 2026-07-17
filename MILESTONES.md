@@ -348,8 +348,9 @@ shell and persistent navigation) complete; Slice 9B.2 (shared admin
 editor primitives) complete; Slice 9B.3 (shared searchable record-list
 foundation) complete; Slice 9B.4 (Item workspace routes, record list,
 and quick switching) complete; Slice 9B.5 (Item General editor) complete
-for the General tab — Acquisition Sources, Used in Recipes, and Metadata
-tab content remain pending; later slices not started
+for the General tab; Slice 9B.6 (Acquisition Sources tab integration)
+complete — Used in Recipes and Metadata tab content remain pending;
+later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -607,15 +608,59 @@ workspace.
       `formId` forwarding; the Item E2E suites (lifecycle, images,
       name-feedback, sources, how-to-obtain) updated for the new
       headings, button labels, and verification-panel markup
-- [ ] Acquisition Sources tab content, Used in Recipes tab content, and
-      Metadata tab content beyond `TimestampsPanel` remain unimplemented
+- [x] Acquisition Sources tab content is implemented in Slice 9B.6
+      (below); Used in Recipes tab content and Metadata tab content
+      beyond `TimestampsPanel` remain unimplemented
+
+### Slice 9B.6 — Acquisition Sources tab integration (complete, 2026-07-17)
+
+- [x] Acquisition Sources is a real, working tab in the Item workspace,
+      replacing the former "Manage acquisition sources" header action
+      (removed). Routes are unchanged: `/admin/items/[slug]/sources`
+      (list + inline create), `/admin/items/[slug]/sources/[sourceId]/edit`,
+      `/admin/items/[slug]/sources/[sourceId]/delete` — all three now
+      render inside `ItemWorkspace` with the shared tab strip
+- [x] One new function, `itemEditorTabs(slug, query, active)` in
+      `src/lib/admin/item-workspace.ts`, builds the tab strip for every
+      Item route (General and Acquisition Sources as real links with
+      correct hrefs/active state; Used in Recipes/Metadata still
+      disabled placeholders) — General's and Sources' tabs can never
+      drift out of sync between pages
+- [x] `ItemWorkspace` gained an optional `recordHref` prop (default
+      `itemEditHref`): the Sources routes pass `itemSourcesHref` so
+      quick-switching records while on the Acquisition Sources tab opens
+      the NEXT item's Acquisition Sources tab, not its General tab; an
+      item with no sources yet still opens a valid empty tab state
+- [x] The sources list/create page wraps its existing table and inline
+      create form in `ContextPanel`s and upgrades the create form's bare
+      picker+checkbox to a full `VerificationPanel` (matching the Item
+      create page); the dedicated source edit page moves
+      `VerificationPanel` into an aside column via the same `form="<id>"`
+      association pattern from Slice 9B.5, and adopts `EditorActions`
+      (button text unchanged: "Save Changes"); the source delete page
+      mirrors the Item delete page's precedent — no aside, no
+      `EditorActions`, unchanged confirm-card
+- [x] Every source CRUD action, route-ownership/tampering protection
+      (mismatched itemSlug, unknown ids, cross-item edit/delete attempts),
+      and verification rule (opt-in checkbox, historical version
+      selection, unchecked-edit preservation) is unchanged; `q` is
+      preserved through every tab link, record-row link, and back/cancel
+      link
+- [x] Tests: new pure-function coverage for `itemEditorTabs` and the new
+      href helpers; new Acquisition Source E2E coverage for real-tab
+      behavior, exactly-one-active-tab, deferred-tab inertness, the
+      removed header action, and item switching preserving the
+      Acquisition Sources tab and `q`; existing Acquisition Source E2E
+      suite updated (not duplicated) for the new navigation
+- [ ] Used in Recipes tab content and Metadata tab content beyond
+      `TimestampsPanel` remain unimplemented
 
 ### Remaining (not started)
 
-- [ ] The rest of Slice 9B.5 (the three deferred tabs' actual content),
-      every other resource workspace conversion, dashboard summaries,
-      and Route Hubs — do not begin until explicitly instructed in the
-      milestone conversation
+- [ ] Used in Recipes tab content, Metadata tab content beyond
+      `TimestampsPanel`, every other resource workspace conversion,
+      dashboard summaries, and Route Hubs — do not begin until
+      explicitly instructed in the milestone conversation
 
 ---
 

@@ -282,18 +282,17 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
     "aria-current",
     "page"
   );
-  // General is the only implemented tab, active, and the three deferred
-  // tabs render as inert, non-navigable placeholders — never links to
-  // empty pages.
+  // General is active; Acquisition Sources is a real tab link (Slice
+  // 9B.6); Used in Recipes and Metadata still render as inert,
+  // non-navigable placeholders — never links to empty pages.
   const tabNav = page.getByRole("navigation", { name: "Item editor sections" });
   await expect(
     tabNav.getByRole("link", { name: "General", exact: true })
   ).toHaveAttribute("aria-current", "page");
-  for (const deferredTab of [
-    "Acquisition Sources",
-    "Used in Recipes",
-    "Metadata",
-  ]) {
+  await expect(
+    tabNav.getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toBeVisible();
+  for (const deferredTab of ["Used in Recipes", "Metadata"]) {
     await expect(
       tabNav.getByText(deferredTab, { exact: true })
     ).toHaveAttribute("aria-disabled", "true");
