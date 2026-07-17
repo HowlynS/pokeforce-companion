@@ -1142,3 +1142,48 @@ Alternatives considered:
 - Reusing the public yellow accent for editor chrome — rejected; the
   approved mockup separates admin editor identity, and one deliberate
   token pair is cheap while scattered hex values are not.
+
+---
+
+### 2026-07-17 — Slice 9B.3: record-list search is URL-driven and caller-owned
+
+Decision:
+
+The shared record-list column (RecordList + RecordListPagination,
+src/components/admin/) renders search, rows, selection, and pagination
+but owns NO data behavior: the caller runs the database query, applies
+the filter, formats the count, and constructs every href — row links
+(including nested editor routes), the create action, the clear target,
+and pagination links carrying the active search parameters forward. The
+component never builds a route and never fetches.
+
+Search follows the public /search pattern: a plain GET form submitting a
+URL parameter, server-rendered results, keyboard submission for free,
+and no request per keystroke (live querying exists only in the
+name-availability fields, which are a different concern). The Clear
+link renders only while a query is applied. The selected record uses
+aria-current="page" as both the accessible marker and the purple styling
+hook — the third consumer of the convention after the sidebar and the
+editor tabs. Pagination is deliberately minimal: previous/next links or
+aria-disabled markers (never fake clickable links), with cursoring,
+page-size controls, and total-page arithmetic left to whichever caller
+ever needs them.
+
+Reason:
+
+Five resource workspaces will feed this column; if it owned querying it
+would grow a generic data-fetching layer the brief forbids, and every
+resource's route shapes differ (items nest sources; settings pages use
+ids). URL-driven search keeps quick switching bookmarkable, shareable,
+and testable server-side — consistent with how the whole application
+already works without client JavaScript.
+
+Alternatives considered:
+
+- Live filtering on keystroke — rejected; no such pattern exists for
+  lists here, it would need client state and debouncing, and the GET
+  form matches the application's no-JS-required posture.
+- The component accepting a Prisma delegate or query callback —
+  rejected; that is the generic data-fetching framework the brief
+  excludes, and it would couple a presentational component to the
+  database client.

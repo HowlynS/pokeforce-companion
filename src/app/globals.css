@@ -675,3 +675,141 @@ input[type="checkbox"] {
 .admin-editor-actions-spacer {
   flex: 1;
 }
+
+/* ---- Admin record list (Slice 9B.3) ----------------------------------
+   The shared quick-switching column for AdminWorkspace's recordList
+   slot: compact dark list, restrained separators, purple selected state
+   matching the editor chrome. Sticks below the top of the content area
+   and scrolls INTERNALLY once the rows outgrow the viewport, so the
+   list stays reachable beside a long editor. No production route uses
+   it yet — adoption starts with the Items workspace conversion. */
+
+.admin-record-list {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  position: sticky;
+  top: 24px;
+}
+
+.admin-record-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-record-search {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-record-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+}
+
+.admin-record-clear {
+  justify-self: start;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.admin-record-clear:hover {
+  color: var(--color-admin-accent-soft);
+}
+
+.admin-record-count {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* Internal scrolling keeps the column usable at any record count; the
+   surrounding page never grows a second scrollbar for the list. */
+.admin-record-rows {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+}
+
+.admin-record-row-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-record-row-list li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-record-link {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.admin-record-link:hover {
+  background: var(--color-surface-soft);
+}
+
+/* Selected record: aria-current is BOTH the accessible marker and the
+   styling hook — purple, consistent with the editor chrome. */
+.admin-record-link[aria-current="page"] {
+  background: var(--color-surface-soft);
+  border-left-color: var(--color-admin-accent);
+}
+
+.admin-record-link[aria-current="page"] .admin-record-primary {
+  color: var(--color-admin-accent-soft);
+  font-weight: 700;
+}
+
+.admin-record-primary {
+  color: var(--color-text);
+  font-size: 15px;
+}
+
+.admin-record-secondary {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.admin-record-empty {
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-soft);
+  padding: 16px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.admin-record-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.admin-record-page-context {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* Disabled direction: plainly inert — muted text, no pointer, never a
+   fake link. */
+.admin-record-page-disabled {
+  padding: 8px 12px;
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  font-size: 16px;
+  line-height: 1.2;
+}

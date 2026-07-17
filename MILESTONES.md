@@ -345,7 +345,8 @@ verification metadata.
 Status: In progress — Slice 9A complete (including the minimal Game
 Version picker on every verification form); Slice 9B.1 (shared admin
 shell and persistent navigation) complete; Slice 9B.2 (shared admin
-editor primitives) complete; Slice 9B.3 and later slices not started
+editor primitives) complete; Slice 9B.3 (shared searchable record-list
+foundation) complete; Slice 9B.4 and later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -497,11 +498,41 @@ workspace.
       touched; Items becomes the first reference workspace in a later
       slice; Game Version verification behavior unchanged
 
+### Slice 9B.3 — Shared searchable record-list foundation (complete, 2026-07-17)
+
+- [x] Resource-agnostic `RecordList` component for `AdminWorkspace`'s
+      recordList slot: visible/accessible column label, create-action
+      link, URL-driven GET search form (parameter name, value, and
+      accessible label caller-configurable; Enter submits; no per-
+      keystroke requests), Clear link rendered only while a query is
+      applied, optional caller-formatted count line, rows with primary
+      label + optional concise secondary context, selected record marked
+      with `aria-current="page"` (also the purple styling hook), caller-
+      supplied empty state (search stays available so an empty result
+      set can be left), optional pagination node. The CALLER owns the
+      database query, filtering, and every href — the component never
+      builds routes or fetches data
+- [x] Minimal `RecordListPagination` primitive: previous/next links with
+      caller-preserved search parameters and a caller-formatted page
+      context; an omitted direction renders as an `aria-disabled` marker,
+      never a fake clickable link; no cursors, page-size controls, or
+      total-page arithmetic
+- [x] Compact dark list-column styling: restrained separators, purple
+      selected state consistent with the editor chrome, sticky column
+      with internal row scrolling (`max-height` + `overflow-y: auto`)
+- [x] 15 new component tests (static-markup): search value/param/action,
+      clear-link presence rules, rows with/without secondary context,
+      exactly-one/zero selected rows, create action, empty state,
+      enabled/disabled pagination, verbatim preservation of caller URLs
+      and query strings, absence of optional count/pagination
+- [x] No production adoption: no resource route renders the list yet —
+      quick switching arrives with the Items workspace conversion
+
 ### Remaining (not started)
 
-- [ ] Slice 9B.3 and later Milestone 9 work (resource workspace
-      conversions starting with Items, searchable record lists, quick
-      record switching, dashboard summaries) — do not begin until
+- [ ] Slice 9B.4 and later Milestone 9 work (resource workspace
+      conversions starting with Items, quick record switching on
+      production routes, dashboard summaries) — do not begin until
       explicitly instructed in the milestone conversation
 
 ---

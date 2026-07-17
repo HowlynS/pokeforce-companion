@@ -22,9 +22,11 @@ Slice 9B.1 (shared admin shell and persistent navigation) is complete: every adm
 
 Slice 9B.2 (shared admin editor primitives) is complete: resource-agnostic editor header, tabs, context/image/verification/timestamps panels, and sticky actions exist in `src/components/admin/` — no resource page adopts them yet. Items will be the first reference workspace. Game Version behavior is unchanged.
 
-Slice 9B.3 and later Milestone 9 work have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+Slice 9B.3 (shared searchable record-list foundation) is complete: the resource-agnostic `RecordList` and `RecordListPagination` components exist with URL-driven search and caller-owned filtering — no production route adopts them yet. Items remains the first reference workspace.
 
-Do not begin Slice 9B.3+, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
+Slice 9B.4 and later Milestone 9 work have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+
+Do not begin Slice 9B.4+, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 
