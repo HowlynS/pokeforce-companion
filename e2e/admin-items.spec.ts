@@ -14,9 +14,12 @@
 
 import { expect, test, type Page } from "@playwright/test";
 import {
+  E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestItemRecords,
+  createE2eTestGameVersion,
   createTemporaryIngredientReferenceToItem,
   createTemporaryRecipeProducingItem,
+  deleteE2eTestGameVersionRecords,
   deleteE2eTestItemRecords,
   readFixtureCounts,
   removeTemporaryItemRelationRecords,
@@ -42,17 +45,23 @@ const EDITED = {
   baseValue: "12",
 } as const;
 
-// Deterministic test build id from .env.test.local; the verification test
-// asserts this exact server-side value is stamped and rendered.
-const TEST_BUILD_ID = "test-build-001";
+// The persistent test-only Game Version fixture, made current by
+// auth.setup.ts before any admin spec runs; the verification test asserts
+// this exact server-resolved name is stamped and shown in the admin UI.
+const CURRENT_VERSION_NAME = E2E_CURRENT_GAME_VERSION_NAME;
 
 const VERIFY_ITEM = {
   name: "Test E2E Item Verified",
   slug: "test-e2e-item-verified",
 } as const;
 
+// A NON-current browser-test version for the historical-selection flow;
+// carries the test-e2e-gv- prefix so deleteE2eTestGameVersionRecords
+// always catches it.
+const HISTORICAL_VERSION_NAME = "test-e2e-gv-items-historical";
+
 const VERIFICATION_CHECKBOX_LABEL =
-  "Mark gameplay data as verified for the current build.";
+  "Mark gameplay data as verified for the selected game version.";
 
 // Separate temporary Items for the two relation-blocked deletion tests, so
 // neither depends on the lifecycle test's data or on each other.
@@ -77,8 +86,11 @@ test.beforeEach(({ page }) => {
 
 test.afterEach(async () => {
   // Defensive prefix-scoped cleanup even when a test failed mid-lifecycle:
-  // temporary RecipeIngredient/Recipe rows first, then test Items.
+  // temporary RecipeIngredient/Recipe rows first, then test Items, then the
+  // browser-test Game Version the verification test creates (last — a
+  // stamped Item RESTRICT-references it).
   await deleteE2eTestItemRecords();
+  await deleteE2eTestGameVersionRecords();
   expect(pageErrors, "no uncaught page errors are allowed").toEqual([]);
 });
 
@@ -86,11 +98,14 @@ test.beforeAll(async () => {
   // Remove stale rows from interrupted earlier runs; the guard inside the
   // helper throws here if the environment is not the verified test project.
   await deleteE2eTestItemRecords();
+  await deleteE2eTestGameVersionRecords();
   expect(await countE2eTestItemRecords()).toBe(0);
 });
 
 test.afterAll(async () => {
-  const remaining = await deleteE2eTestItemRecords();
+  const remaining =
+    (await deleteE2eTestItemRecords()) +
+    (await deleteE2eTestGameVersionRecords());
   // afterEach should already have removed everything — fail loudly if not.
   expect(remaining).toBe(0);
 });
@@ -337,10 +352,13 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(cardLink(page, EDITED.name)).toHaveCount(0);
 });
 
-test("gameplay verification stamps the server build id and survives normal edits", async ({
+test("gameplay verification stamps the selected game version, stays admin-only, and survives normal edits", async ({
   page,
 }) => {
-  // --- Create unverified (checkbox untouched) ---------------------------
+  // A NON-current historical version for the picker flows below.
+  await createE2eTestGameVersion(HISTORICAL_VERSION_NAME);
+
+  // --- Create unverified (picker and checkbox untouched) ----------------
   await page.goto("/admin/items");
   await createMinimalItemThroughForm(page, VERIFY_ITEM);
 
@@ -350,28 +368,49 @@ test("gameplay verification stamps the server build id and survives normal edits
   ).toBeVisible();
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
-  // --- Verify via the explicit opt-in checkbox --------------------------
+  // --- The picker lists versions and defaults to the current one --------
   await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
+  const picker = page.getByLabel("Game version to verify against");
+  await expect(
+    picker.locator("option:checked"),
+    "the current version is preselected"
+  ).toHaveText(`${CURRENT_VERSION_NAME} (current)`);
+  await expect(
+    picker.locator("option", { hasText: HISTORICAL_VERSION_NAME })
+  ).toHaveCount(1);
+
+  // --- Verify via the explicit opt-in checkbox (picker untouched) -------
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=updated");
 
-  // The rendered line carries the deterministic SERVER-side build id from
-  // .env.test.local — the browser never submitted a build value.
-  await page.goto(`/items/${VERIFY_ITEM.slug}`);
+  // The admin edit page shows the stamp carrying the preselected current
+  // Game Version, resolved and validated server-side.
+  await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
   const verificationLine = page.getByText(
-    `Gameplay data verified for build ${TEST_BUILD_ID} on`
+    `Gameplay data verified for ${CURRENT_VERSION_NAME} on`
   );
   await expect(verificationLine).toBeVisible();
   const stampedText = await verificationLine.textContent();
 
-  // --- A later NORMAL edit must not alter the stamp ---------------------
+  // Verification is admin-only since Slice 9A: the PUBLIC page must not
+  // render it even for a verified item.
+  await page.goto(`/items/${VERIFY_ITEM.slug}`);
+  await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
+  await expect(page.getByText(CURRENT_VERSION_NAME)).toHaveCount(0);
+
+  // --- A NORMAL edit, even one that moves the picker, must not alter the
+  // stamp: the picker only ever proposes a version, and nothing is written
+  // while the checkbox stays unchecked. ----------------------------------
   await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
   // Unchecked by default on every render, even for an already-verified
   // item: verification is a per-save action, not persistent form state.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
+  await page
+    .getByLabel("Game version to verify against")
+    .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page
     .getByLabel(/^Description/)
     .fill("Edited without touching verification.");
@@ -380,11 +419,31 @@ test("gameplay verification stamps the server build id and survives normal edits
 
   await page.goto(`/items/${VERIFY_ITEM.slug}`);
   await expect(page.getByText("Edited without touching verification.")).toBeVisible();
+
+  await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
   const preservedLine = page.getByText(
-    `Gameplay data verified for build ${TEST_BUILD_ID} on`
+    `Gameplay data verified for ${CURRENT_VERSION_NAME} on`
   );
   await expect(preservedLine).toBeVisible();
   expect(await preservedLine.textContent()).toBe(stampedText);
+
+  // --- Verifying against a SELECTED historical version ------------------
+  await page
+    .getByLabel("Game version to verify against")
+    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/items?success=updated");
+
+  await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
+  await expect(
+    page.getByText(`Gameplay data verified for ${HISTORICAL_VERSION_NAME} on`)
+  ).toBeVisible();
+
+  // The historical stamp stays admin-only on the public page too.
+  await page.goto(`/items/${VERIFY_ITEM.slug}`);
+  await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
+  await expect(page.getByText(HISTORICAL_VERSION_NAME)).toHaveCount(0);
 });
 
 test("creating an item with a seeded name is rejected server-side", async ({

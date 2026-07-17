@@ -71,6 +71,21 @@ export default async function AdminPage() {
           />
         ))}
       </ContentGrid>
+
+      {/* Deliberately a restrained secondary destination below the primary
+          management grid — Game Versions is settings, not day-to-day content
+          management, and must not join the primary navigation. */}
+      <section style={{ marginTop: designTokens.layout.sectionGap }}>
+        <h2 className="section-title">Settings</h2>
+        <p>
+          <a href="/admin/settings/game-versions" className="link-accent">
+            Game Versions
+          </a>{" "}
+          <span style={{ color: designTokens.colors.textMuted }}>
+            — manage the game versions used to verify gameplay data.
+          </span>
+        </p>
+      </section>
     </AppShell>
   );
 }

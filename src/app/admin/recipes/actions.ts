@@ -11,6 +11,7 @@ import {
 } from "@/lib/prisma-errors";
 import { parseRecipeInput } from "@/lib/validation/recipe";
 import { isRecipeNameTaken } from "@/lib/admin/record-name";
+import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
   deleteImage,
   uploadImage,
@@ -101,6 +102,18 @@ export async function createRecipeAction(formData: FormData) {
     redirect("/admin/recipes?error=invalid_ingredient_item");
   }
 
+  // Resolved before any upload so a missing current Game Version rejects
+  // the submission without leaving an orphaned file behind. The shared
+  // helper stamps the server's own clock and the database row marked
+  // current when the form supplies no selection, or a server-validated
+  // explicitly selected version — a nonexistent or tampered id fails
+  // the submission.
+  const verification = await resolveVerificationStamp(prisma, formData);
+
+  if (verification.failed) {
+    redirect(`/admin/recipes?error=${verification.error}`);
+  }
+
   // The optional image is uploaded only after every field and relation
   // validation has passed, so a rejected submission never leaves an
   // orphaned file behind.
@@ -140,6 +153,9 @@ export async function createRecipeAction(formData: FormData) {
             quantity: ingredient.quantity,
           })),
         },
+        // Without the opt-in stamp both verification fields stay NULL — a
+        // newly created recipe is unverified by default.
+        ...(verification.stamp ?? {}),
       },
     });
   } catch (error) {
@@ -249,6 +265,18 @@ export async function updateRecipeAction(formData: FormData) {
     redirect(`${editPath ?? "/admin/recipes"}?error=invalid_ingredient_item`);
   }
 
+  // Resolved before any upload so a missing current Game Version rejects
+  // the submission without leaving an orphaned file behind. The shared
+  // helper stamps the server's own clock and the database row marked
+  // current when the form supplies no selection, or a server-validated
+  // explicitly selected version — a nonexistent or tampered id fails
+  // the submission.
+  const verification = await resolveVerificationStamp(prisma, formData);
+
+  if (verification.failed) {
+    redirect(`${editPath ?? "/admin/recipes"}?error=${verification.error}`);
+  }
+
   // The image intent comes from the submission, but the existing stored
   // path only ever comes from the database record loaded above — a
   // client-supplied path is never trusted to target a storage operation.
@@ -300,6 +328,11 @@ export async function updateRecipeAction(formData: FormData) {
           resultingQuantity: parsed.value.resultingQuantity,
           professionId: parsed.value.professionId,
           requiredLevel: parsed.value.requiredLevel,
+          // Verification fields are included ONLY when the opt-in checkbox
+          // was checked — a normal edit never alters or clears existing
+          // verification metadata, because Prisma leaves omitted fields
+          // untouched.
+          ...(verification.stamp ?? {}),
         },
       }),
       prisma.recipeIngredient.deleteMany({ where: { recipeId: id } }),

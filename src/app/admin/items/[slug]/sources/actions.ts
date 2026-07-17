@@ -9,30 +9,7 @@ import {
   isMissingRecordError,
 } from "@/lib/prisma-errors";
 import { parseAcquisitionSourceInput } from "@/lib/validation/acquisition-source";
-import { getCurrentGameBuildId } from "@/lib/game-build";
-
-// The explicit opt-in verification action. The checkbox only ever carries
-// intent ("on" or absent); both stamped values come exclusively from the
-// server — the timestamp from the clock, the build id from the validated
-// CURRENT_GAME_BUILD_ID environment value — so the browser can never submit
-// an arbitrary build identifier. Returns null when the box was unchecked,
-// and null with `failed: true` when the server has no configured build id.
-function resolveVerificationStamp(formData: FormData):
-  | { stamp: { verifiedAt: Date; verifiedBuildId: string } | null; failed: false }
-  | { stamp: null; failed: true } {
-  if (formData.get("markVerified") !== "on") {
-    return { stamp: null, failed: false };
-  }
-
-  try {
-    return {
-      stamp: { verifiedAt: new Date(), verifiedBuildId: getCurrentGameBuildId() },
-      failed: false,
-    };
-  } catch {
-    return { stamp: null, failed: true };
-  }
-}
+import { resolveVerificationStamp } from "@/lib/game-versions";
 
 // A submitted location/profession id is never trusted blindly: each must
 // correspond to an existing row before the source is created or updated.
@@ -90,10 +67,14 @@ export async function createAcquisitionSourceAction(formData: FormData) {
     redirect(`${sourcesPath}?error=${parsed.error}`);
   }
 
-  const verification = resolveVerificationStamp(formData);
+  // The shared helper stamps the server's own clock and the database row
+  // marked current when the form supplies no selection, or a
+  // server-validated explicitly selected version — a nonexistent or
+  // tampered id fails the submission.
+  const verification = await resolveVerificationStamp(prisma, formData);
 
   if (verification.failed) {
-    redirect(`${sourcesPath}?error=missing_build_id`);
+    redirect(`${sourcesPath}?error=${verification.error}`);
   }
 
   const relationError = await findInvalidRelationError(
@@ -164,10 +145,14 @@ export async function updateAcquisitionSourceAction(formData: FormData) {
     redirect(`${editPath ?? sourcesPath}?error=${parsed.error}`);
   }
 
-  const verification = resolveVerificationStamp(formData);
+  // The shared helper stamps the server's own clock and the database row
+  // marked current when the form supplies no selection, or a
+  // server-validated explicitly selected version — a nonexistent or
+  // tampered id fails the submission.
+  const verification = await resolveVerificationStamp(prisma, formData);
 
   if (verification.failed) {
-    redirect(`${editPath ?? sourcesPath}?error=missing_build_id`);
+    redirect(`${editPath ?? sourcesPath}?error=${verification.error}`);
   }
 
   const relationError = await findInvalidRelationError(

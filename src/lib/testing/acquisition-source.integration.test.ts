@@ -15,12 +15,17 @@ import { isForeignKeyError } from "@/lib/prisma-errors";
 import { ACQUISITION_TYPES } from "@/lib/validation/acquisition-source";
 import {
   ACQUISITION_TEST_SLUG_PREFIX,
+  GAME_VERSION_TEST_NAME_PREFIX,
   deleteAcquisitionTestRecords,
+  deleteGameVersionTestRecords,
   disconnectTestPrisma,
   getVerifiedTestPrisma,
 } from "./integration-database";
 
 const P = ACQUISITION_TEST_SLUG_PREFIX;
+// The verification test's own GameVersion, scoped by the shared test name
+// prefix so deleteGameVersionTestRecords can remove it.
+const GV = `${GAME_VERSION_TEST_NAME_PREFIX}acquisition-001`;
 
 describe("acquisition sources (integration)", () => {
   beforeAll(async () => {
@@ -32,13 +37,17 @@ describe("acquisition sources (integration)", () => {
   });
 
   // Backstop cleanup after every test: even a failing write test cannot
-  // leave a prefixed row behind.
+  // leave a prefixed row behind. Rows first, then test GameVersions —
+  // every verifiedGameVersionId relation is ON DELETE RESTRICT.
   afterEach(async () => {
     await deleteAcquisitionTestRecords();
+    await deleteGameVersionTestRecords();
   });
 
   afterAll(async () => {
-    const remaining = await deleteAcquisitionTestRecords();
+    const remaining =
+      (await deleteAcquisitionTestRecords()) +
+      (await deleteGameVersionTestRecords());
     await disconnectTestPrisma();
     // Fail loudly if cleanup was still needed at the very end — afterEach
     // should already have removed everything.
@@ -63,7 +72,7 @@ describe("acquisition sources (integration)", () => {
       expect(source.notes).toBeNull();
       expect(source.quantity).toBeNull();
       expect(source.verifiedAt).toBeNull();
-      expect(source.verifiedBuildId).toBeNull();
+      expect(source.verifiedGameVersionId).toBeNull();
     });
 
     it("accepts a source label without any named NPC record", async () => {
@@ -294,14 +303,18 @@ describe("acquisition sources (integration)", () => {
       });
 
       // The exact write shape updateAcquisitionSourceAction uses when the
-      // opt-in checkbox is checked: both fields stamped together.
+      // opt-in checkbox is checked: the timestamp plus a RELATIONAL Game
+      // Version reference, stamped together.
+      const version = await prisma.gameVersion.create({
+        data: { name: GV },
+      });
       const stampedAt = new Date();
       const stamped = await prisma.acquisitionSource.update({
         where: { id: created.id },
-        data: { verifiedAt: stampedAt, verifiedBuildId: "test-build-001" },
+        data: { verifiedAt: stampedAt, verifiedGameVersionId: version.id },
       });
       expect(stamped.verifiedAt?.getTime()).toBe(stampedAt.getTime());
-      expect(stamped.verifiedBuildId).toBe("test-build-001");
+      expect(stamped.verifiedGameVersionId).toBe(version.id);
 
       // The exact write shape of a NORMAL edit: verification fields are
       // omitted entirely, so Prisma must leave them untouched while the
@@ -311,7 +324,7 @@ describe("acquisition sources (integration)", () => {
         data: { quantity: "2-4" },
       });
       expect(edited.verifiedAt?.getTime()).toBe(stampedAt.getTime());
-      expect(edited.verifiedBuildId).toBe("test-build-001");
+      expect(edited.verifiedGameVersionId).toBe(version.id);
       expect(edited.updatedAt.getTime()).toBeGreaterThan(
         stamped.updatedAt.getTime()
       );

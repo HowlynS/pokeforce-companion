@@ -100,6 +100,26 @@ export const E2E_ACQUISITION_LOCATION_SLUG_PREFIX = "test-e2e-acqsrc-location";
 export const E2E_ACQUISITION_PROFESSION_SLUG_PREFIX =
   "test-e2e-acqsrc-profession";
 
+// The persistent test-only CURRENT Game Version fixture. Verification
+// browser tests need a row marked isCurrent in the isolated test database
+// (the retired CURRENT_GAME_BUILD_ID environment value played this role
+// before Slice 9A). ensureCurrentGameVersionFixture() (re)creates it and
+// makes it the ONLY current version at the start of every browser run, so
+// tests that switch the current version can never leave a stale state
+// behind for the next run.
+export const E2E_CURRENT_GAME_VERSION_NAME = "test-gv-current";
+
+// Covers every Game Version NAME the game-version browser tests create
+// (GameVersion has no slug). Deliberately distinct from the fixture name
+// above so cleanup never removes the persistent fixture.
+export const E2E_GAME_VERSION_NAME_PREFIX = "test-e2e-gv-";
+
+// Temporary Item rows created ONLY so a verification stamp can reference a
+// test Game Version for the blocked-deletion test. Not a sub-prefix of
+// test-e2e-item, so the Item suite's cleanup and this one can never race
+// over the same rows.
+export const E2E_GAME_VERSION_ITEM_SLUG_PREFIX = "test-e2e-gv-item";
+
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
 ): Promise<T> {
@@ -1201,6 +1221,179 @@ export async function countE2eTestLocationImageRecords(): Promise<number> {
 
 export async function deleteE2eTestLocationImageRecords(): Promise<number> {
   return deleteImageSuiteRecordsFor(LOCATION_IMAGE_SUITE);
+}
+
+// Defense in depth for every Game Version helper below.
+function assertGameVersionPrefixesAreSafe(): void {
+  if (
+    E2E_GAME_VERSION_NAME_PREFIX.length < 5 ||
+    E2E_GAME_VERSION_ITEM_SLUG_PREFIX.length < 5 ||
+    E2E_CURRENT_GAME_VERSION_NAME.startsWith(E2E_GAME_VERSION_NAME_PREFIX)
+  ) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the browser-test Game Version prefixes are unsafe."
+    );
+  }
+}
+
+/**
+ * (Re)creates the persistent test-only Game Version fixture and makes it
+ * the ONLY current version. Idempotent; called from the authentication
+ * setup so every browser run starts from the same deterministic state
+ * regardless of what an interrupted earlier run left current.
+ */
+export async function ensureCurrentGameVersionFixture(): Promise<void> {
+  assertGameVersionPrefixesAreSafe();
+
+  await withVerifiedDatabase(async (client) => {
+    // id has no database default (Prisma cuids are client-generated) and
+    // updatedAt has no database default (@updatedAt is client-maintained),
+    // so both are supplied explicitly.
+    await client.query(
+      `insert into "GameVersion" (id, name, "isCurrent", "createdAt", "updatedAt")
+       values (gen_random_uuid()::text, $1, false, now(), now())
+       on conflict (name) do nothing`,
+      [E2E_CURRENT_GAME_VERSION_NAME]
+    );
+    await client.query(
+      `update "GameVersion" set "isCurrent" = false, "updatedAt" = now()
+       where name <> $1 and "isCurrent"`,
+      [E2E_CURRENT_GAME_VERSION_NAME]
+    );
+    await client.query(
+      `update "GameVersion" set "isCurrent" = true, "updatedAt" = now()
+       where name = $1 and not "isCurrent"`,
+      [E2E_CURRENT_GAME_VERSION_NAME]
+    );
+  });
+}
+
+/**
+ * Deletes ONLY the browser-test Game Version rows (test-e2e-gv- name
+ * prefix) and the temporary stamped Item rows created for the
+ * blocked-deletion test, in foreign-key-safe order: the Items first (their
+ * verification stamps reference the versions with ON DELETE RESTRICT),
+ * then the versions. The persistent fixture ("test-gv-current") does not
+ * carry this prefix and is never touched here. Returns how many rows were
+ * removed in total; throws loudly on a rejected delete.
+ */
+export async function deleteE2eTestGameVersionRecords(): Promise<number> {
+  assertGameVersionPrefixesAreSafe();
+
+  return withVerifiedDatabase(async (client) => {
+    const items = await client.query(
+      `delete from "Item" where slug like $1`,
+      [`${E2E_GAME_VERSION_ITEM_SLUG_PREFIX}%`]
+    );
+    const versions = await client.query(
+      `delete from "GameVersion" where name like $1`,
+      [`${E2E_GAME_VERSION_NAME_PREFIX}%`]
+    );
+    return (items.rowCount ?? 0) + (versions.rowCount ?? 0);
+  });
+}
+
+/** Read-only count of leftover browser-test Game Version fixtures. */
+export async function countE2eTestGameVersionRecords(): Promise<number> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `select
+         (select count(*) from "GameVersion" where name like $1)::int
+           + (select count(*) from "Item" where slug like $2)::int as n`,
+      [
+        `${E2E_GAME_VERSION_NAME_PREFIX}%`,
+        `${E2E_GAME_VERSION_ITEM_SLUG_PREFIX}%`,
+      ]
+    );
+    return result.rows[0].n as number;
+  });
+}
+
+/**
+ * Creates one bare, NON-current browser-test Game Version so the
+ * verification picker's historical-selection flow can be exercised through
+ * the real UI. The name MUST carry the browser-test prefix, so cleanup
+ * always catches it and the persistent fixture can never be shadowed.
+ */
+export async function createE2eTestGameVersion(
+  versionName: string
+): Promise<void> {
+  assertGameVersionPrefixesAreSafe();
+
+  if (!versionName.startsWith(E2E_GAME_VERSION_NAME_PREFIX)) {
+    throw new Error(
+      "Refusing to create a Game Version: the name does not carry the browser-test prefix."
+    );
+  }
+
+  await withVerifiedDatabase(async (client) => {
+    await client.query(
+      `insert into "GameVersion" (id, name, "isCurrent", "createdAt", "updatedAt")
+       values (gen_random_uuid()::text, $1, false, now(), now())
+       on conflict (name) do nothing`,
+      [versionName]
+    );
+  });
+}
+
+/**
+ * Creates one temporary Item whose verification stamp references the given
+ * browser-test Game Version, so the blocked-deletion flow can be exercised
+ * through the real UI. The target version name MUST carry the browser-test
+ * prefix, so the persistent fixture (or any other version) can never be
+ * linked. Item admin browser workflows are deliberately not used — they
+ * are out of scope for this suite.
+ */
+export async function createVerifiedItemReferencingVersion(
+  versionName: string
+): Promise<void> {
+  assertGameVersionPrefixesAreSafe();
+
+  if (!versionName.startsWith(E2E_GAME_VERSION_NAME_PREFIX)) {
+    throw new Error(
+      "Refusing to link a verified Item: the target Game Version name does not carry the browser-test prefix."
+    );
+  }
+
+  await withVerifiedDatabase(async (client) => {
+    const version = await client.query(
+      `select id from "GameVersion" where name = $1`,
+      [versionName]
+    );
+
+    if (version.rowCount !== 1) {
+      throw new Error(
+        "Cannot create the verified Item: the browser-test Game Version was not found."
+      );
+    }
+
+    await client.query(
+      `insert into "Item" (id, slug, name, "verifiedAt", "verifiedGameVersionId", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, now(), $3, now())`,
+      [
+        `${E2E_GAME_VERSION_ITEM_SLUG_PREFIX}-referencing`,
+        "Test E2E GV Referencing Item",
+        version.rows[0].id as string,
+      ]
+    );
+  });
+}
+
+/**
+ * Removes ONLY the temporary stamped Item rows, leaving the browser-test
+ * Game Version in place so the deletion flow can be retried through the
+ * real UI. Returns how many rows were removed.
+ */
+export async function removeVerifiedItemsReferencingVersions(): Promise<number> {
+  assertGameVersionPrefixesAreSafe();
+
+  return withVerifiedDatabase(async (client) => {
+    const items = await client.query(
+      `delete from "Item" where slug like $1`,
+      [`${E2E_GAME_VERSION_ITEM_SLUG_PREFIX}%`]
+    );
+    return items.rowCount ?? 0;
+  });
 }
 
 /** Read-only snapshot of the seeded fixture counts for preservation checks. */

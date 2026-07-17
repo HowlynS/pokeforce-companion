@@ -12,6 +12,33 @@ datasource db {
   provider = "postgresql"
 }
 
+// One release of the game, managed by admins in the secondary settings area
+// ("Game Version" is the only contributor-facing term — never "build").
+// Verification stamps on gameplay data reference a row here relationally;
+// the row marked isCurrent is the single source of truth for "the current
+// game version" (this replaced the CURRENT_GAME_BUILD_ID environment
+// variable in Slice 9A). "At most one current" is enforced by the
+// service-layer transaction in src/lib/game-versions.ts — every path that
+// sets isCurrent unsets the previous current row in the same transaction.
+// Deleting a version that any verification stamp still references is
+// blocked both by the admin action's pre-check and by the database itself
+// (every verifiedGameVersionId relation below is onDelete: Restrict), so
+// historical verification stamps can never be orphaned or silently
+// detached.
+model GameVersion {
+  id                         String              @id @default(cuid())
+  name                       String              @unique
+  releaseDate                DateTime?
+  isCurrent                  Boolean             @default(false)
+  verifiedItems              Item[]
+  verifiedLocations          Location[]
+  verifiedAcquisitionSources AcquisitionSource[]
+  verifiedRecipes            Recipe[]
+  verifiedProfessions        Profession[]
+  createdAt                  DateTime            @default(now())
+  updatedAt                  DateTime            @updatedAt
+}
+
 model Category {
   id          String   @id @default(cuid())
   slug        String   @unique
@@ -37,14 +64,18 @@ model Item {
   recipeIngredients  RecipeIngredient[]
   acquisitionSources AcquisitionSource[]
   // Gameplay-verification metadata: stamped only by the explicit opt-in
-  // "Mark gameplay data as verified for the current build." action; normal
-  // edits never touch these fields.
-  verifiedAt         DateTime?
-  verifiedBuildId    String?
+  // "Mark gameplay data as verified for the current game version." action;
+  // normal edits never touch these fields. The version reference is
+  // relational (onDelete: Restrict), so a referenced GameVersion cannot be
+  // deleted out from under a stamp.
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
   @@index([categoryId])
+  @@index([verifiedGameVersionId])
 }
 
 model Profession {
@@ -55,8 +86,16 @@ model Profession {
   image              String?
   recipes            Recipe[]
   acquisitionSources AcquisitionSource[]
+  // Gameplay-verification metadata (added in Slice 9A): stamped only by the
+  // explicit opt-in "Mark gameplay data as verified for the current game
+  // version." action; normal edits never touch these fields.
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+
+  @@index([verifiedGameVersionId])
 }
 
 model Recipe {
@@ -71,11 +110,18 @@ model Recipe {
   profession        Profession?        @relation(fields: [professionId], references: [id])
   requiredLevel     Int?
   ingredients       RecipeIngredient[]
+  // Gameplay-verification metadata (added in Slice 9A): stamped only by the
+  // explicit opt-in "Mark gameplay data as verified for the current game
+  // version." action; normal edits never touch these fields.
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
   @@index([professionId])
   @@index([resultingItemId])
+  @@index([verifiedGameVersionId])
 }
 
 model RecipeIngredient {
@@ -119,14 +165,18 @@ model Location {
   accessNote         String?
   acquisitionSources AcquisitionSource[]
   // Gameplay-verification metadata: stamped only by the explicit opt-in
-  // "Mark gameplay data as verified for the current build." action; normal
-  // edits never touch these fields.
-  verifiedAt         DateTime?
-  verifiedBuildId    String?
+  // "Mark gameplay data as verified for the current game version." action;
+  // normal edits never touch these fields. The version reference is
+  // relational (onDelete: Restrict), so a referenced GameVersion cannot be
+  // deleted out from under a stamp.
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
   @@index([parentId])
+  @@index([verifiedGameVersionId])
 }
 
 enum AcquisitionType {
@@ -169,14 +219,18 @@ model AcquisitionSource {
   notes           String?
   quantity        String?
   // Gameplay-verification metadata: stamped only by the explicit opt-in
-  // "Mark gameplay data as verified for the current build." action; normal
-  // edits never touch these fields.
-  verifiedAt      DateTime?
-  verifiedBuildId String?
+  // "Mark gameplay data as verified for the current game version." action;
+  // normal edits never touch these fields. The version reference is
+  // relational (onDelete: Restrict), so a referenced GameVersion cannot be
+  // deleted out from under a stamp.
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
   @@index([itemId])
   @@index([locationId])
   @@index([professionId])
+  @@index([verifiedGameVersionId])
 }

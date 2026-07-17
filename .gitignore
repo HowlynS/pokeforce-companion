@@ -5,6 +5,9 @@ node_modules/
 .next/
 out/
 
+# TypeScript incremental build cache (recreated by any tsc run)
+*.tsbuildinfo
+
 # Production
 build/
 dist/

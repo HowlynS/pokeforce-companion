@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
-import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 
@@ -79,22 +78,9 @@ export default async function LocationDetailPage({
             <Card title="Access" description={location.accessNote} />
           ) : null}
 
-          {/* Rendered only when BOTH verification fields are populated —
-              never as an empty row. The date is formatted as a stable
-              YYYY-MM-DD server-side so output does not depend on the
-              server locale. */}
-          {location.verifiedAt && location.verifiedBuildId ? (
-            <p
-              style={{
-                margin: 0,
-                color: designTokens.colors.textMuted,
-                fontSize: "14px",
-              }}
-            >
-              Gameplay data verified for build {location.verifiedBuildId} on{" "}
-              {location.verifiedAt.toISOString().slice(0, 10)}.
-            </p>
-          ) : null}
+          {/* Verification metadata is deliberately NOT rendered here:
+              since Slice 9A, Game Version and verification information is
+              admin-only and never appears on public pages. */}
         </div>
       </section>
 

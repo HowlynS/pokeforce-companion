@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
 import { prisma } from "@/lib/db";
 import {
   ACQUISITION_TYPES,
@@ -20,8 +21,10 @@ const errorMessages: Record<string, string> = {
   invalid_profession: "Select an existing profession, or choose No profession.",
   missing_item: "That item no longer exists.",
   missing_source: "That acquisition source no longer exists.",
-  missing_build_id:
-    "The current game build is not configured on the server, so gameplay data cannot be marked as verified.",
+  no_current_version:
+    "No Game Version is marked as current, so gameplay data cannot be marked as verified. Set the current version under Admin - Settings - Game Versions.",
+  invalid_game_version:
+    "The selected Game Version no longer exists, so gameplay data cannot be marked as verified. Refresh the page and try again.",
 };
 
 const successMessages: Record<string, string> = {
@@ -65,6 +68,12 @@ export default async function AdminItemSourcesPage({
   if (!item) {
     notFound();
   }
+
+  // Current version first, then newest — the same ordering the
+  // settings list uses; feeds the shared verification picker.
+  const gameVersions = await prisma.gameVersion.findMany({
+    orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+  });
 
   return (
     <AppShell>
@@ -214,13 +223,7 @@ export default async function AdminItemSourcesPage({
             <textarea name="notes" rows={3} className="form-input" />
           </label>
 
-          {/* Explicit per-save action, deliberately never pre-checked: the
-              stamped timestamp and build id come from the server, and an
-              unchecked box leaves verification metadata untouched. */}
-          <label className="form-checkbox-field">
-            <input type="checkbox" name="markVerified" />
-            <span>Mark gameplay data as verified for the current build.</span>
-          </label>
+          <GameVersionVerificationControls gameVersions={gameVersions} />
 
           <div className="form-actions">
             <button type="submit" className="btn btn-primary">

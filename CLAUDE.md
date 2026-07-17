@@ -13,11 +13,20 @@ Before making or suggesting changes, respect these documents:
 
 ## Current Phase
 
-Milestone 8 - Gameplay Data Expansion is complete (see MILESTONES.md and DECISIONS.md 2026-07-16): rarity removed and the exact `Held item` Yes/No field added; opt-in `verifiedAt`/`verifiedBuildId` verification stamping via the server-only `CURRENT_GAME_BUILD_ID`; full ten-profession coverage with the in-place Blacksmithing → Smithing rename; the Location hierarchy with restricted deletion; the AcquisitionSource model with the public "How to obtain" section; item/source route-ownership enforcement; and the rule that public detail pages never render empty optional sections.
+Milestone 9 - Admin Workspace & Game Version Management is in progress; Slice 9A (Game Version foundation) is complete (see MILESTONES.md and DECISIONS.md 2026-07-17):
 
-Milestone numbering was resolved: Gameplay Data Expansion is Milestone 8. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started. Milestone 9 route-hub work remains deferred. Do not begin either until explicitly instructed in the milestone conversation.
+- Database-backed `GameVersion` model (unique name, optional release date, `isCurrent`); at most one version is current, enforced by the service transactions in `src/lib/game-versions.ts`, serialized by a shared `pg_advisory_xact_lock`; the first version ever created becomes current automatically.
+- Gameplay verification is relational: `verifiedAt` + `verifiedGameVersionId` (ON DELETE RESTRICT) on Item, Location, AcquisitionSource, Recipe, and Profession. Categories deliberately have no verification. A referenced Game Version cannot be deleted.
+- Verification is against a selected Game Version: every verification form carries the shared picker (`GameVersionVerificationControls`, submitting `verifiedGameVersionId`), defaulting to the current version; historical versions are valid selections; the id is validated server-side (tampered ids fail); a blank selection falls back to the current version; `verifiedAt` always comes from the server clock.
+- `CURRENT_GAME_BUILD_ID` is retired; the row marked `isCurrent` is the only source of truth. The migration converted the existing `verifiedBuildId` strings into GameVersion rows (name = exact legacy string, not current), preserving every `verifiedAt`.
+- Game Version management and ALL verification information are admin-only: a secondary settings destination at `/admin/settings/game-versions` (linked from a restrained Settings section on the admin dashboard — never primary navigation), and public pages never render version or verification text.
+- Terminology: the contributor-facing term is "Game Version" everywhere; never display "Build".
 
-The automated test stack is backed by an isolated Supabase test project and a fail-closed `.env.test.local` guard (totals at Milestone 8 close are recorded in MILESTONES.md).
+Slices 9B–9E (shared admin workspace redesign and later Milestone 9 work) have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started. Do not begin any of these until explicitly instructed in the milestone conversation.
+
+Milestone 8 - Gameplay Data Expansion is complete (see DECISIONS.md 2026-07-16): rarity removed and the exact `Held item` Yes/No field added; full ten-profession coverage with the in-place Blacksmithing → Smithing rename; the Location hierarchy with restricted deletion; the AcquisitionSource model with the public "How to obtain" section; item/source route-ownership enforcement; and the rule that public detail pages never render empty optional sections.
+
+The automated test stack is backed by an isolated Supabase test project and a fail-closed `.env.test.local` guard. Migrations reach the test project only through the guarded `pnpm test:db:migrate`. The isolated test database carries one documented test-only Game Version fixture, `test-gv-current`, (re)made current by the E2E auth setup.
 
 The Supabase security warning is resolved: the Data API is disabled on both projects, and Prisma over direct PostgreSQL remains the only game-data access layer (see DECISIONS.md 2026-07-15).
 
@@ -25,6 +34,7 @@ The Supabase security warning is resolved: the Data API is disabled on both proj
 
 - `pnpm test:unit`
 - `pnpm test:env:check`
+- `pnpm test:db:migrate` (guarded `prisma migrate deploy` against the isolated test project)
 - `pnpm test:integration`
 - `pnpm test:service`
 - `pnpm test:e2e`

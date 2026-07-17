@@ -26,8 +26,10 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import {
+  GAME_VERSION_TEST_NAME_PREFIX,
   INTEGRATION_TEST_SLUG_PREFIX,
   RELATIONS_TEST_SLUG_PREFIX,
+  deleteGameVersionTestRecords,
   deleteRelationsTestRecords,
   disconnectTestPrisma,
   getVerifiedTestPrisma,
@@ -61,13 +63,17 @@ describe("database relations (integration)", () => {
 
   // Backstop cleanup after every test: even a failing write test cannot
   // leave a prefixed row behind. Only prefix-scoped rows are deleted, in
-  // foreign-key-safe order.
+  // foreign-key-safe order; rows go before test GameVersions because every
+  // verifiedGameVersionId relation is ON DELETE RESTRICT.
   afterEach(async () => {
     await deleteRelationsTestRecords();
+    await deleteGameVersionTestRecords();
   });
 
   afterAll(async () => {
-    const remaining = await deleteRelationsTestRecords();
+    const remaining =
+      (await deleteRelationsTestRecords()) +
+      (await deleteGameVersionTestRecords());
     await disconnectTestPrisma();
     // Fail loudly if cleanup was still needed at the very end — afterEach
     // should already have removed everything.
@@ -125,7 +131,7 @@ describe("database relations (integration)", () => {
 
       expect(item.heldItem).toBe(false);
       expect(item.verifiedAt).toBeNull();
-      expect(item.verifiedBuildId).toBeNull();
+      expect(item.verifiedGameVersionId).toBeNull();
     });
 
     it("stores explicit heldItem values on create and update", async () => {
@@ -155,14 +161,18 @@ describe("database relations (integration)", () => {
       });
 
       // The exact write shape updateItemAction uses when the opt-in
-      // checkbox is checked: both fields stamped together.
+      // checkbox is checked: the timestamp plus a RELATIONAL Game Version
+      // reference, stamped together.
+      const version = await prisma.gameVersion.create({
+        data: { name: `${GAME_VERSION_TEST_NAME_PREFIX}relations-001` },
+      });
       const stampedAt = new Date();
       const stamped = await prisma.item.update({
         where: { id: created.id },
-        data: { verifiedAt: stampedAt, verifiedBuildId: "test-build-001" },
+        data: { verifiedAt: stampedAt, verifiedGameVersionId: version.id },
       });
       expect(stamped.verifiedAt?.getTime()).toBe(stampedAt.getTime());
-      expect(stamped.verifiedBuildId).toBe("test-build-001");
+      expect(stamped.verifiedGameVersionId).toBe(version.id);
 
       // The exact write shape of a NORMAL edit: verification fields are
       // omitted entirely, so Prisma must leave them untouched while the
@@ -172,7 +182,7 @@ describe("database relations (integration)", () => {
         data: { name: "Relations Test Verified Item Renamed" },
       });
       expect(edited.verifiedAt?.getTime()).toBe(stampedAt.getTime());
-      expect(edited.verifiedBuildId).toBe("test-build-001");
+      expect(edited.verifiedGameVersionId).toBe(version.id);
       expect(edited.updatedAt.getTime()).toBeGreaterThan(
         stamped.updatedAt.getTime()
       );

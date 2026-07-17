@@ -15,13 +15,18 @@ import { isForeignKeyError } from "@/lib/prisma-errors";
 import { LOCATION_TYPES } from "@/lib/validation/location";
 import { wouldCreateLocationCycle } from "@/lib/locations/location-hierarchy";
 import {
+  GAME_VERSION_TEST_NAME_PREFIX,
   LOCATIONS_TEST_SLUG_PREFIX,
+  deleteGameVersionTestRecords,
   deleteLocationsTestRecords,
   disconnectTestPrisma,
   getVerifiedTestPrisma,
 } from "./integration-database";
 
 const P = LOCATIONS_TEST_SLUG_PREFIX;
+// The verification test's own GameVersion, scoped by the shared test name
+// prefix so deleteGameVersionTestRecords can remove it.
+const GV = `${GAME_VERSION_TEST_NAME_PREFIX}location-001`;
 
 describe("location hierarchy and verification (integration)", () => {
   beforeAll(async () => {
@@ -34,13 +39,18 @@ describe("location hierarchy and verification (integration)", () => {
 
   // Backstop cleanup after every test: even a failing write test cannot
   // leave a prefixed row behind. Only prefix-scoped rows are deleted, in a
-  // leaf-first order safe for the self-referencing hierarchy.
+  // leaf-first order safe for the self-referencing hierarchy; rows go
+  // before test GameVersions because every verifiedGameVersionId relation
+  // is ON DELETE RESTRICT.
   afterEach(async () => {
     await deleteLocationsTestRecords();
+    await deleteGameVersionTestRecords();
   });
 
   afterAll(async () => {
-    const remaining = await deleteLocationsTestRecords();
+    const remaining =
+      (await deleteLocationsTestRecords()) +
+      (await deleteGameVersionTestRecords());
     await disconnectTestPrisma();
     // Fail loudly if cleanup was still needed at the very end — afterEach
     // should already have removed everything.
@@ -64,7 +74,7 @@ describe("location hierarchy and verification (integration)", () => {
       expect(location.image).toBeNull();
       expect(location.accessNote).toBeNull();
       expect(location.verifiedAt).toBeNull();
-      expect(location.verifiedBuildId).toBeNull();
+      expect(location.verifiedGameVersionId).toBeNull();
     });
 
     it("accepts every declared LocationType", async () => {
@@ -267,14 +277,18 @@ describe("location hierarchy and verification (integration)", () => {
       });
 
       // The exact write shape updateLocationAction uses when the opt-in
-      // checkbox is checked: both fields stamped together.
+      // checkbox is checked: the timestamp plus a RELATIONAL Game Version
+      // reference, stamped together.
+      const version = await prisma.gameVersion.create({
+        data: { name: GV },
+      });
       const stampedAt = new Date();
       const stamped = await prisma.location.update({
         where: { id: created.id },
-        data: { verifiedAt: stampedAt, verifiedBuildId: "test-build-001" },
+        data: { verifiedAt: stampedAt, verifiedGameVersionId: version.id },
       });
       expect(stamped.verifiedAt?.getTime()).toBe(stampedAt.getTime());
-      expect(stamped.verifiedBuildId).toBe("test-build-001");
+      expect(stamped.verifiedGameVersionId).toBe(version.id);
 
       // The exact write shape of a NORMAL edit: verification fields are
       // omitted entirely, so Prisma must leave them untouched while the
@@ -284,7 +298,7 @@ describe("location hierarchy and verification (integration)", () => {
         data: { name: "Test Integration Location Verified Renamed" },
       });
       expect(edited.verifiedAt?.getTime()).toBe(stampedAt.getTime());
-      expect(edited.verifiedBuildId).toBe("test-build-001");
+      expect(edited.verifiedGameVersionId).toBe(version.id);
       expect(edited.updatedAt.getTime()).toBeGreaterThan(
         stamped.updatedAt.getTime()
       );

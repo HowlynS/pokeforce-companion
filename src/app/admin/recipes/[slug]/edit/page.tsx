@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
@@ -13,6 +14,10 @@ import { checkRecipeNameAvailability } from "../../name-availability";
 export const dynamic = "force-dynamic";
 
 const errorMessages: Record<string, string> = {
+  no_current_version:
+    "No Game Version is marked as current, so gameplay data cannot be marked as verified. Set the current version under Admin - Settings - Game Versions.",
+  invalid_game_version:
+    "The selected Game Version no longer exists, so gameplay data cannot be marked as verified. Refresh the page and try again.",
   missing_name: "Recipe name is required.",
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
@@ -68,6 +73,9 @@ export default async function EditRecipePage({
           include: { item: true },
           orderBy: { item: { name: "asc" } },
         },
+        // Admin-only visibility of the verification stamp: the related Game
+        // Version's name is shown next to the opt-in checkbox below.
+        verifiedGameVersion: true,
       },
     }),
     prisma.item.findMany({ orderBy: { name: "asc" } }),
@@ -88,6 +96,12 @@ export default async function EditRecipePage({
     { length: RECIPE_INGREDIENT_ROW_COUNT },
     (_, index) => index + 1
   );
+
+  // Current version first, then newest — the same ordering the
+  // settings list uses; feeds the shared verification picker.
+  const gameVersions = await prisma.gameVersion.findMany({
+    orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+  });
 
   return (
     <AppShell>
@@ -345,6 +359,19 @@ export default async function EditRecipePage({
               className="form-input"
             />
           </label>
+
+          {/* Admin-only verification status (public pages never show it).
+              Rendered only when BOTH fields are populated — never as an
+              empty row; the stable YYYY-MM-DD date never depends on the
+              server locale. */}
+          {recipe.verifiedAt && recipe.verifiedGameVersion ? (
+            <p className="text-muted">
+              Gameplay data verified for {recipe.verifiedGameVersion.name} on{" "}
+              {recipe.verifiedAt.toISOString().slice(0, 10)}.
+            </p>
+          ) : null}
+
+          <GameVersionVerificationControls gameVersions={gameVersions} />
 
           <div className="form-actions">
             <button type="submit" className="btn btn-primary">

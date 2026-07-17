@@ -340,12 +340,109 @@ verification metadata.
 
 ---
 
-## Milestone 9 - Route Hubs
+## Milestone 9 - Admin Workspace & Game Version Management
+
+Status: In progress — Slice 9A complete (including the minimal Game
+Version picker on every verification form); Slices 9B–9E not started
+
+Numbering note: this file previously listed "Milestone 9 - Route Hubs".
+The milestone conversation runs Admin Workspace & Game Version Management
+as Milestone 9; Route Hubs are renumbered to a later milestone (below) and
+remain unstarted.
+
+Goal:
+
+Give admins a database-backed Game Version model as the single source of
+truth for gameplay verification, and (in later slices) a shared admin
+workspace.
+
+### Slice 9A — Game Version foundation (complete, 2026-07-17)
+
+- [x] `GameVersion` model: cuid id, unique display name, optional release
+      date, `isCurrent`, timestamps
+- [x] Current-version rules: at most one current, enforced by the service
+      transactions in `src/lib/game-versions.ts`, each serialized by a
+      shared transaction-scoped PostgreSQL advisory lock
+      (`pg_advisory_xact_lock`) so overlapping mark-current or bootstrap
+      calls cannot commit two current rows — application-enforced, not
+      schema-enforced (Prisma cannot express the partial unique index);
+      the first version ever created becomes current automatically;
+      marking current safely demotes the previous one; historical versions
+      remain selectable; deletion blocked while any verification stamp
+      references the version (friendly pre-check backed by database
+      `ON DELETE RESTRICT`)
+- [x] Verification against a selected Game Version: the server accepts a
+      submitted `verifiedGameVersionId`, validates that it names a real
+      version, and accepts any existing version — current or historical;
+      a nonexistent or tampered id fails the submission
+      (`invalid_game_version`) and is never silently replaced. An absent
+      or blank selection temporarily falls back to the current version
+      for compatibility with the existing forms (which have no picker
+      yet), failing clearly (`no_current_version`) when nothing is
+      current; `verifiedAt` always comes from the server clock
+- [x] Minimal Game Version picker on every verification form (all ten
+      create/edit forms across Items, Locations, Acquisition Sources,
+      Recipes, and Professions) via the shared
+      `GameVersionVerificationControls` component: lists every version
+      (current first), defaults to the current version, keeps historical
+      versions selectable, shows an explicit unselected placeholder when
+      nothing is current (never silently picking a historical version),
+      submits the selection as `verifiedGameVersionId`, and shows a clear
+      message linking to the Game Versions settings page when no versions
+      exist. The checkbox label is "Mark gameplay data as verified for
+      the selected game version.", never pre-checked; moving the picker
+      without checking the box writes nothing. Compatibility UI inside
+      the existing forms — deliberately NOT the Slice 9B workspace
+      redesign. The server-side blank-selection fallback to the current
+      version remains as documented
+- [x] Relational verification: Item, Location, and AcquisitionSource
+      migrated from the string `verifiedBuildId` to `verifiedGameVersionId`;
+      Recipe and Profession gained `verifiedAt`/`verifiedGameVersionId`;
+      Category deliberately remains non-verifiable
+- [x] Migration `20260717011230_add_game_version_relational_verification`
+      preserves every stamp: one GameVersion per distinct legacy build
+      string (name = the exact string, not current), rows linked by name, a
+      fail-closed VERIFY before the legacy column drop; the development
+      database's one verified row (Item "charcoal", "dev-build-1") kept its
+      exact `verifiedAt`
+- [x] `CURRENT_GAME_BUILD_ID` retired: `src/lib/game-build.ts` and its unit
+      tests deleted after all usages migrated; env examples document the
+      retirement
+- [x] Admin-only settings destination `/admin/settings/game-versions`
+      (list, create, edit, mark current, delete with blocked-deletion
+      feedback), linked from a restrained Settings section on the admin
+      dashboard — not primary navigation; the contributor-facing term is
+      "Game Version" ("Build" never appears in the UI)
+- [x] Verification information is admin-only: the public item/location
+      verification line was removed; verification status now shows only in
+      the admin edit forms
+- [x] Guarded test-database migration launcher: `pnpm test:db:migrate`
+      (`scripts/migrate-test-database.ts`, fail-closed guard first)
+- [x] Test-only placeholder version documented: `test-gv-current` in the
+      isolated test database, (re)created and made the only current version
+      by the E2E auth setup; integration suites use the `test-gv-` name
+      prefix, browser suites the `test-e2e-gv-` prefix
+- [x] Tests: game-version validation unit suite; a dedicated game-version
+      integration suite (uniqueness, single-current, switching, first-
+      current bootstrap, blocked/allowed deletion, relational stamps on all
+      five models, Category exclusion, tampered-id rejection, fail-closed
+      stamping); migrated verification tests for Item/Location/
+      AcquisitionSource; new `admin-game-versions` browser suite; admin
+      protection coverage for the settings route
+
+### Remaining (not started)
+
+- [ ] Slices 9B–9E, including the shared admin workspace redesign — do not
+      begin until explicitly instructed in the milestone conversation
+
+---
+
+## Route Hubs (renumbered; previously Milestone 9)
 
 Status: Not started (deferred)
 
-Route-hub work is Milestone 9. Do not begin it until explicitly instructed
-in the milestone conversation.
+Do not begin route-hub work until explicitly instructed in the milestone
+conversation.
 
 ---
 

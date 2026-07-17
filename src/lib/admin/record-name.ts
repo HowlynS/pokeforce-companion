@@ -119,6 +119,34 @@ export async function isRecipeNameTaken(
   return existing !== null;
 }
 
+/**
+ * GameVersion twin of isCategoryNameTaken — identical rule and guarantees.
+ * GameVersion additionally carries a database-level unique constraint on
+ * name; this helper adds the same trimmed, case-insensitive duplicate rule
+ * every other resource uses on top of it.
+ */
+export async function isGameVersionNameTaken(
+  db: GameDataClient,
+  rawName: string,
+  excludeId?: string
+): Promise<boolean> {
+  const name = normalizeRecordNameInput(rawName);
+
+  if (name === "") {
+    return false;
+  }
+
+  const existing = await db.gameVersion.findFirst({
+    where: {
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
+    select: { id: true },
+  });
+
+  return existing !== null;
+}
+
 /** Location twin of isCategoryNameTaken — identical rule and guarantees. */
 export async function isLocationNameTaken(
   db: GameDataClient,

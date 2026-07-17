@@ -17,7 +17,7 @@ import {
 } from "./helpers/database-cleanup";
 
 const VERIFICATION_CHECKBOX_LABEL =
-  "Mark gameplay data as verified for the current build.";
+  "Mark gameplay data as verified for the selected game version.";
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.

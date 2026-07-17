@@ -8,6 +8,7 @@
 
 import { expect, test as setup } from "@playwright/test";
 import { loadTestEnvironment } from "../src/lib/testing/load-test-environment";
+import { ensureCurrentGameVersionFixture } from "./helpers/database-cleanup";
 
 const ADMIN_STORAGE_STATE_PATH = "playwright/.auth/admin.json";
 
@@ -17,6 +18,12 @@ setup("authenticate as the test admin", async ({ page }) => {
   loadTestEnvironment();
   const adminEmail = process.env.ADMIN_EMAIL as string;
   const adminPassword = process.env.TEST_ADMIN_PASSWORD as string;
+
+  // Deterministic verification state for the whole run: the persistent
+  // test-only Game Version fixture exists and is the ONLY current version
+  // before any admin spec stamps gameplay data. (The helper runs the same
+  // fail-closed environment guard before touching the database.)
+  await ensureCurrentGameVersionFixture();
 
   await page.goto("/login");
   await expect(

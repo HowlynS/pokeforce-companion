@@ -44,7 +44,13 @@ test.describe("not-found behavior", () => {
 test.describe("unauthenticated admin protection", () => {
   // Each test uses Playwright's default fresh context: no cookies, no
   // stored session.
-  const PROTECTED_ROUTES = ["/admin", "/admin/items"] as const;
+  const PROTECTED_ROUTES = [
+    "/admin",
+    "/admin/items",
+    // The Slice 9A secondary settings destination: Game Version management
+    // (and every verification detail) is strictly admin-only.
+    "/admin/settings/game-versions",
+  ] as const;
 
   for (const route of PROTECTED_ROUTES) {
     test(`${route} redirects to the login page`, async ({ page }) => {

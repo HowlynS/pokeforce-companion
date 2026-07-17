@@ -10,6 +10,7 @@ import {
 } from "@/lib/prisma-errors";
 import { parseProfessionInput } from "@/lib/validation/profession";
 import { isProfessionNameTaken } from "@/lib/admin/record-name";
+import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
   deleteImage,
   uploadImage,
@@ -66,6 +67,18 @@ export async function createProfessionAction(formData: FormData) {
     redirect("/admin/professions?error=duplicate_name");
   }
 
+  // Resolved before any upload so a missing current Game Version rejects
+  // the submission without leaving an orphaned file behind. The shared
+  // helper stamps the server's own clock and the database row marked
+  // current when the form supplies no selection, or a server-validated
+  // explicitly selected version — a nonexistent or tampered id fails
+  // the submission.
+  const verification = await resolveVerificationStamp(prisma, formData);
+
+  if (verification.failed) {
+    redirect(`/admin/professions?error=${verification.error}`);
+  }
+
   // The optional image is uploaded only after every other validation has
   // passed, so a rejected submission never leaves an orphaned file behind.
   const imageFile = getSubmittedImageFile(formData);
@@ -86,8 +99,10 @@ export async function createProfessionAction(formData: FormData) {
   }
 
   try {
+    // Without the opt-in stamp both verification fields stay NULL — a
+    // newly created profession is unverified by default.
     await prisma.profession.create({
-      data: { ...parsed.value, image: imagePath },
+      data: { ...parsed.value, image: imagePath, ...(verification.stamp ?? {}) },
     });
   } catch (error) {
     // The row was never created, so the file just uploaded for it must not
@@ -140,6 +155,18 @@ export async function updateProfessionAction(formData: FormData) {
     redirect(`${editPath ?? "/admin/professions"}?error=duplicate_name`);
   }
 
+  // Resolved before any upload so a missing current Game Version rejects
+  // the submission without leaving an orphaned file behind. The shared
+  // helper stamps the server's own clock and the database row marked
+  // current when the form supplies no selection, or a server-validated
+  // explicitly selected version — a nonexistent or tampered id fails
+  // the submission.
+  const verification = await resolveVerificationStamp(prisma, formData);
+
+  if (verification.failed) {
+    redirect(`${editPath ?? "/admin/professions"}?error=${verification.error}`);
+  }
+
   // Loaded from the database so the existing stored image path is trusted —
   // a client-supplied path is never used to target a storage operation.
   const existingProfession = await prisma.profession.findUnique({
@@ -187,9 +214,12 @@ export async function updateProfessionAction(formData: FormData) {
   try {
     // Located by the stable cuid `id`, not the editable slug, so changing
     // the slug in this same submission cannot lose the target record.
+    // Verification fields are included ONLY when the opt-in checkbox was
+    // checked — a normal edit never alters or clears existing verification
+    // metadata, because Prisma leaves omitted fields untouched.
     await prisma.profession.update({
       where: { id },
-      data: { ...parsed.value, image: imageValue },
+      data: { ...parsed.value, image: imageValue, ...(verification.stamp ?? {}) },
     });
   } catch (error) {
     // The database still references the old image (or none), so the file

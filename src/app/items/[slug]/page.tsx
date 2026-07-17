@@ -96,22 +96,9 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
         <div className="detail-hero-facts">
           <Card title="Details" description={details.join(" · ")} />
 
-          {/* Rendered only when BOTH verification fields are populated —
-              never as an empty row. The date is formatted as a stable
-              YYYY-MM-DD server-side so output does not depend on the
-              server locale. */}
-          {item.verifiedAt && item.verifiedBuildId ? (
-            <p
-              style={{
-                margin: 0,
-                color: designTokens.colors.textMuted,
-                fontSize: "14px",
-              }}
-            >
-              Gameplay data verified for build {item.verifiedBuildId} on{" "}
-              {item.verifiedAt.toISOString().slice(0, 10)}.
-            </p>
-          ) : null}
+          {/* Verification metadata is deliberately NOT rendered here:
+              since Slice 9A, Game Version and verification information is
+              admin-only and never appears on public pages. */}
         </div>
       </section>
 

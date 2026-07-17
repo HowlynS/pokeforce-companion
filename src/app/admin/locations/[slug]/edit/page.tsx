@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RecordNameField } from "@/components/admin/record-name-field";
@@ -28,8 +29,10 @@ const errorMessages: Record<string, string> = {
   upload_failed: "The image could not be uploaded. Please try again.",
   conflicting_image_input:
     "Choose either a replacement image or Remove current image, not both.",
-  missing_build_id:
-    "The current game build is not configured on the server, so gameplay data cannot be marked as verified.",
+  no_current_version:
+    "No Game Version is marked as current, so gameplay data cannot be marked as verified. Set the current version under Admin - Settings - Game Versions.",
+  invalid_game_version:
+    "The selected Game Version no longer exists, so gameplay data cannot be marked as verified. Refresh the page and try again.",
 };
 
 type EditLocationPageProps = {
@@ -50,7 +53,12 @@ export default async function EditLocationPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
 
   const [location, allLocations] = await Promise.all([
-    prisma.location.findUnique({ where: { slug } }),
+    prisma.location.findUnique({
+      where: { slug },
+      // Admin-only visibility of the verification stamp: the related Game
+      // Version's name is shown next to the opt-in checkbox below.
+      include: { verifiedGameVersion: true },
+    }),
     prisma.location.findMany({ orderBy: { name: "asc" } }),
   ]);
 
@@ -66,6 +74,12 @@ export default async function EditLocationPage({
 
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(location.image);
+
+  // Current version first, then newest — the same ordering the
+  // settings list uses; feeds the shared verification picker.
+  const gameVersions = await prisma.gameVersion.findMany({
+    orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+  });
 
   return (
     <AppShell>
@@ -277,14 +291,18 @@ export default async function EditLocationPage({
           />
         </label>
 
-        {/* Explicit per-save action, deliberately never pre-checked (even
-            when the record is already verified): the stamped timestamp and
-            build id come from the server, and an unchecked box leaves
-            existing verification metadata untouched. */}
-        <label className="form-checkbox-field">
-          <input type="checkbox" name="markVerified" />
-          <span>Mark gameplay data as verified for the current build.</span>
-        </label>
+        {/* Admin-only verification status (public pages never show it).
+            Rendered only when BOTH fields are populated — never as an
+            empty row; the stable YYYY-MM-DD date never depends on the
+            server locale. */}
+        {location.verifiedAt && location.verifiedGameVersion ? (
+          <p className="text-muted">
+            Gameplay data verified for {location.verifiedGameVersion.name} on{" "}
+            {location.verifiedAt.toISOString().slice(0, 10)}.
+          </p>
+        ) : null}
+
+        <GameVersionVerificationControls gameVersions={gameVersions} />
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary">

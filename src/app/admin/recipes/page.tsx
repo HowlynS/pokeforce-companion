@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
 import { prisma } from "@/lib/db";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
 import { RecordNameField } from "@/components/admin/record-name-field";
@@ -12,6 +13,10 @@ import { checkRecipeNameAvailability } from "./name-availability";
 export const dynamic = "force-dynamic";
 
 const errorMessages: Record<string, string> = {
+  no_current_version:
+    "No Game Version is marked as current, so gameplay data cannot be marked as verified. Set the current version under Admin - Settings - Game Versions.",
+  invalid_game_version:
+    "The selected Game Version no longer exists, so gameplay data cannot be marked as verified. Refresh the page and try again.",
   missing_name: "Recipe name is required.",
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
@@ -84,6 +89,12 @@ export default async function AdminRecipesPage({
     { length: RECIPE_INGREDIENT_ROW_COUNT },
     (_, index) => index + 1
   );
+
+  // Current version first, then newest — the same ordering the
+  // settings list uses; feeds the shared verification picker.
+  const gameVersions = await prisma.gameVersion.findMany({
+    orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+  });
 
   return (
     <AppShell>
@@ -292,6 +303,8 @@ export default async function AdminRecipesPage({
                 className="form-input"
               />
             </label>
+
+            <GameVersionVerificationControls gameVersions={gameVersions} />
 
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">

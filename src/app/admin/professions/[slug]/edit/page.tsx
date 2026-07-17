@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RecordNameField } from "@/components/admin/record-name-field";
@@ -12,6 +13,10 @@ import { checkProfessionNameAvailability } from "../../name-availability";
 export const dynamic = "force-dynamic";
 
 const errorMessages: Record<string, string> = {
+  no_current_version:
+    "No Game Version is marked as current, so gameplay data cannot be marked as verified. Set the current version under Admin - Settings - Game Versions.",
+  invalid_game_version:
+    "The selected Game Version no longer exists, so gameplay data cannot be marked as verified. Refresh the page and try again.",
   missing_name: "Profession name is required.",
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
@@ -41,7 +46,12 @@ export default async function EditProfessionPage({
   const { error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
 
-  const profession = await prisma.profession.findUnique({ where: { slug } });
+  const profession = await prisma.profession.findUnique({
+    where: { slug },
+    // Admin-only visibility of the verification stamp: the related Game
+    // Version's name is shown next to the opt-in checkbox below.
+    include: { verifiedGameVersion: true },
+  });
 
   if (!profession) {
     notFound();
@@ -49,6 +59,12 @@ export default async function EditProfessionPage({
 
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(profession.image);
+
+  // Current version first, then newest — the same ordering the
+  // settings list uses; feeds the shared verification picker.
+  const gameVersions = await prisma.gameVersion.findMany({
+    orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+  });
 
   return (
     <AppShell>
@@ -215,6 +231,19 @@ export default async function EditProfessionPage({
             className="form-input"
           />
         </label>
+
+        {/* Admin-only verification status (public pages never show it).
+            Rendered only when BOTH fields are populated — never as an
+            empty row; the stable YYYY-MM-DD date never depends on the
+            server locale. */}
+        {profession.verifiedAt && profession.verifiedGameVersion ? (
+          <p className="text-muted">
+            Gameplay data verified for {profession.verifiedGameVersion.name} on{" "}
+            {profession.verifiedAt.toISOString().slice(0, 10)}.
+          </p>
+        ) : null}
+
+        <GameVersionVerificationControls gameVersions={gameVersions} />
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary">

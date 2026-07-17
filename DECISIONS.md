@@ -800,3 +800,219 @@ Alternatives considered:
   behavior) — rejected by the confirmed rule; on a record detail page an
   empty optional section is noise, unlike a collection page where the
   empty state explains a genuinely empty collection.
+---
+
+### 2026-07-17 — Milestone 9 Slice 9A: relational Game Version verification (implemented decisions)
+
+Decision:
+
+Milestone 9 is Admin Workspace & Game Version Management; Slice 9A (Game
+Version foundation) is implemented. Route-hub work — previously listed as
+Milestone 9 — remains deferred and unstarted; Slices 9B–9E (including the
+shared admin workspace redesign) have not started.
+
+Terminology: the contributor-facing term is "Game Version" everywhere.
+"Build" never appears in the UI; the word survives only in historical
+decision entries and migration names.
+
+The GameVersion model: cuid id, unique display name (database unique
+constraint plus the shared trimmed, case-insensitive duplicate rule),
+optional release date (stored at UTC midnight so the value never shifts
+with the server timezone), isCurrent flag, timestamps. At most one version
+is current: every path that sets isCurrent runs through
+setCurrentGameVersion() in src/lib/game-versions.ts, whose transaction
+unsets the previous current row in the same commit. The very first version
+ever created becomes current automatically (an empty table has nothing to
+choose between); later versions never bootstrap themselves — with history
+present, promotion is the admin's explicit call.
+
+Gameplay verification is relational. Item, Location, and AcquisitionSource
+migrated from the string verifiedBuildId to verifiedGameVersionId
+(references GameVersion, ON DELETE RESTRICT); Recipe and Profession gained
+verifiedAt/verifiedGameVersionId for the first time. Category deliberately
+remains non-verifiable. RESTRICT means the database itself refuses to
+delete a Game Version while any verification stamp references it — the
+admin action's friendly count pre-check exists only to explain the refusal
+before the constraint would fire. Historical versions therefore remain
+available for as long as anything references them.
+
+Migration handling (20260717011230_add_game_version_relational_verification):
+written by hand because the auto-generated diff would have dropped
+verifiedBuildId while it still held data. Order: create GameVersion; add
+the new nullable columns beside the legacy ones; create one GameVersion
+row per distinct legacy build string (name = the exact string, isCurrent
+false); link every stamped row by name; a DO-block VERIFY aborts the whole
+transactional migration if any stamped row failed to link; only then drop
+the legacy columns; finally add indexes and the RESTRICT foreign keys.
+Every verifiedAt value is untouched. Applied state: the development
+database's one verified row (Item "charcoal", stamped 2026-07-16 for
+"dev-build-1") now references a GameVersion named "dev-build-1"; the test
+database had no verified rows, so its migration created no versions. No
+migrated version is marked current — after deploying this migration an
+admin must visit the settings screen and either promote "dev-build-1" or
+create and promote a real version; until then, marking data as verified
+fails with a clear message (the same fail-loud posture the missing
+CURRENT_GAME_BUILD_ID had).
+
+CURRENT_GAME_BUILD_ID is retired. The database row marked isCurrent is the
+only source of truth for the current version. src/lib/game-build.ts and
+its unit tests were deleted after every usage was migrated; the env
+examples now document the retirement. Leftover values in local .env files
+are harmless — nothing reads them.
+
+Admin-only visibility. Game Versions are a secondary settings destination:
+/admin/settings/game-versions (list, create with optional release date,
+edit, mark current, delete with blocked-deletion feedback), reached from a
+restrained Settings section at the bottom of the admin dashboard — never
+primary navigation. The public verification line that item and location
+detail pages used to render was removed; verification status now appears
+only inside the admin edit forms (next to the opt-in checkbox). Public
+pages never render Game Version or verification information.
+
+Test infrastructure. Migrations reach the isolated test project only
+through the new guarded launcher (pnpm test:db:migrate →
+scripts/migrate-test-database.ts, same fail-closed guard-first pattern as
+the E2E web server). The isolated test database carries one documented
+test-only placeholder version, "test-gv-current", which the E2E auth setup
+(re)creates and makes the ONLY current version before every browser run —
+it replaces the deterministic CURRENT_GAME_BUILD_ID=test-build-001 the
+tests previously read from .env.test.local. Integration suites create
+versions under the test-gv- name prefix (GameVersion has no slug, so
+name-prefix cleanup stands in for slug-prefix cleanup) and may sweep the
+fixture too — the next E2E run recreates it. Browser tests for the
+settings screen use the test-e2e-gv- name prefix and restore the fixture
+as current after switching.
+
+Reason:
+
+A relational reference keeps verification stamps meaningful across
+renames, makes "which version is current" a single administered fact
+instead of a per-environment variable, lets the database enforce that
+history cannot be deleted out from under a stamp, and gives Recipes and
+Professions the same verification workflow the other gameplay models
+already had. Migrating the legacy strings into named rows (rather than
+discarding or reinterpreting them) preserves the historical meaning of
+every existing stamp verbatim.
+
+Alternatives considered:
+
+- Keeping CURRENT_GAME_BUILD_ID as a fallback when no version is current —
+  rejected; two sources of truth that can disagree, and the fail-loud
+  "no current version" message is clearer than silently stamping from an
+  environment variable.
+- A partial unique index on isCurrent for database-level single-current
+  enforcement — rejected for now; Prisma cannot express partial indexes in
+  the schema, so a hand-added index would surface as drift and a future
+  `migrate dev` could silently generate its DROP. The service transaction
+  plus integration tests carry the invariant; revisit if Prisma gains
+  support.
+- Marking the migrated "dev-build-1" version current automatically —
+  rejected; a migration should not silently decide what "current" means.
+  The admin promotes a version explicitly through the new settings screen.
+- Auto-promoting a new version whenever no current version exists (not
+  just on the very first ever) — rejected; in the post-migration state
+  (history present, nothing current) silent promotion would decide the
+  current version as a side effect of creation.
+- Putting Game Versions in the primary admin navigation — rejected by the
+  milestone brief; it is settings, not day-to-day content management.
+
+---
+
+### 2026-07-17 — Slice 9A correction: selected-version verification, locked current-flag writes, isolated test fixtures
+
+Decision:
+
+Three corrections to the Slice 9A implementation recorded in the previous
+entry, made during review before any commit. Where this entry and the
+previous 2026-07-17 entry disagree, this entry is authoritative.
+
+Selected-version verification. The milestone requires verifying a record
+against a selected Game Version, including a historical one, so
+resolveVerificationStamp (src/lib/game-versions.ts) no longer always
+stamps the current version. A form may submit a `verifiedGameVersionId`;
+the server validates that the id resolves to a real GameVersion row, and
+any existing version — current or historical — is a valid selection. A
+nonexistent or tampered id fails the whole submission with
+`invalid_game_version`; it is never silently replaced with another
+version. When the field is absent or blank, the stamp falls back to the
+single row marked current — the exact behavior the existing admin forms
+(which predate version selection and submit no picker value) have always
+had — and fails clearly with `no_current_version` when nothing is
+current. This fallback is a documented temporary compatibility measure:
+the record-level Game Version picker UI is deferred to the admin
+workspace slice, and until it exists "no selection" safely means "the
+current version". The stamped `verifiedAt` always comes from the server
+clock in both paths, and an unchecked verification checkbox still leaves
+existing verification metadata untouched.
+
+Locked current-flag writes. Under READ COMMITTED, two overlapping
+mark-current transactions could each miss the other's uncommitted current
+row and both commit as current. Both writers of the isCurrent flag
+(createGameVersion's first-version bootstrap and setCurrentGameVersion)
+now take the same transaction-scoped PostgreSQL advisory lock
+(pg_advisory_xact_lock) before reading, so overlapping calls serialize
+and the loser's demote step always sees the winner's committed row. The
+single-current invariant therefore remains application-enforced — not
+schema-enforced — because Prisma cannot express the partial unique index
+that would otherwise carry it (unchanged from the previous entry); the
+lock plus a dedicated overlapping-calls integration test carry it
+instead.
+
+Isolated test fixtures. The integration suites' Game Version name prefix
+narrowed from test-gv- to test-gv-int-, so integration cleanup can no
+longer delete the persistent browser fixture "test-gv-current" (which
+E2E runs create, mark current, and deliberately never delete). Every
+integration test that needs a controlled current-version state now
+arranges it itself and restores the previously current version in its own
+finally block — no test depends on execution order, on another test
+having demoted the fixture, or (except the explicitly skipping bootstrap
+test) on an empty GameVersion table.
+
+Reason:
+
+The always-current stamping contradicted the milestone's historical-
+verification requirement; the unlocked transactions left a real
+concurrency hole in the invariant the whole feature rests on; and the
+original tests passed only through inter-test ordering side effects,
+which would have made future failures misleading.
+
+Alternatives considered:
+
+- Rejecting submissions with no selected version once a picker exists
+  everywhere — deferred; until the workspace slice adds the picker, the
+  compatibility fallback keeps the existing forms working unchanged, and
+  it can outlive them harmlessly.
+- SERIALIZABLE isolation instead of an advisory lock — rejected; it
+  surfaces as retryable serialization failures that every caller would
+  need to handle, while a single transaction-scoped advisory lock is
+  invisible to callers and scoped to exactly this one flag.
+- Having the integration suite delete and recreate the browser fixture —
+  rejected; tests should never own another suite's fixture, and
+  temporary demote-plus-restore keeps every side effect inside the test
+  that caused it.
+
+---
+
+### 2026-07-17 — Slice 9A clarification: compatibility Game Version picker supersedes the deferral
+
+Decision:
+
+The earlier same-day correction entry deferred the record-level Game
+Version picker UI to the admin workspace slice. That deferral was
+superseded during Slice 9A completion: without any picker, an
+administrator could not actually use the historical-version verification
+the milestone requires, so a minimal compatibility picker (the shared
+GameVersionVerificationControls component) was added to the existing
+Item, Location, Acquisition Source, Recipe, and Profession create/edit
+forms. It slots into the existing form layouts and is deliberately NOT
+the Slice 9B workspace redesign, which remains unstarted. The
+server-validated selection, the blank-selection fallback to the current
+version, and the advisory-lock single-current architecture are all
+unchanged — the picker only proposes an id the server was already
+prepared to validate.
+
+Reason:
+
+Historical-version verification had a tested server path but no way for
+an administrator to reach it; a restrained picker inside the existing
+forms closes that gap without starting the workspace redesign.

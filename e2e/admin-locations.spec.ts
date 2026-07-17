@@ -13,11 +13,14 @@
 
 import { expect, test, type Page } from "@playwright/test";
 import {
+  E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestLocationRecords,
   deleteE2eTestLocationRecords,
 } from "./helpers/database-cleanup";
 
-const TEST_BUILD_ID = "test-build-001";
+// The persistent test-only Game Version fixture, made current by
+// auth.setup.ts before any admin spec runs.
+const CURRENT_VERSION_NAME = E2E_CURRENT_GAME_VERSION_NAME;
 
 const INITIAL = {
   name: "Test E2E Location",
@@ -69,7 +72,7 @@ const VERIFY_LOCATION = {
 } as const;
 
 const VERIFICATION_CHECKBOX_LABEL =
-  "Mark gameplay data as verified for the current build.";
+  "Mark gameplay data as verified for the selected game version.";
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -270,7 +273,7 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   expect(deletedResponse?.status()).toBe(404);
 });
 
-test("gameplay verification stamps the server build id and survives normal edits", async ({
+test("gameplay verification stamps the current game version, stays admin-only, and survives normal edits", async ({
   page,
 }) => {
   // --- Create unverified (checkbox untouched) ---------------------------
@@ -295,14 +298,21 @@ test("gameplay verification stamps the server build id and survives normal edits
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/locations?success=updated");
 
-  // The rendered line carries the deterministic SERVER-side build id from
-  // .env.test.local — the browser never submitted a build value.
-  await page.goto(`/locations/${VERIFY_LOCATION.slug}`);
+  // The admin edit page shows the stamp carrying the deterministic
+  // SERVER-resolved current Game Version — the browser never submitted a
+  // version value.
+  await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
   const verificationLine = page.getByText(
-    `Gameplay data verified for build ${TEST_BUILD_ID} on`
+    `Gameplay data verified for ${CURRENT_VERSION_NAME} on`
   );
   await expect(verificationLine).toBeVisible();
   const stampedText = await verificationLine.textContent();
+
+  // Verification is admin-only since Slice 9A: the PUBLIC page must not
+  // render it even for a verified location.
+  await page.goto(`/locations/${VERIFY_LOCATION.slug}`);
+  await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
+  await expect(page.getByText(CURRENT_VERSION_NAME)).toHaveCount(0);
 
   // --- A later NORMAL edit must not alter the stamp ----------------------
   await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
@@ -317,8 +327,10 @@ test("gameplay verification stamps the server build id and survives normal edits
   await expect(
     page.getByText("Edited without touching verification.")
   ).toBeVisible();
+
+  await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
   const preservedLine = page.getByText(
-    `Gameplay data verified for build ${TEST_BUILD_ID} on`
+    `Gameplay data verified for ${CURRENT_VERSION_NAME} on`
   );
   await expect(preservedLine).toBeVisible();
   expect(await preservedLine.textContent()).toBe(stampedText);

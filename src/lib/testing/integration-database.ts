@@ -26,6 +26,15 @@ export const INTEGRATION_TEST_SLUG_PREFIX = "test-integration-";
 export const RELATIONS_TEST_SLUG_PREFIX = "test-relations-";
 export const LOCATIONS_TEST_SLUG_PREFIX = "test-integration-location-";
 export const ACQUISITION_TEST_SLUG_PREFIX = "test-acquisition-";
+// Rows (of every verifiable model) created by the game-version integration
+// suite carry this slug prefix.
+export const GAME_VERSION_ROWS_SLUG_PREFIX = "test-gameversion-";
+// GameVersion has no slug; test-created versions are scoped by NAME
+// prefix instead. Deliberately the integration suites' OWN prefix: it can
+// never match the browser tests' versions ("test-e2e-gv-...") or the E2E
+// fixture version ("test-gv-current"), so integration cleanup only ever
+// removes rows the integration suites themselves created.
+export const GAME_VERSION_TEST_NAME_PREFIX = "test-gv-int-";
 
 // Memoized as a promise: the first caller triggers guard + import exactly
 // once, and a guard failure stays failed for every later caller instead of
@@ -202,6 +211,70 @@ export async function deleteAcquisitionTestRecords(): Promise<number> {
   });
 
   return sources.count + items.count + locations.count + professions.count;
+}
+
+/**
+ * Deletes ONLY the rows created by the game-version integration suite:
+ * first the verifiable rows carrying the test-gameversion- slug prefix
+ * (AcquisitionSource has no slug and is matched through its Item relation;
+ * RecipeIngredient likewise through its Recipe/Item), then GameVersion
+ * rows carrying the test-gv-int- NAME prefix. Order matters: every
+ * verifiedGameVersionId relation is ON DELETE RESTRICT, so referencing
+ * rows must go first. Returns how many rows were removed in total; throws
+ * (failing the calling test or hook loudly) if the database rejects a
+ * delete.
+ */
+export async function deleteGameVersionTestRecords(): Promise<number> {
+  // Defense in depth: a broad deleteMany must be impossible even if the
+  // prefix constants are ever edited carelessly.
+  if (
+    GAME_VERSION_ROWS_SLUG_PREFIX.length < 5 ||
+    GAME_VERSION_TEST_NAME_PREFIX.length < 5
+  ) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: a game-version test prefix is suspiciously short."
+    );
+  }
+
+  const prisma = await getVerifiedTestPrisma();
+  const startsWithPrefix = { startsWith: GAME_VERSION_ROWS_SLUG_PREFIX };
+
+  const sources = await prisma.acquisitionSource.deleteMany({
+    where: { item: { slug: startsWithPrefix } },
+  });
+  const ingredients = await prisma.recipeIngredient.deleteMany({
+    where: {
+      OR: [
+        { recipe: { slug: startsWithPrefix } },
+        { item: { slug: startsWithPrefix } },
+      ],
+    },
+  });
+  const recipes = await prisma.recipe.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
+  const items = await prisma.item.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
+  const locations = await prisma.location.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
+  const professions = await prisma.profession.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
+  const versions = await prisma.gameVersion.deleteMany({
+    where: { name: { startsWith: GAME_VERSION_TEST_NAME_PREFIX } },
+  });
+
+  return (
+    sources.count +
+    ingredients.count +
+    recipes.count +
+    items.count +
+    locations.count +
+    professions.count +
+    versions.count
+  );
 }
 
 /**

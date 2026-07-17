@@ -14,11 +14,13 @@ AI tools must not invent features, architecture, database tables, or design syst
 
 The current phase is:
 
-Milestone 8 - Gameplay Data Expansion is complete (see MILESTONES.md and DECISIONS.md 2026-07-16).
+Milestone 9 - Admin Workspace & Game Version Management is in progress. Slice 9A (Game Version foundation) is complete (see MILESTONES.md and DECISIONS.md 2026-07-17): the database-backed GameVersion model with at most one current version (advisory-lock-serialized service transactions); relational verification (`verifiedGameVersionId`, ON DELETE RESTRICT) on Item, Location, AcquisitionSource, Recipe, and Profession (Categories deliberately have none); verification against a selected Game Version — the shared picker on every verification form submits a server-validated id, historical versions are valid selections, and a blank selection falls back to the current version; the retirement of the CURRENT_GAME_BUILD_ID environment variable; and admin-only Game Version management as a secondary settings destination (`/admin/settings/game-versions`) — never in primary navigation, never public.
 
-Milestone numbering was resolved: Gameplay Data Expansion is Milestone 8. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started. Milestone 9 route-hub work remains deferred.
+Terminology: the contributor-facing term is "Game Version" everywhere. Never display "Build" in the UI.
 
-Do not begin Deployment or Milestone 9 work until explicitly instructed in the milestone conversation.
+Slices 9B–9E (shared admin workspace redesign and later Milestone 9 work) have not started. Route Hubs remain deferred and unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+
+Do not begin Slice 9B+, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 

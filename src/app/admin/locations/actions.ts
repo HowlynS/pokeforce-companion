@@ -12,7 +12,7 @@ import {
 import { parseLocationInput } from "@/lib/validation/location";
 import { isLocationNameTaken } from "@/lib/admin/record-name";
 import { wouldCreateLocationCycle } from "@/lib/locations/location-hierarchy";
-import { getCurrentGameBuildId } from "@/lib/game-build";
+import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
   deleteImage,
   uploadImage,
@@ -52,29 +52,6 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
   }
 }
 
-// The explicit opt-in verification action. The checkbox only ever carries
-// intent ("on" or absent); both stamped values come exclusively from the
-// server — the timestamp from the clock, the build id from the validated
-// CURRENT_GAME_BUILD_ID environment value — so the browser can never submit
-// an arbitrary build identifier. Returns null when the box was unchecked,
-// and null with `failed: true` when the server has no configured build id.
-function resolveVerificationStamp(formData: FormData):
-  | { stamp: { verifiedAt: Date; verifiedBuildId: string } | null; failed: false }
-  | { stamp: null; failed: true } {
-  if (formData.get("markVerified") !== "on") {
-    return { stamp: null, failed: false };
-  }
-
-  try {
-    return {
-      stamp: { verifiedAt: new Date(), verifiedBuildId: getCurrentGameBuildId() },
-      failed: false,
-    };
-  } catch {
-    return { stamp: null, failed: true };
-  }
-}
-
 export async function createLocationAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
@@ -92,12 +69,16 @@ export async function createLocationAction(formData: FormData) {
     redirect("/admin/locations?error=duplicate_name");
   }
 
-  // Resolved before any upload so a misconfigured build id rejects the
-  // submission without leaving an orphaned file behind.
-  const verification = resolveVerificationStamp(formData);
+  // Resolved before any upload so a missing current Game Version rejects
+  // the submission without leaving an orphaned file behind. The shared
+  // helper stamps the server's own clock and the database row marked
+  // current when the form supplies no selection, or a server-validated
+  // explicitly selected version — a nonexistent or tampered id fails
+  // the submission.
+  const verification = await resolveVerificationStamp(prisma, formData);
 
   if (verification.failed) {
-    redirect("/admin/locations?error=missing_build_id");
+    redirect(`/admin/locations?error=${verification.error}`);
   }
 
   // A submitted parent id is never trusted blindly: it must correspond to
@@ -201,12 +182,16 @@ export async function updateLocationAction(formData: FormData) {
     redirect(`${editPath ?? "/admin/locations"}?error=duplicate_name`);
   }
 
-  // Resolved before any upload so a misconfigured build id rejects the
-  // submission without leaving an orphaned file behind.
-  const verification = resolveVerificationStamp(formData);
+  // Resolved before any upload so a missing current Game Version rejects
+  // the submission without leaving an orphaned file behind. The shared
+  // helper stamps the server's own clock and the database row marked
+  // current when the form supplies no selection, or a server-validated
+  // explicitly selected version — a nonexistent or tampered id fails
+  // the submission.
+  const verification = await resolveVerificationStamp(prisma, formData);
 
   if (verification.failed) {
-    redirect(`${editPath ?? "/admin/locations"}?error=missing_build_id`);
+    redirect(`${editPath ?? "/admin/locations"}?error=${verification.error}`);
   }
 
   // A submitted parent id is never trusted blindly: it must correspond to
