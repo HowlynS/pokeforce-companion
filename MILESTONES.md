@@ -349,8 +349,8 @@ editor primitives) complete; Slice 9B.3 (shared searchable record-list
 foundation) complete; Slice 9B.4 (Item workspace routes, record list,
 and quick switching) complete; Slice 9B.5 (Item General editor) complete
 for the General tab; Slice 9B.6 (Acquisition Sources tab integration)
-complete — Used in Recipes and Metadata tab content remain pending;
-later slices not started
+complete; Slice 9B.7 (Used in Recipes tab) complete — Metadata tab
+content remains pending; later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -652,15 +652,65 @@ workspace.
       removed header action, and item switching preserving the
       Acquisition Sources tab and `q`; existing Acquisition Source E2E
       suite updated (not duplicated) for the new navigation
-- [ ] Used in Recipes tab content and Metadata tab content beyond
-      `TimestampsPanel` remain unimplemented
+- [x] Used in Recipes tab content is implemented in Slice 9B.7 (below);
+      Metadata tab content beyond `TimestampsPanel` remains unimplemented
+
+### Slice 9B.7 — Used in Recipes tab (complete, 2026-07-17)
+
+- [x] `/admin/items/[slug]/recipes` is a new, real, read-only Item tab
+      rendering inside `ItemWorkspace` exactly like General/Acquisition
+      Sources: the record list stays visible with the current item
+      selected, `EditorHeader` shows the item's own name, `EditorTabs`
+      marks Used in Recipes active
+- [x] `ItemEditorTabKey` gained a `"recipes"` variant and `itemEditorTabs`
+      now links Used in Recipes as a real tab (General is active only on
+      the edit route, Acquisition Sources only on source routes, Used in
+      Recipes only on this new route); Metadata remains the only disabled
+      placeholder; exactly one tab is active on every implemented route
+- [x] One restrained query (`prisma.item.findUnique` including both
+      `recipesProduced` and `recipeIngredients` together with their
+      `profession`/`resultingItem` relations) — no N+1 per row
+- [x] Content is strictly read-only and navigational: two `ContextPanel`s
+      ("Used as an ingredient in" and "Produced by," each with a
+      restrained count and its own admin-table, omitted entirely when
+      empty) list recipe name (linking to the EXISTING
+      `/admin/recipes/[slug]/edit` route), quantity/yield, and resulting
+      item name — no separate Profession/Required Level column; a shared
+      `RecipeNameCell` renders those two optional fields as a labeled
+      detail line beneath the recipe name only when each is populated, so
+      sparse recipes emit no placeholder dash, empty label, or blank cell
+      — no inline recipe editing, no ingredient mutation, no create-recipe
+      form; an item with no relationship in either direction renders a
+      single `EmptyState`
+- [x] A new `itemUsedInRecipesHref(slug, query)` helper feeds the tab's
+      own href and `ItemWorkspace`'s existing `recordHref` prop (no
+      component changes needed), so quick-switching items while on this
+      tab opens the next item's Used in Recipes tab — not General — with
+      `q` preserved, exactly the Slice 9B.6 pattern reused, not a new
+      routing framework
+- [x] Recipe CRUD, ingredient actions, the Prisma schema, storage, and
+      authorization are unchanged; `notFound()` still applies for unknown
+      item slugs
+- [x] Tests: pure-function coverage for `itemUsedInRecipesHref` and the
+      extended `itemEditorTabs`; four new integration tests (ingredient
+      usage with quantity/profession/required-level, absent-optional
+      handling, an item with no recipe usage, and the schema-enforced
+      impossibility of a duplicate ingredient row) in
+      `database-relations.integration.test.ts`; a new focused
+      `admin-item-recipes.spec.ts` E2E suite (direct tab access, both
+      relationship directions rendering, the Recipe edit link, item
+      switching preserving the tab and `q`, the empty state, General/
+      Acquisition Sources still working from this tab, Metadata staying
+      inert, an unknown item slug 404ing) plus the existing Item tab
+      tests in `admin-items.spec.ts`/`admin-item-sources.spec.ts` and the
+      protection spec updated for the tab no longer being disabled
+- [ ] Metadata tab content beyond `TimestampsPanel` remains unimplemented
 
 ### Remaining (not started)
 
-- [ ] Used in Recipes tab content, Metadata tab content beyond
-      `TimestampsPanel`, every other resource workspace conversion,
-      dashboard summaries, and Route Hubs — do not begin until
-      explicitly instructed in the milestone conversation
+- [ ] Metadata tab content beyond `TimestampsPanel`, every other resource
+      workspace conversion, dashboard summaries, and Route Hubs — do not
+      begin until explicitly instructed in the milestone conversation
 
 ---
 

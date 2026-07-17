@@ -589,6 +589,66 @@ export async function createTemporaryRecipeProducingItem(
 }
 
 /**
+ * Creates one temporary Recipe whose RESULT is the given browser-test Item,
+ * same as `createTemporaryRecipeProducingItem`, but with a Profession and
+ * Required level set — proving the Used in Recipes tab renders those
+ * optional fields when present (Slice 9B.7 correction). Links an EXISTING
+ * seeded Profession by slug rather than creating one, so seeded Profession
+ * fixture counts stay untouched.
+ */
+export async function createTemporaryRecipeProducingItemWithMetadata(
+  itemSlug: string,
+  professionSlug: string,
+  requiredLevel: number
+): Promise<void> {
+  assertItemPrefixesAreSafe();
+
+  if (!itemSlug.startsWith(E2E_ITEM_SLUG_PREFIX)) {
+    throw new Error(
+      "Refusing to link a Recipe: the target Item slug does not carry the browser-test prefix."
+    );
+  }
+
+  await withVerifiedDatabase(async (client) => {
+    const item = await client.query(
+      `select id from "Item" where slug = $1`,
+      [itemSlug]
+    );
+
+    if (item.rowCount !== 1) {
+      throw new Error(
+        "Cannot create the temporary producing Recipe: the browser-test Item was not found."
+      );
+    }
+
+    const profession = await client.query(
+      `select id from "Profession" where slug = $1`,
+      [professionSlug]
+    );
+
+    if (profession.rowCount !== 1) {
+      throw new Error(
+        "Cannot create the temporary producing Recipe: the seeded Profession was not found."
+      );
+    }
+
+    await client.query(
+      `insert into "Recipe"
+         (id, slug, name, "resultingItemId", "resultingQuantity",
+          "professionId", "requiredLevel", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, $4, $5, now())`,
+      [
+        `${E2E_ITEM_RELATION_SLUG_PREFIX}produces-meta`,
+        "Test E2E Item Relation Producing Recipe With Metadata",
+        item.rows[0].id as string,
+        profession.rows[0].id as string,
+        requiredLevel,
+      ]
+    );
+  });
+}
+
+/**
  * Creates the minimum temporary rows for the given browser-test Item to be
  * a Recipe INGREDIENT: one helper Item (the recipe's required result), one
  * Recipe, and one RecipeIngredient pointing at the test Item. All created

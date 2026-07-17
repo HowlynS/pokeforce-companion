@@ -30,9 +30,11 @@ Slice 9B.5 (Item General editor) is complete: `/admin/items/new` and `/admin/ite
 
 Slice 9B.6 (Acquisition Sources tab integration) is complete: Acquisition Sources is now a real, working tab in the Item workspace (`itemEditorTabs` in `src/lib/admin/item-workspace.ts` builds the shared tab strip for every Item route). The former "Manage acquisition sources" header action is gone. The existing routes (`/admin/items/[slug]/sources` and its `[sourceId]/edit`/`delete` children) are unchanged and now render inside `ItemWorkspace` with the tab strip, the record list, and (on the source edit page) a `VerificationPanel` aside. Quick switching between items while on the Acquisition Sources tab opens the next item's Acquisition Sources tab, not General, via a new `recordHref` prop on `ItemWorkspace`. Every source CRUD action, ownership/tampering protection, and verification rule is unchanged. Used in Recipes and Metadata tab content remain unimplemented.
 
-The rest of Slice 9B.5/9B.6 (Used in Recipes tab content, Metadata tab content beyond `TimestampsPanel`), every other resource workspace conversion, dashboard summaries, and Route Hubs remain unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+Slice 9B.7 (Used in Recipes tab) is complete: `/admin/items/[slug]/recipes` is a real, read-only Item tab showing every Recipe relationship for the selected Item — "Used as an ingredient in" and "Produced by," never conflated, each row linking to the existing Recipe admin edit route with no inline editing. `itemEditorTabs` now marks Used in Recipes active on this route; only Metadata remains a disabled placeholder. Quick switching between items while on this tab opens the next item's Used in Recipes tab via the same `recordHref` mechanism from Slice 9B.6.
 
-Do not begin Used in Recipes, Metadata tab content, any other resource workspace, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
+The rest of Slice 9B.5/9B.6/9B.7 (Metadata tab content beyond `TimestampsPanel`), every other resource workspace conversion, dashboard summaries, and Route Hubs remain unstarted. Deployment — previously listed as Milestone 8 — is a later milestone, is not complete, and has not started.
+
+Do not begin Metadata tab content, any other resource workspace, Route Hubs, or Deployment until explicitly instructed in the milestone conversation.
 
 ## AI Workflow Rules
 

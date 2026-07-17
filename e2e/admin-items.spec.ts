@@ -282,9 +282,9 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
     "aria-current",
     "page"
   );
-  // General is active; Acquisition Sources is a real tab link (Slice
-  // 9B.6); Used in Recipes and Metadata still render as inert,
-  // non-navigable placeholders — never links to empty pages.
+  // General is active; Acquisition Sources and Used in Recipes are real
+  // tab links (Slices 9B.6/9B.7); Metadata still renders as an inert,
+  // non-navigable placeholder — never a link to an empty page.
   const tabNav = page.getByRole("navigation", { name: "Item editor sections" });
   await expect(
     tabNav.getByRole("link", { name: "General", exact: true })
@@ -292,14 +292,15 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(
     tabNav.getByRole("link", { name: "Acquisition Sources", exact: true })
   ).toBeVisible();
-  for (const deferredTab of ["Used in Recipes", "Metadata"]) {
-    await expect(
-      tabNav.getByText(deferredTab, { exact: true })
-    ).toHaveAttribute("aria-disabled", "true");
-    await expect(
-      tabNav.getByRole("link", { name: deferredTab, exact: true })
-    ).toHaveCount(0);
-  }
+  await expect(
+    tabNav.getByRole("link", { name: "Used in Recipes", exact: true })
+  ).toBeVisible();
+  await expect(
+    tabNav.getByText("Metadata", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    tabNav.getByRole("link", { name: "Metadata", exact: true })
+  ).toHaveCount(0);
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);

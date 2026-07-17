@@ -257,6 +257,15 @@ select:focus-visible {
   border-bottom: none;
 }
 
+/* Optional per-row detail line (e.g. Profession/Required level) shown
+   beneath a table row's name cell — only rendered when there is at
+   least one detail to show. */
+.admin-table-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
 /* Edit/Delete pair at the end of a table row. */
 .row-actions {
   display: inline-flex;

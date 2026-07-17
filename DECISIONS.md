@@ -1331,3 +1331,48 @@ Alternatives considered:
   Item list query in every Sources-route page or require exporting
   `ItemWorkspace`'s row-building logic separately, both worse than one
   parameterized prop.
+
+---
+
+### 2026-07-17 — Slice 9B.7: Used in Recipes shows both relationship directions, never conflated
+
+Decision:
+
+The Used in Recipes tab (`/admin/items/[slug]/recipes`) renders BOTH of
+an Item's Recipe relationships — "Used as an ingredient in"
+(`recipeIngredients`) and "Produced by" (`recipesProduced`) — as two
+separate `ContextPanel`s with distinct headings, each omitted entirely
+when its own list is empty. Nothing merges the two into one list or one
+row shape. This mirrors the distinction the public item detail page
+(`src/app/items/[slug]/page.tsx`) already draws between its own
+"Produced by" and "Used as an ingredient in" sections, reusing the exact
+same two section names and the same underlying Prisma relations rather
+than inventing new terminology or a new query shape for the admin tab.
+
+`ItemWorkspace` itself required no new capability: `recordHref` (added
+in Slice 9B.6) already accepts any `(slug, query) => string` builder, so
+Used in Recipes' `itemUsedInRecipesHref` slots in unchanged, and
+`itemEditorTabs` gained one more real branch (`"recipes"`) rather than a
+new mechanism.
+
+Reason:
+
+The task explicitly warned against conflating "used as ingredient" with
+"produced by recipe." Since the codebase already had a correct, tested,
+public-facing precedent for keeping the two apart — including the
+exact wording contributors already recognize — matching it exactly
+was safer than designing new copy or a combined table that would need
+a discriminator column to tell the two relationship kinds apart.
+
+Alternatives considered:
+
+- One combined table with a "Role" column ("Ingredient in" /
+  "Produces") — rejected; it would require a synthetic per-row
+  discriminator neither Prisma relation carries natively, and the two
+  relationships have different natural columns (an ingredient's own
+  quantity vs. a recipe's resulting quantity), so a single table shape
+  would need blank cells either way.
+- Showing only "used as an ingredient in" and omitting "produced by"
+  entirely — rejected; the task explicitly allowed including the
+  produced-by direction when it is "useful and clearly distinguishable,"
+  and the public page already proves it is both.

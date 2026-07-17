@@ -528,6 +528,180 @@ describe("database relations (integration)", () => {
     });
   });
 
+  describe("Item Used in Recipes relationship query (Slice 9B.7)", () => {
+    it("loads ingredient usage with quantity, resulting item, profession, and required level", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const profession = await prisma.profession.create({
+        data: {
+          name: "Relations Test Recipes Tab Profession",
+          slug: `${P}recipes-tab-profession`,
+        },
+      });
+      const resultItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Recipes Tab Result",
+          slug: `${P}recipes-tab-result`,
+        },
+      });
+      const ingredientItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Recipes Tab Ingredient",
+          slug: `${P}recipes-tab-ingredient`,
+        },
+      });
+      const recipe = await prisma.recipe.create({
+        data: {
+          name: "Relations Test Recipes Tab Recipe",
+          slug: `${P}recipes-tab-recipe`,
+          resultingItemId: resultItem.id,
+          professionId: profession.id,
+          requiredLevel: 7,
+          ingredients: { create: [{ itemId: ingredientItem.id, quantity: 3 }] },
+        },
+      });
+
+      // The exact query shape the Used in Recipes tab page runs: one call,
+      // both relationship directions, the fields each row needs already
+      // included — no per-row follow-up query.
+      const loaded = await prisma.item.findUnique({
+        where: { id: ingredientItem.id },
+        include: {
+          recipesProduced: {
+            include: { profession: true },
+            orderBy: { name: "asc" },
+          },
+          recipeIngredients: {
+            include: {
+              recipe: { include: { profession: true, resultingItem: true } },
+            },
+            orderBy: { recipe: { name: "asc" } },
+          },
+        },
+      });
+
+      expect(loaded?.recipeIngredients).toHaveLength(1);
+      const ingredient = loaded!.recipeIngredients[0]!;
+      expect(ingredient.quantity).toBe(3);
+      expect(ingredient.recipe.name).toBe(recipe.name);
+      expect(ingredient.recipe.resultingItem.name).toBe(
+        "Relations Test Recipes Tab Result"
+      );
+      expect(ingredient.recipe.profession?.name).toBe(
+        "Relations Test Recipes Tab Profession"
+      );
+      expect(ingredient.recipe.requiredLevel).toBe(7);
+      // This item is only an ingredient here, never a recipe's result.
+      expect(loaded?.recipesProduced).toHaveLength(0);
+    });
+
+    it("handles absent profession and required level as null, never a query error", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const resultItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Recipes Tab Sparse Result",
+          slug: `${P}recipes-tab-sparse-result`,
+        },
+      });
+      const ingredientItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Recipes Tab Sparse Ingredient",
+          slug: `${P}recipes-tab-sparse-ingredient`,
+        },
+      });
+      await prisma.recipe.create({
+        data: {
+          name: "Relations Test Recipes Tab Sparse Recipe",
+          slug: `${P}recipes-tab-sparse-recipe`,
+          resultingItemId: resultItem.id,
+          ingredients: { create: [{ itemId: ingredientItem.id, quantity: 1 }] },
+        },
+      });
+
+      const loaded = await prisma.item.findUnique({
+        where: { id: ingredientItem.id },
+        include: {
+          recipeIngredients: {
+            include: {
+              recipe: { include: { profession: true, resultingItem: true } },
+            },
+          },
+        },
+      });
+
+      const ingredient = loaded!.recipeIngredients[0]!;
+      expect(ingredient.recipe.profession).toBeNull();
+      expect(ingredient.recipe.requiredLevel).toBeNull();
+    });
+
+    it("returns empty relationship arrays for an item used in no recipe", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const unused = await prisma.item.create({
+        data: {
+          name: "Relations Test Recipes Tab Unused",
+          slug: `${P}recipes-tab-unused`,
+        },
+      });
+
+      const loaded = await prisma.item.findUnique({
+        where: { id: unused.id },
+        include: { recipesProduced: true, recipeIngredients: true },
+      });
+
+      expect(loaded?.recipesProduced).toEqual([]);
+      expect(loaded?.recipeIngredients).toEqual([]);
+    });
+
+    it("cannot produce duplicate ingredient rows for the same recipe/item pair (schema-enforced)", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const resultItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Recipes Tab Dup Result",
+          slug: `${P}recipes-tab-dup-result`,
+        },
+      });
+      const ingredientItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Recipes Tab Dup Ingredient",
+          slug: `${P}recipes-tab-dup-ingredient`,
+        },
+      });
+      const recipe = await prisma.recipe.create({
+        data: {
+          name: "Relations Test Recipes Tab Dup Recipe",
+          slug: `${P}recipes-tab-dup-recipe`,
+          resultingItemId: resultItem.id,
+          ingredients: { create: [{ itemId: ingredientItem.id, quantity: 1 }] },
+        },
+      });
+
+      // The same recipe/item pair can never be inserted twice —
+      // @@unique([recipeId, itemId]) is exactly what makes the Used in
+      // Recipes tab's query safe from ever needing to de-duplicate rows
+      // itself.
+      let caught: unknown = null;
+      try {
+        await prisma.recipeIngredient.create({
+          data: { recipeId: recipe.id, itemId: ingredientItem.id, quantity: 2 },
+        });
+      } catch (error) {
+        caught = error;
+      }
+
+      expect(caught).toBeInstanceOf(Prisma.PrismaClientKnownRequestError);
+      expect(isUniqueConstraintError(caught)).toBe(true);
+
+      const loaded = await prisma.item.findUnique({
+        where: { id: ingredientItem.id },
+        include: { recipeIngredients: true },
+      });
+      expect(loaded?.recipeIngredients).toHaveLength(1);
+    });
+  });
+
   describe("final preservation checks", () => {
     it("keeps all seeded fixture counts unchanged", async () => {
       const prisma = await getVerifiedTestPrisma();

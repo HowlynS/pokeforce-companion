@@ -302,14 +302,17 @@ test("Item editor tabs: Acquisition Sources is a real link, General returns, def
   await expect(
     tabNav().getByRole("link", { name: "Acquisition Sources", exact: true })
   ).toBeVisible();
-  for (const deferred of ["Used in Recipes", "Metadata"]) {
-    await expect(
-      tabNav().getByText(deferred, { exact: true })
-    ).toHaveAttribute("aria-disabled", "true");
-    await expect(
-      tabNav().getByRole("link", { name: deferred, exact: true })
-    ).toHaveCount(0);
-  }
+  // Used in Recipes is a real tab since Slice 9B.7; Metadata is still the
+  // only deferred, inert placeholder.
+  await expect(
+    tabNav().getByRole("link", { name: "Used in Recipes", exact: true })
+  ).toBeVisible();
+  await expect(
+    tabNav().getByText("Metadata", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    tabNav().getByRole("link", { name: "Metadata", exact: true })
+  ).toHaveCount(0);
   await expect(tabNav().locator('[aria-current="page"]')).toHaveCount(1);
 
   // --- Following the Acquisition Sources tab marks IT active instead -----

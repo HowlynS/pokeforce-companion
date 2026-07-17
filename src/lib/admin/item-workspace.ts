@@ -77,11 +77,17 @@ export function itemSourceDeleteHref(
   );
 }
 
-/** Which Item editor tab is active — General (the record's own fields)
-    or Acquisition Sources (Slice 9B.6). Used in Recipes and Metadata
-    have no content yet, so `itemEditorTabs` always renders them as inert
-    placeholders regardless of this value. */
-export type ItemEditorTabKey = "general" | "sources";
+/** The Used in Recipes tab route for one item, preserving the query
+    (Slice 9B.7) — read-only recipe relationship content. */
+export function itemUsedInRecipesHref(slug: string, query: string): string {
+  return withItemSearchQuery(`${ITEM_LIST_PATH}/${slug}/recipes`, query);
+}
+
+/** Which Item editor tab is active — General (the record's own fields),
+    Acquisition Sources (Slice 9B.6), or Used in Recipes (Slice 9B.7).
+    Metadata has no content yet, so `itemEditorTabs` always renders it as
+    an inert placeholder regardless of this value. */
+export type ItemEditorTabKey = "general" | "sources" | "recipes";
 
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
@@ -95,11 +101,11 @@ export type ItemEditorTab = {
 
 /**
  * The Item editor's tab strip, shared by every route inside the Item
- * workspace that renders tabs (General edit/create, and every
- * Acquisition Sources route) — one function so General's and Acquisition
- * Sources' hrefs/active state can never drift out of sync between pages.
- * Used in Recipes and Metadata have no destination yet, so they render
- * as disabled placeholders — never fake links to empty pages.
+ * workspace that renders tabs (General edit/create, every Acquisition
+ * Sources route, and the Used in Recipes route) — one function so every
+ * real tab's href/active state can never drift out of sync between
+ * pages. Metadata has no destination yet, so it renders as a disabled
+ * placeholder — never a fake link to an empty page.
  */
 export function itemEditorTabs(
   slug: string,
@@ -117,7 +123,11 @@ export function itemEditorTabs(
       href: itemSourcesHref(slug, query),
       active: active === "sources",
     },
-    { label: "Used in Recipes", href: "", active: false, disabled: true },
+    {
+      label: "Used in Recipes",
+      href: itemUsedInRecipesHref(slug, query),
+      active: active === "recipes",
+    },
     { label: "Metadata", href: "", active: false, disabled: true },
   ];
 }
