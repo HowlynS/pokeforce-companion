@@ -67,11 +67,13 @@ test.afterAll(async () => {
   expect(remaining).toBe(0);
 });
 
-// The admin table row for a profession, located by its exact Name cell.
-function adminRow(page: Page, name: string) {
+// One row of the shared Profession record list (Slice 9D.1), located by
+// its exact primary text inside the list's navigation landmark.
+function recordRow(page: Page, name: string) {
   return page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name, exact: true }) });
+    .getByRole("navigation", { name: "Professions records" })
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
 // Asserts a real rendered image: visible AND actually decoded (non-zero
@@ -96,7 +98,7 @@ async function createProfessionWithImage(
   data: { name: string; slug: string },
   imageFile: string
 ) {
-  await page.goto("/admin/professions");
+  await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
   await page.getByLabel(/^Image \(optional/).setInputFiles(imageFile);
@@ -106,9 +108,7 @@ async function createProfessionWithImage(
 
   await expect(page).toHaveURL("/admin/professions?success=created");
   await expect(page.getByRole("status")).toHaveText("Profession created.");
-  await expect(
-    page.getByRole("cell", { name: data.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, data.name)).toBeVisible();
 }
 
 test("creating a profession with a valid PNG stores, serves, and renders it", async ({
@@ -244,7 +244,7 @@ test("removing the profession image clears the row, deletes the object, and rest
 test("an unsupported file type is rejected and nothing is written", async ({
   page,
 }) => {
-  await page.goto("/admin/professions");
+  await page.goto("/admin/professions/new");
   await page
     .getByLabel("Name", { exact: true })
     .fill("Test E2E Profession Image Invalid");
@@ -256,7 +256,9 @@ test("an unsupported file type is rejected and nothing is written", async ({
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/professions?error=invalid_image_type");
+  await expect(page).toHaveURL(
+    "/admin/professions/new?error=invalid_image_type"
+  );
   await expect(
     page
       .getByRole("alert")
@@ -283,7 +285,7 @@ test("an oversized image is rejected and nothing is written", async ({
   fs.writeFileSync(oversizedPath, Buffer.alloc(5 * 1024 * 1024 + 1));
 
   try {
-    await page.goto("/admin/professions");
+    await page.goto("/admin/professions/new");
     await page
       .getByLabel("Name", { exact: true })
       .fill("Test E2E Profession Image Oversized");
@@ -295,7 +297,9 @@ test("an oversized image is rejected and nothing is written", async ({
       .getByRole("button", { name: "Create Profession", exact: true })
       .click();
 
-    await expect(page).toHaveURL("/admin/professions?error=image_too_large");
+    await expect(page).toHaveURL(
+      "/admin/professions/new?error=image_too_large"
+    );
     await expect(
       page
         .getByRole("alert")
@@ -324,9 +328,12 @@ test("deleting the profession also deletes its stored image object", async ({
   // Real confirmation flow (no recipes reference the temporary profession,
   // so deletion is offered); the plain "Profession deleted." message also
   // proves the image cleanup succeeded (a failed cleanup uses a distinct
-  // message).
-  await adminRow(page, PROFESSION.name)
-    .getByRole("link", { name: "Delete" })
+  // message). Quick switching opens the edit route; Delete is reached
+  // from its toolbar (the old table's per-row Delete link is gone).
+  await recordRow(page, PROFESSION.name).click();
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
+  await page
+    .getByRole("link", { name: "Delete Profession", exact: true })
     .click();
   await expect(page).toHaveURL(
     `/admin/professions/${PROFESSION.slug}/delete`
@@ -337,9 +344,7 @@ test("deleting the profession also deletes its stored image object", async ({
 
   await expect(page).toHaveURL("/admin/professions?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Profession deleted.");
-  await expect(
-    page.getByRole("cell", { name: PROFESSION.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, PROFESSION.name)).toHaveCount(0);
 
   // The row is gone and so is its exact Storage object.
   expect(await countE2eTestProfessionImageRecords()).toBe(0);

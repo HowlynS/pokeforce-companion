@@ -3,6 +3,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
+import {
+  PROFESSION_LIST_PATH,
+  normalizeProfessionSearchQuery,
+  professionDeleteHref,
+  withProfessionSearchQuery,
+} from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RecordNameField } from "@/components/admin/record-name-field";
@@ -30,7 +37,7 @@ const errorMessages: Record<string, string> = {
 
 type EditProfessionPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function EditProfessionPage({
@@ -42,8 +49,9 @@ export default async function EditProfessionPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
+  const query = normalizeProfessionSearchQuery(q);
 
   const profession = await prisma.profession.findUnique({
     where: { slug },
@@ -65,26 +73,50 @@ export default async function EditProfessionPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
+  // The edit route inside the Profession workspace (Slice 9D.1,
+  // following the Item workspace's Slice 9B.4 and Recipe workspace's
+  // Slice 9C.1 precedent): the record list marks this profession
+  // selected and keeps the active search applied for quick switching.
+  // Every field, redirect, server action, image behavior, and
+  // verification control is unchanged — only the navigation wrapper
+  // moved. Delete is now reached from this page's toolbar (the old
+  // table's per-row Delete link is gone).
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Edit Profession"
-        description={`Update details for "${profession.name}".`}
-      />
+    <ProfessionWorkspace
+      rawQuery={q}
+      selectedSlug={profession.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Edit Profession"
+            description={`Update details for "${profession.name}".`}
+          />
 
-      <p className="admin-toolbar">
-        <a href="/admin/professions" className="link-accent">
-          &larr; Back to Profession Management
-        </a>
-      </p>
+          <nav className="admin-toolbar" aria-label="Profession editor actions">
+            <a
+              href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+              className="link-accent"
+            >
+              &larr; Back to Profession Management
+            </a>
 
-      {errorMessage ? (
-        <p role="alert" className="banner banner-error">
-          {errorMessage}
-        </p>
-      ) : null}
+            <a
+              href={professionDeleteHref(profession.slug, query)}
+              className="link-danger"
+            >
+              Delete Profession
+            </a>
+          </nav>
 
+          {errorMessage ? (
+            <p role="alert" className="banner banner-error">
+              {errorMessage}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       <form action={updateProfessionAction} className="form-grid">
         <input type="hidden" name="id" value={profession.id} />
         <input type="hidden" name="originalSlug" value={profession.slug} />
@@ -249,11 +281,14 @@ export default async function EditProfessionPage({
             Save Changes
           </button>
 
-          <a href="/admin/professions" className="btn btn-secondary">
+          <a
+            href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+            className="btn btn-secondary"
+          >
             Cancel
           </a>
         </div>
       </form>
-    </>
+    </ProfessionWorkspace>
   );
 }

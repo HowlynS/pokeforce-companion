@@ -51,7 +51,7 @@ const RESOURCES: ResourceCase[] = [
   },
   {
     label: "Profession",
-    createUrl: "/admin/professions",
+    createUrl: "/admin/professions/new",
     editUrl: "/admin/professions/smithing/edit",
     regionId: "#profession-name-availability",
     seededName: "Smithing",
@@ -60,7 +60,7 @@ const RESOURCES: ResourceCase[] = [
     uniqueName: "Test E2E Unique Profession Feedback",
     takenText: "A profession with that name already exists.",
     createButton: "Create Profession",
-    duplicateErrorUrl: "/admin/professions?error=duplicate_name",
+    duplicateErrorUrl: "/admin/professions/new?error=duplicate_name",
   },
   {
     label: "Recipe",

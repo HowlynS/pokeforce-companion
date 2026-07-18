@@ -58,13 +58,13 @@ export async function createProfessionAction(formData: FormData) {
   const parsed = parseProfessionInput(formData);
 
   if (!parsed.ok) {
-    redirect(`/admin/professions?error=${parsed.error}`);
+    redirect(`/admin/professions/new?error=${parsed.error}`);
   }
 
   // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
   // live availability feedback queries, so the two can never disagree.
   if (await isProfessionNameTaken(prisma, parsed.value.name)) {
-    redirect("/admin/professions?error=duplicate_name");
+    redirect("/admin/professions/new?error=duplicate_name");
   }
 
   // Resolved before any upload so a missing current Game Version rejects
@@ -76,7 +76,7 @@ export async function createProfessionAction(formData: FormData) {
   const verification = await resolveVerificationStamp(prisma, formData);
 
   if (verification.failed) {
-    redirect(`/admin/professions?error=${verification.error}`);
+    redirect(`/admin/professions/new?error=${verification.error}`);
   }
 
   // The optional image is uploaded only after every other validation has
@@ -88,13 +88,13 @@ export async function createProfessionAction(formData: FormData) {
     const imageValidation = validateImageFile(imageFile);
 
     if (!imageValidation.ok) {
-      redirect(`/admin/professions?error=${imageValidation.error}`);
+      redirect(`/admin/professions/new?error=${imageValidation.error}`);
     }
 
     try {
       imagePath = await uploadImage("professions", imageFile);
     } catch {
-      redirect("/admin/professions?error=upload_failed");
+      redirect("/admin/professions/new?error=upload_failed");
     }
   }
 
@@ -110,7 +110,7 @@ export async function createProfessionAction(formData: FormData) {
     await tryDeleteImage(imagePath);
 
     if (isUniqueConstraintError(error)) {
-      redirect("/admin/professions?error=duplicate");
+      redirect("/admin/professions/new?error=duplicate");
     }
     throw error;
   }

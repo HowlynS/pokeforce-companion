@@ -111,7 +111,7 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
     .click();
   await expect(page).toHaveURL("/admin/locations?success=created");
 
-  await page.goto("/admin/professions");
+  await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
   await page.getByLabel(/^Slug/).fill(PROFESSION.slug);
   await page

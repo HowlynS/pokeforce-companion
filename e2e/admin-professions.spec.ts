@@ -1,16 +1,16 @@
-// Authenticated Profession admin lifecycle against the REAL application
-// and the isolated Supabase test project. Runs in the chromium-admin
-// project with the storage state saved by auth.setup.ts. All temporary
-// Profession rows use the test-e2e-profession slug prefix, the temporary
-// Item/Recipe rows for the relation-blocked test use the separate
-// test-e2e-profession-relation- prefix, and everything is removed by
-// guard-first, prefix-scoped cleanup in beforeAll/afterEach/afterAll — a
-// mid-test failure can never strand a row. Seeded fixtures are read but
-// never modified; the duplicate test only borrows a seeded NAME to trigger
-// the existing server-side rejection, and the relation test links a
-// temporary Recipe only to a temporary Profession. No image file is ever
-// provided: the optional image input stays empty, so no Storage object is
-// written or deleted.
+// Authenticated Profession admin CRUD and validation coverage against the
+// REAL application and the isolated Supabase test project. Runs in the
+// chromium-admin project with the storage state saved by auth.setup.ts.
+// All temporary Profession rows use the test-e2e-profession slug prefix,
+// the temporary Item/Recipe rows for the relation-blocked test use the
+// separate test-e2e-profession-relation- prefix, and everything is
+// removed by guard-first, prefix-scoped cleanup in
+// beforeAll/afterEach/afterAll — a mid-test failure can never strand a
+// row. Seeded fixtures are read but never modified; the duplicate test
+// only borrows a seeded NAME to trigger the existing server-side
+// rejection, and the relation test links a temporary Recipe only to a
+// temporary Profession. No image file is ever provided: the optional
+// image input stays empty, so no Storage object is written or deleted.
 
 import { expect, test, type Page } from "@playwright/test";
 import {
@@ -77,16 +77,22 @@ function cardLink(page: Page, name: string) {
     .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
 }
 
-// The admin table row for a profession, located by its exact Name cell.
-function adminRow(page: Page, name: string) {
+// One row of the shared Profession record list (Slice 9D.1), located by
+// its exact primary text inside the list's navigation landmark. The row
+// link itself opens the edit route — there is no separate per-row
+// Edit/Delete action any more (Delete is reached from the edit page's
+// toolbar).
+function recordRow(page: Page, name: string) {
   return page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name, exact: true }) });
+    .getByRole("navigation", { name: "Professions records" })
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
-// Fills the create form on /admin/professions (the page must already be
-// open) and submits it. The optional image input is deliberately left
-// untouched: creation must succeed with no image.
+// Fills the create form on /admin/professions/new (the page must already
+// be open — the dedicated creation route since Slice 9D.1) and submits
+// it. The optional image input is deliberately left untouched: creation
+// must succeed with no image.
 async function createProfessionThroughForm(
   page: Page,
   data: { name: string; slug: string; description: string }
@@ -100,9 +106,7 @@ async function createProfessionThroughForm(
 
   await expect(page).toHaveURL("/admin/professions?success=created");
   await expect(page.getByRole("status")).toHaveText("Profession created.");
-  await expect(
-    page.getByRole("cell", { name: data.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, data.name)).toBeVisible();
 }
 
 test("authenticated profession admin access uses the saved storage state", async ({
@@ -115,18 +119,41 @@ test("authenticated profession admin access uses the saved storage state", async
   await expect(
     page.getByRole("heading", { level: 1, name: "Profession Management" })
   ).toBeVisible();
+
+  // The workspace landing state: the record list with its create link —
+  // the embedded creation form is gone from this page (Slice 9D.1,
+  // following the Item workspace's Slice 9B.4 and Recipe workspace's
+  // Slice 9C.1 precedent).
+  await expect(
+    page.getByRole("link", { name: "+ New profession", exact: true })
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Profession", exact: true })
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
 
-  // A representative pair of seeded professions appear in the admin table
-  // (the full deterministic set of ten is asserted by the dedicated
-  // profession-coverage test below).
+  // A representative pair of seeded professions appear as record-list
+  // rows (the full deterministic set of ten is asserted by the dedicated
+  // profession-coverage test in admin-name-feedback.spec.ts and
+  // public-navigation.spec.ts).
+  await expect(recordRow(page, "Smithing")).toBeVisible();
+  await expect(recordRow(page, "Alchemy")).toBeVisible();
+});
+
+test("Create profession opens the dedicated creation route", async ({
+  page,
+}) => {
+  await page.goto("/admin/professions");
+  await page
+    .getByRole("link", { name: "+ New profession", exact: true })
+    .click();
+
+  await expect(page).toHaveURL("/admin/professions/new");
   await expect(
-    page.getByRole("cell", { name: "Smithing", exact: true })
+    page.getByRole("heading", { level: 1, name: "Create Profession" })
   ).toBeVisible();
   await expect(
-    page.getByRole("cell", { name: "Alchemy", exact: true })
+    page.getByRole("button", { name: "Create Profession", exact: true })
   ).toBeVisible();
 });
 
@@ -141,6 +168,10 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
     page.getByRole("heading", { level: 1, name: "Profession Management" })
   ).toBeVisible();
 
+  await page
+    .getByRole("link", { name: "+ New profession", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/professions/new");
   await createProfessionThroughForm(page, INITIAL);
 
   // Public detail page renders the new profession with the no-image
@@ -169,9 +200,15 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   );
 
   // --- Edit (name, slug, and description; image untouched) -------------
+  // Quick switching: the record-list row itself is the edit link, and the
+  // open record is marked selected (aria-current) in the list.
   await page.goto("/admin/professions");
-  await adminRow(page, INITIAL.name).getByRole("link", { name: "Edit" }).click();
+  await recordRow(page, INITIAL.name).click();
   await expect(page).toHaveURL(`/admin/professions/${INITIAL.slug}/edit`);
+  await expect(recordRow(page, INITIAL.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
   await expect(
     page.getByRole("heading", { level: 1, name: "Edit Profession" })
   ).toBeVisible();
@@ -186,9 +223,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
 
   await expect(page).toHaveURL("/admin/professions?success=updated");
   await expect(page.getByRole("status")).toHaveText("Profession updated.");
-  await expect(
-    page.getByRole("cell", { name: EDITED.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, EDITED.name)).toBeVisible();
 
   // The slug changed, so the original public route must be gone...
   const staleResponse = await page.goto(`/professions/${INITIAL.slug}`);
@@ -209,9 +244,15 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
     `/professions/${EDITED.slug}`
   );
 
-  // --- Delete -----------------------------------------------------------
+  // --- Delete -------------------------------------------------------------
+  // Delete is reached from the edit page's toolbar (the old table's
+  // per-row Delete link is gone).
   await page.goto("/admin/professions");
-  await adminRow(page, EDITED.name).getByRole("link", { name: "Delete" }).click();
+  await recordRow(page, EDITED.name).click();
+  await expect(page).toHaveURL(`/admin/professions/${EDITED.slug}/edit`);
+  await page
+    .getByRole("link", { name: "Delete Profession", exact: true })
+    .click();
   await expect(page).toHaveURL(`/admin/professions/${EDITED.slug}/delete`);
   await expect(
     page.getByRole("heading", { level: 1, name: "Delete Profession" })
@@ -226,9 +267,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
 
   await expect(page).toHaveURL("/admin/professions?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Profession deleted.");
-  await expect(
-    page.getByRole("cell", { name: EDITED.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, EDITED.name)).toHaveCount(0);
 
   // Gone from the public site as well.
   const deletedResponse = await page.goto(`/professions/${EDITED.slug}`);
@@ -241,7 +280,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
 test("creating a profession with a seeded name is rejected server-side", async ({
   page,
 }) => {
-  await page.goto("/admin/professions");
+  await page.goto("/admin/professions/new");
 
   // Seeded name "Smithing" in different casing with surrounding
   // whitespace: the server trims the name and its duplicate check is
@@ -253,7 +292,9 @@ test("creating a profession with a seeded name is rejected server-side", async (
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/professions?error=duplicate_name");
+  await expect(page).toHaveURL(
+    "/admin/professions/new?error=duplicate_name"
+  );
   // Next.js injects a hidden route-announcer div that also has role=alert,
   // so the application's alert is located by its exact readable text.
   await expect(
@@ -276,7 +317,7 @@ test("deletion is blocked while a recipe references the profession", async ({
   // the Recipe relation (and its required resulting Item) is set up through
   // the guarded database helper, because Item/Recipe admin browser
   // workflows are out of scope for this suite.
-  await page.goto("/admin/professions");
+  await page.goto("/admin/professions/new");
   await createProfessionThroughForm(page, BLOCKED);
 
   // Open the confirmation page while the profession is still unreferenced:
@@ -316,12 +357,13 @@ test("deletion is blocked while a recipe references the profession", async ({
   ).toBeVisible();
   await expect(deleteButton).toHaveCount(0);
 
-  // The profession survived, in the admin list and on the public site,
-  // where the temporary recipe is rendered through the real relation.
+  // The profession survived, in the admin list (record-list secondary
+  // context now shows "1 recipe") and on the public site, where the
+  // temporary recipe is rendered through the real relation.
   await page.goto("/admin/professions");
-  await expect(
-    page.getByRole("cell", { name: BLOCKED.name, exact: true })
-  ).toBeVisible();
+  const blockedRow = recordRow(page, BLOCKED.name);
+  await expect(blockedRow).toBeVisible();
+  await expect(blockedRow.getByText("1 recipe", { exact: true })).toBeVisible();
   await page.goto(`/professions/${BLOCKED.slug}`);
   await expect(
     page.getByRole("heading", { level: 1, name: BLOCKED.name, exact: true })
@@ -342,12 +384,115 @@ test("deletion is blocked while a recipe references the profession", async ({
 
   await expect(page).toHaveURL("/admin/professions?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Profession deleted.");
-  await expect(
-    page.getByRole("cell", { name: BLOCKED.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, BLOCKED.name)).toHaveCount(0);
 
   const deletedResponse = await page.goto(`/professions/${BLOCKED.slug}`);
   expect(deletedResponse?.status()).toBe(404);
+});
+
+test("record-list search filters, preserves the query across switching, and clears", async ({
+  page,
+}) => {
+  // Two temporary professions sharing the test prefix, so one query
+  // matches both while seeded records stay out of the way.
+  await page.goto("/admin/professions/new");
+  await createProfessionThroughForm(page, {
+    name: "Test E2E Profession Search A",
+    slug: "test-e2e-profession-search-a",
+    description: "First search fixture.",
+  });
+  await page.goto("/admin/professions/new");
+  await createProfessionThroughForm(page, {
+    name: "Test E2E Profession Search B",
+    slug: "test-e2e-profession-search-b",
+    description: "Second search fixture.",
+  });
+
+  // --- Search by NAME (trimmed, case-insensitive) -----------------------
+  await page.goto("/admin/professions");
+  await page
+    .getByRole("searchbox", { name: "Search professions" })
+    .fill("  test e2e profession search  ");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/professions\?q=/);
+  await expect(recordRow(page, "Test E2E Profession Search A")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Profession Search B")).toBeVisible();
+  // Seeded records are filtered out server-side.
+  await expect(recordRow(page, "Smithing")).toHaveCount(0);
+  await expect(page.getByText("2 matches")).toBeVisible();
+
+  // --- Quick switching keeps the query applied --------------------------
+  // Row hrefs carry the TRIMMED query, %20-encoded by the server helper.
+  await recordRow(page, "Test E2E Profession Search A").click();
+  await expect(page).toHaveURL(
+    "/admin/professions/test-e2e-profession-search-a/edit?q=test%20e2e%20profession%20search"
+  );
+  await expect(
+    recordRow(page, "Test E2E Profession Search A")
+  ).toHaveAttribute("aria-current", "page");
+
+  // Switch directly to the second match: the list stays filtered, the
+  // selection follows, and the first record is no longer marked.
+  await recordRow(page, "Test E2E Profession Search B").click();
+  await expect(page).toHaveURL(
+    "/admin/professions/test-e2e-profession-search-b/edit?q=test%20e2e%20profession%20search"
+  );
+  await expect(
+    recordRow(page, "Test E2E Profession Search B")
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    recordRow(page, "Test E2E Profession Search A")
+  ).not.toHaveAttribute("aria-current", "page");
+
+  // The create action, and this edit page's own Cancel/Delete links, keep
+  // the search context too.
+  await expect(
+    page.getByRole("link", { name: "+ New profession", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/professions/new?q=test%20e2e%20profession%20search"
+  );
+  await expect(
+    page.getByRole("link", { name: "Cancel", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/professions?q=test%20e2e%20profession%20search"
+  );
+  await expect(
+    page.getByRole("link", { name: "Delete Profession", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/professions/test-e2e-profession-search-b/delete?q=test%20e2e%20profession%20search"
+  );
+
+  // --- Search by SLUG ---------------------------------------------------
+  await page.goto("/admin/professions");
+  await page
+    .getByRole("searchbox", { name: "Search professions" })
+    .fill("test-e2e-profession-search-b");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(recordRow(page, "Test E2E Profession Search B")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Profession Search A")).toHaveCount(0);
+  await expect(page.getByText("1 match", { exact: true })).toBeVisible();
+
+  // --- No-match state (distinct from the no-professions-at-all state) ---
+  await page
+    .getByRole("searchbox", { name: "Search professions" })
+    .fill("zzz-no-such-profession");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  const emptyRegion = page.locator(".admin-record-empty");
+  await expect(emptyRegion).toContainText("No professions match");
+  await expect(emptyRegion).toContainText("zzz-no-such-profession");
+  await expect(page.getByText("0 matches")).toBeVisible();
+
+  // --- Clear search returns the full list -------------------------------
+  await page.getByRole("link", { name: "Clear search", exact: true }).click();
+  await expect(page).toHaveURL("/admin/professions");
+  await expect(recordRow(page, "Smithing")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Profession Search A")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Clear search", exact: true })
+  ).toHaveCount(0);
 });
 
 test("seeded fixtures are preserved and no test profession remains", async () => {

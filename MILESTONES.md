@@ -354,8 +354,10 @@ tab) complete — the Item reference workspace is functionally complete;
 Slice 9C.1 (Recipe workspace navigation foundation) complete; Slice 9C.2
 (Recipe General editor conversion) complete; Slice 9C.3 (Recipe
 Ingredients tab) complete; Slice 9C.4 (Recipe Metadata tab) complete —
-the Recipe reference workspace is functionally complete; later slices
-not started
+the Recipe reference workspace is functionally complete; Slice 9D.1
+(Profession workspace navigation foundation) complete — the Profession
+General editor conversion and a Recipes relationship tab remain pending;
+later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -976,11 +978,70 @@ workspace.
       now functionally complete, matching the Item workspace's shape; no
       other resource workspace was converted
 
+### Slice 9D.1 — Profession workspace navigation foundation (complete, 2026-07-18)
+
+- [x] Professions are the THIRD production adoption of
+      `AdminWorkspace`/`RecordList`, via a new, independent thin wrapper —
+      `ProfessionWorkspace` (`src/components/admin/profession-workspace.tsx`)
+      — over new pure helpers in `src/lib/admin/profession-workspace.ts`
+      (`professionEditHref`, `professionDeleteHref`,
+      `normalizeProfessionSearchQuery`, `withProfessionSearchQuery`),
+      mirroring the Item (Slice 9B.4) and Recipe (Slice 9C.1) workspaces
+      exactly but sharing no code with either
+- [x] `/admin/professions` is the workspace landing state (searchable
+      record list + restrained guidance; the embedded creation form and
+      the old admin table are both gone); `/admin/professions/new` is the
+      dedicated creation route the form moved to unchanged (same fields —
+      name, slug, description, image, `GameVersionVerificationControls`);
+      `/admin/professions/[slug]/edit` and `/admin/professions/[slug]/delete`
+      render inside `ProfessionWorkspace` otherwise unchanged (same
+      PageHeader, same form, same confirm-card)
+- [x] EditorHeader/EditorTabs/ImagePanel/VerificationPanel/TimestampsPanel/
+      sticky EditorActions are deliberately NOT adopted this pass — only
+      the navigation/wrapper moved, matching Slice 9C.1's own restraint
+- [x] The edit page's toolbar gained an unconditional "Delete Profession"
+      link (replacing the old table's per-row Delete action, mirroring
+      Slice 9C.1's toolbar change) — Professions carry no capacity guard,
+      so it never needs to be withheld
+- [x] The record list shows the profession name as primary text and its
+      recipe count ("N recipes") as secondary context, loaded via one
+      `prisma.profession.findMany({ include: { _count: { select: { recipes: true } } } })`
+      query — never the full `recipes` relation, so the list never
+      triggers an N+1 query; search matches name OR slug, trimmed,
+      case-insensitive, server-rendered via `?q=`, preserved through
+      record links, the create link, and Cancel/Delete links
+- [x] Pagination is deliberately deferred: ten seeded professions, an even
+      smaller record count than the Item/Recipe precedent that already
+      deferred it for the same reason
+- [x] Because the create form moved, `createProfessionAction`'s
+      validation/duplicate/verification/image error redirects now target
+      `/admin/professions/new` instead of `/admin/professions` (mirroring
+      exactly how `createRecipeAction` was changed for Slice 9C.1) — the
+      success redirect and every other action (`updateProfessionAction`,
+      `deleteProfessionAction`), the Prisma schema, image storage, Game
+      Version verification, and the recipe-linked delete-blocking rule are
+      all byte-for-byte unchanged
+- [x] Tests: `profession-workspace.test.ts` covers the pure URL helpers
+      (query normalization/preservation, edit/delete hrefs); the E2E
+      suite (`admin-professions.spec.ts`) was converted from admin-table
+      assertions to record-list assertions, gained a dedicated
+      creation-route test and a record-list search/switching/no-match
+      test mirroring the Recipe precedent, and every existing lifecycle/
+      duplicate/relation-blocked test now goes through
+      `/admin/professions/new` and the edit-page Delete link;
+      `admin-profession-images.spec.ts` and `admin-name-feedback.spec.ts`
+      were updated for the same route change; the protection spec
+      extended with `/admin/professions/new`
+- [x] No Profession tabs, no Recipes relationship tab, no Categories/
+      Locations conversion, no dashboard summaries, and no Route Hubs
+      were started
+
 ### Remaining (not started)
 
-- [ ] Every other resource workspace conversion, dashboard summaries, and
-      Route Hubs — do not begin until explicitly instructed in the
-      milestone conversation
+- [ ] The Profession General editor conversion, a Profession Recipes
+      relationship tab, every other resource workspace conversion,
+      dashboard summaries, and Route Hubs — do not begin until explicitly
+      instructed in the milestone conversation
 
 ---
 

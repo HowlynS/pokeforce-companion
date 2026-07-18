@@ -234,7 +234,7 @@ test("optional profession, source label, quantity, and notes render only when po
   };
   await createTemporaryItem(page, ITEM);
 
-  await page.goto("/admin/professions");
+  await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
   await page.getByLabel(/^Slug/).fill(PROFESSION.slug);
   await page

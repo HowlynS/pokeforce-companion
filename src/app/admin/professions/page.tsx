@@ -1,33 +1,17 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { designTokens } from "@/lib/design-tokens";
+import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
-import { prisma } from "@/lib/db";
-import { RecordNameField } from "@/components/admin/record-name-field";
-import { createProfessionAction } from "./actions";
-import { checkProfessionNameAvailability } from "./name-availability";
 
 export const dynamic = "force-dynamic";
 
+// Create-form validation errors now surface on /admin/professions/new,
+// where the form lives; this landing state only reports outcomes that
+// redirect back to the list itself.
 const errorMessages: Record<string, string> = {
-  no_current_version:
-    "No Game Version is marked as current, so gameplay data cannot be marked as verified. Set the current version under Admin - Settings - Game Versions.",
-  invalid_game_version:
-    "The selected Game Version no longer exists, so gameplay data cannot be marked as verified. Refresh the page and try again.",
-  missing_name: "Profession name is required.",
-  invalid_slug:
-    "Enter a valid slug using lowercase letters, numbers, and hyphens.",
-  duplicate: "A profession with that name or slug already exists.",
-  duplicate_name: "A profession with that name already exists.",
   missing_profession: "That profession no longer exists.",
   linked_recipes:
     "That profession cannot be deleted while recipes are still assigned to it.",
-  image_too_large: "The image must be 5 MB or smaller.",
-  invalid_image_type: "Only PNG, JPEG, and WebP images are allowed.",
-  upload_failed: "The image could not be uploaded. Please try again.",
-  conflicting_image_input:
-    "Choose either a replacement image or Remove current image, not both.",
 };
 
 const successMessages: Record<string, string> = {
@@ -41,7 +25,7 @@ const successMessages: Record<string, string> = {
 };
 
 type AdminProfessionsPageProps = {
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{ q?: string; error?: string; success?: string }>;
 };
 
 export default async function AdminProfessionsPage({
@@ -51,144 +35,43 @@ export default async function AdminProfessionsPage({
   // admin layout, but also re-runs the check itself rather than assuming it.
   await requireAdminUser();
 
-  const { error, success } = await searchParams;
+  const { q, error, success } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const successMessage = success ? successMessages[success] ?? null : null;
 
-  const professions = await prisma.profession.findMany({
-    orderBy: { name: "asc" },
-  });
-
-  // Current version first, then newest — the same ordering the
-  // settings list uses; feeds the shared verification picker.
-  const gameVersions = await prisma.gameVersion.findMany({
-    orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
-  });
-
+  // The workspace landing state: the searchable record list beside a
+  // restrained guidance region — the create form lives on
+  // /admin/professions/new (Slice 9D.1, following the Item workspace's
+  // Slice 9B.4 and Recipe workspace's Slice 9C.1 precedent).
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Profession Management"
-        description="View existing professions and create new ones."
+    <ProfessionWorkspace
+      rawQuery={q}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Profession Management"
+            description="Select a profession to edit, or create a new one."
+          />
+
+          {errorMessage ? (
+            <p role="alert" className="banner banner-error">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          {successMessage ? (
+            <p role="status" className="banner banner-success">
+              {successMessage}
+            </p>
+          ) : null}
+        </>
+      }
+    >
+      <EmptyState
+        title="Select a profession"
+        description="Choose a profession from the list to edit its details — or use “+ New profession” to create one."
       />
-
-      <nav className="admin-toolbar" aria-label="Profession management">
-        <a href="/admin" className="link-accent">
-          &larr; Back to Admin
-        </a>
-
-        <a href="#create-profession" className="btn btn-secondary btn-compact">
-          + New profession
-        </a>
-      </nav>
-
-      {errorMessage ? (
-        <p role="alert" className="banner banner-error">
-          {errorMessage}
-        </p>
-      ) : null}
-
-      {successMessage ? (
-        <p role="status" className="banner banner-success">
-          {successMessage}
-        </p>
-      ) : null}
-
-      <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <h2 className="section-title">Existing Professions</h2>
-
-        {professions.length > 0 ? (
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  {["Name", "Slug", "Description", "Actions"].map((heading) => (
-                    <th key={heading}>{heading}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {professions.map((profession) => (
-                  <tr key={profession.id}>
-                    <td>{profession.name}</td>
-                    <td>{profession.slug}</td>
-                    <td>{profession.description ?? "—"}</td>
-                    <td>
-                      <span className="row-actions">
-                        <a
-                          href={`/admin/professions/${profession.slug}/edit`}
-                          className="link-accent"
-                        >
-                          Edit
-                        </a>
-                        <a
-                          href={`/admin/professions/${profession.slug}/delete`}
-                          className="link-danger"
-                        >
-                          Delete
-                        </a>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <EmptyState
-            title="No professions yet"
-            description="Create the first profession using the form below."
-          />
-        )}
-      </section>
-
-      <section id="create-profession">
-        <h2 className="section-title">Create Profession</h2>
-
-        <form action={createProfessionAction} className="form-grid">
-          {/* Client-enhanced Name field with live duplicate feedback; the
-              submission-time duplicate check in createProfessionAction
-              remains the authoritative protection. */}
-          <RecordNameField
-            checkAvailabilityAction={checkProfessionNameAvailability}
-            takenText="A profession with that name already exists."
-            regionId="profession-name-availability"
-          />
-
-          <label className="form-field">
-            <span className="form-field-label">
-              Slug (optional — generated from name if left blank)
-            </span>
-            <input type="text" name="slug" className="form-input" />
-          </label>
-
-          <label className="form-field">
-            <span className="form-field-label">Description (optional)</span>
-            <textarea name="description" rows={3} className="form-input" />
-          </label>
-
-          <label className="form-field">
-            <span className="form-field-label">
-              Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-            </span>
-            <input
-              type="file"
-              name="image"
-              accept="image/png,image/jpeg,image/webp"
-              className="form-input"
-            />
-          </label>
-
-          <GameVersionVerificationControls gameVersions={gameVersions} />
-
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Create Profession
-            </button>
-          </div>
-        </form>
-      </section>
-    </>
+    </ProfessionWorkspace>
   );
 }

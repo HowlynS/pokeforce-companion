@@ -1,6 +1,12 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
+import {
+  PROFESSION_LIST_PATH,
+  normalizeProfessionSearchQuery,
+  withProfessionSearchQuery,
+} from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
 import { deleteProfessionAction } from "../../actions";
 
@@ -8,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 type DeleteProfessionPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 function describeLinkedRecipes(count: number): string {
@@ -24,7 +30,8 @@ export default async function DeleteProfessionPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
+  const query = normalizeProfessionSearchQuery(q);
 
   const profession = await prisma.profession.findUnique({
     where: { slug },
@@ -38,30 +45,44 @@ export default async function DeleteProfessionPage({
   const recipeCount = profession._count.recipes;
   const canDelete = recipeCount === 0;
 
+  // The delete confirmation inside the Profession workspace (Slice
+  // 9D.1, following the Item workspace's Slice 9B.4 and Recipe
+  // workspace's Slice 9C.1 precedent): the record list marks this
+  // profession selected. The confirmation card, its summary, and the
+  // delete action are unchanged — only the navigation wrapper moved.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Delete Profession"
-        description={`Review before permanently deleting "${profession.name}".`}
-      />
+    <ProfessionWorkspace
+      rawQuery={q}
+      selectedSlug={profession.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Delete Profession"
+            description={`Review before permanently deleting "${profession.name}".`}
+          />
 
-      <p className="admin-toolbar">
-        <a href="/admin/professions" className="link-accent">
-          &larr; Back to Profession Management
-        </a>
-      </p>
+          <p className="admin-toolbar">
+            <a
+              href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+              className="link-accent"
+            >
+              &larr; Back to Profession Management
+            </a>
+          </p>
 
-      {error ? (
-        <p role="alert" className="banner banner-error">
-          {error === "linked_recipes"
-            ? `This profession cannot be deleted because it is assigned to ${describeLinkedRecipes(
-                recipeCount
-              )}.`
-            : "Something went wrong."}
-        </p>
-      ) : null}
-
+          {error ? (
+            <p role="alert" className="banner banner-error">
+              {error === "linked_recipes"
+                ? `This profession cannot be deleted because it is assigned to ${describeLinkedRecipes(
+                    recipeCount
+                  )}.`
+                : "Something went wrong."}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       <div className="confirm-card">
         <p>
           You are about to permanently delete{" "}
@@ -90,11 +111,14 @@ export default async function DeleteProfessionPage({
             </form>
           ) : null}
 
-          <a href="/admin/professions" className="btn btn-secondary">
+          <a
+            href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+            className="btn btn-secondary"
+          >
             Cancel
           </a>
         </div>
       </div>
-    </>
+    </ProfessionWorkspace>
   );
 }
