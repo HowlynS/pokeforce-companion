@@ -6,6 +6,7 @@ import {
   recipeDeleteHref,
   recipeEditHref,
   recipeEditorTabs,
+  recipeIngredientsHref,
   withRecipeSearchQuery,
 } from "@/lib/admin/recipe-workspace";
 
@@ -61,39 +62,81 @@ describe("recipe workspace hrefs", () => {
       "/admin/recipes/iron-sword/delete?q=iron"
     );
   });
+
+  it("builds the Ingredients tab route, preserving the query", () => {
+    expect(recipeIngredientsHref("iron-sword", "")).toBe(
+      "/admin/recipes/iron-sword/ingredients"
+    );
+    expect(recipeIngredientsHref("iron-sword", "iron")).toBe(
+      "/admin/recipes/iron-sword/ingredients?q=iron"
+    );
+  });
 });
 
 describe("recipeEditorTabs", () => {
-  it("marks General active as the only real destination, with Ingredients and Metadata disabled", () => {
-    const tabs = recipeEditorTabs("iron-sword", "");
+  it("marks General active and links Ingredients as a real tab, with Metadata disabled", () => {
+    const tabs = recipeEditorTabs("iron-sword", "", "general");
 
     expect(tabs).toEqual([
       { label: "General", href: "/admin/recipes/iron-sword/edit", active: true },
-      { label: "Ingredients", href: "", active: false, disabled: true },
+      {
+        label: "Ingredients",
+        href: "/admin/recipes/iron-sword/ingredients",
+        active: false,
+      },
       { label: "Metadata", href: "", active: false, disabled: true },
     ]);
   });
 
-  it("preserves the query on the General tab's own href", () => {
-    const tabs = recipeEditorTabs("iron-sword", "iron");
+  it("marks Ingredients active when that is the current tab", () => {
+    const tabs = recipeEditorTabs("iron-sword", "iron", "ingredients");
+
+    expect(tabs[1]).toEqual({
+      label: "Ingredients",
+      href: "/admin/recipes/iron-sword/ingredients?q=iron",
+      active: true,
+    });
+    expect(tabs[0].active).toBe(false);
+  });
+
+  it("preserves the query on each real tab's own href", () => {
+    const tabs = recipeEditorTabs("iron-sword", "iron", "general");
 
     expect(tabs[0]).toEqual({
       label: "General",
       href: "/admin/recipes/iron-sword/edit?q=iron",
       active: true,
     });
+    expect(tabs[1].href).toBe("/admin/recipes/iron-sword/ingredients?q=iron");
   });
 
-  it("marks exactly one tab active", () => {
-    const tabs = recipeEditorTabs("iron-sword", "");
-    expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+  it("marks exactly one tab active for every valid key", () => {
+    for (const active of ["general", "ingredients"] as const) {
+      const tabs = recipeEditorTabs("iron-sword", "", active);
+      expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+    }
   });
 
-  it("never renders Ingredients or Metadata as real links", () => {
-    const tabs = recipeEditorTabs("iron-sword", "");
-    const deferred = tabs.slice(1);
+  it("always renders Metadata as a disabled placeholder", () => {
+    for (const active of ["general", "ingredients"] as const) {
+      const tabs = recipeEditorTabs("iron-sword", "", active);
 
-    expect(deferred.every((tab) => tab.disabled)).toBe(true);
-    expect(deferred.every((tab) => tab.href === "")).toBe(true);
+      expect(tabs[2]).toEqual({
+        label: "Metadata",
+        href: "",
+        active: false,
+        disabled: true,
+      });
+    }
+  });
+
+  it("never renders General or Ingredients as disabled", () => {
+    for (const active of ["general", "ingredients"] as const) {
+      const tabs = recipeEditorTabs("iron-sword", "", active);
+      const realTabs = tabs.slice(0, 2);
+
+      expect(realTabs.every((tab) => !tab.disabled)).toBe(true);
+      expect(realTabs.every((tab) => tab.href !== "")).toBe(true);
+    }
   });
 });

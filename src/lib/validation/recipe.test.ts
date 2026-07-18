@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   RECIPE_INGREDIENT_ROW_COUNT,
   normalizeSlug,
+  parseRecipeGeneralInput,
+  parseRecipeIngredientsInput,
   parseRecipeInput,
 } from "@/lib/validation/recipe";
 
@@ -264,5 +266,91 @@ describe("parseRecipeInput", () => {
         ]);
       }
     });
+  });
+});
+
+// Slice 9C.3: the General editor and the Ingredients tab each parse only
+// their own half of the fields, via functions that reuse — never
+// re-implement — the exact field/row validation `parseRecipeInput` has
+// always used. These tests prove the delegation, not the underlying
+// per-field rules already exhaustively covered above.
+describe("parseRecipeGeneralInput", () => {
+  it("validates every non-ingredient field, ignoring any ingredient rows present", () => {
+    const result = parseRecipeGeneralInput(
+      formDataFrom({
+        ...validRecipeEntries(),
+        resultingQuantity: "3",
+        professionId: "prof-1",
+        requiredLevel: "5",
+      })
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        name: "Iron Ingot",
+        slug: "iron-ingot",
+        resultingItemId: "item-result",
+        resultingQuantity: 3,
+        professionId: "prof-1",
+        requiredLevel: 5,
+      },
+    });
+  });
+
+  it("rejects a missing name exactly like the full parser", () => {
+    const result = parseRecipeGeneralInput(
+      formDataFrom({ name: "  ", resultingItemId: "item-result" })
+    );
+
+    expect(result).toEqual({ ok: false, error: "missing_name" });
+  });
+
+  it("succeeds with no ingredient rows at all — ingredients are not its concern", () => {
+    const result = parseRecipeGeneralInput(
+      formDataFrom({ name: "Iron Ingot", resultingItemId: "item-result" })
+    );
+
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("parseRecipeIngredientsInput", () => {
+  it("collects valid ingredient rows, ignoring any non-ingredient fields present", () => {
+    const result = parseRecipeIngredientsInput(
+      formDataFrom({ ...validRecipeEntries(), name: "Ignored Name" })
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: { ingredients: [{ itemId: "item-a", quantity: 2 }] },
+    });
+  });
+
+  it("rejects a submission with no filled ingredient rows exactly like the full parser", () => {
+    const result = parseRecipeIngredientsInput(formDataFrom({}));
+
+    expect(result).toEqual({ ok: false, error: "no_ingredients" });
+  });
+
+  it("rejects the same ingredient item used twice", () => {
+    const result = parseRecipeIngredientsInput(
+      formDataFrom({
+        ingredientItemId1: "item-a",
+        ingredientQuantity1: "1",
+        ingredientItemId2: "item-a",
+        ingredientQuantity2: "2",
+      })
+    );
+
+    expect(result).toEqual({ ok: false, error: "duplicate_ingredient" });
+  });
+
+  it("succeeds with no name or resulting item at all — those are not its concern", () => {
+    const result = parseRecipeIngredientsInput(
+      formDataFrom({ ingredientItemId1: "item-a", ingredientQuantity1: "1" })
+    );
+
+    expect(result.ok).toBe(true);
   });
 });

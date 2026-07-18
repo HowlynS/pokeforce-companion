@@ -200,9 +200,10 @@ test("replacing the recipe image stores a new object and removes the old one", a
   expect(originalPath !== null).toBe(true);
   expect(await recipeImageObjectExists(originalPath as string)).toBe(true);
 
-  // Real edit form: attach the WebP replacement, leave the remove control
-  // untouched, keep every prefilled field and ingredient row as loaded so
-  // the recipe's relations stay valid.
+  // Real General edit form: attach the WebP replacement, leave the
+  // remove control untouched, keep every other prefilled field as
+  // loaded. Ingredients live on their own tab now (Slice 9C.3) and are
+  // untouched by this General-only save.
   await page.goto(`/admin/recipes/${RECIPE.slug}/edit`);
   await page
     .getByLabel(/^Replacement image \(optional/)

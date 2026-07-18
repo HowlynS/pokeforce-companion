@@ -60,6 +60,10 @@ test.describe("unauthenticated admin protection", () => {
     // The Slice 9C.1 dedicated Recipe creation route inside the Recipe
     // workspace, following the Item workspace's Slice 9B.4 precedent.
     "/admin/recipes/new",
+    // The Slice 9C.3 Ingredients tab (ingredient rows edited independently
+    // of the recipe's other fields); the seeded "iron-sword" slug is only
+    // ever read here, never modified.
+    "/admin/recipes/iron-sword/ingredients",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

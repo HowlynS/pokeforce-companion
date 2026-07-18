@@ -352,8 +352,9 @@ for the General tab; Slice 9B.6 (Acquisition Sources tab integration)
 complete; Slice 9B.7 (Used in Recipes tab) complete; Slice 9B.8 (Metadata
 tab) complete — the Item reference workspace is functionally complete;
 Slice 9C.1 (Recipe workspace navigation foundation) complete; Slice 9C.2
-(Recipe General editor conversion) complete — the Ingredients tab split
-and Recipe Metadata content remain pending; later slices not started
+(Recipe General editor conversion) complete; Slice 9C.3 (Recipe
+Ingredients tab) complete — Recipe Metadata content remains pending;
+later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -866,12 +867,78 @@ workspace.
 - [x] No Ingredients tab, no Metadata content, and no other resource
       workspace was converted
 
+### Slice 9C.3 — Recipe Ingredients tab (complete, 2026-07-18)
+
+- [x] `/admin/recipes/[slug]/ingredients` is a new, real, independent
+      Recipe tab holding the ingredient rows moved out of General —
+      rendering inside `RecipeWorkspace` exactly like General (record list
+      visible, current recipe selected, `EditorHeader` with the recipe's
+      own name, quick switching via a new `recipeIngredientsHref`
+      passed as `RecipeWorkspace`'s `recordHref`); `recipeEditorTabs` now
+      takes an `active: "general" | "ingredients"` key (mirroring
+      `itemEditorTabs`) so General and Ingredients are both real links on
+      both routes, with Metadata still the only disabled placeholder
+- [x] General's ingredient `<fieldset>` (five fixed rows, unchanged
+      markup) moved unmodified to the new route; General's
+      `tooManyIngredients` guard is GONE — General is now always fully
+      editable regardless of ingredient count, a deliberate improvement
+      over the prior all-or-nothing behavior, since ingredients no longer
+      live there. The guard moved to Ingredients only (identical wording,
+      adjusted from "the edit form" to "this form"); a Delete Recipe link
+      in Ingredients' own `EditorHeader` `actions` slot stays reachable
+      there too, exactly like General's
+- [x] Ingredients renders no `ImagePanel`/`VerificationPanel`/
+      `TimestampsPanel` — none apply to ingredient rows
+- [x] `updateRecipeAction` was replaced by two narrow actions in
+      `src/app/admin/recipes/actions.ts`: `updateRecipeGeneralAction` (a
+      single `prisma.recipe.update()` covering every field except
+      ingredients, never touching `RecipeIngredient`) and
+      `updateRecipeIngredientsAction` (the same delete-then-recreate
+      `prisma.$transaction([deleteMany, createMany])` shape the old
+      action used, scoped to `RecipeIngredient` only, plus a
+      defense-in-depth capacity re-check so a tampered request can never
+      truncate an already-over-capacity recipe down to 5 rows)
+- [x] Both actions reuse — never reimplement — validation:
+      `src/lib/validation/recipe.ts` extracts a private
+      `parseRecipeGeneralFields` helper that the unchanged
+      `parseRecipeInput` (still the create page's parser, untouched), the
+      new exported `parseRecipeGeneralInput`, and the new exported
+      `parseRecipeIngredientsInput` (wrapping the existing private
+      `parseIngredientRows`) all share — one implementation of every
+      field/row rule, error code, capacity limit, and duplicate-item check
+- [x] A normal General save leaves ingredients byte-for-byte untouched; a
+      normal Ingredients save leaves name/slug/resulting item/profession/
+      required level/image/verification byte-for-byte untouched — proven
+      by dedicated integration tests (`database-relations.integration.test.ts`)
+      and E2E tests
+- [x] The create page and its embedded ingredients are completely
+      untouched — ingredients remain embedded there until the record
+      exists, matching the Item workspace's established create-page
+      precedent
+- [x] Tests: pure-function coverage for `recipeIngredientsHref` and the
+      extended `recipeEditorTabs` (Ingredients active state,
+      exactly-one-active across both keys, Metadata always disabled);
+      new `parseRecipeGeneralInput`/`parseRecipeIngredientsInput` unit
+      tests proving delegation without re-testing every already-covered
+      per-field rule; new integration tests for both actions' exact write
+      shapes (General preserves ingredients/image/verification;
+      Ingredients preserves name/image/required level/verification;
+      rollback safety) replacing the stale combined-transaction tests;
+      `admin-recipes.spec.ts` split the old combined edit test into
+      separate General-only and Ingredients-only save tests, updated the
+      tabs test for both routes, moved the five/six-ingredient prefill and
+      capacity-guard checks to Ingredients, added a General-remains-
+      editable-for-an-over-capacity-recipe assertion, and added new tests
+      for Ingredients-page validation errors and cross-recipe switching
+      while on Ingredients; the protection spec extended with
+      `/admin/recipes/[slug]/ingredients`
+- [x] No Metadata content and no other resource workspace was converted
+
 ### Remaining (not started)
 
-- [ ] The Ingredients tab split, Recipe Metadata content, every other
-      resource workspace conversion, dashboard summaries, and Route Hubs
-      — do not begin until explicitly instructed in the milestone
-      conversation
+- [ ] Recipe Metadata content, every other resource workspace conversion,
+      dashboard summaries, and Route Hubs — do not begin until explicitly
+      instructed in the milestone conversation
 
 ---
 

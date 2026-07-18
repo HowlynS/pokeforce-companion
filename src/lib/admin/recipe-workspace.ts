@@ -10,8 +10,13 @@
 // ids never appear in URLs.
 //
 // Slice 9C.2 (General editor conversion) added `recipeEditorTabs`: General
-// is the only real tab so far — Ingredients (still embedded in General)
-// and Metadata (not yet implemented) render as disabled placeholders.
+// was the only real tab — Ingredients (still embedded in General) and
+// Metadata (not yet implemented) rendered as disabled placeholders.
+//
+// Slice 9C.3 (Ingredients tab) made Ingredients a real, independent
+// destination too: `recipeEditorTabs` now takes an `active` key (General
+// or Ingredients) exactly like the Item workspace's `itemEditorTabs`.
+// Metadata remains the only disabled placeholder.
 
 export const RECIPE_LIST_PATH = "/admin/recipes";
 export const RECIPE_CREATE_PATH = "/admin/recipes/new";
@@ -51,6 +56,13 @@ export function recipeDeleteHref(slug: string, query: string): string {
   return withRecipeSearchQuery(`${RECIPE_LIST_PATH}/${slug}/delete`, query);
 }
 
+/** The Ingredients tab route for one recipe, preserving the query (Slice
+    9C.3) — the recipe's ingredient rows, edited independently of its
+    other fields. */
+export function recipeIngredientsHref(slug: string, query: string): string {
+  return withRecipeSearchQuery(`${RECIPE_LIST_PATH}/${slug}/ingredients`, query);
+}
+
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
     component into this pure, React-free module. */
@@ -61,19 +73,39 @@ export type RecipeEditorTab = {
   disabled?: boolean;
 };
 
+/** Which Recipe editor tab is active — General (Slice 9C.2) or
+    Ingredients (Slice 9C.3). Metadata has no content yet, so
+    `recipeEditorTabs` always renders it as an inert placeholder
+    regardless of this value. */
+export type RecipeEditorTabKey = "general" | "ingredients";
+
 /**
- * The Recipe edit route's tab strip (Slice 9C.2): General is the only
- * real destination this slice — Ingredients (still embedded in General;
- * a dedicated tab is a later slice) and Metadata (not yet implemented)
- * render as disabled placeholders, never links to empty pages. The
- * create page shows only General with no placeholders at all (mirroring
- * the Item workspace's create-page precedent), so this helper is
- * deliberately edit-only.
+ * The Recipe edit/ingredients routes' shared tab strip (Slice 9C.3,
+ * extending Slice 9C.2's `recipeEditorTabs`): General and Ingredients
+ * are both real, independent destinations now — one function so their
+ * hrefs/active state can never drift out of sync between the two pages,
+ * exactly like the Item workspace's `itemEditorTabs`. Metadata has no
+ * destination yet, so it renders as a disabled placeholder — never a
+ * fake link to an empty page. The create page shows only General with
+ * no placeholders at all (mirroring the Item workspace's create-page
+ * precedent), so this helper is deliberately edit-only.
  */
-export function recipeEditorTabs(slug: string, query: string): RecipeEditorTab[] {
+export function recipeEditorTabs(
+  slug: string,
+  query: string,
+  active: RecipeEditorTabKey
+): RecipeEditorTab[] {
   return [
-    { label: "General", href: recipeEditHref(slug, query), active: true },
-    { label: "Ingredients", href: "", active: false, disabled: true },
+    {
+      label: "General",
+      href: recipeEditHref(slug, query),
+      active: active === "general",
+    },
+    {
+      label: "Ingredients",
+      href: recipeIngredientsHref(slug, query),
+      active: active === "ingredients",
+    },
     { label: "Metadata", href: "", active: false, disabled: true },
   ];
 }

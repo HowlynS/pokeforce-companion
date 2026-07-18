@@ -24,18 +24,24 @@ import {
 type RecipeWorkspaceProps = {
   /** Raw ?q= value from the page's searchParams; normalized here. */
   rawQuery?: string;
-  /** Slug of the recipe open in the editor (edit/delete routes) — marks
-      the selected row. Landing and create pages pass nothing. */
+  /** Slug of the recipe open in the editor (edit/ingredients/delete
+      routes) — marks the selected row. Landing and create pages pass
+      nothing. */
   selectedSlug?: string;
   /** The page's header region (PageHeader plus any toolbar/banners). */
   header: React.ReactNode;
   /** The page's main content (guidance state, create form, edit form, or
       delete confirmation). */
   children: React.ReactNode;
-  /** Optional contextual side panel, unused in this pass — reserved for
-      a later slice (image/verification panels), matching the slot
-      AdminWorkspace already exposes. */
+  /** Optional contextual side panel — image/verification/timestamps
+      panels on the General editor; unused elsewhere. */
   aside?: React.ReactNode;
+  /** Builds each record row's link (Slice 9C.3) — defaults to the
+      General edit route. The Ingredients route passes
+      `recipeIngredientsHref` so quick switching between recipes while on
+      that tab opens the next recipe's Ingredients tab instead of
+      dropping back to General. */
+  recordHref?: (slug: string, query: string) => string;
 };
 
 export async function RecipeWorkspace({
@@ -44,6 +50,7 @@ export async function RecipeWorkspace({
   header,
   children,
   aside,
+  recordHref = recipeEditHref,
 }: RecipeWorkspaceProps) {
   const query = normalizeRecipeSearchQuery(rawQuery);
 
@@ -65,7 +72,7 @@ export async function RecipeWorkspace({
   });
 
   const rows = recipes.map((recipe) => ({
-    href: recipeEditHref(recipe.slug, query),
+    href: recordHref(recipe.slug, query),
     primary: recipe.name,
     secondary: recipe.resultingItem.name,
     selected: recipe.slug === selectedSlug,

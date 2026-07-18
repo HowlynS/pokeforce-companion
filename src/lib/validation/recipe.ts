@@ -16,6 +16,16 @@ export type RecipeInput = {
   ingredients: RecipeIngredientInput[];
 };
 
+/** The Recipe General editor's own field set (Slice 9C.3) — everything
+    `RecipeInput` carries except `ingredients`, which now belongs to the
+    separate Ingredients tab. */
+export type RecipeGeneralInput = Omit<RecipeInput, "ingredients">;
+
+/** Ingredients tab's own field set (Slice 9C.3) — nothing but the rows. */
+export type RecipeIngredientsInput = {
+  ingredients: RecipeIngredientInput[];
+};
+
 export type RecipeValidationError =
   | "missing_name"
   | "invalid_slug"
@@ -29,6 +39,14 @@ export type RecipeValidationError =
 
 export type RecipeParseResult =
   | { ok: true; value: RecipeInput }
+  | { ok: false; error: RecipeValidationError };
+
+export type RecipeGeneralParseResult =
+  | { ok: true; value: RecipeGeneralInput }
+  | { ok: false; error: RecipeValidationError };
+
+export type RecipeIngredientsParseResult =
+  | { ok: true; value: RecipeIngredientsInput }
   | { ok: false; error: RecipeValidationError };
 
 export function normalizeSlug(value: string): string {
@@ -89,7 +107,11 @@ function parseIngredientRows(formData: FormData): IngredientRowsResult {
   return { ok: true, value: ingredients };
 }
 
-export function parseRecipeInput(formData: FormData): RecipeParseResult {
+// Every field EXCEPT ingredients — shared by the full parser (create page,
+// which still submits everything together) and the General-only parser
+// (Slice 9C.3's edit page, which never touches ingredients). Extracted
+// once so the two callers can never validate these fields differently.
+function parseRecipeGeneralFields(formData: FormData): RecipeGeneralParseResult {
   const name = String(formData.get("name") ?? "").trim();
   const rawSlug = String(formData.get("slug") ?? "").trim();
   const resultingItemId = String(formData.get("resultingItemId") ?? "").trim();
@@ -142,12 +164,6 @@ export function parseRecipeInput(formData: FormData): RecipeParseResult {
     requiredLevel = parsedRequiredLevel;
   }
 
-  const ingredientsResult = parseIngredientRows(formData);
-
-  if (!ingredientsResult.ok) {
-    return { ok: false, error: ingredientsResult.error };
-  }
-
   return {
     ok: true,
     value: {
@@ -157,8 +173,50 @@ export function parseRecipeInput(formData: FormData): RecipeParseResult {
       resultingQuantity,
       professionId: professionId || null,
       requiredLevel,
-      ingredients: ingredientsResult.value,
     },
+  };
+}
+
+/** The Recipe General editor's own parser (Slice 9C.3): every field
+    except ingredients, reusing the exact field-by-field validation
+    `parseRecipeInput` has always used — never a second implementation. */
+export function parseRecipeGeneralInput(
+  formData: FormData
+): RecipeGeneralParseResult {
+  return parseRecipeGeneralFields(formData);
+}
+
+/** The Ingredients tab's own parser (Slice 9C.3): reuses the exact same
+    row-parsing/deduplication/limit logic `parseRecipeInput` has always
+    used, wrapped for a caller that only ever supplies ingredient rows. */
+export function parseRecipeIngredientsInput(
+  formData: FormData
+): RecipeIngredientsParseResult {
+  const ingredientsResult = parseIngredientRows(formData);
+
+  if (!ingredientsResult.ok) {
+    return { ok: false, error: ingredientsResult.error };
+  }
+
+  return { ok: true, value: { ingredients: ingredientsResult.value } };
+}
+
+export function parseRecipeInput(formData: FormData): RecipeParseResult {
+  const generalResult = parseRecipeGeneralFields(formData);
+
+  if (!generalResult.ok) {
+    return generalResult;
+  }
+
+  const ingredientsResult = parseIngredientRows(formData);
+
+  if (!ingredientsResult.ok) {
+    return { ok: false, error: ingredientsResult.error };
+  }
+
+  return {
+    ok: true,
+    value: { ...generalResult.value, ingredients: ingredientsResult.value },
   };
 }
 

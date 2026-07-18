@@ -409,39 +409,121 @@ describe("database relations (integration)", () => {
   });
 
   describe("recipe transaction atomicity", () => {
-    it("updates the recipe and replaces its ingredient set in one transaction", async () => {
+    // Slice 9C.3 split the recipe/ingredient update into two independent
+    // actions — updateRecipeGeneralAction (Recipe's own fields only) and
+    // updateRecipeIngredientsAction (RecipeIngredient rows only) — so
+    // these tests exercise each action's EXACT write shape separately,
+    // proving neither one reaches into the other's data.
+    it("updateRecipeGeneralAction's shape: updates the recipe's own fields without touching its ingredients", async () => {
       const prisma = await getVerifiedTestPrisma();
 
       const resultItem = await prisma.item.create({
-        data: { name: "Relations Test Txn Result", slug: `${P}txn-result` },
+        data: { name: "Relations Test General Result", slug: `${P}general-result` },
       });
-      const oldIngredient = await prisma.item.create({
-        data: { name: "Relations Test Txn Old Ingredient", slug: `${P}txn-old-ingredient` },
-      });
-      const newIngredient = await prisma.item.create({
-        data: { name: "Relations Test Txn New Ingredient", slug: `${P}txn-new-ingredient` },
+      const ingredientItem = await prisma.item.create({
+        data: { name: "Relations Test General Ingredient", slug: `${P}general-ingredient` },
       });
       const recipe = await prisma.recipe.create({
         data: {
-          name: "Relations Test Txn Recipe",
-          slug: `${P}txn-recipe`,
+          name: "Relations Test General Recipe",
+          slug: `${P}general-recipe`,
           resultingItemId: resultItem.id,
+          ingredients: {
+            create: [{ itemId: ingredientItem.id, quantity: 1 }],
+          },
+        },
+      });
+
+      // The exact write shape updateRecipeGeneralAction performs: a
+      // single Recipe update, no RecipeIngredient statement at all.
+      await prisma.recipe.update({
+        where: { id: recipe.id },
+        data: { name: "Relations Test General Recipe Updated", requiredLevel: 5 },
+      });
+
+      const updated = await prisma.recipe.findUnique({
+        where: { id: recipe.id },
+        include: { ingredients: true },
+      });
+      expect(updated?.name).toBe("Relations Test General Recipe Updated");
+      expect(updated?.requiredLevel).toBe(5);
+      // The ingredient row set is byte-for-byte untouched — same item,
+      // same quantity, same row.
+      expect(updated?.ingredients).toHaveLength(1);
+      expect(updated?.ingredients[0]?.itemId).toBe(ingredientItem.id);
+      expect(updated?.ingredients[0]?.quantity).toBe(1);
+    });
+
+    it("updateRecipeGeneralAction's shape: preserves the stored image path and verification stamp", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const resultItem = await prisma.item.create({
+        data: { name: "Relations Test General Verified Result", slug: `${P}general-verified-result` },
+      });
+      const version = await prisma.gameVersion.create({
+        data: { name: `${GAME_VERSION_TEST_NAME_PREFIX}relations-general` },
+      });
+      const stampedAt = new Date();
+      const recipe = await prisma.recipe.create({
+        data: {
+          name: "Relations Test General Verified Recipe",
+          slug: `${P}general-verified-recipe`,
+          image: "recipes/relations-general-verified.png",
+          resultingItemId: resultItem.id,
+          verifiedAt: stampedAt,
+          verifiedGameVersionId: version.id,
+        },
+      });
+
+      // The exact write shape of a NORMAL General save: image and
+      // verification fields are omitted entirely (an untouched image
+      // control, an unchecked verification checkbox), so Prisma must
+      // leave them untouched while only the submitted field changes.
+      const edited = await prisma.recipe.update({
+        where: { id: recipe.id },
+        data: { requiredLevel: 7 },
+      });
+
+      expect(edited.requiredLevel).toBe(7);
+      expect(edited.image).toBe("recipes/relations-general-verified.png");
+      expect(edited.verifiedAt?.getTime()).toBe(stampedAt.getTime());
+      expect(edited.verifiedGameVersionId).toBe(version.id);
+    });
+
+    it("updateRecipeIngredientsAction's shape: replaces the ingredient set in one transaction without touching the recipe's own fields", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const resultItem = await prisma.item.create({
+        data: { name: "Relations Test Ingredients Txn Result", slug: `${P}ingredients-txn-result` },
+      });
+      const oldIngredient = await prisma.item.create({
+        data: { name: "Relations Test Ingredients Txn Old", slug: `${P}ingredients-txn-old` },
+      });
+      const newIngredient = await prisma.item.create({
+        data: { name: "Relations Test Ingredients Txn New", slug: `${P}ingredients-txn-new` },
+      });
+      const version = await prisma.gameVersion.create({
+        data: { name: `${GAME_VERSION_TEST_NAME_PREFIX}relations-ingredients` },
+      });
+      const stampedAt = new Date();
+      const recipe = await prisma.recipe.create({
+        data: {
+          name: "Relations Test Ingredients Txn Recipe",
+          slug: `${P}ingredients-txn-recipe`,
+          image: "recipes/relations-ingredients-txn.png",
+          requiredLevel: 9,
+          resultingItemId: resultItem.id,
+          verifiedAt: stampedAt,
+          verifiedGameVersionId: version.id,
           ingredients: {
             create: [{ itemId: oldIngredient.id, quantity: 1 }],
           },
         },
       });
 
-      // The exact update-delete-recreate transaction updateRecipeAction
-      // performs.
+      // The exact write shape updateRecipeIngredientsAction performs: a
+      // delete-then-recreate transaction touching ONLY RecipeIngredient.
       await prisma.$transaction([
-        prisma.recipe.update({
-          where: { id: recipe.id },
-          data: {
-            name: "Relations Test Txn Recipe Updated",
-            requiredLevel: 5,
-          },
-        }),
         prisma.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } }),
         prisma.recipeIngredient.createMany({
           data: [{ recipeId: recipe.id, itemId: newIngredient.id, quantity: 3 }],
@@ -452,14 +534,18 @@ describe("database relations (integration)", () => {
         where: { id: recipe.id },
         include: { ingredients: true },
       });
-      expect(updated?.name).toBe("Relations Test Txn Recipe Updated");
-      expect(updated?.requiredLevel).toBe(5);
       expect(updated?.ingredients).toHaveLength(1);
       expect(updated?.ingredients[0]?.itemId).toBe(newIngredient.id);
       expect(updated?.ingredients[0]?.quantity).toBe(3);
+      // Every non-ingredient field is byte-for-byte untouched.
+      expect(updated?.name).toBe("Relations Test Ingredients Txn Recipe");
+      expect(updated?.image).toBe("recipes/relations-ingredients-txn.png");
+      expect(updated?.requiredLevel).toBe(9);
+      expect(updated?.verifiedAt?.getTime()).toBe(stampedAt.getTime());
+      expect(updated?.verifiedGameVersionId).toBe(version.id);
     });
 
-    it("rolls back the update and ingredient deletion when the recreate step fails", async () => {
+    it("rolls back the ingredient replacement transaction when the recreate step fails, leaving the recipe's own fields untouched", async () => {
       const prisma = await getVerifiedTestPrisma();
 
       const resultItem = await prisma.item.create({
@@ -483,17 +569,14 @@ describe("database relations (integration)", () => {
         },
       });
 
-      // Same transaction shape, but the createMany deliberately violates
-      // the real @@unique([recipeId, itemId]) constraint by inserting the
-      // same ingredient item twice — a deterministic, schema-backed
-      // database failure, not a mock.
+      // The exact transaction shape updateRecipeIngredientsAction runs,
+      // but the createMany deliberately violates the real
+      // @@unique([recipeId, itemId]) constraint by inserting the same
+      // ingredient item twice — a deterministic, schema-backed database
+      // failure, not a mock.
       let caught: unknown = null;
       try {
         await prisma.$transaction([
-          prisma.recipe.update({
-            where: { id: recipe.id },
-            data: { name: "Relations Test Rollback NEVER APPLIED", requiredLevel: 99 },
-          }),
           prisma.recipeIngredient.deleteMany({
             where: { recipeId: recipe.id },
           }),
@@ -514,8 +597,10 @@ describe("database relations (integration)", () => {
       );
       expect(isUniqueConstraintError(caught)).toBe(true);
 
-      // Every step rolled back: the recipe fields are untouched and the
-      // original ingredient row survived the deleteMany.
+      // The deleteMany step rolled back along with the failed createMany:
+      // the original ingredient row survived, and the recipe's own
+      // fields (never part of this transaction to begin with) are
+      // trivially untouched — no silent truncation on failure.
       const preserved = await prisma.recipe.findUnique({
         where: { id: recipe.id },
         include: { ingredients: true },

@@ -219,7 +219,7 @@ test("Create recipe opens the dedicated creation route", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("Recipe editor tabs: create shows only General; edit marks General active with Ingredients and Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
+test("Recipe editor tabs: create shows only General; edit and ingredients mark their own tab active with the other real and Metadata inert; exactly one h1 renders; Timestamps render on General edit only", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -248,9 +248,10 @@ test("Recipe editor tabs: create shows only General; edit marks General active w
     ingredients: [{ item: "Iron Ore", quantity: "1" }],
   });
 
-  // --- Edit: exactly one h1 (the recipe's own name), General active,
-  // Ingredients/Metadata inert placeholders (never links to empty pages),
-  // Timestamps now present (Created/Updated, no Verified stamp yet) -----
+  // --- General edit: exactly one h1 (the recipe's own name), General
+  // active, Ingredients a REAL tab (Slice 9C.3), Metadata still the only
+  // inert placeholder, Timestamps present (Created/Updated, no Verified
+  // stamp yet) -------------------------------------------------------------
   await recordRow(page, "Test E2E Recipe Tabs").click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -270,11 +271,8 @@ test("Recipe editor tabs: create shows only General; edit marks General active w
   ).toHaveAttribute("aria-current", "page");
   await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
   await expect(
-    editTabNav.getByText("Ingredients", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
     editTabNav.getByRole("link", { name: "Ingredients", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
     editTabNav.getByText("Metadata", { exact: true })
   ).toHaveAttribute("aria-disabled", "true");
@@ -291,6 +289,61 @@ test("Recipe editor tabs: create shows only General; edit marks General active w
   await expect(panelRow(page, "Timestamps", "Created")).toBeVisible();
   await expect(panelRow(page, "Timestamps", "Updated")).toBeVisible();
   await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
+  // Ingredient rows are gone from General — moved entirely to the
+  // Ingredients tab (Slice 9C.3).
+  await expect(
+    page.getByRole("group", { name: "Ingredients (fill at least one row)" })
+  ).toHaveCount(0);
+
+  // --- Ingredients: exactly one h1 (still the recipe's own name),
+  // Ingredients active, General a REAL tab back, Metadata still inert, NO
+  // Image/Verification/Timestamps panels (nothing to do with ingredients) -
+  await editTabNav
+    .getByRole("link", { name: "Ingredients", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-tabs/ingredients"
+  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Recipe Tabs",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  const ingredientsTabNav = page.getByRole("navigation", {
+    name: "Recipe editor sections",
+  });
+  await expect(
+    ingredientsTabNav.getByRole("link", { name: "Ingredients", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    ingredientsTabNav.locator('[aria-current="page"]')
+  ).toHaveCount(1);
+  await expect(
+    ingredientsTabNav.getByRole("link", { name: "General", exact: true })
+  ).toBeVisible();
+  await expect(
+    ingredientsTabNav.getByText("Metadata", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    ingredientsTabNav.getByRole("link", { name: "Metadata", exact: true })
+  ).toHaveCount(0);
+
+  await expect(
+    page.getByRole("group", { name: "Ingredients (fill at least one row)" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Verification", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toHaveCount(0);
 });
 
 test("recipe creation renders result, profession, and ingredients publicly", async ({
@@ -362,7 +415,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   await expect(page.getByText("No image available")).toBeVisible();
 });
 
-test("recipe editing prefills ingredients and applies the transactional update", async ({
+test("General editing updates its own fields and leaves ingredients byte-for-byte untouched", async ({
   page,
 }) => {
   await page.goto("/admin/recipes/new");
@@ -378,7 +431,7 @@ test("recipe editing prefills ingredients and applies the transactional update",
     ],
   });
 
-  // --- Open the edit form and verify every prefilled value --------------
+  // --- Open the General edit form and verify every prefilled value ------
   // Quick switching: the record-list row itself is the edit link, and the
   // open record is marked selected (aria-current) in the list.
   await recordRow(page, "Test E2E Recipe").click();
@@ -415,22 +468,14 @@ test("recipe editing prefills ingredients and applies the transactional update",
     )
   ).toBe("Smithing");
   await expect(page.getByLabel(/^Required level/)).toHaveValue("3");
+  // Ingredients moved entirely to their own tab (Slice 9C.3) — no
+  // ingredient group renders on General any more.
+  await expect(
+    page.getByRole("group", { name: "Ingredients (fill at least one row)" })
+  ).toHaveCount(0);
 
-  // Ingredient rows prefill in item-name order: Charcoal, then Iron Ore,
-  // then three untouched empty rows.
-  expect(await selectedOptionLabel(ingredientSelect(page, 0))).toBe("Charcoal");
-  await expect(ingredientQuantity(page, 0)).toHaveValue("1");
-  expect(await selectedOptionLabel(ingredientSelect(page, 1))).toBe("Iron Ore");
-  await expect(ingredientQuantity(page, 1)).toHaveValue("2");
-  for (const row of [2, 3, 4]) {
-    expect(await selectedOptionLabel(ingredientSelect(page, row))).toBe(
-      "No ingredient"
-    );
-    await expect(ingredientQuantity(page, row)).toHaveValue("");
-  }
-
-  // --- Change name, slug, result, profession (to none), level, and both
-  // --- ingredient rows; image untouched ---------------------------------
+  // --- Change name, slug, result, profession (to none), and level;
+  // --- ingredients and image untouched -----------------------------------
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Updated");
   await page.getByLabel("Slug", { exact: true }).fill("test-e2e-recipe-updated");
   await page
@@ -443,10 +488,6 @@ test("recipe editing prefills ingredients and applies the transactional update",
     .getByRole("combobox", { name: "Profession", exact: true })
     .selectOption({ label: "No profession" });
   await page.getByLabel(/^Required level/).fill("");
-  await ingredientSelect(page, 0).selectOption({ label: "Wood" });
-  await ingredientQuantity(page, 0).fill("4");
-  await ingredientSelect(page, 1).selectOption({ label: "Spring Water" });
-  await ingredientQuantity(page, 1).fill("5");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/recipes?success=updated");
@@ -465,7 +506,9 @@ test("recipe editing prefills ingredients and applies the transactional update",
   const staleResponse = await page.goto("/recipes/test-e2e-recipe");
   expect(staleResponse?.status()).toBe(404);
 
-  // ...and the new public detail page renders the fully replaced data.
+  // ...and the new public detail page renders the changed General fields
+  // — but the SAME, untouched ingredients: a General-only save must never
+  // reach the RecipeIngredient table.
   await page.goto("/recipes/test-e2e-recipe-updated");
   await expect(
     page.getByRole("heading", {
@@ -483,10 +526,103 @@ test("recipe editing prefills ingredients and applies the transactional update",
   // no-profession fallback.
   await expect(page.getByText("Profession: None", { exact: true })).toBeVisible();
   await expect(
+    cardLink(page, "Charcoal").getByText("1x required.")
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Iron Ore").getByText("2x required.")
+  ).toBeVisible();
+});
+
+test("Ingredients editing updates the ingredient rows and leaves General fields byte-for-byte untouched", async ({
+  page,
+}) => {
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Ingredients",
+    slug: "test-e2e-recipe-ingredients",
+    resultingItem: "Iron Ingot",
+    profession: "Smithing",
+    requiredLevel: "3",
+    ingredients: [
+      { item: "Iron Ore", quantity: "2" },
+      { item: "Charcoal", quantity: "1" },
+    ],
+  });
+
+  // --- Open the Ingredients tab and verify every prefilled value --------
+  await recordRow(page, "Test E2E Recipe Ingredients").click();
+  await page
+    .getByRole("navigation", { name: "Recipe editor sections" })
+    .getByRole("link", { name: "Ingredients", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-ingredients/ingredients"
+  );
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Recipe Ingredients",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  // Ingredient rows prefill in item-name order: Charcoal, then Iron Ore,
+  // then three untouched empty rows.
+  expect(await selectedOptionLabel(ingredientSelect(page, 0))).toBe("Charcoal");
+  await expect(ingredientQuantity(page, 0)).toHaveValue("1");
+  expect(await selectedOptionLabel(ingredientSelect(page, 1))).toBe("Iron Ore");
+  await expect(ingredientQuantity(page, 1)).toHaveValue("2");
+  for (const row of [2, 3, 4]) {
+    expect(await selectedOptionLabel(ingredientSelect(page, row))).toBe(
+      "No ingredient"
+    );
+    await expect(ingredientQuantity(page, row)).toHaveValue("");
+  }
+
+  // --- Replace both ingredient rows; every other field untouched --------
+  await ingredientSelect(page, 0).selectOption({ label: "Wood" });
+  await ingredientQuantity(page, 0).fill("4");
+  await ingredientSelect(page, 1).selectOption({ label: "Spring Water" });
+  await ingredientQuantity(page, 1).fill("5");
+  await page
+    .getByRole("button", { name: "Save Ingredients", exact: true })
+    .click();
+
+  await expect(page).toHaveURL("/admin/recipes?success=updated");
+  await expect(page.getByRole("status")).toHaveText("Recipe updated.");
+
+  // The list still shows the SAME name and resulting item — an
+  // ingredients-only save never touches them.
+  const unchangedRow = recordRow(page, "Test E2E Recipe Ingredients");
+  await expect(unchangedRow).toBeVisible();
+  await expect(
+    unchangedRow.getByText("Iron Ingot", { exact: true })
+  ).toBeVisible();
+
+  // The public route is unchanged (the slug never moved)...
+  await page.goto("/recipes/test-e2e-recipe-ingredients");
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Recipe Ingredients",
+      exact: true,
+    })
+  ).toBeVisible();
+  // ...and every General field (result, profession, required level) is
+  // byte-for-byte the same as before...
+  await expect(
+    cardLink(page, "Result: Iron Ingot").getByText(
+      "Yields 1x Iron Ingot (Components)."
+    )
+  ).toBeVisible();
+  await expect(
+    page.getByText("Profession: Smithing · Required level: 3")
+  ).toBeVisible();
+  // ...but the ingredients are fully replaced.
+  await expect(
     cardLink(page, "Spring Water").getByText("5x required.")
   ).toBeVisible();
   await expect(cardLink(page, "Wood").getByText("4x required.")).toBeVisible();
-  // The replaced ingredients are gone.
   await expect(cardLink(page, "Charcoal")).toHaveCount(0);
   await expect(cardLink(page, "Iron Ore")).toHaveCount(0);
 });
@@ -627,6 +763,54 @@ test("selecting the same ingredient twice is rejected server-side", async ({
   expect((await readFixtureCounts()).recipeIngredients).toBe(15);
 });
 
+test("Ingredients editing rejects invalid submissions exactly like creation, with no General field touched", async ({
+  page,
+}) => {
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Ingredients Invalid",
+    slug: "test-e2e-recipe-ingredients-invalid",
+    resultingItem: "Iron Ingot",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+
+  await page.goto(
+    "/admin/recipes/test-e2e-recipe-ingredients-invalid/ingredients"
+  );
+
+  // A duplicate ingredient item is rejected server-side, exactly like the
+  // create form — the same shared parser, reached through a different
+  // action.
+  await ingredientSelect(page, 1).selectOption({ label: "Iron Ore" });
+  await ingredientQuantity(page, 1).fill("2");
+  await page
+    .getByRole("button", { name: "Save Ingredients", exact: true })
+    .click();
+
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-ingredients-invalid/ingredients?error=duplicate_ingredient"
+  );
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: "Each ingredient can only be added once." })
+  ).toBeVisible();
+
+  // The rejected submission changed nothing: the original single
+  // ingredient survives, and the recipe's own name is untouched.
+  await page.goto("/recipes/test-e2e-recipe-ingredients-invalid");
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Recipe Ingredients Invalid",
+      exact: true,
+    })
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Iron Ore").getByText("1x required.")
+  ).toBeVisible();
+});
+
 test("the form supports exactly five ingredient rows and guards larger recipes", async ({
   page,
 }) => {
@@ -655,8 +839,8 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
   await expect(cardLink(page, "Iron Ore").getByText("4x required.")).toBeVisible();
   await expect(cardLink(page, "Wood").getByText("5x required.")).toBeVisible();
 
-  // ...and the edit form prefills all five rows (item-name order).
-  await page.goto("/admin/recipes/test-e2e-recipe-five/edit");
+  // ...and the Ingredients tab prefills all five rows (item-name order).
+  await page.goto("/admin/recipes/test-e2e-recipe-five/ingredients");
   const expectedRows: Array<[string, string]> = [
     ["Charcoal", "1"],
     ["Copper Ore", "2"],
@@ -671,33 +855,34 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
 
   // A recipe carrying six ingredients (set up through the guarded helper;
   // seeded items are only referenced) triggers the existing capacity
-  // guard: the edit page explains the refusal and renders no form at all,
-  // so the extra ingredient cannot be silently dropped.
+  // guard, now isolated to the Ingredients tab (Slice 9C.3): the page
+  // explains the refusal and renders no form at all, so the extra
+  // ingredient cannot be silently dropped.
   await createTemporaryRecipeWithSixIngredients();
-  await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/edit");
+  await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/ingredients");
   await expect(
     page.getByRole("alert").filter({
       hasText:
-        "This recipe has 6 ingredients, but the edit form currently supports only 5.",
+        "This recipe has 6 ingredients, but this form currently supports only 5.",
     })
   ).toBeVisible();
   await expect(
     page.getByText(/none of this recipe's data is at risk of being dropped/)
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Save Changes", exact: true })
+    page.getByRole("button", { name: "Save Ingredients", exact: true })
   ).toHaveCount(0);
-  await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
-  // Deletion must never depend on the edit form being renderable — the
-  // header's Delete Recipe action (Slice 9C.2's EditorHeader `actions`
-  // slot) stays reachable even when the ingredient-count guard blocks
-  // the form itself.
+  await expect(
+    page.getByRole("group", { name: "Ingredients (fill at least one row)" })
+  ).toHaveCount(0);
+  // Deletion must never depend on the Ingredients form being renderable —
+  // the header's Delete Recipe action (EditorHeader `actions` slot) stays
+  // reachable even when the ingredient-count guard blocks the form.
   await expect(
     page.getByRole("link", { name: "Delete Recipe", exact: true })
   ).toBeVisible();
-  // Image and verification controls submit into the guarded form, so
-  // they are withheld too — nothing interactive is left half-broken.
-  // Timestamps are pure read-only display, so they still render.
+  // The Ingredients tab never renders Image/Verification/Timestamps in
+  // the first place — nothing there to withhold.
   await expect(
     page.getByRole("heading", { level: 2, name: "Image", exact: true })
   ).toHaveCount(0);
@@ -706,6 +891,33 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toHaveCount(0);
+
+  // The key Slice 9C.3 improvement: the SAME over-capacity recipe's
+  // General tab is fully, normally editable — the former all-or-nothing
+  // guard is gone from General entirely, and a normal save succeeds
+  // without touching (or losing) any of the six ingredients. (Next.js
+  // injects a hidden route-announcer div that also carries role="alert",
+  // so the absence of the capacity banner is checked by its exact text
+  // rather than by alert count.)
+  await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/edit");
+  await expect(
+    page.getByText(/currently has more ingredients|ingredients, but/)
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
+  await page.getByLabel(/^Required level/).fill("8");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes?success=updated");
+  await expect(page.getByRole("status")).toHaveText("Recipe updated.");
+
+  // The Ingredients guard still applies afterward — none of the six
+  // ingredients were touched by the General save.
+  await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/ingredients");
+  await expect(
+    page.getByRole("alert").filter({
+      hasText:
+        "This recipe has 6 ingredients, but this form currently supports only 5.",
+    })
   ).toBeVisible();
 });
 
@@ -851,6 +1063,87 @@ test("gameplay verification stamps the selected game version and survives normal
   await expect(
     panelRow(page, "Verification", "Verified against")
   ).toContainText(HISTORICAL_VERSION_NAME);
+});
+
+test("switching recipes while on the Ingredients tab preserves the tab and q, and General's own tab link preserves q too", async ({
+  page,
+}) => {
+  const RECIPE_A = {
+    name: "Test E2E Recipe Ingredients Switch A",
+    slug: "test-e2e-recipe-ingredients-switch-a",
+  };
+  const RECIPE_B = {
+    name: "Test E2E Recipe Ingredients Switch B",
+    slug: "test-e2e-recipe-ingredients-switch-b",
+  };
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    ...RECIPE_A,
+    resultingItem: "Iron Ingot",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    ...RECIPE_B,
+    resultingItem: "Copper Ingot",
+    ingredients: [{ item: "Copper Ore", quantity: "1" }],
+  });
+
+  // A shared, distinguishing query so only these two temporary recipes
+  // match.
+  await page.goto("/admin/recipes");
+  await page
+    .getByRole("searchbox", { name: "Search recipes" })
+    .fill("test e2e recipe ingredients switch");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(recordRow(page, RECIPE_A.name)).toBeVisible();
+  await expect(recordRow(page, RECIPE_B.name)).toBeVisible();
+
+  await recordRow(page, RECIPE_A.name).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/recipes/${RECIPE_A.slug}/edit\\?q=`)
+  );
+
+  const tabNav = page.getByRole("navigation", { name: "Recipe editor sections" });
+  await tabNav.getByRole("link", { name: "Ingredients", exact: true }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/recipes/${RECIPE_A.slug}/ingredients\\?q=`)
+  );
+  await expect(recordRow(page, RECIPE_A.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+
+  // Switching records while ON the Ingredients tab opens the OTHER
+  // recipe's Ingredients tab — not its General tab — with q intact.
+  await recordRow(page, RECIPE_B.name).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/recipes/${RECIPE_B.slug}/ingredients\\?q=`)
+  );
+  await expect(
+    page.getByRole("heading", { level: 1, name: RECIPE_B.name, exact: true })
+  ).toBeVisible();
+  await expect(
+    tabNav.getByRole("link", { name: "Ingredients", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(recordRow(page, RECIPE_B.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  await expect(recordRow(page, RECIPE_A.name)).not.toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+
+  // General's own tab link, followed from the Ingredients tab, preserves
+  // q too.
+  await tabNav.getByRole("link", { name: "General", exact: true }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/recipes/${RECIPE_B.slug}/edit\\?q=`)
+  );
+  await expect(
+    tabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
 });
 
 test("record-list search filters, preserves the query across switching, and clears", async ({

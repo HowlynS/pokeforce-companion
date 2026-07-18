@@ -1529,3 +1529,64 @@ Alternatives considered:
 - Gate `TimestampsPanel` behind the same guard for symmetry — rejected;
   it has no interactive control and no dependency on the main form, so
   hiding it would only remove genuinely useful, harmless information.
+
+---
+
+### 2026-07-18 — Slice 9C.3: `updateRecipeAction` splits into two narrow actions instead of one action serving both tabs
+
+Decision:
+
+Moving ingredient rows out of General onto their own Ingredients tab
+meant the single `updateRecipeAction` — which validated and wrote every
+Recipe field AND replaced the full `RecipeIngredient` set as one
+transaction — no longer matched either page's actual submission. Two
+options existed: (a) keep one shared action and have each page's form
+carry hidden fields preserving whatever it doesn't edit, or (b) split
+into two purpose-built actions. Hidden-field preservation works for
+Ingredients (its non-ingredient hidden fields are always exactly five
+values, however many ingredients exist), but NOT for General: a recipe
+carrying more than five ingredients can never have its ingredients
+losslessly round-tripped through five fixed `ingredientItemId${n}`
+form fields, so a General save on an over-capacity recipe would
+silently truncate it to five ingredients — precisely the data loss the
+task forbids. Since General is required to stay fully editable
+regardless of ingredient count, hidden-field preservation was provably
+unsafe for that direction, so `updateRecipeAction` was split into
+`updateRecipeGeneralAction` (touches only Recipe's own columns) and
+`updateRecipeIngredientsAction` (touches only `RecipeIngredient`,
+carrying no non-ingredient field at all — nothing to preserve, nothing
+to truncate). Both reuse the exact same field/row validation via new
+`parseRecipeGeneralInput`/`parseRecipeIngredientsInput` functions built
+from one shared, unexported `parseRecipeGeneralFields` helper that
+`parseRecipeInput` (still the create page's parser, unmodified) also
+calls — so the three parsers can never validate the same field
+differently by accident.
+
+Reason:
+
+The task's General-page requirement ("General page must remain editable
+for non-ingredient fields" for a recipe exceeding editor capacity) is
+incompatible with any design where a General save's submission has to
+represent the full ingredient set in a bounded number of form fields.
+Splitting the action removes that representation problem entirely: since
+`updateRecipeGeneralAction` never reads or writes ingredient rows, there
+is no capacity to exceed and nothing to truncate, no matter how many
+ingredients the recipe actually carries.
+
+Alternatives considered:
+
+- Hidden-field preservation on the General form (mirroring the pattern
+  the Ingredients page uses in the other direction) — rejected for
+  General specifically, for the truncation risk above; adopted nowhere,
+  to keep both pages' actions symmetric rather than mixing strategies.
+- One shared action with conditional ingredient handling based on
+  whether ingredient fields are present in the submission — rejected;
+  it would require modifying the already-tested `parseRecipeInput`/
+  `updateRecipeAction` control flow with new branching, a larger and
+  riskier change than adding two new, independently simple actions that
+  leave the create path completely untouched.
+- A single ingredients-only action (matching the task's literal
+  "ingredients-only action" phrasing) paired with hidden-field
+  preservation for General — rejected once the truncation risk on
+  General was identified; General needed its OWN narrow action just as
+  much as Ingredients did, so both got one, kept deliberately symmetric.

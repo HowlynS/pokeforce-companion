@@ -9,7 +9,12 @@ import {
   isMissingRecordError,
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
-import { parseRecipeInput } from "@/lib/validation/recipe";
+import {
+  RECIPE_INGREDIENT_ROW_COUNT,
+  parseRecipeGeneralInput,
+  parseRecipeIngredientsInput,
+  parseRecipeInput,
+} from "@/lib/validation/recipe";
 import { isRecipeNameTaken } from "@/lib/admin/record-name";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
@@ -183,7 +188,13 @@ export async function createRecipeAction(formData: FormData) {
   redirect("/admin/recipes?success=created");
 }
 
-export async function updateRecipeAction(formData: FormData) {
+// The General editor's own action (Slice 9C.3): every Recipe field EXCEPT
+// ingredients, which now belong to the separate Ingredients tab and its
+// own action below. Never touches the RecipeIngredient table, so General
+// stays fully editable regardless of how many ingredient rows the recipe
+// carries — the ingredient-count capacity guard applies to the
+// Ingredients tab only.
+export async function updateRecipeGeneralAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
   await requireAdminUser();
@@ -196,7 +207,7 @@ export async function updateRecipeAction(formData: FormData) {
     redirect("/admin/recipes?error=missing_recipe");
   }
 
-  const parsed = parseRecipeInput(formData);
+  const parsed = parseRecipeGeneralInput(formData);
 
   if (!parsed.ok) {
     redirect(`${editPath ?? "/admin/recipes"}?error=${parsed.error}`);
@@ -207,11 +218,7 @@ export async function updateRecipeAction(formData: FormData) {
   // hidden fields were tampered with or are stale.
   const existingRecipe = await prisma.recipe.findUnique({
     where: { id },
-    include: {
-      resultingItem: true,
-      profession: true,
-      ingredients: { include: { item: true } },
-    },
+    include: { resultingItem: true, profession: true },
   });
 
   if (!existingRecipe) {
@@ -252,17 +259,6 @@ export async function updateRecipeAction(formData: FormData) {
     if (!profession) {
       redirect(`${editPath ?? "/admin/recipes"}?error=invalid_profession`);
     }
-  }
-
-  const ingredientItemIds = parsed.value.ingredients.map(
-    (ingredient) => ingredient.itemId
-  );
-  const ingredientItems = await prisma.item.findMany({
-    where: { id: { in: ingredientItemIds } },
-  });
-
-  if (ingredientItems.length !== ingredientItemIds.length) {
-    redirect(`${editPath ?? "/admin/recipes"}?error=invalid_ingredient_item`);
   }
 
   // Resolved before any upload so a missing current Game Version rejects
@@ -313,37 +309,26 @@ export async function updateRecipeAction(formData: FormData) {
   const imageValue = newImagePath ?? (removeImage ? null : existingImagePath);
 
   try {
-    // Update the Recipe, delete all of its existing ingredient rows, then
-    // recreate the submitted set — all as one atomic transaction, so the
-    // Recipe is never left with zero or partially-updated ingredients if
-    // any step fails.
-    await prisma.$transaction([
-      prisma.recipe.update({
-        where: { id },
-        data: {
-          name: parsed.value.name,
-          slug: parsed.value.slug,
-          image: imageValue,
-          resultingItemId: parsed.value.resultingItemId,
-          resultingQuantity: parsed.value.resultingQuantity,
-          professionId: parsed.value.professionId,
-          requiredLevel: parsed.value.requiredLevel,
-          // Verification fields are included ONLY when the opt-in checkbox
-          // was checked — a normal edit never alters or clears existing
-          // verification metadata, because Prisma leaves omitted fields
-          // untouched.
-          ...(verification.stamp ?? {}),
-        },
-      }),
-      prisma.recipeIngredient.deleteMany({ where: { recipeId: id } }),
-      prisma.recipeIngredient.createMany({
-        data: parsed.value.ingredients.map((ingredient) => ({
-          recipeId: id,
-          itemId: ingredient.itemId,
-          quantity: ingredient.quantity,
-        })),
-      }),
-    ]);
+    // A single update — no ingredient rows are touched, so a Recipe's
+    // ingredients (however many it carries, even beyond editor capacity)
+    // are never at risk from a General save.
+    await prisma.recipe.update({
+      where: { id },
+      data: {
+        name: parsed.value.name,
+        slug: parsed.value.slug,
+        image: imageValue,
+        resultingItemId: parsed.value.resultingItemId,
+        resultingQuantity: parsed.value.resultingQuantity,
+        professionId: parsed.value.professionId,
+        requiredLevel: parsed.value.requiredLevel,
+        // Verification fields are included ONLY when the opt-in checkbox
+        // was checked — a normal edit never alters or clears existing
+        // verification metadata, because Prisma leaves omitted fields
+        // untouched.
+        ...(verification.stamp ?? {}),
+      },
+    });
   } catch (error) {
     // The database still references the old image (or none), so the file
     // just uploaded for this failed update must not linger in storage.
@@ -356,17 +341,17 @@ export async function updateRecipeAction(formData: FormData) {
       redirect("/admin/recipes?error=missing_recipe");
     }
     if (isForeignKeyError(error)) {
-      // A relation (resulting item, profession, or an ingredient item) was
-      // removed between validation and the write; treat it the same as a
-      // normal invalid-relation error rather than crashing.
+      // A relation (resulting item or profession) was removed between
+      // validation and the write; treat it the same as a normal
+      // invalid-relation error rather than crashing.
       redirect(`${editPath ?? "/admin/recipes"}?error=relation_changed`);
     }
     throw error;
   }
 
-  // Only after the transaction has succeeded is the old file deleted. If
-  // this cleanup fails, the update stays successful — an orphaned file is
-  // less harmful than rolling the record back to a deleted path — and the
+  // Only after the update has succeeded is the old file deleted. If this
+  // cleanup fails, the update stays successful — an orphaned file is less
+  // harmful than rolling the record back to a deleted path — and the
   // admin gets a distinct success message noting the leftover file.
   let oldImageCleanupFailed = false;
 
@@ -387,8 +372,6 @@ export async function updateRecipeAction(formData: FormData) {
   const itemSlugsToRevalidate = new Set<string>([
     existingRecipe.resultingItem.slug,
     resultingItem.slug,
-    ...existingRecipe.ingredients.map((ingredient) => ingredient.item.slug),
-    ...ingredientItems.map((item) => item.slug),
   ]);
   for (const itemSlug of itemSlugsToRevalidate) {
     revalidatePath(`/items/${itemSlug}`);
@@ -410,6 +393,126 @@ export async function updateRecipeAction(formData: FormData) {
       ? "/admin/recipes?success=updated_image_cleanup"
       : "/admin/recipes?success=updated"
   );
+}
+
+// The Ingredients tab's own action (Slice 9C.3): touches ONLY the
+// RecipeIngredient rows — name, slug, resulting item, profession,
+// required level, image, and verification metadata are never read from
+// the submission and never written here, so a normal ingredient save
+// leaves every other Recipe field byte-for-byte unchanged.
+export async function updateRecipeIngredientsAction(formData: FormData) {
+  // Repeated here deliberately: every mutation re-checks authorization and
+  // never relies solely on the admin layout having already run.
+  await requireAdminUser();
+
+  const id = String(formData.get("id") ?? "").trim();
+  const originalSlug = String(formData.get("originalSlug") ?? "").trim();
+  const ingredientsPath = originalSlug
+    ? `/admin/recipes/${originalSlug}/ingredients`
+    : null;
+
+  if (!id) {
+    redirect("/admin/recipes?error=missing_recipe");
+  }
+
+  // Loaded from the database, not trusted from the client, so we know the
+  // recipe's previous ingredients (for revalidation and the capacity
+  // guard below) even if the form's hidden fields were tampered with.
+  const existingRecipe = await prisma.recipe.findUnique({
+    where: { id },
+    include: {
+      resultingItem: true,
+      profession: true,
+      ingredients: { include: { item: true } },
+    },
+  });
+
+  if (!existingRecipe) {
+    redirect("/admin/recipes?error=missing_recipe");
+  }
+
+  // Defense in depth: the Ingredients form is only ever rendered for a
+  // recipe within editor capacity. A request that somehow reaches this
+  // action for an over-capacity recipe must never truncate it down to
+  // the form's fixed row count — the same guarantee the page's own
+  // safety state provides, enforced again here against direct tampering.
+  if (existingRecipe.ingredients.length > RECIPE_INGREDIENT_ROW_COUNT) {
+    redirect(
+      `${ingredientsPath ?? "/admin/recipes"}?error=too_many_ingredients`
+    );
+  }
+
+  const parsed = parseRecipeIngredientsInput(formData);
+
+  if (!parsed.ok) {
+    redirect(`${ingredientsPath ?? "/admin/recipes"}?error=${parsed.error}`);
+  }
+
+  // Every submitted ingredient item ID is verified server-side before the
+  // write — never trusted from the form alone.
+  const ingredientItemIds = parsed.value.ingredients.map(
+    (ingredient) => ingredient.itemId
+  );
+  const ingredientItems = await prisma.item.findMany({
+    where: { id: { in: ingredientItemIds } },
+  });
+
+  if (ingredientItems.length !== ingredientItemIds.length) {
+    redirect(
+      `${ingredientsPath ?? "/admin/recipes"}?error=invalid_ingredient_item`
+    );
+  }
+
+  try {
+    // Delete the existing ingredient rows, then recreate the submitted
+    // set, as one atomic transaction — the Recipe is never left with
+    // zero or partially-updated ingredients if any step fails.
+    await prisma.$transaction([
+      prisma.recipeIngredient.deleteMany({ where: { recipeId: id } }),
+      prisma.recipeIngredient.createMany({
+        data: parsed.value.ingredients.map((ingredient) => ({
+          recipeId: id,
+          itemId: ingredient.itemId,
+          quantity: ingredient.quantity,
+        })),
+      }),
+    ]);
+  } catch (error) {
+    if (isMissingRecordError(error)) {
+      redirect("/admin/recipes?error=missing_recipe");
+    }
+    if (isForeignKeyError(error)) {
+      // An ingredient item was removed between validation and the write;
+      // treat it the same as a normal invalid-relation error rather than
+      // crashing.
+      redirect(
+        `${ingredientsPath ?? "/admin/recipes"}?error=relation_changed`
+      );
+    }
+    throw error;
+  }
+
+  revalidatePath("/admin/recipes");
+  if (ingredientsPath) {
+    revalidatePath(ingredientsPath);
+  }
+  revalidatePath("/recipes");
+  revalidatePath(`/recipes/${existingRecipe.slug}`);
+
+  const itemSlugsToRevalidate = new Set<string>([
+    existingRecipe.resultingItem.slug,
+    ...existingRecipe.ingredients.map((ingredient) => ingredient.item.slug),
+    ...ingredientItems.map((item) => item.slug),
+  ]);
+  for (const itemSlug of itemSlugsToRevalidate) {
+    revalidatePath(`/items/${itemSlug}`);
+  }
+
+  if (existingRecipe.profession) {
+    revalidatePath(`/professions/${existingRecipe.profession.slug}`);
+  }
+
+  redirect("/admin/recipes?success=updated");
 }
 
 export async function deleteRecipeAction(formData: FormData) {
