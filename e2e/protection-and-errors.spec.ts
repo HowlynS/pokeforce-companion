@@ -64,6 +64,9 @@ test.describe("unauthenticated admin protection", () => {
     // of the recipe's other fields); the seeded "iron-sword" slug is only
     // ever read here, never modified.
     "/admin/recipes/iron-sword/ingredients",
+    // The Slice 9C.4 Metadata tab (read-only administrative information);
+    // the seeded "iron-sword" slug is only ever read here, never modified.
+    "/admin/recipes/iron-sword/metadata",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

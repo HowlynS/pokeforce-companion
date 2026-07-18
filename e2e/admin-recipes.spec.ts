@@ -219,7 +219,7 @@ test("Create recipe opens the dedicated creation route", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("Recipe editor tabs: create shows only General; edit and ingredients mark their own tab active with the other real and Metadata inert; exactly one h1 renders; Timestamps render on General edit only", async ({
+test("Recipe editor tabs: create shows only General; edit, ingredients, and metadata mark their own tab active with the other two real; exactly one h1 renders; Timestamps render on General edit and Metadata", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -249,9 +249,8 @@ test("Recipe editor tabs: create shows only General; edit and ingredients mark t
   });
 
   // --- General edit: exactly one h1 (the recipe's own name), General
-  // active, Ingredients a REAL tab (Slice 9C.3), Metadata still the only
-  // inert placeholder, Timestamps present (Created/Updated, no Verified
-  // stamp yet) -------------------------------------------------------------
+  // active, Ingredients and Metadata both REAL tabs (Slice 9C.3/9C.4),
+  // Timestamps present (Created/Updated, no Verified stamp yet) ----------
   await recordRow(page, "Test E2E Recipe Tabs").click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -274,11 +273,9 @@ test("Recipe editor tabs: create shows only General; edit and ingredients mark t
     editTabNav.getByRole("link", { name: "Ingredients", exact: true })
   ).toBeVisible();
   await expect(
-    editTabNav.getByText("Metadata", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
     editTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
+  await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(
     page.getByRole("heading", { level: 2, name: "Image", exact: true })
@@ -296,7 +293,7 @@ test("Recipe editor tabs: create shows only General; edit and ingredients mark t
   ).toHaveCount(0);
 
   // --- Ingredients: exactly one h1 (still the recipe's own name),
-  // Ingredients active, General a REAL tab back, Metadata still inert, NO
+  // Ingredients active, General and Metadata both REAL tabs, NO
   // Image/Verification/Timestamps panels (nothing to do with ingredients) -
   await editTabNav
     .getByRole("link", { name: "Ingredients", exact: true })
@@ -326,10 +323,10 @@ test("Recipe editor tabs: create shows only General; edit and ingredients mark t
     ingredientsTabNav.getByRole("link", { name: "General", exact: true })
   ).toBeVisible();
   await expect(
-    ingredientsTabNav.getByText("Metadata", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
     ingredientsTabNav.getByRole("link", { name: "Metadata", exact: true })
+  ).toBeVisible();
+  await expect(
+    ingredientsTabNav.locator('[aria-disabled="true"]')
   ).toHaveCount(0);
 
   await expect(
@@ -343,6 +340,54 @@ test("Recipe editor tabs: create shows only General; edit and ingredients mark t
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toHaveCount(0);
+
+  // --- Metadata: exactly one h1 (still the recipe's own name), Metadata
+  // active, General and Ingredients both REAL tabs, Verification and
+  // Timestamps panels present, NO Image panel (read-only tab) -----------
+  await ingredientsTabNav
+    .getByRole("link", { name: "Metadata", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-tabs/metadata");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Recipe Tabs",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  const metadataTabNav = page.getByRole("navigation", {
+    name: "Recipe editor sections",
+  });
+  await expect(
+    metadataTabNav.getByRole("link", { name: "Metadata", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    metadataTabNav.locator('[aria-current="page"]')
+  ).toHaveCount(1);
+  await expect(
+    metadataTabNav.getByRole("link", { name: "General", exact: true })
+  ).toBeVisible();
+  await expect(
+    metadataTabNav.getByRole("link", { name: "Ingredients", exact: true })
+  ).toBeVisible();
+  await expect(metadataTabNav.locator('[aria-disabled="true"]')).toHaveCount(
+    0
+  );
+
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Verification", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Ingredients (fill at least one row)" })
   ).toHaveCount(0);
 });
 

@@ -353,8 +353,9 @@ complete; Slice 9B.7 (Used in Recipes tab) complete; Slice 9B.8 (Metadata
 tab) complete — the Item reference workspace is functionally complete;
 Slice 9C.1 (Recipe workspace navigation foundation) complete; Slice 9C.2
 (Recipe General editor conversion) complete; Slice 9C.3 (Recipe
-Ingredients tab) complete — Recipe Metadata content remains pending;
-later slices not started
+Ingredients tab) complete; Slice 9C.4 (Recipe Metadata tab) complete —
+the Recipe reference workspace is functionally complete; later slices
+not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -934,11 +935,52 @@ workspace.
       `/admin/recipes/[slug]/ingredients`
 - [x] No Metadata content and no other resource workspace was converted
 
+### Slice 9C.4 — Recipe Metadata tab (complete, 2026-07-18)
+
+- [x] `/admin/recipes/[slug]/metadata` is a new, real, independent Recipe
+      tab completing the workspace — rendering inside `RecipeWorkspace`
+      exactly like General/Ingredients (record list visible, current
+      recipe selected, `EditorHeader` with the recipe's own name, quick
+      switching via a new `recipeMetadataHref` passed as
+      `RecipeWorkspace`'s `recordHref`); `recipeEditorTabs` now takes an
+      `active: "general" | "ingredients" | "metadata"` key and no Recipe
+      tab renders as a disabled placeholder any more (mirroring the Item
+      workspace's Slice 9B.8 completion)
+- [x] Content is strictly read-only: a new "Recipe" `ContextPanel` shows
+      the resulting item, the optional Profession and required level
+      (each omitted entirely when absent — no placeholder dash, no
+      "None"), and the ingredient count; the existing `VerificationPanel`
+      `readOnly` mode (introduced in Slice 9B.8, unchanged) shows the
+      status badge and stamp rows with no picker/checkbox;
+      `TimestampsPanel` shows created/updated/verified dates
+- [x] No form, image control, ingredient control, or delete action
+      anywhere on the tab; no database id, foreign key, or storage path
+      ever surfaces
+- [x] One restrained query — `resultingItem`, `profession`,
+      `verifiedGameVersion`, and an ingredient `_count` only, never the
+      full ingredient row set — plus the same `gameVersion.findMany`
+      ordering every other verification surface uses; no N+1 behavior
+- [x] Recipe actions, schema, storage, and authorization are unchanged;
+      General/Ingredients behavior is unchanged beyond real tab links
+- [x] Tests: `recipeMetadataHref` and the extended `recipeEditorTabs`
+      unit coverage (Metadata active state, exactly-one-active across all
+      three keys, no disabled Recipe tab remains); a new
+      `admin-recipe-metadata.spec.ts` E2E suite covering direct
+      navigation, Recipe context content and hide-empty behavior,
+      verified/unverified status display, Recipe switching with `q`
+      preservation, tab navigation, unknown-slug 404, and read-only
+      constraints; the existing Recipe tabs E2E test extended for the
+      Metadata tab; the protection spec extended with
+      `/admin/recipes/[slug]/metadata`
+- [x] The Recipe reference workspace (General, Ingredients, Metadata) is
+      now functionally complete, matching the Item workspace's shape; no
+      other resource workspace was converted
+
 ### Remaining (not started)
 
-- [ ] Recipe Metadata content, every other resource workspace conversion,
-      dashboard summaries, and Route Hubs — do not begin until explicitly
-      instructed in the milestone conversation
+- [ ] Every other resource workspace conversion, dashboard summaries, and
+      Route Hubs — do not begin until explicitly instructed in the
+      milestone conversation
 
 ---
 
