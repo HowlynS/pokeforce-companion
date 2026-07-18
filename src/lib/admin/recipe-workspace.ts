@@ -9,10 +9,9 @@
 // routes): the workspace links to /admin/recipes/[slug]/edit. Database
 // ids never appear in URLs.
 //
-// This is a narrow navigation-foundation pass: unlike the Item workspace,
-// Recipes have no tabs yet (General/Ingredients/Metadata conversion is
-// deferred), so this module only exports the list/create/edit/delete
-// hrefs a plain record list and its two nested routes need.
+// Slice 9C.2 (General editor conversion) added `recipeEditorTabs`: General
+// is the only real tab so far — Ingredients (still embedded in General)
+// and Metadata (not yet implemented) render as disabled placeholders.
 
 export const RECIPE_LIST_PATH = "/admin/recipes";
 export const RECIPE_CREATE_PATH = "/admin/recipes/new";
@@ -50,4 +49,31 @@ export function recipeEditHref(slug: string, query: string): string {
 /** The delete-confirmation route for one recipe, preserving the query. */
 export function recipeDeleteHref(slug: string, query: string): string {
   return withRecipeSearchQuery(`${RECIPE_LIST_PATH}/${slug}/delete`, query);
+}
+
+/** Structurally compatible with the shared `EditorTab` type
+    (`src/components/admin/editor-tabs.tsx`) without importing a
+    component into this pure, React-free module. */
+export type RecipeEditorTab = {
+  label: string;
+  href: string;
+  active: boolean;
+  disabled?: boolean;
+};
+
+/**
+ * The Recipe edit route's tab strip (Slice 9C.2): General is the only
+ * real destination this slice — Ingredients (still embedded in General;
+ * a dedicated tab is a later slice) and Metadata (not yet implemented)
+ * render as disabled placeholders, never links to empty pages. The
+ * create page shows only General with no placeholders at all (mirroring
+ * the Item workspace's create-page precedent), so this helper is
+ * deliberately edit-only.
+ */
+export function recipeEditorTabs(slug: string, query: string): RecipeEditorTab[] {
+  return [
+    { label: "General", href: recipeEditHref(slug, query), active: true },
+    { label: "Ingredients", href: "", active: false, disabled: true },
+    { label: "Metadata", href: "", active: false, disabled: true },
+  ];
 }

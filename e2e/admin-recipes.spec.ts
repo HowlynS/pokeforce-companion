@@ -12,11 +12,26 @@
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
+  E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestRecipeRecords,
+  createE2eTestGameVersion,
   createTemporaryRecipeWithSixIngredients,
+  deleteE2eTestGameVersionRecords,
   deleteE2eTestRecipeRecords,
   readFixtureCounts,
 } from "./helpers/database-cleanup";
+
+// The persistent test-only Game Version fixture, made current by
+// auth.setup.ts before any admin spec runs.
+const CURRENT_VERSION_NAME = E2E_CURRENT_GAME_VERSION_NAME;
+
+// A NON-current browser-test version for the historical-selection flow;
+// carries the test-e2e-gv- prefix so deleteE2eTestGameVersionRecords
+// always catches it.
+const HISTORICAL_VERSION_NAME = "test-e2e-gv-recipes-historical";
+
+const VERIFICATION_CHECKBOX_LABEL =
+  "Mark gameplay data as verified for the selected game version.";
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -29,8 +44,11 @@ test.beforeEach(({ page }) => {
 
 test.afterEach(async () => {
   // Defensive prefix-scoped cleanup even when a test failed mid-lifecycle:
-  // RecipeIngredient rows of test Recipes first, then the Recipes.
+  // RecipeIngredient rows of test Recipes first, then the Recipes, then
+  // the browser-test Game Version the verification test creates (last —
+  // a stamped Recipe RESTRICT-references it).
   await deleteE2eTestRecipeRecords();
+  await deleteE2eTestGameVersionRecords();
   expect(pageErrors, "no uncaught page errors are allowed").toEqual([]);
 });
 
@@ -38,11 +56,14 @@ test.beforeAll(async () => {
   // Remove stale rows from interrupted earlier runs; the guard inside the
   // helper throws here if the environment is not the verified test project.
   await deleteE2eTestRecipeRecords();
+  await deleteE2eTestGameVersionRecords();
   expect(await countE2eTestRecipeRecords()).toBe(0);
 });
 
 test.afterAll(async () => {
-  const remaining = await deleteE2eTestRecipeRecords();
+  const remaining =
+    (await deleteE2eTestRecipeRecords()) +
+    (await deleteE2eTestGameVersionRecords());
   // afterEach should already have removed everything — fail loudly if not.
   expect(remaining).toBe(0);
 });
@@ -64,6 +85,23 @@ function recordRow(page: Page, name: string) {
     .getByRole("navigation", { name: "Recipes records" })
     .getByRole("link")
     .filter({ has: page.getByText(name, { exact: true }) });
+}
+
+// One of the shared panels' rows (Verification or Timestamps) in the
+// Recipe editor's aside, located by its label (dt) text — scoped to the
+// panel by heading so identical row labels can never collide. The row's
+// dt/dd text is concatenated with no separator, so the filter is
+// anchored to the START of the row's text — otherwise "Current version"
+// would also match the unrelated "Verified — current version" status
+// badge's own "admin-panel-row" wrapper (case-insensitive substring).
+function panelRow(page: Page, panelTitle: string, label: string) {
+  return page
+    .locator(".admin-panel")
+    .filter({
+      has: page.getByRole("heading", { level: 2, name: panelTitle, exact: true }),
+    })
+    .locator(".admin-panel-row")
+    .filter({ hasText: new RegExp(`^${label}`) });
 }
 
 // The five fixed ingredient rows live inside one fieldset; its legend
@@ -181,6 +219,80 @@ test("Create recipe opens the dedicated creation route", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("Recipe editor tabs: create shows only General; edit marks General active with Ingredients and Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
+  page,
+}) => {
+  // --- Create: exactly one h1, one real tab, no disabled placeholders,
+  // Image panel present, no Timestamps panel (nothing to show yet) ------
+  await page.goto("/admin/recipes/new");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  const createTabNav = page.getByRole("navigation", {
+    name: "Recipe editor sections",
+  });
+  await expect(
+    createTabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(createTabNav.getByText("Ingredients")).toHaveCount(0);
+  await expect(createTabNav.getByText("Metadata")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toHaveCount(0);
+
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Tabs",
+    slug: "test-e2e-recipe-tabs",
+    resultingItem: "Iron Ingot",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+
+  // --- Edit: exactly one h1 (the recipe's own name), General active,
+  // Ingredients/Metadata inert placeholders (never links to empty pages),
+  // Timestamps now present (Created/Updated, no Verified stamp yet) -----
+  await recordRow(page, "Test E2E Recipe Tabs").click();
+  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-tabs/edit");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Recipe Tabs",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  const editTabNav = page.getByRole("navigation", {
+    name: "Recipe editor sections",
+  });
+  await expect(
+    editTabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
+  await expect(
+    editTabNav.getByText("Ingredients", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Ingredients", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    editTabNav.getByText("Metadata", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Metadata", exact: true })
+  ).toHaveCount(0);
+
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Created")).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Updated")).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
+});
+
 test("recipe creation renders result, profession, and ingredients publicly", async ({
   page,
 }) => {
@@ -275,12 +387,13 @@ test("recipe editing prefills ingredients and applies the transactional update",
     "aria-current",
     "page"
   );
+  // The editor's one h1 is the recipe's own name; its slug is the
+  // subtitle context underneath (Slice 9C.2, matching the Item General
+  // editor's convention exactly).
   await expect(
-    page.getByRole("heading", { level: 1, name: "Edit Recipe" })
+    page.getByRole("heading", { level: 1, name: "Test E2E Recipe", exact: true })
   ).toBeVisible();
-  await expect(
-    page.getByText(`Update details for "Test E2E Recipe".`)
-  ).toBeVisible();
+  await expect(page.getByText("test-e2e-recipe", { exact: true })).toBeVisible();
 
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
     "Test E2E Recipe"
@@ -576,10 +689,23 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
   ).toHaveCount(0);
   await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
   // Deletion must never depend on the edit form being renderable — the
-  // toolbar's Delete Recipe link stays reachable even when the
-  // ingredient-count guard blocks the form itself.
+  // header's Delete Recipe action (Slice 9C.2's EditorHeader `actions`
+  // slot) stays reachable even when the ingredient-count guard blocks
+  // the form itself.
   await expect(
     page.getByRole("link", { name: "Delete Recipe", exact: true })
+  ).toBeVisible();
+  // Image and verification controls submit into the guarded form, so
+  // they are withheld too — nothing interactive is left half-broken.
+  // Timestamps are pure read-only display, so they still render.
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Verification", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
   ).toBeVisible();
 });
 
@@ -626,6 +752,105 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
   // The cascade removed the recipe's own ingredient rows and nothing else.
   expect(await countE2eTestRecipeRecords()).toBe(0);
   expect((await readFixtureCounts()).recipeIngredients).toBe(15);
+});
+
+test("gameplay verification stamps the selected game version and survives normal edits", async ({
+  page,
+}) => {
+  // A NON-current historical version for the picker flows below.
+  await createE2eTestGameVersion(HISTORICAL_VERSION_NAME);
+
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Verify",
+    slug: "test-e2e-recipe-verify",
+    resultingItem: "Iron Ingot",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+
+  // --- The shared VerificationPanel shows Unverified with no stamp rows,
+  // and the picker lists versions and defaults to the current one -------
+  await recordRow(page, "Test E2E Recipe Verify").click();
+  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-verify/edit");
+  await expect(
+    page.locator(".admin-status-badge", { hasText: "Unverified" })
+  ).toBeVisible();
+  await expect(panelRow(page, "Verification", "Verified against")).toHaveCount(
+    0
+  );
+  const picker = page.getByLabel("Game version to verify against");
+  await expect(
+    picker.locator("option:checked"),
+    "the current version is preselected"
+  ).toHaveText(`${CURRENT_VERSION_NAME} (current)`);
+  await expect(
+    picker.locator("option", { hasText: HISTORICAL_VERSION_NAME })
+  ).toHaveCount(1);
+
+  // --- Verify via the explicit opt-in checkbox (picker untouched) -------
+  const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
+  await expect(verifyCheckbox).not.toBeChecked();
+  await verifyCheckbox.check();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes?success=updated");
+
+  // The edit page shows the stamp carrying the preselected current Game
+  // Version, resolved and validated server-side, classified as
+  // verified-for-the-current-version by the shared panel.
+  await recordRow(page, "Test E2E Recipe Verify").click();
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(CURRENT_VERSION_NAME);
+  const stampedDateText = await panelRow(page, "Verification", "Verified on")
+    .textContent();
+  await expect(panelRow(page, "Timestamps", "Verified")).toBeVisible();
+
+  // --- A NORMAL edit, even one that moves the picker, must not alter the
+  // stamp: the picker only ever proposes a version, and nothing is
+  // written while the checkbox stays unchecked. ---------------------------
+  // Unchecked by default on every render, even for an already-verified
+  // recipe: verification is a per-save action, not persistent form state.
+  await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
+  await page
+    .getByLabel("Game version to verify against")
+    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await page.getByLabel("Resulting quantity", { exact: true }).fill("2");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes?success=updated");
+
+  await recordRow(page, "Test E2E Recipe Verify").click();
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(CURRENT_VERSION_NAME);
+  expect(
+    await panelRow(page, "Verification", "Verified on").textContent()
+  ).toBe(stampedDateText);
+
+  // --- Verifying against a SELECTED historical version -------------------
+  await page
+    .getByLabel("Game version to verify against")
+    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes?success=updated");
+
+  await recordRow(page, "Test E2E Recipe Verify").click();
+  await expect(
+    page.locator(".admin-status-badge", { hasText: "Verified — older version" })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(HISTORICAL_VERSION_NAME);
 });
 
 test("record-list search filters, preserves the query across switching, and clears", async ({

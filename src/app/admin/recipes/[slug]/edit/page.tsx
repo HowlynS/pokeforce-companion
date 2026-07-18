@@ -1,13 +1,18 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs } from "@/components/admin/editor-tabs";
+import { ImagePanel } from "@/components/admin/image-panel";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { TimestampsPanel } from "@/components/admin/timestamps-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
   normalizeRecipeSearchQuery,
   recipeDeleteHref,
+  recipeEditorTabs,
   withRecipeSearchQuery,
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
@@ -18,6 +23,12 @@ import { updateRecipeAction } from "../../actions";
 import { checkRecipeNameAvailability } from "../../name-availability";
 
 export const dynamic = "force-dynamic";
+
+// Associates the image and verification controls — both rendered in the
+// aside column, outside this <form> element — with this form via the
+// standard HTML `form` attribute, so every field still submits together
+// with one ordinary form submission.
+const RECIPE_EDIT_FORM_ID = "recipe-edit-form";
 
 const errorMessages: Record<string, string> = {
   no_current_version:
@@ -81,7 +92,7 @@ export default async function EditRecipePage({
           orderBy: { item: { name: "asc" } },
         },
         // Admin-only visibility of the verification stamp: the related Game
-        // Version's name is shown next to the opt-in checkbox below.
+        // Version's name is shown in the aside's VerificationPanel below.
         verifiedGameVersion: true,
       },
     }),
@@ -110,48 +121,134 @@ export default async function EditRecipePage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  // The edit route inside the Recipe workspace (Slice 9C.1, following the
-  // Item workspace's Slice 9B.4 precedent): the record list marks this
+  const tabs = recipeEditorTabs(recipe.slug, query);
+
+  // The edit route inside the Recipe workspace, now composed from the
+  // shared editor primitives (Slice 9C.2): the record list marks this
   // recipe selected and keeps the active search applied for quick
   // switching. Every field, redirect, server action, ingredient row,
-  // image behavior, and verification control is unchanged — only the
-  // navigation wrapper moved. Delete is now reached from this page's
-  // toolbar (the old table's per-row Delete link is gone), always
-  // rendered regardless of the ingredient-count guard below.
+  // image behavior, and verification rule is unchanged — only the
+  // presentation moved. Delete lives in the header's action slot
+  // (EditorHeader `actions`), so it stays reachable even when the
+  // ingredient-count guard below hides the entire form — the same
+  // guarantee the Slice 9C.1 toolbar link provided, now via the shared
+  // primitive's own extension point instead of a bespoke nav element.
   return (
     <RecipeWorkspace
       rawQuery={q}
       selectedSlug={recipe.slug}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
-            title="Edit Recipe"
-            description={`Update details for "${recipe.name}".`}
+          <EditorHeader
+            title={recipe.name}
+            subtitle={recipe.slug}
+            backHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+            backLabel="Back to Recipe Management"
+            actions={
+              <a
+                href={recipeDeleteHref(recipe.slug, query)}
+                className="link-danger"
+              >
+                Delete Recipe
+              </a>
+            }
           />
 
-          <nav className="admin-toolbar" aria-label="Recipe editor actions">
-            <a
-              href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
-              className="link-accent"
-            >
-              &larr; Back to Recipe Management
-            </a>
-
-            {/* Reachable even when the ingredient-count guard below hides
-                the form entirely — deletion must never depend on the edit
-                form being renderable (the old table's per-row Delete link
-                had no such dependency either). */}
-            <a href={recipeDeleteHref(recipe.slug, query)} className="link-danger">
-              Delete Recipe
-            </a>
-          </nav>
+          <EditorTabs label="Recipe editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
               {errorMessage}
             </p>
           ) : null}
+        </>
+      }
+      aside={
+        <>
+          {/* Image and verification controls submit into the main form
+              below, so they are withheld — exactly like the pre-9C.2
+              behavior, where the whole form (image and verification
+              included) was replaced by the alert — whenever the
+              ingredient-count guard hides that form; there is nothing
+              for them to submit into in that state. Timestamps are pure
+              read-only display of already-loaded data, so they render
+              regardless. */}
+          {!tooManyIngredients ? (
+            <>
+              <ImagePanel>
+                {imageUrl ? (
+                  <div style={{ position: "relative", justifySelf: "start" }}>
+                    <input
+                      type="checkbox"
+                      name="removeImage"
+                      id="removeImage"
+                      form={RECIPE_EDIT_FORM_ID}
+                      className="admin-image-remove-checkbox"
+                    />
+                    <div className="admin-image-remove-frame">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
+                      <img
+                        src={imageUrl}
+                        alt={`Current image for ${recipe.name}`}
+                        style={{
+                          maxWidth: "128px",
+                          height: "auto",
+                          border: `1px solid ${designTokens.colors.border}`,
+                          borderRadius: designTokens.radius.sm,
+                          background: designTokens.colors.surface,
+                          padding: "8px",
+                          display: "block",
+                        }}
+                      />
+                      <label
+                        htmlFor="removeImage"
+                        title="Remove current image"
+                        className="admin-image-remove-toggle"
+                      >
+                        <span aria-hidden="true">&times;</span>
+                        <span className="admin-image-remove-hidden-text">
+                          Remove current image
+                        </span>
+                      </label>
+                    </div>
+                    <p className="admin-image-remove-note">
+                      Image will be removed when saved.
+                    </p>
+                  </div>
+                ) : (
+                  <span className="form-field-label">No image uploaded.</span>
+                )}
+
+                <label className="form-field">
+                  <span className="form-field-label">
+                    {recipe.image
+                      ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
+                      : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
+                  </span>
+                  <input
+                    type="file"
+                    name="image"
+                    accept="image/png,image/jpeg,image/webp"
+                    form={RECIPE_EDIT_FORM_ID}
+                    className="form-input"
+                  />
+                </label>
+              </ImagePanel>
+
+              <VerificationPanel
+                gameVersions={gameVersions}
+                verifiedAt={recipe.verifiedAt}
+                verifiedGameVersion={recipe.verifiedGameVersion}
+                formId={RECIPE_EDIT_FORM_ID}
+              />
+            </>
+          ) : null}
+
+          <TimestampsPanel
+            createdAt={recipe.createdAt}
+            updatedAt={recipe.updatedAt}
+            verifiedAt={recipe.verifiedAt}
+          />
         </>
       }
     >
@@ -164,7 +261,11 @@ export default async function EditRecipePage({
           dropped.
         </p>
       ) : (
-        <form action={updateRecipeAction} className="form-grid form-grid-wide">
+        <form
+          id={RECIPE_EDIT_FORM_ID}
+          action={updateRecipeAction}
+          className="form-grid form-grid-wide"
+        >
           <input type="hidden" name="id" value={recipe.id} />
           <input type="hidden" name="originalSlug" value={recipe.slug} />
 
@@ -282,141 +383,10 @@ export default async function EditRecipePage({
             })}
           </fieldset>
 
-          <div className="form-field">
-            <span className="form-field-label">Current image</span>
-            {imageUrl ? (
-              <div style={{ position: "relative", justifySelf: "start" }}>
-                <style>{`
-                  .remove-image-checkbox,
-                  .remove-image-hidden-text {
-                    position: absolute;
-                    width: 1px;
-                    height: 1px;
-                    margin: -1px;
-                    padding: 0;
-                    overflow: hidden;
-                    clip: rect(0 0 0 0);
-                    white-space: nowrap;
-                    border: 0;
-                  }
-                  .remove-image-frame {
-                    position: relative;
-                    display: inline-block;
-                  }
-                  .remove-image-toggle {
-                    position: absolute;
-                    top: 4px;
-                    right: 4px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 22px;
-                    height: 22px;
-                    border-radius: 9999px;
-                    background: ${designTokens.colors.danger};
-                    color: ${designTokens.colors.background};
-                    font-size: 14px;
-                    font-weight: 700;
-                    line-height: 1;
-                    cursor: pointer;
-                    user-select: none;
-                  }
-                  .remove-image-checkbox:focus-visible ~ .remove-image-frame .remove-image-toggle {
-                    outline: 2px solid ${designTokens.colors.accent};
-                    outline-offset: 2px;
-                  }
-                  .remove-image-checkbox:checked ~ .remove-image-frame img {
-                    opacity: 0.35;
-                  }
-                  .remove-image-note {
-                    display: none;
-                    margin: 6px 0 0;
-                    color: ${designTokens.colors.danger};
-                  }
-                  .remove-image-checkbox:checked ~ .remove-image-note {
-                    display: block;
-                  }
-                `}</style>
-                <input
-                  type="checkbox"
-                  name="removeImage"
-                  id="removeImage"
-                  className="remove-image-checkbox"
-                />
-                <div className="remove-image-frame">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
-                  <img
-                    src={imageUrl}
-                    alt={`Current image for ${recipe.name}`}
-                    style={{
-                      maxWidth: "128px",
-                      height: "auto",
-                      border: `1px solid ${designTokens.colors.border}`,
-                      borderRadius: designTokens.radius.sm,
-                      background: designTokens.colors.surface,
-                      padding: "8px",
-                      display: "block",
-                    }}
-                  />
-                  <label
-                    htmlFor="removeImage"
-                    title="Remove current image"
-                    className="remove-image-toggle"
-                  >
-                    <span aria-hidden="true">&times;</span>
-                    <span className="remove-image-hidden-text">
-                      Remove current image
-                    </span>
-                  </label>
-                </div>
-                <p className="remove-image-note">
-                  Image will be removed when saved.
-                </p>
-              </div>
-            ) : (
-              <span className="form-field-label">No image uploaded.</span>
-            )}
-          </div>
-
-          <label className="form-field">
-            <span className="form-field-label">
-              {recipe.image
-                ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
-                : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
-            </span>
-            <input
-              type="file"
-              name="image"
-              accept="image/png,image/jpeg,image/webp"
-              className="form-input"
-            />
-          </label>
-
-          {/* Admin-only verification status (public pages never show it).
-              Rendered only when BOTH fields are populated — never as an
-              empty row; the stable YYYY-MM-DD date never depends on the
-              server locale. */}
-          {recipe.verifiedAt && recipe.verifiedGameVersion ? (
-            <p className="text-muted">
-              Gameplay data verified for {recipe.verifiedGameVersion.name} on{" "}
-              {recipe.verifiedAt.toISOString().slice(0, 10)}.
-            </p>
-          ) : null}
-
-          <GameVersionVerificationControls gameVersions={gameVersions} />
-
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Save Changes
-            </button>
-
-            <a
-              href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
-              className="btn btn-secondary"
-            >
-              Cancel
-            </a>
-          </div>
+          <EditorActions
+            submitLabel="Save Changes"
+            cancelHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+          />
         </form>
       )}
     </RecipeWorkspace>

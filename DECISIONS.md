@@ -1468,3 +1468,64 @@ Alternatives considered:
 - A separate always-rendered delete confirmation link within the
   `tooManyIngredients` error banner itself — rejected as more visual
   clutter than a single toolbar link achieves the same guarantee with.
+
+---
+
+### 2026-07-18 — Slice 9C.2: Delete stays in EditorHeader's `actions` slot, not EditorActions' `deleteHref`; Image/Verification panels join the too-many-ingredients guard
+
+Decision:
+
+Converting the Recipe edit page to the shared editor primitives meant
+adopting `EditorActions` — which has its own optional `deleteHref` prop,
+exactly the pattern `ItemWorkspace`'s edit page uses. Recipe does NOT
+use that prop. `EditorActions` is documented as "Rendered INSIDE the
+resource's `<form>`" — and the Recipe edit page's too-many-ingredients
+guard replaces that entire `<form>` (Save Changes included) with a
+plain alert banner. Passing `deleteHref` to `EditorActions` would have
+reintroduced exactly the bug Slice 9C.1's DECISIONS.md entry above
+already fixed: Delete disappearing whenever a recipe carries more
+ingredients than the form supports. Instead, Delete stays where Slice
+9C.1 already proved reachable — now expressed through `EditorHeader`'s
+own `actions` slot (an extension point the primitive already exposed)
+rather than a bespoke `<nav>` element, since the header always renders
+regardless of which branch of the ingredient-count ternary is active.
+
+The conversion surfaced a related, second question: `ImagePanel` and
+`VerificationPanel` now render in the workspace's `aside` slot, entirely
+OUTSIDE the ternary (asides are not the guarded `children` region).
+Left unguarded, a too-many-ingredients recipe would show a live image
+remove-toggle and a live verification checkbox with no `<form>` in the
+DOM for their `form="recipe-edit-form"` attribute to resolve against —
+controls that LOOK interactive but silently do nothing on submit. Before
+this conversion, the pre-9C.2 markup had no such possibility: image and
+verification inputs lived inside the same single `<form>` the guard
+replaced wholesale, so they were never visible while blocked. The
+decision was to preserve that exact invisibility by gating `ImagePanel`/
+`VerificationPanel` on the same `!tooManyIngredients` condition, while
+leaving `TimestampsPanel` unconditional — it is pure read-only display
+of already-loaded `recipe.createdAt`/`updatedAt`/`verifiedAt`, has no
+form-submitting control, and showing it costs nothing.
+
+Reason:
+
+The task requires image, verification, and deletion behavior to survive
+this conversion unchanged, and explicitly calls out that Delete must
+stay reachable outside the guard. Reusing the shared primitives' own
+extension points (`EditorHeader.actions`) rather than inventing new
+bespoke markup keeps the conversion's promise of "presentation moved,
+behavior didn't" honest in both directions — neither losing the
+guarantee 9C.1 established nor quietly adding a new dead-control state
+the pre-conversion page never had.
+
+Alternatives considered:
+
+- Pass `deleteHref` to `EditorActions` as Item does — rejected; it lives
+  inside the guarded `<form>...</form>` conditional, which would silently
+  drop Delete for over-capacity recipes exactly as the pre-9C.1 table did.
+- Leave `ImagePanel`/`VerificationPanel` unguarded in the aside — rejected;
+  it would present controls that appear functional but have no form to
+  submit into once the guard is active, a confusing regression from the
+  prior all-or-nothing hidden-form behavior.
+- Gate `TimestampsPanel` behind the same guard for symmetry — rejected;
+  it has no interactive control and no dependency on the main form, so
+  hiding it would only remove genuinely useful, harmless information.

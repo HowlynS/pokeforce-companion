@@ -183,11 +183,17 @@ test("opening the Used in Recipes tab directly shows both relationship direction
   ).toBeVisible();
 
   // The recipe link goes to the EXISTING Recipe admin edit route — no
-  // inline editing lives on this tab.
+  // inline editing lives on this tab. The Recipe editor's one h1 is the
+  // recipe's own name (Slice 9C.2), matching the Item General editor's
+  // convention exactly.
   await ingredientRecipeLink.click();
   await expect(page).toHaveURL(/\/admin\/recipes\/.+\/edit$/);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Edit Recipe" })
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Item Relation Consuming Recipe",
+      exact: true,
+    })
   ).toBeVisible();
 });
 

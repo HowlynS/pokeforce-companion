@@ -351,9 +351,9 @@ and quick switching) complete; Slice 9B.5 (Item General editor) complete
 for the General tab; Slice 9B.6 (Acquisition Sources tab integration)
 complete; Slice 9B.7 (Used in Recipes tab) complete; Slice 9B.8 (Metadata
 tab) complete — the Item reference workspace is functionally complete;
-Slice 9C.1 (Recipe workspace navigation foundation) complete — the
-Recipe editor redesign (tabs/panels/sticky actions) remains pending;
-later slices not started
+Slice 9C.1 (Recipe workspace navigation foundation) complete; Slice 9C.2
+(Recipe General editor conversion) complete — the Ingredients tab split
+and Recipe Metadata content remain pending; later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -818,12 +818,60 @@ workspace.
       was started; the Recipe editor redesign (tabs, panels, sticky
       actions) remains pending
 
+### Slice 9C.2 — Recipe General editor conversion (complete, 2026-07-18)
+
+- [x] `/admin/recipes/new` and `/admin/recipes/[slug]/edit` now compose
+      the shared editor primitives — `EditorHeader` (one h1: "Create
+      Recipe" or the recipe's own name, slug as subtitle on edit),
+      `EditorTabs` (create shows only General, matching the Item
+      precedent; edit adds Ingredients/Metadata as disabled placeholders
+      via the new `recipeEditorTabs(slug, query)` helper), `ImagePanel`,
+      `VerificationPanel`, `TimestampsPanel` (edit only), and sticky
+      `EditorActions` ("Create Recipe"/"Save Changes", Cancel) — mirroring
+      the Item General editor's Slice 9B.5 conversion exactly
+- [x] Ingredients remain embedded in General's own fields this slice — no
+      dedicated Ingredients tab yet; Metadata content remains unimplemented
+- [x] Delete is deliberately NOT passed to `EditorActions`' own
+      `deleteHref`; it lives in `EditorHeader`'s `actions` slot instead
+      (unconditionally rendered, outside the too-many-ingredients guard),
+      preserving the exact reachability guarantee Slice 9C.1's toolbar
+      link established — confirmed by a dedicated E2E assertion
+- [x] That same guard now also withholds `ImagePanel`/`VerificationPanel`
+      (their controls submit into the main form, which the guard hides —
+      matching the pre-conversion behavior where image and verification
+      were part of the single form the alert replaced entirely), while
+      `TimestampsPanel` — pure read-only display of already-loaded data —
+      still renders regardless
+- [x] The Recipe-specific inline `<style>` block for the image
+      remove-toggle was deleted in favor of the exact same shared
+      `.admin-image-remove-*` classes Item already migrated to in Slice
+      9B.5 — verified byte-for-byte equivalent selectors/properties before
+      reuse, per the task's explicit condition for doing so
+- [x] Every redirect, server action, validation rule, ingredient
+      parsing/deduplication/capacity-guard, image behavior, and
+      verification rule is byte-for-byte unchanged — only presentation
+      moved; no Prisma schema, action, storage, or auth change was made
+- [x] Tests: pure-function coverage for the new `recipeEditorTabs` helper
+      (General active, Ingredients/Metadata disabled placeholders, query
+      preservation, exactly-one-active); `admin-recipes.spec.ts` updated
+      for the recipe-name/slug h1/subtitle (replacing the old fixed "Edit
+      Recipe" heading) plus two new tests — tab/h1/Timestamps structure
+      across create and edit, and a full gameplay-verification lifecycle
+      (unverified state, current-version stamp, unchecked edits preserve
+      it, historical-version selection) mirroring the Item precedent; the
+      too-many-ingredients guard test extended to confirm Image/
+      Verification panels are withheld while Timestamps and Delete remain
+      visible; `admin-item-recipes.spec.ts` updated for the new edit-page
+      h1 (the recipe's own name, not "Edit Recipe")
+- [x] No Ingredients tab, no Metadata content, and no other resource
+      workspace was converted
+
 ### Remaining (not started)
 
-- [ ] The Recipe editor redesign (tabs, panels, sticky actions), every
-      other resource workspace conversion, dashboard summaries, and
-      Route Hubs — do not begin until explicitly instructed in the
-      milestone conversation
+- [ ] The Ingredients tab split, Recipe Metadata content, every other
+      resource workspace conversion, dashboard summaries, and Route Hubs
+      — do not begin until explicitly instructed in the milestone
+      conversation
 
 ---
 

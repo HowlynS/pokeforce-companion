@@ -1,7 +1,10 @@
-import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { ImagePanel } from "@/components/admin/image-panel";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -15,6 +18,12 @@ import { createRecipeAction } from "../actions";
 import { checkRecipeNameAvailability } from "../name-availability";
 
 export const dynamic = "force-dynamic";
+
+// Associates the image and verification controls — both rendered in the
+// aside column, outside this <form> element — with this form via the
+// standard HTML `form` attribute, so every field still submits together
+// with one ordinary form submission.
+const RECIPE_CREATE_FORM_ID = "recipe-create-form";
 
 const errorMessages: Record<string, string> = {
   no_current_version:
@@ -76,39 +85,72 @@ export default async function NewRecipePage({
     (_, index) => index + 1
   );
 
-  // The dedicated creation page (Slice 9C.1, following the Item
-  // workspace's Slice 9B.4 precedent): the form previously embedded at
-  // the bottom of /admin/recipes, moved here with unchanged action,
-  // validation, ingredient rows, image handling, and verification
-  // controls. No row is selected in the list while creating. Field
-  // grouping, EditorHeader/tabs/ImagePanel/VerificationPanel/
-  // TimestampsPanel/sticky EditorActions are deliberately NOT adopted in
-  // this pass — only the navigation/wrapper moved.
+  // Only General makes sense before a record exists — Ingredients and
+  // Metadata both describe an existing Recipe's relations and history, so
+  // they are omitted here rather than shown as disabled placeholders
+  // (matching the Item General editor's create-page precedent exactly).
+  const tabs: EditorTab[] = [
+    {
+      label: "General",
+      href: withRecipeSearchQuery("/admin/recipes/new", query),
+      active: true,
+    },
+  ];
+
+  // The dedicated creation page (Slice 9C.1), now composed from the
+  // shared editor primitives (Slice 9C.2): the form previously plain,
+  // moved here unchanged in field/action/validation terms — only the
+  // presentation now uses EditorHeader/EditorTabs/ImagePanel/
+  // VerificationPanel/EditorActions. Ingredients remain embedded in
+  // General fields; Ingredients and Metadata tabs, and TimestampsPanel,
+  // do not apply to a record that doesn't exist yet.
   return (
     <RecipeWorkspace
       rawQuery={q}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
+          <EditorHeader
             title="Create Recipe"
-            description="Add a new recipe to the wiki."
+            subtitle="Add a new recipe to the wiki."
+            backHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+            backLabel="Back to Recipe Management"
           />
 
-          <p className="admin-toolbar">
-            <a
-              href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
-              className="link-accent"
-            >
-              &larr; Back to Recipe Management
-            </a>
-          </p>
+          <EditorTabs label="Recipe editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
               {errorMessage}
             </p>
           ) : null}
+        </>
+      }
+      aside={
+        <>
+          <ImagePanel>
+            <label className="form-field">
+              <span className="form-field-label">
+                Image (optional — PNG, JPEG, or WebP, up to 5 MB)
+              </span>
+              <input
+                type="file"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+                form={RECIPE_CREATE_FORM_ID}
+                className="form-input"
+              />
+            </label>
+          </ImagePanel>
+
+          {/* No fake existing verification state on create: both fields
+              are null, so the panel renders Unverified with no stamp
+              rows — exactly the state a brand-new Recipe actually has. */}
+          <VerificationPanel
+            gameVersions={gameVersions}
+            verifiedAt={null}
+            verifiedGameVersion={null}
+            formId={RECIPE_CREATE_FORM_ID}
+          />
         </>
       }
     >
@@ -118,7 +160,11 @@ export default async function NewRecipePage({
           description="Create at least one item before creating a recipe."
         />
       ) : (
-        <form action={createRecipeAction} className="form-grid form-grid-wide">
+        <form
+          id={RECIPE_CREATE_FORM_ID}
+          action={createRecipeAction}
+          className="form-grid form-grid-wide"
+        >
           {/* Client-enhanced Name field with live duplicate feedback; the
               submission-time duplicate check in createRecipeAction remains
               the authoritative protection. */}
@@ -221,32 +267,10 @@ export default async function NewRecipePage({
             ))}
           </fieldset>
 
-          <label className="form-field">
-            <span className="form-field-label">
-              Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-            </span>
-            <input
-              type="file"
-              name="image"
-              accept="image/png,image/jpeg,image/webp"
-              className="form-input"
-            />
-          </label>
-
-          <GameVersionVerificationControls gameVersions={gameVersions} />
-
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Create Recipe
-            </button>
-
-            <a
-              href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
-              className="btn btn-secondary"
-            >
-              Cancel
-            </a>
-          </div>
+          <EditorActions
+            submitLabel="Create Recipe"
+            cancelHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+          />
         </form>
       )}
     </RecipeWorkspace>
