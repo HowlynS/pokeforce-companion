@@ -5,6 +5,7 @@ import {
   categoryDeleteHref,
   categoryEditHref,
   categoryEditorTabs,
+  categoryItemsHref,
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
@@ -63,54 +64,78 @@ describe("category workspace hrefs", () => {
       "/admin/categories/materials/delete?q=mat"
     );
   });
+
+  it("builds the Items tab route, preserving the query", () => {
+    expect(categoryItemsHref("materials", "")).toBe(
+      "/admin/categories/materials/items"
+    );
+    expect(categoryItemsHref("materials", "mat")).toBe(
+      "/admin/categories/materials/items?q=mat"
+    );
+  });
 });
 
 describe("categoryEditorTabs", () => {
-  it("marks General active, real, and linking to the edit route", () => {
-    const tabs = categoryEditorTabs("materials", "");
+  it("marks General active and links Items as a real destination", () => {
+    const tabs = categoryEditorTabs("materials", "", "general");
 
-    expect(tabs[0]).toEqual({
-      label: "General",
-      href: "/admin/categories/materials/edit",
-      active: true,
-    });
+    expect(tabs).toEqual([
+      {
+        label: "General",
+        href: "/admin/categories/materials/edit",
+        active: true,
+      },
+      {
+        label: "Items",
+        href: "/admin/categories/materials/items",
+        active: false,
+      },
+      { label: "Metadata", href: "", active: false, disabled: true },
+    ]);
   });
 
-  it("preserves the query on General's own href", () => {
-    const tabs = categoryEditorTabs("materials", "mat");
+  it("marks Items active when that is the current tab", () => {
+    const tabs = categoryEditorTabs("materials", "mat", "items");
 
     expect(tabs[0]).toEqual({
       label: "General",
       href: "/admin/categories/materials/edit?q=mat",
+      active: false,
+    });
+    expect(tabs[1]).toEqual({
+      label: "Items",
+      href: "/admin/categories/materials/items?q=mat",
       active: true,
     });
   });
 
-  it("marks exactly one tab active", () => {
-    const tabs = categoryEditorTabs("materials", "");
-    expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+  it("preserves the query on both real tabs' own hrefs", () => {
+    const tabs = categoryEditorTabs("materials", "mat", "general");
+
+    expect(tabs[0].href).toBe("/admin/categories/materials/edit?q=mat");
+    expect(tabs[1].href).toBe("/admin/categories/materials/items?q=mat");
   });
 
-  it("renders Items and Metadata as disabled placeholders", () => {
-    const tabs = categoryEditorTabs("materials", "");
-
-    expect(tabs[1]).toEqual({
-      label: "Items",
-      href: "",
-      active: false,
-      disabled: true,
-    });
-    expect(tabs[2]).toEqual({
-      label: "Metadata",
-      href: "",
-      active: false,
-      disabled: true,
-    });
+  it("marks exactly one tab active for every valid key", () => {
+    for (const active of ["general", "items"] as const) {
+      const tabs = categoryEditorTabs("materials", "", active);
+      expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+    }
   });
 
-  it("never renders General as disabled", () => {
-    const tabs = categoryEditorTabs("materials", "");
-    expect(tabs[0].disabled).toBeUndefined();
-    expect(tabs[0].href).not.toBe("");
+  it("renders only Metadata as a disabled placeholder", () => {
+    for (const active of ["general", "items"] as const) {
+      const tabs = categoryEditorTabs("materials", "", active);
+      expect(tabs[2]).toEqual({
+        label: "Metadata",
+        href: "",
+        active: false,
+        disabled: true,
+      });
+      expect(tabs[0].disabled).toBeUndefined();
+      expect(tabs[1].disabled).toBeUndefined();
+      expect(tabs[0].href).not.toBe("");
+      expect(tabs[1].href).not.toBe("");
+    }
   });
 });

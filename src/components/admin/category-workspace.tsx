@@ -11,6 +11,10 @@
 // src/lib/admin/category-workspace.ts); the shared components underneath
 // stay resource-agnostic. Not a generic resource-query framework — this
 // is a fourth, independent thin wrapper, not a shared base class.
+//
+// Slice 9E.3 added the optional `recordHref` prop, mirroring
+// `ProfessionWorkspace`'s own (Slice 9D.3): the Items tab route passes
+// `categoryItemsHref` so quick switching stays on that tab.
 
 import { prisma } from "@/lib/db";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
@@ -37,6 +41,12 @@ type CategoryWorkspaceProps = {
   /** Optional contextual side panel, unused in this pass — reserved for
       a later slice, matching the slot AdminWorkspace already exposes. */
   aside?: React.ReactNode;
+  /** Builds each record row's link (Slice 9E.3) — defaults to the
+      General edit route. The Items tab route passes `categoryItemsHref`
+      so quick switching between categories stays on the Items tab
+      instead of dropping back to General, mirroring
+      `ProfessionWorkspace`'s own `recordHref` prop. */
+  recordHref?: (slug: string, query: string) => string;
 };
 
 export async function CategoryWorkspace({
@@ -45,6 +55,7 @@ export async function CategoryWorkspace({
   header,
   children,
   aside,
+  recordHref = categoryEditHref,
 }: CategoryWorkspaceProps) {
   const query = normalizeCategorySearchQuery(rawQuery);
 
@@ -68,7 +79,7 @@ export async function CategoryWorkspace({
   });
 
   const rows = categories.map((category) => ({
-    href: categoryEditHref(category.slug, query),
+    href: recordHref(category.slug, query),
     primary: category.name,
     secondary: `${category._count.items} ${
       category._count.items === 1 ? "item" : "items"

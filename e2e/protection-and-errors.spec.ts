@@ -83,6 +83,10 @@ test.describe("unauthenticated admin protection", () => {
     // workspace, following the Item/Recipe/Profession workspaces'
     // navigation-foundation precedent.
     "/admin/categories/new",
+    // The Slice 9E.3 Items tab (read-only relationship content is still
+    // strictly admin-only); the seeded "materials" slug is only ever
+    // read here, never modified.
+    "/admin/categories/materials/items",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

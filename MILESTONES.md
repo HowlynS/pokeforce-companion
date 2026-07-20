@@ -360,9 +360,9 @@ the Recipe reference workspace is functionally complete; Slice 9D.1
 Recipes relationship tab) complete; Slice 9D.4 (Profession Metadata tab)
 complete — the Profession reference workspace is functionally complete;
 Slice 9E.1 (Category workspace navigation foundation) complete; Slice
-9E.2 (Category General editor conversion) complete — the Category
-Items relationship tab and Metadata remain pending; later slices not
-started
+9E.2 (Category General editor conversion) complete; Slice 9E.3 (Category
+Items relationship tab) complete — Category Metadata remains pending;
+later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1276,11 +1276,59 @@ workspace.
 - [x] No Items relationship tab, no Metadata content, and no other
       resource workspace was converted
 
+### Slice 9E.3 — Category Items relationship tab (complete, 2026-07-20)
+
+- [x] `/admin/categories/[slug]/items` is a new, real, read-only tab
+      inside `CategoryWorkspace`, mirroring the Profession workspace's
+      own Recipes tab (Slice 9D.3) shape but for a single relationship
+      direction (Items linked to this Category)
+- [x] `categoryEditorTabs` now takes an `active: "general" | "items"`
+      key (its new `CategoryEditorTabKey`, structurally identical to
+      `professionEditorTabs`'s shape) — General and Items are both real
+      links; Metadata remains the only disabled placeholder
+- [x] A new `categoryItemsHref(slug, query)` helper builds the tab's
+      route; `CategoryWorkspace` gained an optional `recordHref` prop
+      (default `categoryEditHref`, mirroring `ProfessionWorkspace`'s own)
+      so quick-switching categories while on this tab stays on the Items
+      tab, with `q` preserved
+- [x] One restrained query —
+      `prisma.category.findUnique({ include: { items: { orderBy: { name: "asc" } } } })`
+      — no per-row follow-up query; items are ordered alphabetically by
+      name
+- [x] Content is a `ContextPanel` table (Item/Held Item/Tradeable) with a
+      restrained count, replaced by an `EmptyState` when the category has
+      no linked item; each Item name links to the EXISTING
+      `/admin/items/[slug]/edit` route (no Category `q` carried onto that
+      link)
+- [x] Base value renders as a labeled detail line beneath the item name
+      only when present — no placeholder dash, no empty label, no blank
+      cell — following the hide-empty convention Profession's Recipes tab
+      established; Held item and Tradeable are always-meaningful
+      booleans, so they render as explicit Yes/No table columns instead
+      of optional detail lines (never a rigid column with blank cells)
+- [x] No form, input, select, checkbox, file control, or mutation/delete/
+      image/verification control exists anywhere on this tab
+- [x] Category/Item CRUD actions, the Prisma schema, storage, and
+      authorization are all unchanged
+- [x] Tests: `categoryEditorTabs`/`categoryItemsHref` unit coverage
+      (Items active/real, query preservation, exactly-one-active,
+      Metadata the only disabled tab); a new integration test proving the
+      relation query's alphabetical ordering, boolean-field availability,
+      and sparse `baseValue` handling; a new dedicated
+      "admin-category-items" E2E spec (direct route access, ordering,
+      hide-empty base value, empty state, tab navigation, quick switching
+      with `q` preservation, read-only-content assertions, unknown-slug
+      404) mirroring `admin-profession-recipes.spec.ts`'s structure; the
+      existing Category editor E2E test updated for Items becoming a real
+      tab, and the unauthenticated-protection route list extended with
+      the new route
+- [x] No Metadata content, and no other resource workspace was converted
+
 ### Remaining (not started)
 
-- [ ] A Category Items relationship tab, Category Metadata content,
-      Locations conversion, dashboard summaries, and Route Hubs — do not
-      begin until explicitly instructed in the milestone conversation
+- [ ] Category Metadata content, Locations conversion, dashboard
+      summaries, and Route Hubs — do not begin until explicitly
+      instructed in the milestone conversation
 
 ---
 

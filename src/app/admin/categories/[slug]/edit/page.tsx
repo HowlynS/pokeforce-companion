@@ -51,7 +51,7 @@ export default async function EditCategoryPage({
     notFound();
   }
 
-  const tabs = categoryEditorTabs(category.slug, query);
+  const tabs = categoryEditorTabs(category.slug, query, "general");
 
   // The General edit route inside the Category workspace, now composed
   // from the shared editor primitives (Slice 9E.2): the record list
@@ -59,10 +59,10 @@ export default async function EditCategoryPage({
   // quick switching. Every field, redirect, and server action is
   // unchanged — only the presentation moved. Categories have no image or
   // gameplay-verification behavior, so no ImagePanel or VerificationPanel
-  // exists here — unlike Item/Recipe/Profession. Items (a relationship
-  // tab) and Metadata remain disabled placeholders; Delete lives in
-  // `EditorActions`' own `deleteHref` since Categories carry no capacity
-  // guard that would ever need to hide the form.
+  // exists here — unlike Item/Recipe/Profession. Items is a real tab
+  // since Slice 9E.3; Metadata remains a disabled placeholder. Delete
+  // lives in `EditorActions`' own `deleteHref` since Categories carry no
+  // capacity guard that would ever need to hide the form.
   return (
     <CategoryWorkspace
       rawQuery={q}

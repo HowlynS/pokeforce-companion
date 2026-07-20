@@ -15,6 +15,12 @@
 // Profession workspace's own Slice 9D.2 shape exactly: General is the
 // only real tab so far — Items (a relationship tab, later slice) and
 // Metadata (not yet implemented) render as disabled placeholders.
+//
+// Slice 9E.3 (Items relationship tab) made Items a real destination too,
+// mirroring the Profession workspace's own Slice 9D.3 shape exactly:
+// `categoryEditorTabs` now takes an `active` key (General or Items)
+// exactly like `professionEditorTabs` does. Metadata remains the only
+// disabled placeholder.
 
 export const CATEGORY_LIST_PATH = "/admin/categories";
 export const CATEGORY_CREATE_PATH = "/admin/categories/new";
@@ -54,6 +60,18 @@ export function categoryDeleteHref(slug: string, query: string): string {
   return withCategorySearchQuery(`${CATEGORY_LIST_PATH}/${slug}/delete`, query);
 }
 
+/** The Items tab route for one category, preserving the query (Slice
+    9E.3) — read-only item relationship content, mirroring
+    `professionRecipesHref`. */
+export function categoryItemsHref(slug: string, query: string): string {
+  return withCategorySearchQuery(`${CATEGORY_LIST_PATH}/${slug}/items`, query);
+}
+
+/** Which Category editor tab is active — General (the record's own
+    fields) or Items (Slice 9E.3). Metadata is not yet implemented and
+    always renders as a disabled placeholder. */
+export type CategoryEditorTabKey = "general" | "items";
+
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
     component into this pure, React-free module. */
@@ -65,24 +83,31 @@ export type CategoryEditorTab = {
 };
 
 /**
- * The Category edit route's tab strip (Slice 9E.2): General is the only
- * real destination this slice — Items (a relationship tab, later slice)
- * and Metadata (not yet implemented) render as disabled placeholders,
- * never links to empty pages. The create page shows only General with no
- * placeholders at all (mirroring the Item/Recipe/Profession workspaces'
- * create-page precedent), so this helper is deliberately edit-only.
+ * The Category editor's tab strip, shared by every route inside the
+ * Category workspace that renders tabs (General edit, and the Items
+ * route added in Slice 9E.3) — one function so every tab's href/active
+ * state can never drift out of sync between pages. Metadata remains a
+ * disabled placeholder (not yet implemented); the create page shows only
+ * General with no placeholders at all (mirroring the Item/Recipe/
+ * Profession workspaces' create-page precedent), so this helper stays
+ * edit-only.
  */
 export function categoryEditorTabs(
   slug: string,
-  query: string
+  query: string,
+  active: CategoryEditorTabKey
 ): CategoryEditorTab[] {
   return [
     {
       label: "General",
       href: categoryEditHref(slug, query),
-      active: true,
+      active: active === "general",
     },
-    { label: "Items", href: "", active: false, disabled: true },
+    {
+      label: "Items",
+      href: categoryItemsHref(slug, query),
+      active: active === "items",
+    },
     { label: "Metadata", href: "", active: false, disabled: true },
   ];
 }

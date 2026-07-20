@@ -262,6 +262,63 @@ export async function removeTemporaryItemForCategory(): Promise<number> {
   });
 }
 
+/**
+ * Creates one temporary Item linked to a browser-test Category, with a
+ * caller-chosen suffix so MULTIPLE items can coexist under the same
+ * Category — unlike the single fixed-name `createTemporaryItemForCategory`
+ * above, which the Category Items tab tests (Slice 9E.3) need to prove
+ * alphabetical ordering and the hide-empty baseValue behavior. The target
+ * Category slug MUST carry the browser-test prefix, so a seeded Category
+ * can never be linked; the created row carries the same relation prefix,
+ * so the existing deleteE2eTestCategories sweep catches it with no new
+ * cleanup surface.
+ */
+export async function createTemporaryItemForCategoryItemsTab(
+  categorySlug: string,
+  options: {
+    suffix: string;
+    itemName: string;
+    heldItem?: boolean;
+    tradeable?: boolean;
+    baseValue?: number;
+  }
+): Promise<void> {
+  assertCategoryPrefixesAreSafe();
+
+  if (!categorySlug.startsWith(E2E_CATEGORY_SLUG_PREFIX)) {
+    throw new Error(
+      "Refusing to link an Item: the target Category slug does not carry the browser-test prefix."
+    );
+  }
+
+  await withVerifiedDatabase(async (client) => {
+    const category = await client.query(
+      `select id from "Category" where slug = $1`,
+      [categorySlug]
+    );
+
+    if (category.rowCount !== 1) {
+      throw new Error(
+        "Cannot create the temporary Item relation: the browser-test Category was not found."
+      );
+    }
+
+    await client.query(
+      `insert into "Item"
+         (id, slug, name, "categoryId", "heldItem", "tradeable", "baseValue", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, now())`,
+      [
+        `${E2E_CATEGORY_RELATION_SLUG_PREFIX}item-${options.suffix}`,
+        options.itemName,
+        category.rows[0].id as string,
+        options.heldItem ?? false,
+        options.tradeable ?? false,
+        options.baseValue ?? null,
+      ]
+    );
+  });
+}
+
 // Defense in depth for every Profession helper below: a broad delete or a
 // link against a seeded row must be impossible even if a prefix constant
 // is ever edited carelessly.

@@ -232,6 +232,84 @@ describe("database relations (integration)", () => {
     });
   });
 
+  describe("Category Items relationship query (Slice 9E.3)", () => {
+    it("loads linked items in alphabetical order, with heldItem/tradeable always present and baseValue when set", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const category = await prisma.category.create({
+        data: {
+          name: "Relations Test Category Items Tab",
+          slug: `${P}category-items-tab`,
+        },
+      });
+
+      // Created out of alphabetical order, so the query's own ordering —
+      // not insertion order — must be what determines the result.
+      await prisma.item.create({
+        data: {
+          name: "Zeta Relations Test Category Items Tab Item",
+          slug: `${P}category-items-tab-item-z`,
+          categoryId: category.id,
+          heldItem: true,
+          tradeable: false,
+          baseValue: 42,
+        },
+      });
+      await prisma.item.create({
+        data: {
+          name: "Alpha Relations Test Category Items Tab Item",
+          slug: `${P}category-items-tab-item-a`,
+          categoryId: category.id,
+          heldItem: false,
+          tradeable: true,
+        },
+      });
+
+      // The exact query shape the Category Items tab page runs: one call,
+      // no per-row follow-up query.
+      const loaded = await prisma.category.findUnique({
+        where: { id: category.id },
+        include: {
+          items: {
+            orderBy: { name: "asc" },
+          },
+        },
+      });
+
+      expect(loaded?.items).toHaveLength(2);
+      const [first, second] = loaded!.items;
+      // Alphabetical by name ("Alpha..." before "Zeta..."), not insertion
+      // order.
+      expect(first!.name).toBe("Alpha Relations Test Category Items Tab Item");
+      expect(first!.heldItem).toBe(false);
+      expect(first!.tradeable).toBe(true);
+      expect(first!.baseValue).toBeNull();
+
+      expect(second!.name).toBe("Zeta Relations Test Category Items Tab Item");
+      expect(second!.heldItem).toBe(true);
+      expect(second!.tradeable).toBe(false);
+      expect(second!.baseValue).toBe(42);
+    });
+
+    it("returns an empty items array for a category with no linked item", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const unused = await prisma.category.create({
+        data: {
+          name: "Relations Test Category Items Tab Unused",
+          slug: `${P}category-items-tab-unused`,
+        },
+      });
+
+      const loaded = await prisma.category.findUnique({
+        where: { id: unused.id },
+        include: { items: true },
+      });
+
+      expect(loaded?.items).toEqual([]);
+    });
+  });
+
   describe("profession relation blocker (application pre-check)", () => {
     it("blocks deletion via the linked-recipes count until the recipe is detached", async () => {
       const prisma = await getVerifiedTestPrisma();
