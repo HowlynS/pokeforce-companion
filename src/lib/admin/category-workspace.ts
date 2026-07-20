@@ -9,11 +9,12 @@
 // routes): the workspace links to /admin/categories/[slug]/edit.
 // Database ids never appear in URLs.
 //
-// This is a narrow navigation-foundation pass, mirroring the Profession
-// workspace's own Slice 9D.1 exactly: Categories have no tabs yet (the
-// editor conversion is deferred), so this module only exports the
-// list/create/edit/delete hrefs a plain record list and its two nested
-// routes need.
+// This started as a narrow navigation-foundation pass, mirroring the
+// Profession workspace's own Slice 9D.1 exactly (no tabs). Slice 9E.2
+// (General editor conversion) added `categoryEditorTabs`, mirroring the
+// Profession workspace's own Slice 9D.2 shape exactly: General is the
+// only real tab so far — Items (a relationship tab, later slice) and
+// Metadata (not yet implemented) render as disabled placeholders.
 
 export const CATEGORY_LIST_PATH = "/admin/categories";
 export const CATEGORY_CREATE_PATH = "/admin/categories/new";
@@ -51,4 +52,37 @@ export function categoryEditHref(slug: string, query: string): string {
 /** The delete-confirmation route for one category, preserving the query. */
 export function categoryDeleteHref(slug: string, query: string): string {
   return withCategorySearchQuery(`${CATEGORY_LIST_PATH}/${slug}/delete`, query);
+}
+
+/** Structurally compatible with the shared `EditorTab` type
+    (`src/components/admin/editor-tabs.tsx`) without importing a
+    component into this pure, React-free module. */
+export type CategoryEditorTab = {
+  label: string;
+  href: string;
+  active: boolean;
+  disabled?: boolean;
+};
+
+/**
+ * The Category edit route's tab strip (Slice 9E.2): General is the only
+ * real destination this slice — Items (a relationship tab, later slice)
+ * and Metadata (not yet implemented) render as disabled placeholders,
+ * never links to empty pages. The create page shows only General with no
+ * placeholders at all (mirroring the Item/Recipe/Profession workspaces'
+ * create-page precedent), so this helper is deliberately edit-only.
+ */
+export function categoryEditorTabs(
+  slug: string,
+  query: string
+): CategoryEditorTab[] {
+  return [
+    {
+      label: "General",
+      href: categoryEditHref(slug, query),
+      active: true,
+    },
+    { label: "Items", href: "", active: false, disabled: true },
+    { label: "Metadata", href: "", active: false, disabled: true },
+  ];
 }

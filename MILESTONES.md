@@ -359,9 +359,10 @@ the Recipe reference workspace is functionally complete; Slice 9D.1
 (Profession General editor conversion) complete; Slice 9D.3 (Profession
 Recipes relationship tab) complete; Slice 9D.4 (Profession Metadata tab)
 complete — the Profession reference workspace is functionally complete;
-Slice 9E.1 (Category workspace navigation foundation) complete — the
-Category General/Items/Metadata editor conversion remains pending; later
-slices not started
+Slice 9E.1 (Category workspace navigation foundation) complete; Slice
+9E.2 (Category General editor conversion) complete — the Category
+Items relationship tab and Metadata remain pending; later slices not
+started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1238,11 +1239,48 @@ workspace.
 - [x] No Category General/Items/Metadata editor conversion, no Locations
       conversion, no dashboard summaries, and no Route Hubs were started
 
+### Slice 9E.2 — Category General editor conversion (complete, 2026-07-20)
+
+- [x] `/admin/categories/new` and `/admin/categories/[slug]/edit` now
+      compose the shared editor primitives — `EditorHeader` (one h1:
+      "Create Category" or the category's own name), `EditorTabs`
+      (General active; create shows only General with no placeholders,
+      matching the Item/Recipe/Profession precedent; edit adds
+      Items/Metadata as disabled placeholders via the new
+      `categoryEditorTabs` helper), `TimestampsPanel` (edit only), and
+      sticky `EditorActions` ("Create Category"/"Save Changes", Cancel,
+      and on edit a "Delete Category" link via `EditorActions`' own
+      `deleteHref`)
+- [x] Categories carry no image or gameplay-verification behavior, so —
+      unlike Item/Recipe/Profession — this conversion deliberately adds
+      NO `ImagePanel`, NO `VerificationPanel`, and NO
+      `GameVersionVerificationControls`; the create page has no aside at
+      all (nothing applies pre-save) and the edit aside holds only
+      `TimestampsPanel`
+- [x] Delete is passed directly to `EditorActions`' `deleteHref` (the
+      simpler Item/Profession-style placement) — Categories carry no
+      capacity guard that would ever need to withhold the form
+- [x] Every Category field (name, slug, description), redirect, server
+      action, duplicate-name check, and the item-linked delete-blocking
+      rule is byte-for-byte unchanged — only presentation moved
+- [x] `updateCategoryAction` and `deleteCategoryAction` are completely
+      untouched; General does not load the full `items` relation
+- [x] Tests: `categoryEditorTabs` unit coverage (General active/real,
+      Items/Metadata disabled, exactly-one-active, query preservation);
+      a new "Category editor" E2E test proving exactly one h1, create
+      shows only General, edit marks General active with Items/Metadata
+      inert, Timestamps render on edit only, and no Image/Verification
+      heading or file/checkbox/select control appears anywhere on either
+      page; the existing lifecycle test updated for the edit heading
+      changing from the static "Edit Category" to the category's own name
+- [x] No Items relationship tab, no Metadata content, and no other
+      resource workspace was converted
+
 ### Remaining (not started)
 
-- [ ] The Category General/Items/Metadata editor conversion, Locations
-      conversion, dashboard summaries, and Route Hubs — do not begin
-      until explicitly instructed in the milestone conversation
+- [ ] A Category Items relationship tab, Category Metadata content,
+      Locations conversion, dashboard summaries, and Route Hubs — do not
+      begin until explicitly instructed in the milestone conversation
 
 ---
 

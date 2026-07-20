@@ -1,5 +1,7 @@
-import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
   CATEGORY_LIST_PATH,
@@ -35,32 +37,40 @@ export default async function NewCategoryPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const query = normalizeCategorySearchQuery(q);
 
-  // The dedicated creation page, following the Item/Recipe/Profession
-  // workspaces' navigation-foundation precedent: the form previously
-  // embedded at the bottom of /admin/categories, moved here with
-  // unchanged action, fields, and validation. No row is selected in the
-  // list while creating. Field grouping, EditorHeader/tabs/sticky
-  // EditorActions are deliberately NOT adopted in this pass — only the
-  // navigation/wrapper moved.
+  // Only General makes sense before a record exists — Items and
+  // Metadata both describe an existing Category's relations and history,
+  // so they are omitted here rather than shown as disabled placeholders
+  // (matching the Item/Recipe/Profession General editors' create-page
+  // precedent exactly).
+  const tabs: EditorTab[] = [
+    {
+      label: "General",
+      href: withCategorySearchQuery("/admin/categories/new", query),
+      active: true,
+    },
+  ];
+
+  // The dedicated creation page, now composed from the shared editor
+  // primitives (Slice 9E.2): the form previously plain, moved here
+  // unchanged in field/action/validation terms — only the presentation
+  // now uses EditorHeader/EditorTabs/EditorActions. Categories have no
+  // image or gameplay-verification behavior, so no ImagePanel or
+  // VerificationPanel exists here — unlike Item/Recipe/Profession. Items
+  // and Metadata tabs, and TimestampsPanel, do not apply to a record that
+  // doesn't exist yet.
   return (
     <CategoryWorkspace
       rawQuery={q}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
+          <EditorHeader
             title="Create Category"
-            description="Add a new category to the wiki."
+            subtitle="Add a new category to the wiki."
+            backHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+            backLabel="Back to Category Management"
           />
 
-          <p className="admin-toolbar">
-            <a
-              href={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-              className="link-accent"
-            >
-              &larr; Back to Category Management
-            </a>
-          </p>
+          <EditorTabs label="Category editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
@@ -92,18 +102,10 @@ export default async function NewCategoryPage({
           <textarea name="description" rows={3} className="form-input" />
         </label>
 
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Create Category
-          </button>
-
-          <a
-            href={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Create Category"
+          cancelHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+        />
       </form>
     </CategoryWorkspace>
   );

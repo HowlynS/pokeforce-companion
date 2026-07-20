@@ -1,11 +1,15 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs } from "@/components/admin/editor-tabs";
+import { TimestampsPanel } from "@/components/admin/timestamps-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
   CATEGORY_LIST_PATH,
   categoryDeleteHref,
+  categoryEditorTabs,
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
@@ -47,40 +51,32 @@ export default async function EditCategoryPage({
     notFound();
   }
 
-  // The edit route inside the Category workspace, following the
-  // Item/Recipe/Profession workspaces' navigation-foundation precedent:
-  // the record list marks this category selected and keeps the active
-  // search applied for quick switching. Every field, redirect, and
-  // server action is unchanged — only the navigation wrapper moved.
-  // Delete is now reached from this page's toolbar (the old table's
-  // per-row Delete link is gone).
+  const tabs = categoryEditorTabs(category.slug, query);
+
+  // The General edit route inside the Category workspace, now composed
+  // from the shared editor primitives (Slice 9E.2): the record list
+  // marks this category selected and keeps the active search applied for
+  // quick switching. Every field, redirect, and server action is
+  // unchanged — only the presentation moved. Categories have no image or
+  // gameplay-verification behavior, so no ImagePanel or VerificationPanel
+  // exists here — unlike Item/Recipe/Profession. Items (a relationship
+  // tab) and Metadata remain disabled placeholders; Delete lives in
+  // `EditorActions`' own `deleteHref` since Categories carry no capacity
+  // guard that would ever need to hide the form.
   return (
     <CategoryWorkspace
       rawQuery={q}
       selectedSlug={category.slug}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
-            title="Edit Category"
-            description={`Update details for "${category.name}".`}
+          <EditorHeader
+            title={category.name}
+            subtitle={category.slug}
+            backHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+            backLabel="Back to Category Management"
           />
 
-          <nav className="admin-toolbar" aria-label="Category editor actions">
-            <a
-              href={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-              className="link-accent"
-            >
-              &larr; Back to Category Management
-            </a>
-
-            <a
-              href={categoryDeleteHref(category.slug, query)}
-              className="link-danger"
-            >
-              Delete Category
-            </a>
-          </nav>
+          <EditorTabs label="Category editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
@@ -88,6 +84,12 @@ export default async function EditCategoryPage({
             </p>
           ) : null}
         </>
+      }
+      aside={
+        <TimestampsPanel
+          createdAt={category.createdAt}
+          updatedAt={category.updatedAt}
+        />
       }
     >
       <form action={updateCategoryAction} className="form-grid">
@@ -126,18 +128,12 @@ export default async function EditCategoryPage({
           />
         </label>
 
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Save Changes
-          </button>
-
-          <a
-            href={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Save Changes"
+          cancelHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+          deleteHref={categoryDeleteHref(category.slug, query)}
+          deleteLabel="Delete Category"
+        />
       </form>
     </CategoryWorkspace>
   );

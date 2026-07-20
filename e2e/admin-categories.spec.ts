@@ -86,6 +86,25 @@ function recordRow(page: Page, name: string) {
     .filter({ has: page.getByText(name, { exact: true }) });
 }
 
+// One of the shared panels' rows (Timestamps) in the Category editor's
+// aside, located by its label (dt) text — scoped to the panel by heading
+// so identical row labels can never collide with content elsewhere on
+// the page. The row's dt/dd text is concatenated with no separator, so
+// the filter is anchored to the START of the row's text.
+function panelRow(page: Page, panelTitle: string, label: string) {
+  return page
+    .locator(".admin-panel")
+    .filter({
+      has: page.getByRole("heading", { level: 2, name: panelTitle, exact: true }),
+    })
+    .locator(".admin-panel-row")
+    .filter({ hasText: new RegExp(`^${label}`) });
+}
+
+function tabNav(page: Page) {
+  return page.getByRole("navigation", { name: "Category editor sections" });
+}
+
 // Fills the create form on /admin/categories/new (the page must already
 // be open — the dedicated creation route) and submits it.
 async function createCategoryThroughForm(
@@ -147,6 +166,87 @@ test("Create category opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
+test("Category editor: create shows only General; edit marks General active with Items and Metadata inert; exactly one h1 renders; Timestamps render on edit only; no image or verification controls appear", async ({
+  page,
+}) => {
+  // --- Create: exactly one h1, one real tab, no disabled placeholders,
+  // no Timestamps panel (nothing to show yet), no image/verification
+  // controls (Categories have neither) ------------------------------------
+  await page.goto("/admin/categories/new");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  const createTabNav = tabNav(page);
+  await expect(
+    createTabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(createTabNav.getByText("Items")).toHaveCount(0);
+  await expect(createTabNav.getByText("Metadata")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Verification", exact: true })
+  ).toHaveCount(0);
+  await expect(page.locator('input[type="file"]')).toHaveCount(0);
+  await expect(page.locator('input[type="checkbox"]')).toHaveCount(0);
+  await expect(page.locator("select")).toHaveCount(0);
+
+  await createCategoryThroughForm(page, {
+    name: "Test E2E Category Tabs",
+    slug: "test-e2e-category-tabs",
+    description: "Verifies the shared editor structure.",
+  });
+
+  // --- Edit: exactly one h1 (the category's own name), General active,
+  // Items and Metadata both inert placeholders, Timestamps present
+  // (Created/Updated), still no image or verification controls ----------
+  await recordRow(page, "Test E2E Category Tabs").click();
+  await expect(page).toHaveURL("/admin/categories/test-e2e-category-tabs/edit");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Category Tabs",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  const editTabNav = tabNav(page);
+  await expect(
+    editTabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
+  await expect(
+    editTabNav.getByText("Items", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Items", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    editTabNav.getByText("Metadata", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Metadata", exact: true })
+  ).toHaveCount(0);
+
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Created")).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Updated")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Verification", exact: true })
+  ).toHaveCount(0);
+  await expect(page.locator('input[type="file"]')).toHaveCount(0);
+  await expect(page.locator('input[type="checkbox"]')).toHaveCount(0);
+  await expect(page.locator("select")).toHaveCount(0);
+});
+
 test("category create/edit/delete lifecycle through the real admin UI", async ({
   page,
 }) => {
@@ -197,12 +297,13 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
     "aria-current",
     "page"
   );
+  // The editor's one h1 is the category's own name; its slug is the
+  // subtitle context underneath (Slice 9E.2, matching the Item/Recipe/
+  // Profession General editors' convention exactly).
   await expect(
-    page.getByRole("heading", { level: 1, name: "Edit Category" })
+    page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
-  await expect(
-    page.getByText(`Update details for "${INITIAL.name}".`)
-  ).toBeVisible();
+  await expect(page.getByText(INITIAL.slug, { exact: true })).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);

@@ -4,6 +4,7 @@ import {
   CATEGORY_LIST_PATH,
   categoryDeleteHref,
   categoryEditHref,
+  categoryEditorTabs,
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
@@ -61,5 +62,55 @@ describe("category workspace hrefs", () => {
     expect(categoryDeleteHref("materials", "mat")).toBe(
       "/admin/categories/materials/delete?q=mat"
     );
+  });
+});
+
+describe("categoryEditorTabs", () => {
+  it("marks General active, real, and linking to the edit route", () => {
+    const tabs = categoryEditorTabs("materials", "");
+
+    expect(tabs[0]).toEqual({
+      label: "General",
+      href: "/admin/categories/materials/edit",
+      active: true,
+    });
+  });
+
+  it("preserves the query on General's own href", () => {
+    const tabs = categoryEditorTabs("materials", "mat");
+
+    expect(tabs[0]).toEqual({
+      label: "General",
+      href: "/admin/categories/materials/edit?q=mat",
+      active: true,
+    });
+  });
+
+  it("marks exactly one tab active", () => {
+    const tabs = categoryEditorTabs("materials", "");
+    expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+  });
+
+  it("renders Items and Metadata as disabled placeholders", () => {
+    const tabs = categoryEditorTabs("materials", "");
+
+    expect(tabs[1]).toEqual({
+      label: "Items",
+      href: "",
+      active: false,
+      disabled: true,
+    });
+    expect(tabs[2]).toEqual({
+      label: "Metadata",
+      href: "",
+      active: false,
+      disabled: true,
+    });
+  });
+
+  it("never renders General as disabled", () => {
+    const tabs = categoryEditorTabs("materials", "");
+    expect(tabs[0].disabled).toBeUndefined();
+    expect(tabs[0].href).not.toBe("");
   });
 });
