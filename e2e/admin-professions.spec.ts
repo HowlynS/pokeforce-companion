@@ -14,8 +14,11 @@
 
 import { expect, test, type Page } from "@playwright/test";
 import {
+  E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestProfessionRecords,
+  createE2eTestGameVersion,
   createTemporaryRecipeForProfession,
+  deleteE2eTestGameVersionRecords,
   deleteE2eTestProfessionRecords,
   readFixtureCounts,
   removeTemporaryRecipeForProfession,
@@ -41,6 +44,18 @@ const BLOCKED = {
   description: "Created to verify the relation-blocked deletion rule.",
 } as const;
 
+// The persistent test-only Game Version fixture, made current by
+// auth.setup.ts before any admin spec runs.
+const CURRENT_VERSION_NAME = E2E_CURRENT_GAME_VERSION_NAME;
+
+// A NON-current browser-test version for the historical-selection flow;
+// carries the test-e2e-gv- prefix so deleteE2eTestGameVersionRecords
+// always catches it.
+const HISTORICAL_VERSION_NAME = "test-e2e-gv-professions-historical";
+
+const VERIFICATION_CHECKBOX_LABEL =
+  "Mark gameplay data as verified for the selected game version.";
+
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
 let pageErrors: string[] = [];
@@ -52,8 +67,11 @@ test.beforeEach(({ page }) => {
 
 test.afterEach(async () => {
   // Defensive prefix-scoped cleanup even when a test failed mid-lifecycle:
-  // temporary relation Recipe/Item rows first, then test Professions.
+  // temporary relation Recipe/Item rows and test Professions first, then
+  // the browser-test Game Version the verification test creates (last —
+  // a stamped Profession RESTRICT-references it).
   await deleteE2eTestProfessionRecords();
+  await deleteE2eTestGameVersionRecords();
   expect(pageErrors, "no uncaught page errors are allowed").toEqual([]);
 });
 
@@ -61,11 +79,14 @@ test.beforeAll(async () => {
   // Remove stale rows from interrupted earlier runs; the guard inside the
   // helper throws here if the environment is not the verified test project.
   await deleteE2eTestProfessionRecords();
+  await deleteE2eTestGameVersionRecords();
   expect(await countE2eTestProfessionRecords()).toBe(0);
 });
 
 test.afterAll(async () => {
-  const remaining = await deleteE2eTestProfessionRecords();
+  const remaining =
+    (await deleteE2eTestProfessionRecords()) +
+    (await deleteE2eTestGameVersionRecords());
   // afterEach should already have removed everything — fail loudly if not.
   expect(remaining).toBe(0);
 });
@@ -87,6 +108,23 @@ function recordRow(page: Page, name: string) {
     .getByRole("navigation", { name: "Professions records" })
     .getByRole("link")
     .filter({ has: page.getByText(name, { exact: true }) });
+}
+
+// One of the shared panels' rows (Verification or Timestamps) in the
+// Profession editor's aside, located by its label (dt) text — scoped to
+// the panel by heading so identical row labels can never collide. The
+// row's dt/dd text is concatenated with no separator, so the filter is
+// anchored to the START of the row's text — otherwise "Current version"
+// would also match the unrelated "Verified — current version" status
+// badge's own "admin-panel-row" wrapper (case-insensitive substring).
+function panelRow(page: Page, panelTitle: string, label: string) {
+  return page
+    .locator(".admin-panel")
+    .filter({
+      has: page.getByRole("heading", { level: 2, name: panelTitle, exact: true }),
+    })
+    .locator(".admin-panel-row")
+    .filter({ hasText: new RegExp(`^${label}`) });
 }
 
 // Fills the create form on /admin/professions/new (the page must already
@@ -157,6 +195,79 @@ test("Create profession opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
+test("Profession editor: create shows only General; edit marks General active with Recipes and Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
+  page,
+}) => {
+  // --- Create: exactly one h1, one real tab, no disabled placeholders,
+  // Image panel present, no Timestamps panel (nothing to show yet) ------
+  await page.goto("/admin/professions/new");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  const createTabNav = page.getByRole("navigation", {
+    name: "Profession editor sections",
+  });
+  await expect(
+    createTabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(createTabNav.getByText("Recipes")).toHaveCount(0);
+  await expect(createTabNav.getByText("Metadata")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toHaveCount(0);
+
+  await createProfessionThroughForm(page, {
+    name: "Test E2E Profession Tabs",
+    slug: "test-e2e-profession-tabs",
+    description: "Verifies the shared editor structure.",
+  });
+
+  // --- Edit: exactly one h1 (the profession's own name), General
+  // active, Recipes and Metadata both inert placeholders, Timestamps
+  // present (Created/Updated, no Verified stamp yet) --------------------
+  await recordRow(page, "Test E2E Profession Tabs").click();
+  await expect(page).toHaveURL("/admin/professions/test-e2e-profession-tabs/edit");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Profession Tabs",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  const editTabNav = page.getByRole("navigation", {
+    name: "Profession editor sections",
+  });
+  await expect(
+    editTabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
+  await expect(
+    editTabNav.getByText("Recipes", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Recipes", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    editTabNav.getByText("Metadata", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Metadata", exact: true })
+  ).toHaveCount(0);
+
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Created")).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Updated")).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
+});
+
 test("profession create/edit/delete lifecycle through the real admin UI", async ({
   page,
 }) => {
@@ -209,12 +320,13 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
     "aria-current",
     "page"
   );
+  // The editor's one h1 is the profession's own name; its slug is the
+  // subtitle context underneath (Slice 9D.2, matching the Item/Recipe
+  // General editors' convention exactly).
   await expect(
-    page.getByRole("heading", { level: 1, name: "Edit Profession" })
+    page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
-  await expect(
-    page.getByText(`Update details for "${INITIAL.name}".`)
-  ).toBeVisible();
+  await expect(page.getByText(INITIAL.slug, { exact: true })).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);
@@ -245,8 +357,8 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   );
 
   // --- Delete -------------------------------------------------------------
-  // Delete is reached from the edit page's toolbar (the old table's
-  // per-row Delete link is gone).
+  // Delete is reached from the edit page's sticky EditorActions (the old
+  // table's per-row Delete link is gone).
   await page.goto("/admin/professions");
   await recordRow(page, EDITED.name).click();
   await expect(page).toHaveURL(`/admin/professions/${EDITED.slug}/edit`);
@@ -493,6 +605,109 @@ test("record-list search filters, preserves the query across switching, and clea
   await expect(
     page.getByRole("link", { name: "Clear search", exact: true })
   ).toHaveCount(0);
+});
+
+test("gameplay verification stamps the selected game version and survives normal edits", async ({
+  page,
+}) => {
+  // A NON-current historical version for the picker flows below.
+  await createE2eTestGameVersion(HISTORICAL_VERSION_NAME);
+
+  await page.goto("/admin/professions/new");
+  await createProfessionThroughForm(page, {
+    name: "Test E2E Profession Verify",
+    slug: "test-e2e-profession-verify",
+    description: "Verifies the shared verification panel.",
+  });
+
+  // --- The shared VerificationPanel shows Unverified with no stamp rows,
+  // and the picker lists versions and defaults to the current one -------
+  await recordRow(page, "Test E2E Profession Verify").click();
+  await expect(page).toHaveURL(
+    "/admin/professions/test-e2e-profession-verify/edit"
+  );
+  await expect(
+    page.locator(".admin-status-badge", { hasText: "Unverified" })
+  ).toBeVisible();
+  await expect(panelRow(page, "Verification", "Verified against")).toHaveCount(
+    0
+  );
+  const picker = page.getByLabel("Game version to verify against");
+  await expect(
+    picker.locator("option:checked"),
+    "the current version is preselected"
+  ).toHaveText(`${CURRENT_VERSION_NAME} (current)`);
+  await expect(
+    picker.locator("option", { hasText: HISTORICAL_VERSION_NAME })
+  ).toHaveCount(1);
+
+  // --- Verify via the explicit opt-in checkbox (picker untouched) -------
+  const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
+  await expect(verifyCheckbox).not.toBeChecked();
+  await verifyCheckbox.check();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/professions?success=updated");
+
+  // The edit page shows the stamp carrying the preselected current Game
+  // Version, resolved and validated server-side, classified as
+  // verified-for-the-current-version by the shared panel.
+  await recordRow(page, "Test E2E Profession Verify").click();
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(CURRENT_VERSION_NAME);
+  const stampedDateText = await panelRow(page, "Verification", "Verified on")
+    .textContent();
+  await expect(panelRow(page, "Timestamps", "Verified")).toBeVisible();
+
+  // --- A NORMAL edit, even one that moves the picker, must not alter the
+  // stamp: the picker only ever proposes a version, and nothing is
+  // written while the checkbox stays unchecked. ---------------------------
+  // Unchecked by default on every render, even for an already-verified
+  // profession: verification is a per-save action, not persistent form
+  // state.
+  await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
+  await page
+    .getByLabel("Game version to verify against")
+    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await page
+    .getByLabel(/^Description/)
+    .fill("Verifies the shared verification panel (edited).");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/professions?success=updated");
+
+  await recordRow(page, "Test E2E Profession Verify").click();
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(CURRENT_VERSION_NAME);
+  expect(
+    await panelRow(page, "Verification", "Verified on").textContent()
+  ).toBe(stampedDateText);
+
+  // --- Verifying against a SELECTED historical version -------------------
+  await page
+    .getByLabel("Game version to verify against")
+    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/professions?success=updated");
+
+  await recordRow(page, "Test E2E Profession Verify").click();
+  await expect(
+    page.locator(".admin-status-badge", { hasText: "Verified — older version" })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(HISTORICAL_VERSION_NAME);
 });
 
 test("seeded fixtures are preserved and no test profession remains", async () => {

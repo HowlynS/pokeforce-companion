@@ -1,6 +1,9 @@
-import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { ImagePanel } from "@/components/admin/image-panel";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
   PROFESSION_LIST_PATH,
@@ -13,6 +16,12 @@ import { createProfessionAction } from "../actions";
 import { checkProfessionNameAvailability } from "../name-availability";
 
 export const dynamic = "force-dynamic";
+
+// Associates the image and verification controls — both rendered in the
+// aside column, outside this <form> element — with this form via the
+// standard HTML `form` attribute, so every field still submits together
+// with one ordinary form submission.
+const PROFESSION_CREATE_FORM_ID = "profession-create-form";
 
 const errorMessages: Record<string, string> = {
   no_current_version:
@@ -50,33 +59,38 @@ export default async function NewProfessionPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  // The dedicated creation page (Slice 9D.1, following the Item
-  // workspace's Slice 9B.4 and Recipe workspace's Slice 9C.1 precedent):
-  // the form previously embedded at the bottom of /admin/professions,
-  // moved here with unchanged action, validation, image handling, and
-  // verification controls. No row is selected in the list while
-  // creating. Field grouping, EditorHeader/tabs/ImagePanel/
-  // VerificationPanel/sticky EditorActions are deliberately NOT adopted
-  // in this pass — only the navigation/wrapper moved.
+  // Only General makes sense before a record exists — Recipes and
+  // Metadata both describe an existing Profession's relations and
+  // history, so they are omitted here rather than shown as disabled
+  // placeholders (matching the Item/Recipe General editors' create-page
+  // precedent exactly).
+  const tabs: EditorTab[] = [
+    {
+      label: "General",
+      href: withProfessionSearchQuery("/admin/professions/new", query),
+      active: true,
+    },
+  ];
+
+  // The dedicated creation page (Slice 9D.1), now composed from the
+  // shared editor primitives (Slice 9D.2): the form previously plain,
+  // moved here unchanged in field/action/validation terms — only the
+  // presentation now uses EditorHeader/EditorTabs/ImagePanel/
+  // VerificationPanel/EditorActions. Recipes and Metadata tabs, and
+  // TimestampsPanel, do not apply to a record that doesn't exist yet.
   return (
     <ProfessionWorkspace
       rawQuery={q}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
+          <EditorHeader
             title="Create Profession"
-            description="Add a new profession to the wiki."
+            subtitle="Add a new profession to the wiki."
+            backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+            backLabel="Back to Profession Management"
           />
 
-          <p className="admin-toolbar">
-            <a
-              href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-              className="link-accent"
-            >
-              &larr; Back to Profession Management
-            </a>
-          </p>
+          <EditorTabs label="Profession editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
@@ -85,8 +99,41 @@ export default async function NewProfessionPage({
           ) : null}
         </>
       }
+      aside={
+        <>
+          <ImagePanel>
+            <label className="form-field">
+              <span className="form-field-label">
+                Image (optional — PNG, JPEG, or WebP, up to 5 MB)
+              </span>
+              <input
+                type="file"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+                form={PROFESSION_CREATE_FORM_ID}
+                className="form-input"
+              />
+            </label>
+          </ImagePanel>
+
+          {/* No fake existing verification state on create: both fields
+              are null, so the panel renders Unverified with no stamp
+              rows — exactly the state a brand-new Profession actually
+              has. */}
+          <VerificationPanel
+            gameVersions={gameVersions}
+            verifiedAt={null}
+            verifiedGameVersion={null}
+            formId={PROFESSION_CREATE_FORM_ID}
+          />
+        </>
+      }
     >
-      <form action={createProfessionAction} className="form-grid">
+      <form
+        id={PROFESSION_CREATE_FORM_ID}
+        action={createProfessionAction}
+        className="form-grid"
+      >
         {/* Client-enhanced Name field with live duplicate feedback; the
             submission-time duplicate check in createProfessionAction
             remains the authoritative protection. */}
@@ -108,32 +155,10 @@ export default async function NewProfessionPage({
           <textarea name="description" rows={3} className="form-input" />
         </label>
 
-        <label className="form-field">
-          <span className="form-field-label">
-            Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-          </span>
-          <input
-            type="file"
-            name="image"
-            accept="image/png,image/jpeg,image/webp"
-            className="form-input"
-          />
-        </label>
-
-        <GameVersionVerificationControls gameVersions={gameVersions} />
-
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Create Profession
-          </button>
-
-          <a
-            href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Create Profession"
+          cancelHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+        />
       </form>
     </ProfessionWorkspace>
   );

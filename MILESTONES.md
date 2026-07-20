@@ -355,9 +355,9 @@ Slice 9C.1 (Recipe workspace navigation foundation) complete; Slice 9C.2
 (Recipe General editor conversion) complete; Slice 9C.3 (Recipe
 Ingredients tab) complete; Slice 9C.4 (Recipe Metadata tab) complete —
 the Recipe reference workspace is functionally complete; Slice 9D.1
-(Profession workspace navigation foundation) complete — the Profession
-General editor conversion and a Recipes relationship tab remain pending;
-later slices not started
+(Profession workspace navigation foundation) complete; Slice 9D.2
+(Profession General editor conversion) complete — a Profession Recipes
+relationship tab and Metadata remain pending; later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1036,12 +1036,53 @@ workspace.
       Locations conversion, no dashboard summaries, and no Route Hubs
       were started
 
+### Slice 9D.2 — Profession General editor conversion (complete, 2026-07-18)
+
+- [x] `/admin/professions/new` and `/admin/professions/[slug]/edit` now
+      compose the shared editor primitives — `EditorHeader` (one h1:
+      "Create Profession" or the profession's own name), `EditorTabs`
+      (General active; create shows only General with no placeholders,
+      matching the Item/Recipe precedent; edit adds Recipes/Metadata as
+      disabled placeholders via the new `professionEditorTabs` helper),
+      `ImagePanel`, `VerificationPanel`, `TimestampsPanel` (edit only),
+      and sticky `EditorActions` ("Create Profession"/"Save Changes",
+      Cancel, and on edit a "Delete Profession" link via `EditorActions`'
+      own `deleteHref`)
+- [x] Delete is passed directly to `EditorActions`' `deleteHref` (not
+      routed through `EditorHeader`'s `actions` slot as Recipe had to) —
+      Professions carry no ingredient-style capacity guard that would
+      ever need to withhold the form, so the simpler Item-style
+      placement applies
+- [x] `ImagePanel`'s upload/replace/remove markup reuses the exact shared
+      `.admin-image-remove-*` classes Item/Recipe already migrated to —
+      no bespoke inline `<style>` block, verified byte-for-byte
+      equivalent before reuse
+- [x] Every Profession field (name, slug, description), redirect, server
+      action, image behavior, verification rule, and name-availability
+      check is byte-for-byte unchanged — only presentation moved
+- [x] Linked-Recipe delete-blocking rule, `updateProfessionAction`, and
+      `deleteProfessionAction` are completely untouched; General does not
+      load the full `recipes` relation
+- [x] Tests: `professionEditorTabs` unit coverage (General active/real,
+      Recipes/Metadata disabled, exactly-one-active, query preservation);
+      a new "Profession editor" E2E test proving exactly one h1, create
+      shows only General, edit marks General active with Recipes/
+      Metadata inert, and Timestamps render on edit only; a new gameplay-
+      verification E2E test (unverified state, opt-in stamping, normal-
+      edit preservation, historical Game Version selection) mirroring the
+      Recipe precedent exactly, since no such coverage existed for
+      Professions before this slice; existing lifecycle/image/name-
+      feedback tests updated only where the edit heading changed from
+      "Edit Profession" to the profession's own name
+- [x] No Recipes route, no Metadata content, and no other resource
+      workspace was converted
+
 ### Remaining (not started)
 
-- [ ] The Profession General editor conversion, a Profession Recipes
-      relationship tab, every other resource workspace conversion,
-      dashboard summaries, and Route Hubs — do not begin until explicitly
-      instructed in the milestone conversation
+- [ ] A Profession Recipes relationship tab, Profession Metadata content,
+      every other resource workspace conversion, dashboard summaries, and
+      Route Hubs — do not begin until explicitly instructed in the
+      milestone conversation
 
 ---
 

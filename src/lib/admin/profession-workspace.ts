@@ -10,10 +10,10 @@
 // edit/delete routes): the workspace links to
 // /admin/professions/[slug]/edit. Database ids never appear in URLs.
 //
-// This is a narrow navigation-foundation pass, mirroring Slice 9C.1
-// exactly: Professions have no tabs yet (the General editor conversion
-// is deferred), so this module only exports the list/create/edit/delete
-// hrefs a plain record list and its two nested routes need.
+// Slice 9D.2 (General editor conversion) added `professionEditorTabs`,
+// mirroring the Recipe workspace's Slice 9C.2 shape exactly: General is
+// the only real tab so far — Recipes (a relationship tab, later slice)
+// and Metadata (not yet implemented) render as disabled placeholders.
 
 export const PROFESSION_LIST_PATH = "/admin/professions";
 export const PROFESSION_CREATE_PATH = "/admin/professions/new";
@@ -57,4 +57,38 @@ export function professionDeleteHref(slug: string, query: string): string {
     `${PROFESSION_LIST_PATH}/${slug}/delete`,
     query
   );
+}
+
+/** Structurally compatible with the shared `EditorTab` type
+    (`src/components/admin/editor-tabs.tsx`) without importing a
+    component into this pure, React-free module. */
+export type ProfessionEditorTab = {
+  label: string;
+  href: string;
+  active: boolean;
+  disabled?: boolean;
+};
+
+/**
+ * The Profession edit route's tab strip (Slice 9D.2): General is the only
+ * real destination this slice — Recipes (a relationship tab, later
+ * slice) and Metadata (not yet implemented) render as disabled
+ * placeholders, never links to empty pages. The create page shows only
+ * General with no placeholders at all (mirroring the Item/Recipe
+ * workspaces' create-page precedent), so this helper is deliberately
+ * edit-only.
+ */
+export function professionEditorTabs(
+  slug: string,
+  query: string
+): ProfessionEditorTab[] {
+  return [
+    {
+      label: "General",
+      href: professionEditHref(slug, query),
+      active: true,
+    },
+    { label: "Recipes", href: "", active: false, disabled: true },
+    { label: "Metadata", href: "", active: false, disabled: true },
+  ];
 }

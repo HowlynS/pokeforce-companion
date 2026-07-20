@@ -1,13 +1,18 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs } from "@/components/admin/editor-tabs";
+import { ImagePanel } from "@/components/admin/image-panel";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { TimestampsPanel } from "@/components/admin/timestamps-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
   PROFESSION_LIST_PATH,
   normalizeProfessionSearchQuery,
   professionDeleteHref,
+  professionEditorTabs,
   withProfessionSearchQuery,
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
@@ -17,6 +22,12 @@ import { updateProfessionAction } from "../../actions";
 import { checkProfessionNameAvailability } from "../../name-availability";
 
 export const dynamic = "force-dynamic";
+
+// Associates the image and verification controls — both rendered in the
+// aside column, outside this <form> element — with this form via the
+// standard HTML `form` attribute, so every field still submits together
+// with one ordinary form submission.
+const PROFESSION_EDIT_FORM_ID = "profession-edit-form";
 
 const errorMessages: Record<string, string> = {
   no_current_version:
@@ -56,7 +67,9 @@ export default async function EditProfessionPage({
   const profession = await prisma.profession.findUnique({
     where: { slug },
     // Admin-only visibility of the verification stamp: the related Game
-    // Version's name is shown next to the opt-in checkbox below.
+    // Version's name is shown in the aside's VerificationPanel below. No
+    // recipes include — General never touches or displays that relation
+    // (a Recipes relationship tab is a later slice).
     include: { verifiedGameVersion: true },
   });
 
@@ -73,41 +86,31 @@ export default async function EditProfessionPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  // The edit route inside the Profession workspace (Slice 9D.1,
-  // following the Item workspace's Slice 9B.4 and Recipe workspace's
-  // Slice 9C.1 precedent): the record list marks this profession
-  // selected and keeps the active search applied for quick switching.
-  // Every field, redirect, server action, image behavior, and
-  // verification control is unchanged — only the navigation wrapper
-  // moved. Delete is now reached from this page's toolbar (the old
-  // table's per-row Delete link is gone).
+  const tabs = professionEditorTabs(profession.slug, query);
+
+  // The General edit route inside the Profession workspace (Slice 9D.1),
+  // now composed from the shared editor primitives (Slice 9D.2): the
+  // record list marks this profession selected and keeps the active
+  // search applied for quick switching. Every field, redirect, server
+  // action, image behavior, and verification rule is unchanged — only
+  // the presentation moved. Recipes (a relationship tab) and Metadata
+  // remain disabled placeholders; Delete lives in `EditorActions`' own
+  // `deleteHref` since Professions carry no capacity guard that would
+  // ever need to hide the form.
   return (
     <ProfessionWorkspace
       rawQuery={q}
       selectedSlug={profession.slug}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
-            title="Edit Profession"
-            description={`Update details for "${profession.name}".`}
+          <EditorHeader
+            title={profession.name}
+            subtitle={profession.slug}
+            backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+            backLabel="Back to Profession Management"
           />
 
-          <nav className="admin-toolbar" aria-label="Profession editor actions">
-            <a
-              href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-              className="link-accent"
-            >
-              &larr; Back to Profession Management
-            </a>
-
-            <a
-              href={professionDeleteHref(profession.slug, query)}
-              className="link-danger"
-            >
-              Delete Profession
-            </a>
-          </nav>
+          <EditorTabs label="Profession editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
@@ -116,8 +119,88 @@ export default async function EditProfessionPage({
           ) : null}
         </>
       }
+      aside={
+        <>
+          <ImagePanel>
+            {imageUrl ? (
+              <div style={{ position: "relative", justifySelf: "start" }}>
+                <input
+                  type="checkbox"
+                  name="removeImage"
+                  id="removeImage"
+                  form={PROFESSION_EDIT_FORM_ID}
+                  className="admin-image-remove-checkbox"
+                />
+                <div className="admin-image-remove-frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
+                  <img
+                    src={imageUrl}
+                    alt={`Current image for ${profession.name}`}
+                    style={{
+                      maxWidth: "128px",
+                      height: "auto",
+                      border: `1px solid ${designTokens.colors.border}`,
+                      borderRadius: designTokens.radius.sm,
+                      background: designTokens.colors.surface,
+                      padding: "8px",
+                      display: "block",
+                    }}
+                  />
+                  <label
+                    htmlFor="removeImage"
+                    title="Remove current image"
+                    className="admin-image-remove-toggle"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                    <span className="admin-image-remove-hidden-text">
+                      Remove current image
+                    </span>
+                  </label>
+                </div>
+                <p className="admin-image-remove-note">
+                  Image will be removed when saved.
+                </p>
+              </div>
+            ) : (
+              <span className="form-field-label">No image uploaded.</span>
+            )}
+
+            <label className="form-field">
+              <span className="form-field-label">
+                {profession.image
+                  ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
+                  : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
+              </span>
+              <input
+                type="file"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+                form={PROFESSION_EDIT_FORM_ID}
+                className="form-input"
+              />
+            </label>
+          </ImagePanel>
+
+          <VerificationPanel
+            gameVersions={gameVersions}
+            verifiedAt={profession.verifiedAt}
+            verifiedGameVersion={profession.verifiedGameVersion}
+            formId={PROFESSION_EDIT_FORM_ID}
+          />
+
+          <TimestampsPanel
+            createdAt={profession.createdAt}
+            updatedAt={profession.updatedAt}
+            verifiedAt={profession.verifiedAt}
+          />
+        </>
+      }
     >
-      <form action={updateProfessionAction} className="form-grid">
+      <form
+        id={PROFESSION_EDIT_FORM_ID}
+        action={updateProfessionAction}
+        className="form-grid"
+      >
         <input type="hidden" name="id" value={profession.id} />
         <input type="hidden" name="originalSlug" value={profession.slug} />
 
@@ -153,141 +236,12 @@ export default async function EditProfessionPage({
           />
         </label>
 
-        <div className="form-field">
-          <span className="form-field-label">Current image</span>
-          {imageUrl ? (
-            <div style={{ position: "relative", justifySelf: "start" }}>
-              <style>{`
-                .remove-image-checkbox,
-                .remove-image-hidden-text {
-                  position: absolute;
-                  width: 1px;
-                  height: 1px;
-                  margin: -1px;
-                  padding: 0;
-                  overflow: hidden;
-                  clip: rect(0 0 0 0);
-                  white-space: nowrap;
-                  border: 0;
-                }
-                .remove-image-frame {
-                  position: relative;
-                  display: inline-block;
-                }
-                .remove-image-toggle {
-                  position: absolute;
-                  top: 4px;
-                  right: 4px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  width: 22px;
-                  height: 22px;
-                  border-radius: 9999px;
-                  background: ${designTokens.colors.danger};
-                  color: ${designTokens.colors.background};
-                  font-size: 14px;
-                  font-weight: 700;
-                  line-height: 1;
-                  cursor: pointer;
-                  user-select: none;
-                }
-                .remove-image-checkbox:focus-visible ~ .remove-image-frame .remove-image-toggle {
-                  outline: 2px solid ${designTokens.colors.accent};
-                  outline-offset: 2px;
-                }
-                .remove-image-checkbox:checked ~ .remove-image-frame img {
-                  opacity: 0.35;
-                }
-                .remove-image-note {
-                  display: none;
-                  margin: 6px 0 0;
-                  color: ${designTokens.colors.danger};
-                }
-                .remove-image-checkbox:checked ~ .remove-image-note {
-                  display: block;
-                }
-              `}</style>
-              <input
-                type="checkbox"
-                name="removeImage"
-                id="removeImage"
-                className="remove-image-checkbox"
-              />
-              <div className="remove-image-frame">
-                {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
-                <img
-                  src={imageUrl}
-                  alt={`Current image for ${profession.name}`}
-                  style={{
-                    maxWidth: "128px",
-                    height: "auto",
-                    border: `1px solid ${designTokens.colors.border}`,
-                    borderRadius: designTokens.radius.sm,
-                    background: designTokens.colors.surface,
-                    padding: "8px",
-                    display: "block",
-                  }}
-                />
-                <label
-                  htmlFor="removeImage"
-                  title="Remove current image"
-                  className="remove-image-toggle"
-                >
-                  <span aria-hidden="true">&times;</span>
-                  <span className="remove-image-hidden-text">
-                    Remove current image
-                  </span>
-                </label>
-              </div>
-              <p className="remove-image-note">
-                Image will be removed when saved.
-              </p>
-            </div>
-          ) : (
-            <span className="form-field-label">No image uploaded.</span>
-          )}
-        </div>
-
-        <label className="form-field">
-          <span className="form-field-label">
-            {profession.image
-              ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
-              : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
-          </span>
-          <input
-            type="file"
-            name="image"
-            accept="image/png,image/jpeg,image/webp"
-            className="form-input"
-          />
-        </label>
-
-        {/* Admin-only verification status (public pages never show it).
-            Rendered only when BOTH fields are populated — never as an
-            empty row; the stable YYYY-MM-DD date never depends on the
-            server locale. */}
-        {profession.verifiedAt && profession.verifiedGameVersion ? (
-          <p className="text-muted">
-            Gameplay data verified for {profession.verifiedGameVersion.name} on{" "}
-            {profession.verifiedAt.toISOString().slice(0, 10)}.
-          </p>
-        ) : null}
-
-        <GameVersionVerificationControls gameVersions={gameVersions} />
-
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Save Changes
-          </button>
-
-          <a
-            href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Save Changes"
+          cancelHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+          deleteHref={professionDeleteHref(profession.slug, query)}
+          deleteLabel="Delete Profession"
+        />
       </form>
     </ProfessionWorkspace>
   );
