@@ -13,6 +13,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { Prisma } from "@/generated/prisma/client";
 import { isForeignKeyError } from "@/lib/prisma-errors";
 import { ACQUISITION_TYPES } from "@/lib/validation/acquisition-source";
+import { sortLocationAcquisitionSourcesByType } from "@/lib/admin/location-workspace";
 import {
   ACQUISITION_TEST_SLUG_PREFIX,
   GAME_VERSION_TEST_NAME_PREFIX,
@@ -328,6 +329,226 @@ describe("acquisition sources (integration)", () => {
       expect(edited.updatedAt.getTime()).toBeGreaterThan(
         stamped.updatedAt.getTime()
       );
+    });
+  });
+
+  describe("Location Sources tab query (Slice 9F.4)", () => {
+    it("returns Acquisition Sources whose locationId references this location, with Item and Profession populated", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Sources",
+          slug: `${P}location-sources`,
+          type: "TOWN",
+        },
+      });
+      const item = await prisma.item.create({
+        data: { name: "Acquisition Test Item Sources", slug: `${P}item-sources` },
+      });
+      const profession = await prisma.profession.create({
+        data: {
+          name: "Acquisition Test Profession Sources",
+          slug: `${P}profession-sources`,
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: {
+          itemId: item.id,
+          type: "FISHING",
+          locationId: location.id,
+          professionId: profession.id,
+          sourceLabel: "Riverbank",
+          quantity: "1-2",
+          notes: "Best at dawn.",
+        },
+      });
+
+      // The exact query shape the Location Sources tab page uses.
+      const reloaded = await prisma.location.findUnique({
+        where: { id: location.id },
+        include: {
+          acquisitionSources: {
+            include: { item: true, profession: true },
+            orderBy: { item: { name: "asc" } },
+          },
+        },
+      });
+
+      expect(reloaded?.acquisitionSources).toHaveLength(1);
+      const [source] = reloaded?.acquisitionSources ?? [];
+      expect(source.item.name).toBe(item.name);
+      expect(source.profession?.name).toBe(profession.name);
+      expect(source.type).toBe("FISHING");
+      expect(source.sourceLabel).toBe("Riverbank");
+      expect(source.quantity).toBe("1-2");
+      expect(source.notes).toBe("Best at dawn.");
+    });
+
+    it("orders sources by item name, and grouping by type preserves that order within each group", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Ordering",
+          slug: `${P}location-ordering`,
+          type: "REGION",
+        },
+      });
+      // Created out of alphabetical order, so a correct query result can
+      // only come from an explicit orderBy, never insertion order.
+      const zebraItem = await prisma.item.create({
+        data: { name: "Zebra Fish", slug: `${P}item-zebra-fish` },
+      });
+      const alphaItem = await prisma.item.create({
+        data: { name: "Alpha Fish", slug: `${P}item-alpha-fish` },
+      });
+      const miningItem = await prisma.item.create({
+        data: { name: "Middle Ore", slug: `${P}item-middle-ore` },
+      });
+
+      await prisma.acquisitionSource.create({
+        data: { itemId: zebraItem.id, type: "FISHING", locationId: location.id },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: alphaItem.id, type: "FISHING", locationId: location.id },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: miningItem.id, type: "MINING", locationId: location.id },
+      });
+
+      const reloaded = await prisma.location.findUnique({
+        where: { id: location.id },
+        include: {
+          acquisitionSources: {
+            include: { item: true, profession: true },
+            orderBy: { item: { name: "asc" } },
+          },
+        },
+      });
+
+      // FISHING is declared before MINING in ACQUISITION_TYPES; supplying
+      // MINING first here proves grouping does not rely on creation order.
+      expect(
+        ACQUISITION_TYPES.indexOf("FISHING") <
+          ACQUISITION_TYPES.indexOf("MINING")
+      ).toBe(true);
+
+      const grouped = sortLocationAcquisitionSourcesByType(
+        reloaded?.acquisitionSources ?? []
+      );
+
+      expect(grouped.map((source) => source.item.name)).toEqual([
+        "Alpha Fish",
+        "Zebra Fish",
+        "Middle Ore",
+      ]);
+    });
+
+    it("keeps sparse optional source values valid (no source label, profession, quantity, or notes)", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Sparse Source",
+          slug: `${P}location-sparse-source`,
+          type: "DUNGEON",
+        },
+      });
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item Sparse Source",
+          slug: `${P}item-sparse-source`,
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: item.id, type: "ENEMY_DROP", locationId: location.id },
+      });
+
+      const reloaded = await prisma.location.findUnique({
+        where: { id: location.id },
+        include: {
+          acquisitionSources: {
+            include: { item: true, profession: true },
+            orderBy: { item: { name: "asc" } },
+          },
+        },
+      });
+
+      expect(reloaded?.acquisitionSources).toHaveLength(1);
+      const [source] = reloaded?.acquisitionSources ?? [];
+      expect(source.profession).toBeNull();
+      expect(source.sourceLabel).toBeNull();
+      expect(source.quantity).toBeNull();
+      expect(source.notes).toBeNull();
+    });
+
+    it("returns an empty collection for a location with no acquisition sources", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location No Sources",
+          slug: `${P}location-no-sources`,
+          type: "SPECIAL_AREA",
+        },
+      });
+
+      const reloaded = await prisma.location.findUnique({
+        where: { id: location.id },
+        include: {
+          acquisitionSources: {
+            include: { item: true, profession: true },
+            orderBy: { item: { name: "asc" } },
+          },
+        },
+      });
+
+      expect(reloaded?.acquisitionSources).toEqual([]);
+    });
+
+    it("never includes acquisition sources that reference a different location", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const locationA = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location A",
+          slug: `${P}location-a`,
+          type: "REGION",
+        },
+      });
+      const locationB = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location B",
+          slug: `${P}location-b`,
+          type: "REGION",
+        },
+      });
+      const itemA = await prisma.item.create({
+        data: { name: "Acquisition Test Item A", slug: `${P}item-a` },
+      });
+      const itemB = await prisma.item.create({
+        data: { name: "Acquisition Test Item B", slug: `${P}item-b` },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: itemA.id, type: "FARMING", locationId: locationA.id },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: itemB.id, type: "FARMING", locationId: locationB.id },
+      });
+
+      const reloadedA = await prisma.location.findUnique({
+        where: { id: locationA.id },
+        include: {
+          acquisitionSources: {
+            include: { item: true, profession: true },
+            orderBy: { item: { name: "asc" } },
+          },
+        },
+      });
+
+      expect(reloadedA?.acquisitionSources).toHaveLength(1);
+      expect(reloadedA?.acquisitionSources[0].item.name).toBe(itemA.name);
     });
   });
 });

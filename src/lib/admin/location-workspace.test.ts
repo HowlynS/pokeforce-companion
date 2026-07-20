@@ -6,7 +6,9 @@ import {
   locationEditHref,
   locationEditorTabs,
   locationHierarchyHref,
+  locationSourcesHref,
   normalizeLocationSearchQuery,
+  sortLocationAcquisitionSourcesByType,
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
 
@@ -73,10 +75,19 @@ describe("location workspace hrefs", () => {
       "/admin/locations/sunken-cave/hierarchy?q=cave"
     );
   });
+
+  it("builds the Acquisition Sources tab route, preserving the query", () => {
+    expect(locationSourcesHref("sunken-cave", "")).toBe(
+      "/admin/locations/sunken-cave/sources"
+    );
+    expect(locationSourcesHref("sunken-cave", "cave")).toBe(
+      "/admin/locations/sunken-cave/sources?q=cave"
+    );
+  });
 });
 
 describe("locationEditorTabs", () => {
-  it("marks General active and links Hierarchy as a real destination", () => {
+  it("marks General active and links Hierarchy and Acquisition Sources as real destinations", () => {
     const tabs = locationEditorTabs("sunken-cave", "", "general");
 
     expect(tabs).toEqual([
@@ -92,9 +103,8 @@ describe("locationEditorTabs", () => {
       },
       {
         label: "Acquisition Sources",
-        href: "",
+        href: "/admin/locations/sunken-cave/sources",
         active: false,
-        disabled: true,
       },
       { label: "Metadata", href: "", active: false, disabled: true },
     ]);
@@ -113,32 +123,40 @@ describe("locationEditorTabs", () => {
       href: "/admin/locations/sunken-cave/hierarchy?q=cave",
       active: true,
     });
+    expect(tabs[2].active).toBe(false);
   });
 
-  it("preserves the query on both real tabs' own hrefs", () => {
+  it("marks Acquisition Sources active when that is the current tab", () => {
+    const tabs = locationEditorTabs("sunken-cave", "cave", "sources");
+
+    expect(tabs[2]).toEqual({
+      label: "Acquisition Sources",
+      href: "/admin/locations/sunken-cave/sources?q=cave",
+      active: true,
+    });
+    expect(tabs[0].active).toBe(false);
+    expect(tabs[1].active).toBe(false);
+  });
+
+  it("preserves the query on all three real tabs' own hrefs", () => {
     const tabs = locationEditorTabs("sunken-cave", "cave", "general");
 
     expect(tabs[0].href).toBe("/admin/locations/sunken-cave/edit?q=cave");
     expect(tabs[1].href).toBe("/admin/locations/sunken-cave/hierarchy?q=cave");
+    expect(tabs[2].href).toBe("/admin/locations/sunken-cave/sources?q=cave");
   });
 
   it("marks exactly one tab active for every valid key", () => {
-    for (const active of ["general", "hierarchy"] as const) {
+    for (const active of ["general", "hierarchy", "sources"] as const) {
       const tabs = locationEditorTabs("sunken-cave", "", active);
       expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
     }
   });
 
-  it("renders only Acquisition Sources and Metadata as disabled placeholders", () => {
-    for (const active of ["general", "hierarchy"] as const) {
+  it("renders only Metadata as a disabled placeholder", () => {
+    for (const active of ["general", "hierarchy", "sources"] as const) {
       const tabs = locationEditorTabs("sunken-cave", "", active);
 
-      expect(tabs[2]).toEqual({
-        label: "Acquisition Sources",
-        href: "",
-        active: false,
-        disabled: true,
-      });
       expect(tabs[3]).toEqual({
         label: "Metadata",
         href: "",
@@ -147,8 +165,50 @@ describe("locationEditorTabs", () => {
       });
       expect(tabs[0].disabled).toBeUndefined();
       expect(tabs[1].disabled).toBeUndefined();
+      expect(tabs[2].disabled).toBeUndefined();
       expect(tabs[0].href).not.toBe("");
       expect(tabs[1].href).not.toBe("");
+      expect(tabs[2].href).not.toBe("");
     }
+  });
+});
+
+describe("sortLocationAcquisitionSourcesByType", () => {
+  it("orders sources by the AcquisitionType enum's declared order", () => {
+    const sources = [
+      { id: "a", type: "ENEMY_DROP" as const },
+      { id: "b", type: "FORAGING" as const },
+      { id: "c", type: "MINING" as const },
+    ];
+
+    expect(sortLocationAcquisitionSourcesByType(sources).map((s) => s.id)).toEqual([
+      "b",
+      "c",
+      "a",
+    ]);
+  });
+
+  it("preserves the caller's own order within the same type (stable sort)", () => {
+    const sources = [
+      { id: "first", type: "MINING" as const },
+      { id: "second", type: "MINING" as const },
+      { id: "third", type: "MINING" as const },
+    ];
+
+    expect(
+      sortLocationAcquisitionSourcesByType(sources).map((s) => s.id)
+    ).toEqual(["first", "second", "third"]);
+  });
+
+  it("does not mutate the input array", () => {
+    const sources = [
+      { id: "a", type: "OTHER" as const },
+      { id: "b", type: "FORAGING" as const },
+    ];
+    const original = [...sources];
+
+    sortLocationAcquisitionSourcesByType(sources);
+
+    expect(sources).toEqual(original);
   });
 });

@@ -20,6 +20,17 @@
 // `locationEditorTabs` now takes an `active` key (General or Hierarchy)
 // exactly like `professionEditorTabs` does. Acquisition Sources and
 // Metadata remain the only disabled placeholders.
+//
+// Slice 9F.4 (Acquisition Sources tab) made Acquisition Sources a real
+// destination too: `active` now accepts `"sources"` as well. Metadata
+// remains the only disabled placeholder. Acquisition Sources stays a
+// READ-ONLY relationship view — every mutation continues to happen
+// through the existing Item-owned source routes, never here.
+
+import {
+  ACQUISITION_TYPES,
+  type AcquisitionType,
+} from "@/lib/validation/acquisition-source";
 
 export const LOCATION_LIST_PATH = "/admin/locations";
 export const LOCATION_CREATE_PATH = "/admin/locations/new";
@@ -68,10 +79,38 @@ export function locationHierarchyHref(slug: string, query: string): string {
   );
 }
 
+/** The Acquisition Sources tab route for one location, preserving the
+    query (Slice 9F.4) — read-only relationship content; every mutation
+    stays on the existing Item-owned source routes. */
+export function locationSourcesHref(slug: string, query: string): string {
+  return withLocationSearchQuery(
+    `${LOCATION_LIST_PATH}/${slug}/sources`,
+    query
+  );
+}
+
 /** Which Location editor tab is active — General (the record's own
-    fields) or Hierarchy (Slice 9F.3). Acquisition Sources and Metadata
-    are not yet implemented and always render as disabled placeholders. */
-export type LocationEditorTabKey = "general" | "hierarchy";
+    fields), Hierarchy (Slice 9F.3), or Acquisition Sources (Slice 9F.4).
+    Metadata is not yet implemented and always renders as a disabled
+    placeholder. */
+export type LocationEditorTabKey = "general" | "hierarchy" | "sources";
+
+/**
+ * Sorts Acquisition Sources for the Location Sources tab: grouped by
+ * type in the enum's declared order (reusing `ACQUISITION_TYPES` — never
+ * a second, hand-maintained ordering), then by whatever order the caller
+ * already supplied within each type (a stable sort never reorders equal
+ * keys). The caller is expected to have queried with
+ * `orderBy: { item: { name: "asc" } }`, so that per-item-name order
+ * survives untouched within each type group.
+ */
+export function sortLocationAcquisitionSourcesByType<
+  T extends { type: AcquisitionType },
+>(sources: readonly T[]): T[] {
+  return [...sources].sort(
+    (a, b) => ACQUISITION_TYPES.indexOf(a.type) - ACQUISITION_TYPES.indexOf(b.type)
+  );
+}
 
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
@@ -85,10 +124,10 @@ export type LocationEditorTab = {
 
 /**
  * The Location editor's tab strip, shared by every route inside the
- * Location workspace that renders tabs (General edit, and the Hierarchy
- * route added in Slice 9F.3) — one function so every tab's href/active
- * state can never drift out of sync between pages. Acquisition Sources
- * and Metadata remain disabled placeholders (not yet implemented); the
+ * Location workspace that renders tabs (General edit, Hierarchy, and the
+ * Acquisition Sources route added in Slice 9F.4) — one function so every
+ * tab's href/active state can never drift out of sync between pages.
+ * Metadata remains a disabled placeholder (not yet implemented); the
  * create page shows only General with no placeholders at all (mirroring
  * the Item/Recipe/Profession workspaces' create-page precedent), so this
  * helper stays edit-only.
@@ -111,9 +150,8 @@ export function locationEditorTabs(
     },
     {
       label: "Acquisition Sources",
-      href: "",
-      active: false,
-      disabled: true,
+      href: locationSourcesHref(slug, query),
+      active: active === "sources",
     },
     { label: "Metadata", href: "", active: false, disabled: true },
   ];

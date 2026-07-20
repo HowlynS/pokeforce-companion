@@ -365,7 +365,8 @@ Items relationship tab) complete; Slice 9E.4 (Category Metadata tab)
 complete — the Category reference workspace is functionally complete;
 Slice 9F.1 (Location workspace navigation foundation) complete; Slice
 9F.2 (Location General editor conversion) complete; Slice 9F.3 (Location
-Hierarchy tab) complete; later slices not started
+Hierarchy tab) complete; Slice 9F.4 (Location Acquisition Sources tab)
+complete; later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1594,11 +1595,80 @@ workspace.
       no child-mutation control, and no other resource workspace was
       converted
 
+### Slice 9F.4 — Location Acquisition Sources tab (complete, 2026-07-20)
+
+- [x] `/admin/locations/[slug]/sources` is a new, real, read-only tab
+      inside `LocationWorkspace`, mirroring the Profession Recipes tab
+      (Slice 9D.3) and Category Items tab (Slice 9E.3) shape exactly —
+      a relationship VIEW, never a mutation surface
+- [x] `locationEditorTabs`'s `LocationEditorTabKey` now accepts
+      `"sources"` via the new `locationSourcesHref(slug, query)` helper
+      — every one of General, Hierarchy, and Acquisition Sources is now
+      a real link; Metadata remains the sole disabled placeholder
+- [x] `LocationWorkspace`'s existing `recordHref` prop (introduced in
+      Slice 9F.3) takes `locationSourcesHref` so quick-switching
+      locations while on this tab stays on the Acquisition Sources tab,
+      with `q` preserved
+- [x] One restrained query —
+      `prisma.location.findUnique({ include: { acquisitionSources: { include: { item: true, profession: true }, orderBy: { item: { name: "asc" } } } } })`
+      — no per-row follow-up query; no `verifiedGameVersion` include
+      (verification detail belongs to a later Metadata tab, matching
+      every other relationship tab's own restraint)
+- [x] Rows are sorted by the new `sortLocationAcquisitionSourcesByType`
+      helper in `src/lib/admin/location-workspace.ts`: grouped by
+      `AcquisitionType` in the enum's own declared order (reusing the
+      existing `ACQUISITION_TYPES` array — never a second,
+      hand-maintained ordering) via a stable sort that preserves the
+      query's own item-name-ascending order within each type group
+- [x] Content is a `ContextPanel` titled "Acquisition Sources" holding
+      an admin-table (Item/Type) with a restrained count, replaced
+      entirely by an `EmptyState` ("No acquisition sources reference
+      this location yet") when the location has no linked source —
+      never an empty table
+- [x] Each row's Item name links to the EXISTING
+      `/admin/items/[itemSlug]/sources/[sourceId]/edit` route (no
+      Location `q` carried onto that cross-resource link); source
+      label, profession, quantity, and notes each render as a labeled
+      detail line beneath the item name only when present — no
+      placeholder dash, no empty label, no blank cell — following the
+      hide-empty convention every prior relationship tab established;
+      the current Location is never redundantly repeated in a row,
+      since it is already the page's own context
+- [x] No form, input, select, checkbox, file control, or
+      mutation/create/unlink/delete/image/verification/hierarchy
+      control exists anywhere on this tab — Acquisition Sources remain
+      entirely Item-owned, managed only through the existing
+      `/admin/items/[slug]/sources` routes, exactly as before this
+      slice
+- [x] Location/Item/AcquisitionSource CRUD, the Prisma schema, storage,
+      and authorization are all unchanged
+- [x] Tests: `locationSourcesHref`/`sortLocationAcquisitionSourcesByType`
+      unit coverage (Acquisition Sources active/real, query preservation,
+      exactly-one-active across all three real tabs, only Metadata
+      disabled, stable type-then-name ordering, no input mutation); a
+      new integration describe block proving the Location query returns
+      linked Acquisition Sources with Item/Profession populated, stable
+      type/name ordering independent of creation order, sparse optional
+      values remain valid, a zero-source location returns an empty
+      collection, and sources belonging to a different location are
+      never included; a new dedicated "admin-location-sources" E2E spec
+      (direct route access, grouped/ordered rendering, hide-empty
+      optional facts, cross-resource link correctness with no Location
+      `q` leakage, zero-source empty state, tab navigation, quick
+      switching with `q` preservation, read-only-content assertions,
+      unknown-slug 404) mirroring `admin-category-items.spec.ts`'s
+      structure; the existing Location editor tabs E2E test updated for
+      Acquisition Sources becoming a real tab; the
+      unauthenticated-protection route list extended with the sources
+      route
+- [x] No Location Metadata content, and no other resource workspace was
+      converted
+
 ### Remaining (not started)
 
-- [ ] The Location reference workspace's own Acquisition Sources/
-      Metadata tabs, dashboard summaries, and Route Hubs — do not begin
-      until explicitly instructed in the milestone conversation
+- [ ] The Location reference workspace's own Metadata tab, dashboard
+      summaries, and Route Hubs — do not begin until explicitly
+      instructed in the milestone conversation
 
 ---
 
