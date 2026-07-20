@@ -14,6 +14,12 @@
 // mirroring the Recipe workspace's Slice 9C.2 shape exactly: General is
 // the only real tab so far — Recipes (a relationship tab, later slice)
 // and Metadata (not yet implemented) render as disabled placeholders.
+//
+// Slice 9D.3 (Recipes relationship tab) made Recipes a real destination
+// too, mirroring the Item workspace's Used in Recipes tab (Slice 9B.7)
+// shape: `professionEditorTabs` now takes an `active` key (General or
+// Recipes) exactly like `itemEditorTabs`/`recipeEditorTabs` do. Metadata
+// remains the only disabled placeholder.
 
 export const PROFESSION_LIST_PATH = "/admin/professions";
 export const PROFESSION_CREATE_PATH = "/admin/professions/new";
@@ -59,6 +65,21 @@ export function professionDeleteHref(slug: string, query: string): string {
   );
 }
 
+/** The Recipes tab route for one profession, preserving the query (Slice
+    9D.3) — read-only recipe relationship content, mirroring
+    `itemUsedInRecipesHref`. */
+export function professionRecipesHref(slug: string, query: string): string {
+  return withProfessionSearchQuery(
+    `${PROFESSION_LIST_PATH}/${slug}/recipes`,
+    query
+  );
+}
+
+/** Which Profession editor tab is active — General (the record's own
+    fields) or Recipes (Slice 9D.3). Metadata is not yet implemented and
+    always renders as a disabled placeholder. */
+export type ProfessionEditorTabKey = "general" | "recipes";
+
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
     component into this pure, React-free module. */
@@ -70,25 +91,30 @@ export type ProfessionEditorTab = {
 };
 
 /**
- * The Profession edit route's tab strip (Slice 9D.2): General is the only
- * real destination this slice — Recipes (a relationship tab, later
- * slice) and Metadata (not yet implemented) render as disabled
- * placeholders, never links to empty pages. The create page shows only
+ * The Profession editor's tab strip, shared by every route inside the
+ * Profession workspace that renders tabs (General edit, and the Recipes
+ * route added in Slice 9D.3) — one function so every tab's href/active
+ * state can never drift out of sync between pages. Metadata remains a
+ * disabled placeholder (not yet implemented); the create page shows only
  * General with no placeholders at all (mirroring the Item/Recipe
- * workspaces' create-page precedent), so this helper is deliberately
- * edit-only.
+ * workspaces' create-page precedent), so this helper stays edit-only.
  */
 export function professionEditorTabs(
   slug: string,
-  query: string
+  query: string,
+  active: ProfessionEditorTabKey
 ): ProfessionEditorTab[] {
   return [
     {
       label: "General",
       href: professionEditHref(slug, query),
-      active: true,
+      active: active === "general",
     },
-    { label: "Recipes", href: "", active: false, disabled: true },
+    {
+      label: "Recipes",
+      href: professionRecipesHref(slug, query),
+      active: active === "recipes",
+    },
     { label: "Metadata", href: "", active: false, disabled: true },
   ];
 }

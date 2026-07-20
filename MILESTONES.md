@@ -356,8 +356,9 @@ Slice 9C.1 (Recipe workspace navigation foundation) complete; Slice 9C.2
 Ingredients tab) complete; Slice 9C.4 (Recipe Metadata tab) complete —
 the Recipe reference workspace is functionally complete; Slice 9D.1
 (Profession workspace navigation foundation) complete; Slice 9D.2
-(Profession General editor conversion) complete — a Profession Recipes
-relationship tab and Metadata remain pending; later slices not started
+(Profession General editor conversion) complete; Slice 9D.3 (Profession
+Recipes relationship tab) complete — Profession Metadata remains pending;
+later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1077,12 +1078,59 @@ workspace.
 - [x] No Recipes route, no Metadata content, and no other resource
       workspace was converted
 
+### Slice 9D.3 — Profession Recipes relationship tab (complete, 2026-07-20)
+
+- [x] `/admin/professions/[slug]/recipes` is a new, real, read-only tab
+      inside `ProfessionWorkspace`, mirroring the Item workspace's Used in
+      Recipes tab (Slice 9B.7) shape but for a single relationship
+      direction (Recipes linked to this Profession)
+- [x] `professionEditorTabs` now takes an `active: "general" | "recipes"`
+      key (its new `ProfessionEditorTabKey`, structurally identical to
+      `itemEditorTabs`/`recipeEditorTabs`'s shape) — General and Recipes
+      are both real links; Metadata remains the only disabled placeholder
+- [x] A new `professionRecipesHref(slug, query)` helper builds the tab's
+      route; `ProfessionWorkspace` gained an optional `recordHref` prop
+      (default `professionEditHref`, mirroring `ItemWorkspace`'s own) so
+      quick-switching professions while on this tab stays on the Recipes
+      tab, with `q` preserved
+- [x] One restrained query —
+      `prisma.profession.findUnique({ include: { recipes: { include: { resultingItem: true }, orderBy: { name: "asc" } } } })`
+      — no per-row follow-up query; recipes are ordered alphabetically by
+      name
+- [x] Content is a `ContextPanel` table (Recipe/Resulting Item/Quantity)
+      with a restrained count, replaced by an `EmptyState` when the
+      profession has no linked recipe; each Recipe name links to the
+      EXISTING `/admin/recipes/[slug]/edit` route (no Profession `q`
+      carried onto that link)
+- [x] Required level renders as a labeled detail line beneath the recipe
+      name only when present — no placeholder dash, no empty label, no
+      blank cell — following the hide-empty convention Item's Used in
+      Recipes tab established; unlike that tab, no Profession name is
+      repeated in the row, since the current Profession is already the
+      page's own context
+- [x] No form, input, select, checkbox, file control, or mutation/delete/
+      image/verification control exists anywhere on this tab
+- [x] Recipe/Profession CRUD actions, the Prisma schema, storage, and
+      authorization are all unchanged
+- [x] Tests: `professionEditorTabs`/`professionRecipesHref` unit coverage
+      (Recipes active/real, query preservation, exactly-one-active,
+      Metadata the only disabled tab); a new integration test proving the
+      relation query's alphabetical ordering, resulting-item/quantity
+      data, and sparse `requiredLevel` handling; a new dedicated
+      "admin-profession-recipes" E2E spec (direct route access, ordering,
+      hide-empty required level, empty state, tab navigation, quick
+      switching with `q` preservation, read-only-content assertions,
+      unknown-slug 404) mirroring `admin-item-recipes.spec.ts`'s
+      structure; the existing Profession editor E2E test updated for
+      Recipes becoming a real tab, and the unauthenticated-protection
+      route list extended with the new route
+- [x] No Metadata content, and no other resource workspace was converted
+
 ### Remaining (not started)
 
-- [ ] A Profession Recipes relationship tab, Profession Metadata content,
-      every other resource workspace conversion, dashboard summaries, and
-      Route Hubs — do not begin until explicitly instructed in the
-      milestone conversation
+- [ ] Profession Metadata content, every other resource workspace
+      conversion, dashboard summaries, and Route Hubs — do not begin
+      until explicitly instructed in the milestone conversation
 
 ---
 

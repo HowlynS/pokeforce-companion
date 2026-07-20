@@ -11,6 +11,10 @@
 // components underneath stay resource-agnostic. Not a generic
 // resource-query framework — this is a third, independent thin wrapper,
 // not a shared base class.
+//
+// Slice 9D.3 added the optional `recordHref` prop, mirroring
+// `ItemWorkspace`'s own (Slice 9B.6): the Recipes tab route passes
+// `professionRecipesHref` so quick switching stays on that tab.
 
 import { prisma } from "@/lib/db";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
@@ -38,6 +42,12 @@ type ProfessionWorkspaceProps = {
       a later slice (image/verification panels), matching the slot
       AdminWorkspace already exposes. */
   aside?: React.ReactNode;
+  /** Builds each record row's link (Slice 9D.3) — defaults to the
+      General edit route. The Recipes tab route passes
+      `professionRecipesHref` so quick switching between professions
+      stays on the Recipes tab instead of dropping back to General,
+      mirroring `ItemWorkspace`'s own `recordHref` prop. */
+  recordHref?: (slug: string, query: string) => string;
 };
 
 export async function ProfessionWorkspace({
@@ -46,6 +56,7 @@ export async function ProfessionWorkspace({
   header,
   children,
   aside,
+  recordHref = professionEditHref,
 }: ProfessionWorkspaceProps) {
   const query = normalizeProfessionSearchQuery(rawQuery);
 
@@ -68,7 +79,7 @@ export async function ProfessionWorkspace({
   });
 
   const rows = professions.map((profession) => ({
-    href: professionEditHref(profession.slug, query),
+    href: recordHref(profession.slug, query),
     primary: profession.name,
     secondary: `${profession._count.recipes} ${
       profession._count.recipes === 1 ? "recipe" : "recipes"

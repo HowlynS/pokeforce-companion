@@ -613,6 +613,102 @@ describe("database relations (integration)", () => {
     });
   });
 
+  describe("Profession Recipes relationship query (Slice 9D.3)", () => {
+    it("loads linked recipes in alphabetical order, with resulting item and quantity, requiredLevel when present", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const profession = await prisma.profession.create({
+        data: {
+          name: "Relations Test Profession Recipes Tab",
+          slug: `${P}profession-recipes-tab`,
+        },
+      });
+      const resultItemA = await prisma.item.create({
+        data: {
+          name: "Relations Test Profession Recipes Tab Result A",
+          slug: `${P}profession-recipes-tab-result-a`,
+        },
+      });
+      const resultItemB = await prisma.item.create({
+        data: {
+          name: "Relations Test Profession Recipes Tab Result B",
+          slug: `${P}profession-recipes-tab-result-b`,
+        },
+      });
+
+      // Created out of alphabetical order, so the query's own ordering —
+      // not insertion order — must be what determines the result.
+      await prisma.recipe.create({
+        data: {
+          name: "Zeta Relations Test Profession Recipes Tab Recipe",
+          slug: `${P}profession-recipes-tab-recipe-z`,
+          resultingItemId: resultItemB.id,
+          resultingQuantity: 2,
+          professionId: profession.id,
+          requiredLevel: 12,
+        },
+      });
+      await prisma.recipe.create({
+        data: {
+          name: "Alpha Relations Test Profession Recipes Tab Recipe",
+          slug: `${P}profession-recipes-tab-recipe-a`,
+          resultingItemId: resultItemA.id,
+          resultingQuantity: 1,
+          professionId: profession.id,
+        },
+      });
+
+      // The exact query shape the Profession Recipes tab page runs: one
+      // call, the resulting item's fields already included — no per-row
+      // follow-up query.
+      const loaded = await prisma.profession.findUnique({
+        where: { id: profession.id },
+        include: {
+          recipes: {
+            include: { resultingItem: true },
+            orderBy: { name: "asc" },
+          },
+        },
+      });
+
+      expect(loaded?.recipes).toHaveLength(2);
+      const [first, second] = loaded!.recipes;
+      // Alphabetical by name ("Alpha..." before "Zeta..."), not insertion
+      // order.
+      expect(first!.name).toBe("Alpha Relations Test Profession Recipes Tab Recipe");
+      expect(first!.resultingItem.name).toBe(
+        "Relations Test Profession Recipes Tab Result A"
+      );
+      expect(first!.resultingQuantity).toBe(1);
+      expect(first!.requiredLevel).toBeNull();
+
+      expect(second!.name).toBe("Zeta Relations Test Profession Recipes Tab Recipe");
+      expect(second!.resultingItem.name).toBe(
+        "Relations Test Profession Recipes Tab Result B"
+      );
+      expect(second!.resultingQuantity).toBe(2);
+      expect(second!.requiredLevel).toBe(12);
+    });
+
+    it("returns an empty recipes array for a profession with no linked recipe", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const unused = await prisma.profession.create({
+        data: {
+          name: "Relations Test Profession Recipes Tab Unused",
+          slug: `${P}profession-recipes-tab-unused`,
+        },
+      });
+
+      const loaded = await prisma.profession.findUnique({
+        where: { id: unused.id },
+        include: { recipes: true },
+      });
+
+      expect(loaded?.recipes).toEqual([]);
+    });
+  });
+
   describe("Item Used in Recipes relationship query (Slice 9B.7)", () => {
     it("loads ingredient usage with quantity, resulting item, profession, and required level", async () => {
       const prisma = await getVerifiedTestPrisma();

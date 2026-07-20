@@ -195,7 +195,7 @@ test("Create profession opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
-test("Profession editor: create shows only General; edit marks General active with Recipes and Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
+test("Profession editor: create shows only General; edit marks General active with Recipes real and Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -244,12 +244,11 @@ test("Profession editor: create shows only General; edit marks General active wi
     editTabNav.getByRole("link", { name: "General", exact: true })
   ).toHaveAttribute("aria-current", "page");
   await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
-  await expect(
-    editTabNav.getByText("Recipes", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
+  // Recipes is a real tab since Slice 9D.3 — only Metadata remains a
+  // disabled placeholder.
   await expect(
     editTabNav.getByRole("link", { name: "Recipes", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
     editTabNav.getByText("Metadata", { exact: true })
   ).toHaveAttribute("aria-disabled", "true");

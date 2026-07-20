@@ -86,17 +86,17 @@ export default async function EditProfessionPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  const tabs = professionEditorTabs(profession.slug, query);
+  const tabs = professionEditorTabs(profession.slug, query, "general");
 
   // The General edit route inside the Profession workspace (Slice 9D.1),
   // now composed from the shared editor primitives (Slice 9D.2): the
   // record list marks this profession selected and keeps the active
   // search applied for quick switching. Every field, redirect, server
   // action, image behavior, and verification rule is unchanged — only
-  // the presentation moved. Recipes (a relationship tab) and Metadata
-  // remain disabled placeholders; Delete lives in `EditorActions`' own
-  // `deleteHref` since Professions carry no capacity guard that would
-  // ever need to hide the form.
+  // the presentation moved. Recipes is a real tab since Slice 9D.3;
+  // Metadata remains a disabled placeholder. Delete lives in
+  // `EditorActions`' own `deleteHref` since Professions carry no capacity
+  // guard that would ever need to hide the form.
   return (
     <ProfessionWorkspace
       rawQuery={q}

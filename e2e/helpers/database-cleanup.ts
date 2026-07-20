@@ -300,6 +300,74 @@ export async function createTemporaryRecipeForProfession(
 }
 
 /**
+ * Creates one temporary Recipe (and its required resulting Item) linked to
+ * a browser-test Profession, with a caller-chosen suffix so MULTIPLE
+ * recipes can coexist under the same Profession — unlike the single
+ * fixed-name `createTemporaryRecipeForProfession` above, which the
+ * Profession Recipes tab tests (Slice 9D.3) need to prove alphabetical
+ * ordering and the hide-empty requiredLevel behavior. The target
+ * Profession slug MUST carry the browser-test prefix, so a seeded
+ * Profession can never be linked; both created rows carry the same
+ * relation prefix, so the existing deleteE2eTestProfessionRecords sweep
+ * catches them with no new cleanup surface.
+ */
+export async function createTemporaryRecipeForProfessionsTab(
+  professionSlug: string,
+  options: {
+    suffix: string;
+    recipeName: string;
+    resultingQuantity?: number;
+    requiredLevel?: number;
+  }
+): Promise<void> {
+  assertProfessionPrefixesAreSafe();
+
+  if (!professionSlug.startsWith(E2E_PROFESSION_SLUG_PREFIX)) {
+    throw new Error(
+      "Refusing to link a Recipe: the target Profession slug does not carry the browser-test prefix."
+    );
+  }
+
+  await withVerifiedDatabase(async (client) => {
+    const profession = await client.query(
+      `select id from "Profession" where slug = $1`,
+      [professionSlug]
+    );
+
+    if (profession.rowCount !== 1) {
+      throw new Error(
+        "Cannot create the temporary Recipe relation: the browser-test Profession was not found."
+      );
+    }
+
+    const item = await client.query(
+      `insert into "Item" (id, slug, name, "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, now())
+       returning id`,
+      [
+        `${E2E_PROFESSION_RELATION_SLUG_PREFIX}item-${options.suffix}`,
+        `Test E2E Profession Recipes Tab Result ${options.suffix}`,
+      ]
+    );
+
+    await client.query(
+      `insert into "Recipe"
+         (id, slug, name, "resultingItemId", "resultingQuantity",
+          "professionId", "requiredLevel", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, now())`,
+      [
+        `${E2E_PROFESSION_RELATION_SLUG_PREFIX}recipe-${options.suffix}`,
+        options.recipeName,
+        item.rows[0].id as string,
+        options.resultingQuantity ?? 1,
+        profession.rows[0].id as string,
+        options.requiredLevel ?? null,
+      ]
+    );
+  });
+}
+
+/**
  * Removes ONLY the temporary relation Recipe/Item rows (foreign-key-safe
  * order), leaving the browser-test Profession in place so the deletion flow
  * can be retried through the real UI. Returns how many rows were removed.
