@@ -94,10 +94,10 @@ async function createVersionThroughForm(
 test("game version lifecycle: reachable from the dashboard settings link, create, edit, mark current, delete", async ({
   page,
 }) => {
-  // --- Reachable only through the secondary Settings link ---------------
+  // --- Reachable only through the dashboard's Game Version panel --------
   await page.goto("/admin");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Settings" })
+    page.getByRole("heading", { level: 2, name: "Game Version" })
   ).toBeVisible();
   await page.getByRole("link", { name: "Game Versions", exact: true }).click();
   await expect(page).toHaveURL("/admin/settings/game-versions");

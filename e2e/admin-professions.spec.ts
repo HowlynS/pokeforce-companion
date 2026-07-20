@@ -269,9 +269,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   page,
 }) => {
   // --- Create (with the optional image input left empty) ---------------
-  await page.goto("/admin");
-  await page.getByRole("link", { name: /Manage Professions/ }).click();
-  await expect(page).toHaveURL("/admin/professions");
+  await page.goto("/admin/professions");
   await expect(
     page.getByRole("heading", { level: 1, name: "Profession Management" })
   ).toBeVisible();

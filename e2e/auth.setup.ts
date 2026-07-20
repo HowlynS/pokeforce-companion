@@ -37,10 +37,10 @@ setup("authenticate as the test admin", async ({ page }) => {
   // The sign-in server action redirects straight into the protected area.
   await expect(page).toHaveURL("/admin", { timeout: 15_000 });
   await expect(
-    page.getByRole("heading", { level: 1, name: "Admin", exact: true })
+    page.getByRole("heading", { level: 1, name: "Dashboard", exact: true })
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: /Manage Categories/ })
+    page.locator('.admin-workspace-main a[href="/admin/categories"]')
   ).toBeVisible();
 
   // The filled password field must be gone before any state is saved (and

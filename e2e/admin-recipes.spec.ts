@@ -394,9 +394,7 @@ test("Recipe editor tabs: create shows only General; edit, ingredients, and meta
 test("recipe creation renders result, profession, and ingredients publicly", async ({
   page,
 }) => {
-  await page.goto("/admin");
-  await page.getByRole("link", { name: /Manage Recipes/ }).click();
-  await expect(page).toHaveURL("/admin/recipes");
+  await page.goto("/admin/recipes");
   await expect(
     page.getByRole("heading", { level: 1, name: "Recipe Management" })
   ).toBeVisible();

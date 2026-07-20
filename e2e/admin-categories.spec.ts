@@ -248,9 +248,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   page,
 }) => {
   // --- Create -------------------------------------------------------------
-  await page.goto("/admin");
-  await page.getByRole("link", { name: /Manage Categories/ }).click();
-  await expect(page).toHaveURL("/admin/categories");
+  await page.goto("/admin/categories");
   await expect(
     page.getByRole("heading", { level: 1, name: "Category Management" })
   ).toBeVisible();

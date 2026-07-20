@@ -1651,3 +1651,56 @@ Alternatives considered:
   other converted resource's General/relationship-tab split (Recipe,
   Profession, Category all moved their own tab-specific concern fully
   off General).
+
+### 2026-07-20 — Slice 9G.1: the admin dashboard is administrative counts and navigation only, never analytics
+
+Decision:
+
+`/admin` was redesigned from a static grid of "Manage X" cards into a
+dashboard that surfaces real counts (Items, Recipes, Professions,
+Categories, Locations, Game Versions) and the current Game Version's
+status. The durable rule going forward: the admin dashboard shows
+**counts and direct navigation derived from the current database state
+only** — never a chart, graph, percentage, trend indicator, or "recent
+activity" feed. Every number on the page is a plain `.count()` (or the
+existing `getCurrentGameVersion()` call) evaluated at request time; none
+is a rate, an average, a comparison against a prior period, or anything
+else implying history the application does not actually record.
+
+Reason:
+
+This codebase has no audit log, no event history, and no time-series
+data for any resource — there is nothing truthful a chart or trend
+indicator could be computed from. A dashboard that displayed one anyway
+would necessarily be decorative or fabricated (a hard-coded shape, a
+random walk, or a single data point dressed up as a series), which is
+worse than showing nothing: it invites an administrator to trust a
+number that carries no real signal. Restricting the dashboard to counts
+and navigation keeps every figure on the page provably backed by a real
+query against real rows, and keeps the page honest about what
+administrative information actually exists today.
+
+How to apply:
+
+Before adding anything to `/admin` that resembles a chart, sparkline,
+percentage, "up/down since last week," or activity feed, check whether
+the underlying historical data actually exists (an audit log, event
+table, or timestamped history). If it doesn't, the dashboard should not
+imply it does — either the feature waits until that data model exists,
+or it is out of scope for this dashboard. Plain counts, current-state
+summaries, and direct links to the existing workspaces remain welcome
+and encouraged.
+
+Alternatives considered:
+
+- A lightweight "records created this week" style summary computed from
+  existing `createdAt` timestamps — rejected for this slice; while the
+  timestamps do exist, the task scoped this slice to counts and
+  navigation only, and a time-windowed summary is closer to analytics
+  than to the restrained administrative facts this dashboard is meant to
+  show. Revisit only if a future milestone explicitly asks for it.
+- Per-resource sparkline/mini-chart components using only current
+  counts (no real time series) — rejected outright: a chart with a
+  single real data point is decorative, not informative, and would
+  contradict the "no fabricated analytics" rule this same decision
+  establishes.

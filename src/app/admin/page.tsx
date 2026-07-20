@@ -1,54 +1,70 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
-import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
+import { ContextPanel } from "@/components/admin/context-panel";
+import { DashboardSummaryCard } from "@/components/admin/dashboard-summary-card";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { prisma } from "@/lib/db";
+import { getCurrentGameVersion } from "@/lib/game-versions";
+import {
+  DASHBOARD_RESOURCE_ROUTES,
+  describeCurrentGameVersion,
+  pluralize,
+} from "@/lib/admin/dashboard";
 import { signOutAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const managementAreas = [
-  {
-    title: "Manage Categories",
-    description: "Create, edit, and delete item categories.",
-    href: "/admin/categories",
-  },
-  {
-    title: "Manage Professions",
-    description: "Create, edit, and delete professions and their images.",
-    href: "/admin/professions",
-  },
-  {
-    title: "Manage Items",
-    description: "Create, edit, and delete items and their images.",
-    href: "/admin/items",
-  },
-  {
-    title: "Manage Recipes",
-    description: "Create, edit, and delete crafting recipes.",
-    href: "/admin/recipes",
-  },
-  {
-    title: "Manage Locations",
-    description: "Create, edit, and delete locations and their images.",
-    href: "/admin/locations",
-  },
-];
-
 export default async function AdminPage() {
   const user = await requireAdminUser();
 
-  // The dashboard is the reference AdminWorkspace composition: header slot
-  // plus the primary region only — the optional record-list and aside
-  // slots stay empty until later Slice 9B work fills them.
+  // Every count below is a restrained COUNT query — never a full
+  // collection load — and every one is independent of the others, so
+  // Promise.all runs them concurrently: nine count()s plus one
+  // findFirst() (the existing getCurrentGameVersion() helper the
+  // settings page and every verification stamp already use, so "the
+  // current version" is defined in exactly one place). No per-row
+  // queries, no N+1 behavior, no full Item/Recipe/Location collections
+  // loaded merely to count them.
+  const [
+    itemCount,
+    acquisitionSourceCount,
+    recipeCount,
+    recipeIngredientCount,
+    professionCount,
+    categoryCount,
+    locationCount,
+    rootLocationCount,
+    gameVersionCount,
+    currentGameVersion,
+  ] = await Promise.all([
+    prisma.item.count(),
+    prisma.acquisitionSource.count(),
+    prisma.recipe.count(),
+    prisma.recipeIngredient.count(),
+    prisma.profession.count(),
+    prisma.category.count(),
+    prisma.location.count(),
+    prisma.location.count({ where: { parentId: null } }),
+    prisma.gameVersion.count(),
+    getCurrentGameVersion(prisma),
+  ]);
+
+  // The admin dashboard (Slice 9G.1): a restrained workspace summary, not
+  // an analytics dashboard — administrative counts and direct navigation
+  // only. No charts, no graphs, no trend indicators, no fake percentages,
+  // and no "recent activity" feed (there is no real audit history to
+  // report). Every count is a real database count; zero is itself
+  // meaningful and always renders as 0, never hidden.
   return (
     <AdminWorkspace
       header={
         <>
           <PageHeader
-            title="Admin"
-            description="Manage the wiki's game data: create, edit, and delete categories, professions, items, recipes, and locations."
+            eyebrow="Admin"
+            title="Dashboard"
+            description="A restrained summary of the wiki's current reference data, with direct navigation into each completed workspace."
           />
 
           <section className="admin-toolbar">
@@ -69,29 +85,92 @@ export default async function AdminPage() {
       }
     >
       <ContentGrid>
-        {managementAreas.map((area) => (
-          <Card
-            key={area.href}
-            title={area.title}
-            description={area.description}
-            href={area.href}
-          />
-        ))}
+        <DashboardSummaryCard
+          title="Items"
+          href="/admin/items"
+          count={itemCount}
+          unitLabel={pluralize(itemCount, "item")}
+          context={`${acquisitionSourceCount} ${pluralize(
+            acquisitionSourceCount,
+            "acquisition source"
+          )}`}
+        />
+        <DashboardSummaryCard
+          title="Recipes"
+          href="/admin/recipes"
+          count={recipeCount}
+          unitLabel={pluralize(recipeCount, "recipe")}
+          context={`${recipeIngredientCount} ${pluralize(
+            recipeIngredientCount,
+            "ingredient"
+          )}`}
+        />
+        <DashboardSummaryCard
+          title="Professions"
+          href="/admin/professions"
+          count={professionCount}
+          unitLabel={pluralize(professionCount, "profession")}
+        />
+        <DashboardSummaryCard
+          title="Categories"
+          href="/admin/categories"
+          count={categoryCount}
+          unitLabel={pluralize(categoryCount, "category", "categories")}
+        />
+        <DashboardSummaryCard
+          title="Locations"
+          href="/admin/locations"
+          count={locationCount}
+          unitLabel={pluralize(locationCount, "location")}
+          context={`${rootLocationCount} root ${pluralize(
+            rootLocationCount,
+            "location"
+          )}`}
+        />
       </ContentGrid>
 
-      {/* Deliberately a restrained secondary destination below the primary
-          management grid — Game Versions is settings, not day-to-day content
-          management, and must not join the primary navigation. */}
-      <section style={{ marginTop: designTokens.layout.sectionGap }}>
-        <h2 className="section-title">Settings</h2>
-        <p>
+      {/* Read-only administrative status, never fabricated: the current
+          version's own name, or a plain "no current version" status —
+          the exact same getCurrentGameVersion() semantics every
+          verification stamp on the site already relies on. */}
+      <ContextPanel
+        title="Game Version"
+        footer={
           <a href="/admin/settings/game-versions" className="link-accent">
             Game Versions
-          </a>{" "}
-          <span style={{ color: designTokens.colors.textMuted }}>
-            — manage the game versions used to verify gameplay data.
-          </span>
-        </p>
+          </a>
+        }
+      >
+        <dl style={{ margin: 0, display: "grid", gap: "6px" }}>
+          <div className="admin-panel-row">
+            <dt>Current version</dt>
+            <dd>{describeCurrentGameVersion(currentGameVersion)}</dd>
+          </div>
+
+          <div className="admin-panel-row">
+            <dt>Total versions</dt>
+            <dd>{gameVersionCount}</dd>
+          </div>
+        </dl>
+      </ContextPanel>
+
+      <section style={{ marginTop: designTokens.layout.sectionGap }}>
+        <h2 className="section-title">Quick Actions</h2>
+
+        <nav
+          aria-label="Quick create actions"
+          style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}
+        >
+          {DASHBOARD_RESOURCE_ROUTES.map((route) => (
+            <a
+              key={route.key}
+              href={route.createHref}
+              className="btn btn-secondary btn-compact"
+            >
+              {route.createLabel}
+            </a>
+          ))}
+        </nav>
       </section>
     </AdminWorkspace>
   );

@@ -367,7 +367,10 @@ Slice 9F.1 (Location workspace navigation foundation) complete; Slice
 9F.2 (Location General editor conversion) complete; Slice 9F.3 (Location
 Hierarchy tab) complete; Slice 9F.4 (Location Acquisition Sources tab)
 complete; Slice 9F.5 (Location Metadata tab) complete — the Location
-reference workspace is functionally complete; later slices not started
+reference workspace is functionally complete; Slice 9G.1 (Admin Dashboard
+summaries) complete — the only work remaining in Milestone 9 is the
+final admin visual-consistency pass, plus final Milestone 9
+verification/documentation/push
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1724,10 +1727,73 @@ workspace.
       Sources, Metadata) is now functionally complete, matching the
       Item, Recipe, Profession, and Category workspaces' shape
 
+### Slice 9G.1 — Admin Dashboard summaries (complete, 2026-07-20)
+
+- [x] `/admin` is now a restrained resource-summary workspace, not an
+      analytics dashboard: the old "Manage X" card grid is gone, replaced
+      by five resource summary cards (Items, Recipes, Professions,
+      Categories, Locations), a Game Version status panel, and a
+      quick-actions section — all inside the unchanged `AdminShell`/
+      `requireAdminUser()` gate; `AdminShell` itself was not redesigned
+- [x] Each resource summary card (`DashboardSummaryCard`, a single
+      anchor — never a click handler) shows the resource name, its total
+      record count (zero always renders as `0`, never hidden), and
+      concise supporting context only where it adds value: Items → total
+      Acquisition Source count, Recipes → total Recipe Ingredient count,
+      Locations → root-location count; Professions and Categories show
+      the total count only, per the task's own permission to omit
+      context that adds nothing
+- [x] A `ContextPanel` titled "Game Version" shows the current version's
+      own name (via the existing `getCurrentGameVersion()` — the same
+      definition every verification stamp already relies on, not a new
+      one) or a restrained "No current game version selected" status
+      when none is current, plus the total Game Version count and a
+      link to the existing `/admin/settings/game-versions` route — never
+      the version's database id
+- [x] A Quick Actions section links directly to each resource's existing
+      `/new` route (`DASHBOARD_RESOURCE_ROUTES`, a pure canonical route
+      mapping mirroring `admin-nav.ts`'s own pattern); Acquisition Source
+      creation is deliberately excluded, since sources remain Item-owned
+      and need Item context
+- [x] All ten dashboard queries (nine `.count()`s plus one
+      `getCurrentGameVersion()` call) run concurrently via `Promise.all`
+      — no full collection loads, no per-row queries, no new Prisma
+      schema
+- [x] No charts, graphs, percentages, trend indicators, or "recent
+      activity" feed anywhere on the dashboard; no dashboard mutation
+      form
+- [x] New pure helpers: `src/lib/admin/dashboard.ts`
+      (`DASHBOARD_RESOURCE_ROUTES`, `pluralize`, `describeCurrentGameVersion`)
+      and the presentational `DashboardSummaryCard` component — a small,
+      dashboard-specific pair, not a generic framework
+- [x] Tests: unit coverage for the canonical route mapping and the two
+      formatting helpers; a new `dashboard.integration.test.ts` proving
+      the dashboard's own count-query shapes (item/source counts, the
+      root-location-only count, a valid zero count, and the current
+      Game Version query's semantics) against the real isolated test
+      database; a new `admin-dashboard.spec.ts` E2E spec (exactly one
+      h1, all five summary cards and their canonical links, quick-action
+      links, the Game Version panel, no chart/analytics content, and a
+      real create/delete count delta); `admin-shell.spec.ts` and
+      `admin-game-versions.spec.ts` updated for the dashboard's new
+      heading ("Dashboard") and Game Version panel heading; five
+      resource lifecycle E2E specs simplified to navigate straight to
+      their own list route instead of clicking the old "Manage X" card
+      text, which no longer exists
+- [x] The final admin visual-consistency pass, and all later milestone
+      work (Route Hubs included), remain untouched and not started
+
 ### Remaining (not started)
 
-- [ ] Dashboard summaries and Route Hubs — do not begin until explicitly
-      instructed in the milestone conversation
+- [ ] The final admin visual-consistency pass, plus final Milestone 9
+      verification/documentation/push — this is the ONLY work left in
+      Milestone 9. Do not begin until explicitly instructed in the
+      milestone conversation.
+
+Route Hubs are NOT part of the remaining Milestone 9 work — they were
+renumbered to a later milestone (see the dedicated "Route Hubs" section
+below) and stay deferred there regardless of Milestone 9's own
+completion.
 
 ---
 

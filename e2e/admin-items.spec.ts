@@ -186,9 +186,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   page,
 }) => {
   // --- Create (all fields, optional image input left empty) ------------
-  await page.goto("/admin");
-  await page.getByRole("link", { name: /Manage Items/ }).click();
-  await expect(page).toHaveURL("/admin/items");
+  await page.goto("/admin/items");
   await expect(
     page.getByRole("heading", { level: 1, name: "Item Management" })
   ).toBeVisible();
