@@ -4,6 +4,7 @@ import {
   LOCATION_LIST_PATH,
   locationDeleteHref,
   locationEditHref,
+  locationEditorTabs,
   normalizeLocationSearchQuery,
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
@@ -61,5 +62,61 @@ describe("location workspace hrefs", () => {
     expect(locationDeleteHref("sunken-cave", "cave")).toBe(
       "/admin/locations/sunken-cave/delete?q=cave"
     );
+  });
+});
+
+describe("locationEditorTabs", () => {
+  it("marks General active, real, and linking to the edit route", () => {
+    const tabs = locationEditorTabs("sunken-cave", "");
+
+    expect(tabs[0]).toEqual({
+      label: "General",
+      href: "/admin/locations/sunken-cave/edit",
+      active: true,
+    });
+  });
+
+  it("preserves the query on General's own href", () => {
+    const tabs = locationEditorTabs("sunken-cave", "cave");
+
+    expect(tabs[0]).toEqual({
+      label: "General",
+      href: "/admin/locations/sunken-cave/edit?q=cave",
+      active: true,
+    });
+  });
+
+  it("marks exactly one tab active", () => {
+    const tabs = locationEditorTabs("sunken-cave", "");
+    expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+  });
+
+  it("renders Hierarchy, Acquisition Sources, and Metadata as disabled placeholders", () => {
+    const tabs = locationEditorTabs("sunken-cave", "");
+
+    expect(tabs[1]).toEqual({
+      label: "Hierarchy",
+      href: "",
+      active: false,
+      disabled: true,
+    });
+    expect(tabs[2]).toEqual({
+      label: "Acquisition Sources",
+      href: "",
+      active: false,
+      disabled: true,
+    });
+    expect(tabs[3]).toEqual({
+      label: "Metadata",
+      href: "",
+      active: false,
+      disabled: true,
+    });
+  });
+
+  it("never renders General as disabled", () => {
+    const tabs = locationEditorTabs("sunken-cave", "");
+    expect(tabs[0].disabled).toBeUndefined();
+    expect(tabs[0].href).not.toBe("");
   });
 });

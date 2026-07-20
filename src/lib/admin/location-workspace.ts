@@ -9,11 +9,11 @@
 // routes): the workspace links to /admin/locations/[slug]/edit.
 // Database ids never appear in URLs.
 //
-// This is a narrow navigation-foundation pass, mirroring the
-// Item/Recipe/Profession/Category workspaces' own first slices exactly:
-// Locations have no tabs yet (the editor conversion is deferred), so
-// this module only exports the list/create/edit/delete hrefs a plain
-// record list and its two nested routes need.
+// Slice 9F.2 (General editor conversion) added `locationEditorTabs`,
+// mirroring the Profession workspace's Slice 9D.2 shape exactly: General
+// is the only real tab so far — Hierarchy, Acquisition Sources, and
+// Metadata (all later slices, not yet implemented) render as disabled
+// placeholders, never links to empty pages.
 
 export const LOCATION_LIST_PATH = "/admin/locations";
 export const LOCATION_CREATE_PATH = "/admin/locations/new";
@@ -51,4 +51,43 @@ export function locationEditHref(slug: string, query: string): string {
 /** The delete-confirmation route for one location, preserving the query. */
 export function locationDeleteHref(slug: string, query: string): string {
   return withLocationSearchQuery(`${LOCATION_LIST_PATH}/${slug}/delete`, query);
+}
+
+/** Structurally compatible with the shared `EditorTab` type
+    (`src/components/admin/editor-tabs.tsx`) without importing a
+    component into this pure, React-free module. */
+export type LocationEditorTab = {
+  label: string;
+  href: string;
+  active: boolean;
+  disabled?: boolean;
+};
+
+/**
+ * The Location edit route's tab strip (Slice 9F.2): General is the only
+ * real destination this slice — Hierarchy, Acquisition Sources, and
+ * Metadata (all later slices) render as disabled placeholders, never
+ * links to empty pages. The create page shows only General with no
+ * placeholders at all (mirroring the Item/Recipe/Profession workspaces'
+ * create-page precedent), so this helper is deliberately edit-only.
+ */
+export function locationEditorTabs(
+  slug: string,
+  query: string
+): LocationEditorTab[] {
+  return [
+    {
+      label: "General",
+      href: locationEditHref(slug, query),
+      active: true,
+    },
+    { label: "Hierarchy", href: "", active: false, disabled: true },
+    {
+      label: "Acquisition Sources",
+      href: "",
+      active: false,
+      disabled: true,
+    },
+    { label: "Metadata", href: "", active: false, disabled: true },
+  ];
 }

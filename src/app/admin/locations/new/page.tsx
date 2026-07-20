@@ -1,6 +1,9 @@
-import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { ImagePanel } from "@/components/admin/image-panel";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
@@ -14,6 +17,12 @@ import { createLocationAction } from "../actions";
 import { checkLocationNameAvailability } from "../name-availability";
 
 export const dynamic = "force-dynamic";
+
+// Associates the image and verification controls — both rendered in the
+// aside column, outside this <form> element — with this form via the
+// standard HTML `form` attribute, so every field still submits together
+// with one ordinary form submission.
+const LOCATION_CREATE_FORM_ID = "location-create-form";
 
 const errorMessages: Record<string, string> = {
   missing_name: "Location name is required.",
@@ -63,32 +72,40 @@ export default async function NewLocationPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  // The dedicated creation page, following the Item/Recipe/Profession/
-  // Category workspaces' navigation-foundation precedent: the form
-  // previously embedded at the bottom of /admin/locations, moved here
-  // with unchanged action, fields, image handling, and verification
-  // controls. EditorHeader/tabs/ImagePanel/VerificationPanel/sticky
-  // EditorActions are deliberately NOT adopted this pass — only the
-  // navigation/wrapper moved.
+  // Only General makes sense before a record exists — Hierarchy,
+  // Acquisition Sources, and Metadata all describe an existing Location's
+  // relations and history, so they are omitted here rather than shown as
+  // disabled placeholders (matching the Item/Recipe/Profession General
+  // editors' create-page precedent exactly).
+  const tabs: EditorTab[] = [
+    {
+      label: "General",
+      href: withLocationSearchQuery("/admin/locations/new", query),
+      active: true,
+    },
+  ];
+
+  // The dedicated creation page (Slice 9F.1), now composed from the
+  // shared editor primitives (Slice 9F.2): the form previously plain,
+  // moved here unchanged in field/action/validation terms — only the
+  // presentation now uses EditorHeader/EditorTabs/ImagePanel/
+  // VerificationPanel/EditorActions. Hierarchy, Acquisition Sources, and
+  // Metadata tabs, and TimestampsPanel, do not apply to a record that
+  // doesn't exist yet. Parent selection stays right here in General for
+  // this slice — a dedicated Hierarchy tab is later work.
   return (
     <LocationWorkspace
       rawQuery={q}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
+          <EditorHeader
             title="Create Location"
-            description="Add a new location to the wiki."
+            subtitle="Add a new location to the wiki."
+            backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+            backLabel="Back to Location Management"
           />
 
-          <p className="admin-toolbar">
-            <a
-              href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-              className="link-accent"
-            >
-              &larr; Back to Location Management
-            </a>
-          </p>
+          <EditorTabs label="Location editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
@@ -97,8 +114,41 @@ export default async function NewLocationPage({
           ) : null}
         </>
       }
+      aside={
+        <>
+          <ImagePanel>
+            <label className="form-field">
+              <span className="form-field-label">
+                Image (optional — PNG, JPEG, or WebP, up to 5 MB)
+              </span>
+              <input
+                type="file"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+                form={LOCATION_CREATE_FORM_ID}
+                className="form-input"
+              />
+            </label>
+          </ImagePanel>
+
+          {/* No fake existing verification state on create: both fields
+              are null, so the panel renders Unverified with no stamp
+              rows — exactly the state a brand-new Location actually
+              has. */}
+          <VerificationPanel
+            gameVersions={gameVersions}
+            verifiedAt={null}
+            verifiedGameVersion={null}
+            formId={LOCATION_CREATE_FORM_ID}
+          />
+        </>
+      }
     >
-      <form action={createLocationAction} className="form-grid">
+      <form
+        id={LOCATION_CREATE_FORM_ID}
+        action={createLocationAction}
+        className="form-grid"
+      >
         {/* Client-enhanced Name field with live duplicate feedback; the
             submission-time duplicate check in createLocationAction
             remains the authoritative protection. */}
@@ -153,32 +203,10 @@ export default async function NewLocationPage({
           <textarea name="accessNote" rows={3} className="form-input" />
         </label>
 
-        <label className="form-field">
-          <span className="form-field-label">
-            Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-          </span>
-          <input
-            type="file"
-            name="image"
-            accept="image/png,image/jpeg,image/webp"
-            className="form-input"
-          />
-        </label>
-
-        <GameVersionVerificationControls gameVersions={gameVersions} />
-
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Create Location
-          </button>
-
-          <a
-            href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Create Location"
+          cancelHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+        />
       </form>
     </LocationWorkspace>
   );

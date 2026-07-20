@@ -1,14 +1,19 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
 import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
+import { EditorHeader } from "@/components/admin/editor-header";
+import { EditorTabs } from "@/components/admin/editor-tabs";
+import { ImagePanel } from "@/components/admin/image-panel";
+import { VerificationPanel } from "@/components/admin/verification-panel";
+import { TimestampsPanel } from "@/components/admin/timestamps-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
   locationDeleteHref,
+  locationEditorTabs,
   normalizeLocationSearchQuery,
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
@@ -18,6 +23,12 @@ import { updateLocationAction } from "../../actions";
 import { checkLocationNameAvailability } from "../../name-availability";
 
 export const dynamic = "force-dynamic";
+
+// Associates the image and verification controls — both rendered in the
+// aside column, outside this <form> element — with this form via the
+// standard HTML `form` attribute, so every field still submits together
+// with one ordinary form submission.
+const LOCATION_EDIT_FORM_ID = "location-edit-form";
 
 const errorMessages: Record<string, string> = {
   missing_name: "Location name is required.",
@@ -63,7 +74,10 @@ export default async function EditLocationPage({
     prisma.location.findUnique({
       where: { slug },
       // Admin-only visibility of the verification stamp: the related Game
-      // Version's name is shown next to the opt-in checkbox below.
+      // Version's name is shown in the aside's VerificationPanel below. No
+      // children or acquisitionSources include — General never touches or
+      // displays those relations (Hierarchy and Acquisition Sources tabs
+      // are later slices).
       include: { verifiedGameVersion: true },
     }),
     prisma.location.findMany({ orderBy: { name: "asc" } }),
@@ -88,41 +102,31 @@ export default async function EditLocationPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  // The edit route inside the Location workspace, following the
-  // Item/Recipe/Profession/Category workspaces' navigation-foundation
-  // precedent: the record list marks this location selected and keeps
-  // the active search applied for quick switching. Every field, redirect,
-  // server action, image behavior, verification rule, and hierarchy/
-  // cycle guard is unchanged — only the navigation wrapper moved. Delete
-  // is now reached from this page's toolbar (the old table's per-row
-  // Delete link is gone).
+  const tabs = locationEditorTabs(location.slug, query);
+
+  // The General edit route inside the Location workspace (Slice 9F.1),
+  // now composed from the shared editor primitives (Slice 9F.2): the
+  // record list marks this location selected and keeps the active search
+  // applied for quick switching. Every field, redirect, server action,
+  // image behavior, verification rule, and hierarchy/cycle guard is
+  // unchanged — only the presentation moved. Hierarchy, Acquisition
+  // Sources, and Metadata remain disabled placeholders. Delete lives in
+  // `EditorActions`' own `deleteHref` since Locations carry no capacity
+  // guard that would ever need to hide the form.
   return (
     <LocationWorkspace
       rawQuery={q}
       selectedSlug={location.slug}
       header={
         <>
-          <PageHeader
-            eyebrow="Admin"
-            title="Edit Location"
-            description={`Update details for "${location.name}".`}
+          <EditorHeader
+            title={location.name}
+            subtitle={location.slug}
+            backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+            backLabel="Back to Location Management"
           />
 
-          <nav className="admin-toolbar" aria-label="Location editor actions">
-            <a
-              href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-              className="link-accent"
-            >
-              &larr; Back to Location Management
-            </a>
-
-            <a
-              href={locationDeleteHref(location.slug, query)}
-              className="link-danger"
-            >
-              Delete Location
-            </a>
-          </nav>
+          <EditorTabs label="Location editor sections" tabs={tabs} />
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
@@ -131,8 +135,88 @@ export default async function EditLocationPage({
           ) : null}
         </>
       }
+      aside={
+        <>
+          <ImagePanel>
+            {imageUrl ? (
+              <div style={{ position: "relative", justifySelf: "start" }}>
+                <input
+                  type="checkbox"
+                  name="removeImage"
+                  id="removeImage"
+                  form={LOCATION_EDIT_FORM_ID}
+                  className="admin-image-remove-checkbox"
+                />
+                <div className="admin-image-remove-frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
+                  <img
+                    src={imageUrl}
+                    alt={`Current image for ${location.name}`}
+                    style={{
+                      maxWidth: "128px",
+                      height: "auto",
+                      border: `1px solid ${designTokens.colors.border}`,
+                      borderRadius: designTokens.radius.sm,
+                      background: designTokens.colors.surface,
+                      padding: "8px",
+                      display: "block",
+                    }}
+                  />
+                  <label
+                    htmlFor="removeImage"
+                    title="Remove current image"
+                    className="admin-image-remove-toggle"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                    <span className="admin-image-remove-hidden-text">
+                      Remove current image
+                    </span>
+                  </label>
+                </div>
+                <p className="admin-image-remove-note">
+                  Image will be removed when saved.
+                </p>
+              </div>
+            ) : (
+              <span className="form-field-label">No image uploaded.</span>
+            )}
+
+            <label className="form-field">
+              <span className="form-field-label">
+                {location.image
+                  ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
+                  : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
+              </span>
+              <input
+                type="file"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+                form={LOCATION_EDIT_FORM_ID}
+                className="form-input"
+              />
+            </label>
+          </ImagePanel>
+
+          <VerificationPanel
+            gameVersions={gameVersions}
+            verifiedAt={location.verifiedAt}
+            verifiedGameVersion={location.verifiedGameVersion}
+            formId={LOCATION_EDIT_FORM_ID}
+          />
+
+          <TimestampsPanel
+            createdAt={location.createdAt}
+            updatedAt={location.updatedAt}
+            verifiedAt={location.verifiedAt}
+          />
+        </>
+      }
     >
-      <form action={updateLocationAction} className="form-grid">
+      <form
+        id={LOCATION_EDIT_FORM_ID}
+        action={updateLocationAction}
+        className="form-grid"
+      >
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
 
@@ -212,141 +296,12 @@ export default async function EditLocationPage({
           />
         </label>
 
-        <div className="form-field">
-          <span className="form-field-label">Current image</span>
-          {imageUrl ? (
-            <div style={{ position: "relative", justifySelf: "start" }}>
-              <style>{`
-                .remove-image-checkbox,
-                .remove-image-hidden-text {
-                  position: absolute;
-                  width: 1px;
-                  height: 1px;
-                  margin: -1px;
-                  padding: 0;
-                  overflow: hidden;
-                  clip: rect(0 0 0 0);
-                  white-space: nowrap;
-                  border: 0;
-                }
-                .remove-image-frame {
-                  position: relative;
-                  display: inline-block;
-                }
-                .remove-image-toggle {
-                  position: absolute;
-                  top: 4px;
-                  right: 4px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  width: 22px;
-                  height: 22px;
-                  border-radius: 9999px;
-                  background: ${designTokens.colors.danger};
-                  color: ${designTokens.colors.background};
-                  font-size: 14px;
-                  font-weight: 700;
-                  line-height: 1;
-                  cursor: pointer;
-                  user-select: none;
-                }
-                .remove-image-checkbox:focus-visible ~ .remove-image-frame .remove-image-toggle {
-                  outline: 2px solid ${designTokens.colors.accent};
-                  outline-offset: 2px;
-                }
-                .remove-image-checkbox:checked ~ .remove-image-frame img {
-                  opacity: 0.35;
-                }
-                .remove-image-note {
-                  display: none;
-                  margin: 6px 0 0;
-                  color: ${designTokens.colors.danger};
-                }
-                .remove-image-checkbox:checked ~ .remove-image-note {
-                  display: block;
-                }
-              `}</style>
-              <input
-                type="checkbox"
-                name="removeImage"
-                id="removeImage"
-                className="remove-image-checkbox"
-              />
-              <div className="remove-image-frame">
-                {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
-                <img
-                  src={imageUrl}
-                  alt={`Current image for ${location.name}`}
-                  style={{
-                    maxWidth: "128px",
-                    height: "auto",
-                    border: `1px solid ${designTokens.colors.border}`,
-                    borderRadius: designTokens.radius.sm,
-                    background: designTokens.colors.surface,
-                    padding: "8px",
-                    display: "block",
-                  }}
-                />
-                <label
-                  htmlFor="removeImage"
-                  title="Remove current image"
-                  className="remove-image-toggle"
-                >
-                  <span aria-hidden="true">&times;</span>
-                  <span className="remove-image-hidden-text">
-                    Remove current image
-                  </span>
-                </label>
-              </div>
-              <p className="remove-image-note">
-                Image will be removed when saved.
-              </p>
-            </div>
-          ) : (
-            <span className="form-field-label">No image uploaded.</span>
-          )}
-        </div>
-
-        <label className="form-field">
-          <span className="form-field-label">
-            {location.image
-              ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
-              : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
-          </span>
-          <input
-            type="file"
-            name="image"
-            accept="image/png,image/jpeg,image/webp"
-            className="form-input"
-          />
-        </label>
-
-        {/* Admin-only verification status (public pages never show it).
-            Rendered only when BOTH fields are populated — never as an
-            empty row; the stable YYYY-MM-DD date never depends on the
-            server locale. */}
-        {location.verifiedAt && location.verifiedGameVersion ? (
-          <p className="text-muted">
-            Gameplay data verified for {location.verifiedGameVersion.name} on{" "}
-            {location.verifiedAt.toISOString().slice(0, 10)}.
-          </p>
-        ) : null}
-
-        <GameVersionVerificationControls gameVersions={gameVersions} />
-
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Save Changes
-          </button>
-
-          <a
-            href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Save Changes"
+          cancelHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+          deleteHref={locationDeleteHref(location.slug, query)}
+          deleteLabel="Delete Location"
+        />
       </form>
     </LocationWorkspace>
   );

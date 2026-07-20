@@ -17,19 +17,32 @@
 // /admin/locations/new route, and Delete is reached from the edit page's
 // toolbar instead of a per-row table action — mirroring the Item/Recipe/
 // Profession/Category workspaces' own navigation-foundation slices
-// exactly. Every CRUD, hierarchy, verification, and image behavior below
+// exactly. Slice 9F.2 converted General to the shared editor primitives
+// (EditorHeader/EditorTabs/ImagePanel/VerificationPanel/TimestampsPanel/
+// EditorActions) — the old inline "Edit Location" heading, "Update
+// details..." subtitle sentence, and "Gameplay data verified for X on Y"
+// paragraph are gone, replaced by the record's own name as the h1, its
+// slug as the subtitle, and the shared VerificationPanel's status badge
+// and rows. Every CRUD, hierarchy, verification, and image behavior below
 // is otherwise unchanged.
 
 import { expect, test, type Page } from "@playwright/test";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestLocationRecords,
+  createE2eTestGameVersion,
+  deleteE2eTestGameVersionRecords,
   deleteE2eTestLocationRecords,
 } from "./helpers/database-cleanup";
 
 // The persistent test-only Game Version fixture, made current by
 // auth.setup.ts before any admin spec runs.
 const CURRENT_VERSION_NAME = E2E_CURRENT_GAME_VERSION_NAME;
+
+// A NON-current browser-test version for the historical-selection flow;
+// carries the test-e2e-gv- prefix so deleteE2eTestGameVersionRecords
+// always catches it.
+const HISTORICAL_VERSION_NAME = "test-e2e-gv-locations-historical";
 
 const INITIAL = {
   name: "Test E2E Location",
@@ -93,8 +106,12 @@ test.beforeEach(({ page }) => {
 });
 
 test.afterEach(async () => {
-  // Defensive prefix-scoped cleanup even when a test failed mid-lifecycle.
+  // Defensive prefix-scoped cleanup even when a test failed mid-lifecycle:
+  // test Locations first, then the browser-test Game Version the
+  // verification test creates (last — a stamped Location RESTRICT-
+  // references it).
   await deleteE2eTestLocationRecords();
+  await deleteE2eTestGameVersionRecords();
   expect(pageErrors, "no uncaught page errors are allowed").toEqual([]);
 });
 
@@ -102,11 +119,14 @@ test.beforeAll(async () => {
   // Remove stale rows from interrupted earlier runs; the guard inside the
   // helper throws here if the environment is not the verified test project.
   await deleteE2eTestLocationRecords();
+  await deleteE2eTestGameVersionRecords();
   expect(await countE2eTestLocationRecords()).toBe(0);
 });
 
 test.afterAll(async () => {
-  const remaining = await deleteE2eTestLocationRecords();
+  const remaining =
+    (await deleteE2eTestLocationRecords()) +
+    (await deleteE2eTestGameVersionRecords());
   // afterEach should already have removed everything — fail loudly if not.
   expect(remaining).toBe(0);
 });
@@ -120,6 +140,23 @@ function recordRow(page: Page, name: string) {
     .getByRole("navigation", { name: "Locations records" })
     .getByRole("link")
     .filter({ has: page.getByText(name, { exact: true }) });
+}
+
+// One of the shared panels' rows (Verification or Timestamps) in the
+// Location editor's aside, located by its label (dt) text — scoped to
+// the panel by heading so identical row labels can never collide. The
+// row's dt/dd text is concatenated with no separator, so the filter is
+// anchored to the START of the row's text — otherwise "Current version"
+// would also match the unrelated "Verified — current version" status
+// badge's own "admin-panel-row" wrapper (case-insensitive substring).
+function panelRow(page: Page, panelTitle: string, label: string) {
+  return page
+    .locator(".admin-panel")
+    .filter({
+      has: page.getByRole("heading", { level: 2, name: panelTitle, exact: true }),
+    })
+    .locator(".admin-panel-row")
+    .filter({ hasText: new RegExp(`^${label}`) });
 }
 
 // Fills the create form on /admin/locations/new (the page must already be
@@ -197,6 +234,87 @@ test("Create Location opens the dedicated creation route", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("Location editor: create shows only General; edit marks General active with Hierarchy, Acquisition Sources, and Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
+  page,
+}) => {
+  // --- Create: exactly one h1, one real tab, no disabled placeholders,
+  // Image panel present, no Timestamps panel (nothing to show yet) ------
+  await page.goto("/admin/locations/new");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  const createTabNav = page.getByRole("navigation", {
+    name: "Location editor sections",
+  });
+  await expect(
+    createTabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(createTabNav.getByText("Hierarchy")).toHaveCount(0);
+  await expect(createTabNav.getByText("Acquisition Sources")).toHaveCount(0);
+  await expect(createTabNav.getByText("Metadata")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toHaveCount(0);
+
+  await createLocationThroughForm(page, {
+    name: "Test E2E Location Tabs",
+    slug: "test-e2e-location-tabs",
+    type: "Town",
+    description: "Verifies the shared editor structure.",
+  });
+
+  // --- Edit: exactly one h1 (the location's own name), General active,
+  // Hierarchy/Acquisition Sources/Metadata all inert placeholders,
+  // Timestamps present (Created/Updated, no Verified stamp yet) --------
+  await recordRow(page, "Test E2E Location Tabs").click();
+  await expect(page).toHaveURL("/admin/locations/test-e2e-location-tabs/edit");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Test E2E Location Tabs",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  const editTabNav = page.getByRole("navigation", {
+    name: "Location editor sections",
+  });
+  await expect(
+    editTabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
+  await expect(
+    editTabNav.getByText("Hierarchy", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Hierarchy", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    editTabNav.getByText("Acquisition Sources", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    editTabNav.getByText("Metadata", { exact: true })
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(
+    editTabNav.getByRole("link", { name: "Metadata", exact: true })
+  ).toHaveCount(0);
+
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
+  ).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Created")).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Updated")).toBeVisible();
+  await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
+});
+
 test("location create/edit/delete lifecycle through the real admin UI", async ({
   page,
 }) => {
@@ -241,12 +359,13 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
     "aria-current",
     "page"
   );
+  // The editor's one h1 is the location's own name; its slug is the
+  // subtitle context underneath (Slice 9F.2, matching the Item/Recipe/
+  // Profession General editors' convention exactly).
   await expect(
-    page.getByRole("heading", { level: 1, name: "Edit Location" })
+    page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
-  await expect(
-    page.getByText(`Update details for "${INITIAL.name}".`)
-  ).toBeVisible();
+  await expect(page.getByText(INITIAL.slug, { exact: true })).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);
@@ -279,8 +398,8 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
   // --- Delete -------------------------------------------------------------
-  // Delete is reached from the edit page's toolbar (the old table's
-  // per-row Delete link is gone).
+  // Delete is reached from the edit page's sticky EditorActions (the old
+  // table's per-row Delete link is gone).
   await page.goto("/admin/locations");
   await recordRow(page, EDITED.name).click();
   await expect(page).toHaveURL(`/admin/locations/${EDITED.slug}/edit`);
@@ -306,9 +425,12 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   expect(deletedResponse?.status()).toBe(404);
 });
 
-test("gameplay verification stamps the current game version, stays admin-only, and survives normal edits", async ({
+test("gameplay verification stamps the selected game version, stays admin-only, and survives normal edits", async ({
   page,
 }) => {
+  // A NON-current historical version for the picker flows below.
+  await createE2eTestGameVersion(HISTORICAL_VERSION_NAME);
+
   // --- Create unverified (checkbox untouched) ---------------------------
   await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, VERIFY_LOCATION);
@@ -323,23 +445,48 @@ test("gameplay verification stamps the current game version, stays admin-only, a
   ).toBeVisible();
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
-  // --- Verify via the explicit opt-in checkbox --------------------------
-  await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
+  // --- The shared VerificationPanel shows Unverified with no stamp rows,
+  // and the picker lists versions and defaults to the current one -------
+  await page.goto("/admin/locations");
+  await recordRow(page, VERIFY_LOCATION.name).click();
+  await expect(page).toHaveURL(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
+  await expect(
+    page.locator(".admin-status-badge", { hasText: "Unverified" })
+  ).toBeVisible();
+  await expect(panelRow(page, "Verification", "Verified against")).toHaveCount(
+    0
+  );
+  const picker = page.getByLabel("Game version to verify against");
+  await expect(
+    picker.locator("option:checked"),
+    "the current version is preselected"
+  ).toHaveText(`${CURRENT_VERSION_NAME} (current)`);
+  await expect(
+    picker.locator("option", { hasText: HISTORICAL_VERSION_NAME })
+  ).toHaveCount(1);
+
+  // --- Verify via the explicit opt-in checkbox (picker untouched) -------
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/locations?success=updated");
 
-  // The admin edit page shows the stamp carrying the deterministic
-  // SERVER-resolved current Game Version — the browser never submitted a
-  // version value.
-  await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
-  const verificationLine = page.getByText(
-    `Gameplay data verified for ${CURRENT_VERSION_NAME} on`
-  );
-  await expect(verificationLine).toBeVisible();
-  const stampedText = await verificationLine.textContent();
+  // The edit page shows the stamp carrying the preselected current Game
+  // Version, resolved and validated server-side, classified as
+  // verified-for-the-current-version by the shared panel.
+  await recordRow(page, VERIFY_LOCATION.name).click();
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(CURRENT_VERSION_NAME);
+  const stampedDateText = await panelRow(page, "Verification", "Verified on")
+    .textContent();
+  await expect(panelRow(page, "Timestamps", "Verified")).toBeVisible();
 
   // Verification is admin-only since Slice 9A: the PUBLIC page must not
   // render it even for a verified location.
@@ -347,9 +494,17 @@ test("gameplay verification stamps the current game version, stays admin-only, a
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
   await expect(page.getByText(CURRENT_VERSION_NAME)).toHaveCount(0);
 
-  // --- A later NORMAL edit must not alter the stamp ----------------------
+  // --- A later NORMAL edit, even one that moves the picker, must not
+  // alter the stamp: the picker only ever proposes a version, and
+  // nothing is written while the checkbox stays unchecked. ---------------
+  // Unchecked by default on every render, even for an already-verified
+  // location: verification is a per-save action, not persistent form
+  // state.
   await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
+  await page
+    .getByLabel("Game version to verify against")
+    .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page
     .getByLabel(/^Description/)
     .fill("Edited without touching verification.");
@@ -362,11 +517,33 @@ test("gameplay verification stamps the current game version, stays admin-only, a
   ).toBeVisible();
 
   await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
-  const preservedLine = page.getByText(
-    `Gameplay data verified for ${CURRENT_VERSION_NAME} on`
-  );
-  await expect(preservedLine).toBeVisible();
-  expect(await preservedLine.textContent()).toBe(stampedText);
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(CURRENT_VERSION_NAME);
+  expect(
+    await panelRow(page, "Verification", "Verified on").textContent()
+  ).toBe(stampedDateText);
+
+  // --- Verifying against a SELECTED historical version -------------------
+  await page
+    .getByLabel("Game version to verify against")
+    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/locations?success=updated");
+
+  await recordRow(page, VERIFY_LOCATION.name).click();
+  await expect(
+    page.locator(".admin-status-badge", { hasText: "Verified — older version" })
+  ).toBeVisible();
+  await expect(
+    panelRow(page, "Verification", "Verified against")
+  ).toContainText(HISTORICAL_VERSION_NAME);
 });
 
 test("creating a location with a duplicate name is rejected server-side", async ({

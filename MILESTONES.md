@@ -363,8 +363,9 @@ Slice 9E.1 (Category workspace navigation foundation) complete; Slice
 9E.2 (Category General editor conversion) complete; Slice 9E.3 (Category
 Items relationship tab) complete; Slice 9E.4 (Category Metadata tab)
 complete — the Category reference workspace is functionally complete;
-Slice 9F.1 (Location workspace navigation foundation) complete; later
-slices not started
+Slice 9F.1 (Location workspace navigation foundation) complete; Slice
+9F.2 (Location General editor conversion) complete; later slices not
+started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1455,12 +1456,60 @@ workspace.
 - [x] No Location General/Hierarchy/Acquisition Sources/Metadata editor
       conversion, no dashboard summaries, and no Route Hubs were started
 
+### Slice 9F.2 — Location General editor conversion (complete, 2026-07-20)
+
+- [x] `/admin/locations/new` and `/admin/locations/[slug]/edit` now
+      compose the shared editor primitives — `EditorHeader` (one h1:
+      "Create Location" or the location's own name), `EditorTabs`
+      (General active; create shows only General with no placeholders,
+      matching the Item/Recipe/Profession/Category precedent; edit adds
+      Hierarchy/Acquisition Sources/Metadata as disabled placeholders
+      via the new `locationEditorTabs` helper), `ImagePanel` (reusing
+      the exact shared `.admin-image-remove-*` classes Item/Recipe/
+      Profession already migrated to — no bespoke inline `<style>`
+      block), `VerificationPanel`, `TimestampsPanel` (edit only), and
+      sticky `EditorActions` ("Create Location"/"Save Changes", Cancel,
+      and on edit a "Delete Location" link via `EditorActions`' own
+      `deleteHref`)
+- [x] Delete is passed directly to `EditorActions`' `deleteHref` (the
+      simpler Item/Profession-style placement) — Locations carry no
+      capacity guard that would ever need to withhold the form
+- [x] Parent selection stays exactly where it already was — inside
+      General's own fields — since splitting hierarchy editing into a
+      dedicated tab is later work; General still does not load the full
+      `children` or `acquisitionSources` relations, so this slice adds
+      no N+1 query and no relationship control
+- [x] Every Location field (name, slug, type, parent, description,
+      access note), redirect, server action, image behavior,
+      verification rule (including historical Game Version selection
+      and unchecked-edit preservation), hierarchy/cycle-prevention rule,
+      and the child-location delete-blocking rule is byte-for-byte
+      unchanged — only presentation moved
+- [x] `updateLocationAction` and `deleteLocationAction` are completely
+      untouched; General does not mutate Acquisition Source relations
+- [x] Tests: `locationEditorTabs` unit coverage (General active/real,
+      Hierarchy/Acquisition Sources/Metadata disabled,
+      exactly-one-active, query preservation); a new "Location editor"
+      E2E test proving exactly one h1, create shows only General, edit
+      marks General active with the other three tabs inert, Timestamps
+      render on edit only, and Image/Verification panels render
+      correctly on both pages; the existing lifecycle test updated for
+      the edit heading changing from the static "Edit Location" to the
+      location's own name (slug as subtitle); the existing verification
+      test rewritten around the shared `VerificationPanel` (status
+      badge, Verified against/Verified on rows) in place of the removed
+      inline "Gameplay data verified for X on Y" sentence, extended with
+      a historical Game Version selection flow mirroring the Profession
+      workspace's own verification test exactly
+- [x] No Hierarchy tab, no Acquisition Sources tab, no Metadata content,
+      and no other resource workspace was converted
+
 ### Remaining (not started)
 
-- [ ] The Location reference workspace's own General/Hierarchy/
-      Acquisition Sources/Metadata editor conversion, dashboard
-      summaries, and Route Hubs — do not begin until explicitly
-      instructed in the milestone conversation
+- [ ] The Location reference workspace's own Hierarchy/Acquisition
+      Sources/Metadata tabs, dashboard summaries, and Route Hubs — do
+      not begin until explicitly instructed in the milestone
+      conversation
 
 ---
 
