@@ -342,7 +342,7 @@ verification metadata.
 
 ## Milestone 9 - Admin Workspace & Game Version Management
 
-Status: In progress — Slice 9A complete (including the minimal Game
+Status: Complete (2026-07-20) — Slice 9A complete (including the minimal Game
 Version picker on every verification form); Slice 9B.1 (shared admin
 shell and persistent navigation) complete; Slice 9B.2 (shared admin
 editor primitives) complete; Slice 9B.3 (shared searchable record-list
@@ -368,9 +368,13 @@ Slice 9F.1 (Location workspace navigation foundation) complete; Slice
 Hierarchy tab) complete; Slice 9F.4 (Location Acquisition Sources tab)
 complete; Slice 9F.5 (Location Metadata tab) complete — the Location
 reference workspace is functionally complete; Slice 9G.1 (Admin Dashboard
-summaries) complete — the only work remaining in Milestone 9 is the
-final admin visual-consistency pass, plus final Milestone 9
-verification/documentation/push
+summaries) complete; Slice 9H (final admin visual-consistency pass)
+complete; the final Milestone 9 audit (full verification, documentation,
+commit, and push) is complete — Milestone 9 is fully complete. All five
+resource workspaces (Item, Recipe, Profession, Category, Location),
+Game Version management, the shared admin shell/workspace foundation,
+and the dashboard are functionally complete and visually consistent.
+Route Hubs are deferred to the next milestone.
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1783,17 +1787,134 @@ workspace.
 - [x] The final admin visual-consistency pass, and all later milestone
       work (Route Hubs included), remain untouched and not started
 
+### Slice 9H — Final admin visual-consistency pass (complete, 2026-07-20)
+
+- [x] One deliberate visual/interaction consistency pass across the
+      whole completed admin surface — a restrained polish pass, not a
+      redesign: no route, server action, Prisma schema, search
+      semantics, `q` preservation, record switching, form field name,
+      validation rule, image behavior, verification behavior, hierarchy
+      behavior, Acquisition Source ownership, or delete-protection rule
+      changed anywhere
+- [x] The editor chrome's original purple accent
+      (`--color-admin-accent`/`--color-admin-accent-soft`, introduced in
+      Slice 9B.2) is retired: the five CSS rules that used it — active
+      editor tabs, selected record-list rows, and their related hover
+      states — now use the same gold `--color-accent`/`--color-accent-soft`
+      the sidebar nav and dashboard already used, so the whole admin
+      surface shares exactly one accent identity, matching the public
+      site's own gold; the now-unreferenced tokens were removed from
+      both `globals.css` and `designTokens.colors`
+- [x] `color-scheme: dark` added to `:root` — the one genuinely global
+      rule this slice touched — so native controls (select arrows,
+      checkboxes, the Game Version date input's calendar icon) render
+      in dark chrome instead of the browser's light OS default; no
+      markup or behavior change on any page
+- [x] Confirmed-genuine duplicated inline-style patterns consolidated
+      into shared classes (each verified as REAL duplication, not merely
+      similar-looking code, before touching it):
+      `.admin-panel-dl` (the `<dl>` wrapping every panel's key/value
+      rows — seven call sites: `TimestampsPanel`, `VerificationPanel`,
+      the dashboard's own Game Version panel, and all four resource
+      Metadata tabs); `.admin-image-preview-wrap`/`.admin-image-preview`
+      (the identical existing-image preview wrapper and thumbnail
+      copied into the Item/Recipe/Profession/Location edit pages —
+      the now-unused `designTokens` import was removed from all four);
+      `.admin-record-empty p { margin: 0; }` (replacing ten identical
+      inline styles across all five workspace empty/no-match states);
+      a new `.text-accent` utility, matching the existing
+      `.text-muted`/`.text-danger` pair (replacing the two remaining
+      ad hoc accent-colored `<strong>` uses); and `DashboardSummaryCard`
+      rewritten from inline style objects onto five new
+      `.admin-dashboard-card*` classes
+- [x] Inline styles confirmed to be pre-existing, intentional,
+      codebase-wide conventions shared with public pages (the
+      `designTokens.layout.sectionGap` spacing pattern; the brand
+      lockup mirrored from the public `AppShell`) or genuinely
+      single-use and already justified (the record-name feedback text;
+      one inline `<form>` needing `display:inline` inside a table's
+      action row; one banner needing its trailing margin zeroed) were
+      deliberately left untouched — fixing only the admin copy of a
+      shared public convention would have introduced a NEW asymmetry,
+      not resolved one
+- [x] Workspace column widths/gaps, tab/record-list/panel/table
+      structure, delete-confirmation hierarchy, and typography tiers
+      were all audited and found already consistent — a direct result
+      of every prior 9B–9G slice sharing one component set — so no
+      structural changes were needed there; visual verification via
+      Playwright screenshots (desktop 1280×800 and a narrower
+      1024×800) across the dashboard, every resource's General plus one
+      relationship tab, Location's four tabs, a creation page, a
+      delete-confirmation page, Game Version management, and the
+      record-list no-match state confirmed this — screenshots were
+      temporary local review artifacts only, never committed
+- [x] Tests: a new `DashboardSummaryCard` component test
+      (`dashboard-summary-card.test.tsx`) proving the markup shape and
+      that no inline `style=` attribute remains; a new
+      `admin-visual-consistency.spec.ts` E2E spec proving the active
+      tab and selected record row are gold (never the retired purple),
+      the document declares `color-scheme: dark`, and exactly one h1
+      renders across twelve representative routes
+- [x] The final Milestone 9 audit followed as its own pass (below);
+      Route Hubs remain deferred to the next milestone.
+
+### Final Milestone 9 audit (complete, 2026-07-20)
+
+- [x] Full repository/diff inspection confirmed the only uncommitted
+      product work was Slice 9H, and no earlier Milestone 9 slice
+      remained accidentally uncommitted
+- [x] The complete Slice 9H diff was reviewed line by line: the purple
+      admin-accent tokens are fully removed from both `globals.css` and
+      `designTokens.colors` with zero remaining references anywhere in
+      the codebase; `color-scheme: dark` sits at `:root` (confirmed no
+      public page renders any native `<select>`/checkbox/date control,
+      so there is no public-facing regression risk); every shared-class
+      consolidation (`.admin-panel-dl`, `.admin-image-preview-wrap`/
+      `.admin-image-preview`, `.admin-record-empty p`, `.text-accent`,
+      `.admin-dashboard-card*`) was confirmed byte-for-byte equivalent
+      to what it replaced; zero disabled placeholder tabs remain in any
+      of the five completed workspaces
+- [x] One genuine defect was found and corrected during this audit: two
+      throwaway visual-review Playwright scripts (this slice's own and
+      Slice 9H's) had clicked each delete-confirmation button without
+      awaiting the resulting navigation, so two `zzz-`-slugged temporary
+      Location records were never actually deleted from the isolated
+      test database. Neither record matched any established test-prefix
+      cleanup helper (both used an ad hoc `zzz-` slug instead), so
+      neither the seeded-fixture checks nor any resource-specific E2E
+      cleanup would ever have caught them. Both were removed directly
+      against the isolated test database once found; this was a test-data
+      hygiene defect only — no application code was at fault, and no
+      seeded fixture or application behavior was ever affected
+- [x] Full verification matrix run and green: `pnpm test:unit` (444
+      passed), `pnpm test:env:check`, `pnpm test:db:migrate` (no pending
+      migrations), `pnpm test:integration` (129 passed, 1 pre-existing
+      skip), `pnpm test:service` (9 passed), `pnpm test:e2e` (the
+      complete suite — 256 passed), `pnpm lint`, `pnpm exec tsc --noEmit`,
+      `pnpm build`, `git diff --check` — all clean
+- [x] Manual structural checks across the dashboard, Items list, one
+      Item editor and relationship tab, one Recipe editor and
+      Ingredients, one Profession editor and Recipes, one Category
+      editor and Items, all four Location tabs, a creation route, a
+      delete route, Game Version management, and the record-list
+      no-match state confirmed: exactly one h1 per route, gold (never
+      purple) active tabs and selected rows, no horizontal layout
+      regression at 1280px or 1024px, sticky actions never obscuring
+      content
+- [x] Documentation corrected to reflect actual completion: this
+      milestone's own status line, `CLAUDE.md`'s and `AI_RULES.md`'s
+      "Current Phase"/"Current Scope" headers (both previously said
+      Milestone 9 "is in progress"), and `README.md`'s stale "Milestone
+      0" marker
+
 ### Remaining (not started)
 
-- [ ] The final admin visual-consistency pass, plus final Milestone 9
-      verification/documentation/push — this is the ONLY work left in
-      Milestone 9. Do not begin until explicitly instructed in the
-      milestone conversation.
-
-Route Hubs are NOT part of the remaining Milestone 9 work — they were
-renumbered to a later milestone (see the dedicated "Route Hubs" section
-below) and stay deferred there regardless of Milestone 9's own
-completion.
+Nothing remains in Milestone 9. Route Hubs are NOT part of Milestone 9
+— they were renumbered to a later milestone (see the dedicated "Route
+Hubs" section below) and stay deferred there. Do not begin Route Hubs,
+deployment, contributor tooling, audit logs, user accounts, public-page
+redesign, mobile redesign, or any later milestone work until explicitly
+instructed in the milestone conversation.
 
 ---
 

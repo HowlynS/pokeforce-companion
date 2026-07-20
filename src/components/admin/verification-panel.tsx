@@ -63,7 +63,7 @@ export function VerificationPanel({
         </span>
       </p>
 
-      <dl style={{ margin: 0, display: "grid", gap: "6px" }}>
+      <dl className="admin-panel-dl">
         <div className="admin-panel-row">
           <dt>Current version</dt>
           <dd>{currentVersion ? currentVersion.name : "None"}</dd>

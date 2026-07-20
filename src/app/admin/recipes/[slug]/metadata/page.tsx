@@ -96,7 +96,7 @@ export default async function RecipeMetadataPage({
       }
     >
       <ContextPanel title="Recipe">
-        <dl style={{ margin: 0, display: "grid", gap: "6px" }}>
+        <dl className="admin-panel-dl">
           <div className="admin-panel-row">
             <dt>Resulting item</dt>
             <dd>

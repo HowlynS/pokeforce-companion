@@ -1704,3 +1704,60 @@ Alternatives considered:
   single real data point is decorative, not informative, and would
   contradict the "no fabricated analytics" rule this same decision
   establishes.
+
+### 2026-07-20 — Slice 9H: the whole admin surface shares one gold accent; the Slice 9B.2 purple editor-chrome accent is retired
+
+Decision:
+
+Slice 9B.2 (2026-07-17, above) deliberately gave editor chrome its own
+purple accent (`--color-admin-accent`/`--color-admin-accent-soft`),
+explicitly rejecting the public yellow accent for that role at the
+time. Slice 9H reverses that call: the five CSS rules that used purple
+(active editor tabs, selected record-list rows, and their hover states)
+now use the same gold `--color-accent`/`--color-accent-soft` the admin
+sidebar nav and dashboard already used, and the now-unreferenced purple
+tokens were deleted from both `globals.css` and `designTokens.colors` —
+not just left unused. Going forward, the admin surface has exactly ONE
+accent identity, matching the public product's own gold; there is no
+second "editor-only" accent anywhere in the codebase.
+
+Reason:
+
+By the time this slice ran, the admin shell (sidebar nav, dashboard
+cards, Game Version panel) had accumulated its own gold-accented active
+states across Slices 9B.1 and 9G.1, while editor chrome (tabs, selected
+record rows) still carried the original purple from 9B.2 — two accent
+colors doing the identical job (marking the active/selected thing) on
+the same screen, often visible in the same viewport (the record list
+and its editor tabs sit side by side). This is precisely the kind of
+inconsistency a dedicated visual-consistency pass exists to catch: not
+a matter of taste, but two colors competing for the same semantic
+meaning. The milestone conversation's own instruction for this slice —
+"gold used for emphasis, active state, primary actions, and identity...
+no bright unrelated accent palette" — settles the question the 9B.2
+alternatives list left open at the time.
+
+How to apply:
+
+Any new admin surface needing an "active/selected/current" visual cue
+uses `--color-accent`/`--color-accent-soft` (solid for persistent
+active/selected state, soft for hover, mirroring the existing
+convention) — never a second accent color, regardless of which part of
+the admin it lives in. If a future mockup or instruction proposes a
+second accent for some new admin area, treat that as a call to revisit
+this decision explicitly, not something to implement quietly alongside
+the existing gold.
+
+Alternatives considered:
+
+- Keeping purple for editor chrome and only DOCUMENTING the split (no
+  code change) — rejected; the instruction driving this slice explicitly
+  named "no bright unrelated accent palette" as a requirement, and a
+  two-accent admin would keep failing that on every screen with both an
+  editor and a nav/dashboard element visible.
+- Introducing a third, "unifying" accent color distinct from both the
+  original public gold and the retired purple — rejected; the public
+  product's own gold already exists, is already used throughout the
+  admin shell, and introducing a third color to reconcile two existing
+  ones would be pure churn with no benefit over reusing what already
+  works.

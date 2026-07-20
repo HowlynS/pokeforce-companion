@@ -101,11 +101,9 @@ export async function RecipeWorkspace({
               // Distinct no-match state: the applied query is shown, and
               // the list's own Clear link (rendered because a query is
               // active) is the way out.
-              <p style={{ margin: 0 }}>
-                No recipes match &ldquo;{query}&rdquo;.
-              </p>
+              <p>No recipes match &ldquo;{query}&rdquo;.</p>
             ) : (
-              <p style={{ margin: 0 }}>
+              <p>
                 No recipes yet. Use &ldquo;+ New recipe&rdquo; to create the
                 first one.
               </p>

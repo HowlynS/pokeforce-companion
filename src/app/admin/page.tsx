@@ -70,9 +70,7 @@ export default async function AdminPage() {
           <section className="admin-toolbar">
             <p>
               Signed in as{" "}
-              <strong style={{ color: designTokens.colors.accent }}>
-                {user.email}
-              </strong>
+              <strong className="text-accent">{user.email}</strong>
             </p>
 
             <form action={signOutAction}>
@@ -141,7 +139,7 @@ export default async function AdminPage() {
           </a>
         }
       >
-        <dl style={{ margin: 0, display: "grid", gap: "6px" }}>
+        <dl className="admin-panel-dl">
           <div className="admin-panel-row">
             <dt>Current version</dt>
             <dd>{describeCurrentGameVersion(currentGameVersion)}</dd>
@@ -157,10 +155,7 @@ export default async function AdminPage() {
       <section style={{ marginTop: designTokens.layout.sectionGap }}>
         <h2 className="section-title">Quick Actions</h2>
 
-        <nav
-          aria-label="Quick create actions"
-          style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}
-        >
+        <nav aria-label="Quick create actions" className="form-actions">
           {DASHBOARD_RESOURCE_ROUTES.map((route) => (
             <a
               key={route.key}

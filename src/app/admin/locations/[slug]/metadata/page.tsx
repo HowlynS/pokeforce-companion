@@ -102,7 +102,7 @@ export default async function LocationMetadataPage({
       }
     >
       <ContextPanel title="Location">
-        <dl style={{ margin: 0, display: "grid", gap: "6px" }}>
+        <dl className="admin-panel-dl">
           <div className="admin-panel-row">
             <dt>Type</dt>
             <dd>{LOCATION_TYPE_LABELS[location.type]}</dd>

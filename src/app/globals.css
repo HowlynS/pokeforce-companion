@@ -15,11 +15,13 @@
   --color-success: #22c55e;
   --color-warning: #f97316;
   --color-danger: #ef4444;
-  /* Admin editor accent (Slice 9B.2): the approved dark admin mockup uses
-     a purple accent for editor chrome (selected tabs, panel highlights).
-     Deliberately separate from the public yellow accent. */
-  --color-admin-accent: #8b5cf6;
-  --color-admin-accent-soft: #c4b5fd;
+}
+
+/* Slice 9H: the whole site is dark by design, including admin. Without
+   this, native controls (select arrows, checkboxes, etc.) fall back to
+   the OS light theme and visibly clash against every dark surface. */
+:root {
+  color-scheme: dark;
 }
 
 * {
@@ -371,6 +373,10 @@ input[type="checkbox"] {
   color: var(--color-danger);
 }
 
+.text-accent {
+  color: var(--color-accent);
+}
+
 /* ---- Admin shell (Slice 9B.1) ----------------------------------------
    The desktop-first two-column admin frame: a persistent left sidebar and
    a scrolling content area, rendered once by the /admin layout. Widths
@@ -483,12 +489,15 @@ input[type="checkbox"] {
   align-content: start;
 }
 
-/* ---- Admin editor primitives (Slice 9B.2) -----------------------------
-   The shared presentational vocabulary for the upcoming resource
-   workspaces: editor header, tab navigation, contextual panels, status
-   badges, and the sticky save/cancel area. Purple admin accent per the
-   approved dark mockup; compact desktop density. No resource page uses
-   these yet — adoption is the next slice. */
+/* ---- Admin editor primitives (Slice 9B.2; accent unified to gold in
+   Slice 9H) ---------------------------------------------------------
+   The shared presentational vocabulary for every resource workspace:
+   editor header, tab navigation, contextual panels, status badges, and
+   the sticky save/cancel area. Compact desktop density. Slice 9H
+   replaced the editor chrome's original purple accent with the same
+   gold accent the public site and the rest of the admin shell (nav,
+   dashboard) already use — one identity across the whole admin surface,
+   never two competing accent colors. */
 
 .admin-editor-header {
   display: grid;
@@ -504,7 +513,7 @@ input[type="checkbox"] {
 }
 
 .admin-editor-header-back:hover {
-  color: var(--color-admin-accent-soft);
+  color: var(--color-accent-soft);
 }
 
 .admin-editor-header-row {
@@ -545,7 +554,7 @@ input[type="checkbox"] {
 }
 
 /* Editor tab navigation: link-based tabs under the header, active tab
-   marked with the admin accent AND aria-current (one hook for both the
+   marked with the gold accent AND aria-current (one hook for both the
    visual and the accessible state). */
 .admin-tabs {
   display: flex;
@@ -572,8 +581,8 @@ input[type="checkbox"] {
 }
 
 .admin-tab[aria-current="page"] {
-  color: var(--color-admin-accent-soft);
-  border-bottom-color: var(--color-admin-accent);
+  color: var(--color-accent-soft);
+  border-bottom-color: var(--color-accent);
   font-weight: 700;
 }
 
@@ -622,6 +631,16 @@ input[type="checkbox"] {
 .admin-panel-footer {
   border-top: 1px solid var(--color-border);
   padding-top: 12px;
+}
+
+/* Slice 9H: the dt/dd list wrapping a panel's own admin-panel-rows
+   (Timestamps, Verification, and every read-only Metadata tab) had
+   repeated this exact three-property inline style in seven separate
+   files — one shared class replaces every copy. */
+.admin-panel-dl {
+  margin: 0;
+  display: grid;
+  gap: 6px;
 }
 
 /* Key/value rows inside panels (timestamps, verification facts). */
@@ -673,6 +692,24 @@ input[type="checkbox"] {
 
 .admin-image-panel-body input[type="file"]::file-selector-button {
   cursor: pointer;
+}
+
+/* Existing-image preview wrapper and thumbnail: identical inline styles
+   had been copied into the Item, Recipe, Profession, and Location edit
+   pages (Slice 9H consolidates all four into these two classes). */
+.admin-image-preview-wrap {
+  position: relative;
+  justify-self: start;
+}
+
+.admin-image-preview {
+  display: block;
+  max-width: 128px;
+  height: auto;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
 }
 
 /* Remove-current-image toggle (Slice 9B.5, migrated from the Item edit
@@ -763,13 +800,13 @@ input[type="checkbox"] {
   flex: 1;
 }
 
-/* ---- Admin record list (Slice 9B.3) ----------------------------------
+/* ---- Admin record list (Slice 9B.3; accent unified to gold in Slice
+   9H) -----------------------------------------------------------------
    The shared quick-switching column for AdminWorkspace's recordList
-   slot: compact dark list, restrained separators, purple selected state
-   matching the editor chrome. Sticks below the top of the content area
-   and scrolls INTERNALLY once the rows outgrow the viewport, so the
-   list stays reachable beside a long editor. No production route uses
-   it yet — adoption starts with the Items workspace conversion. */
+   slot: compact dark list, restrained separators, gold selected state
+   matching the rest of the admin shell. Sticks below the top of the
+   content area and scrolls INTERNALLY once the rows outgrow the
+   viewport, so the list stays reachable beside a long editor. */
 
 .admin-record-list {
   display: grid;
@@ -812,7 +849,7 @@ input[type="checkbox"] {
 }
 
 .admin-record-clear:hover {
-  color: var(--color-admin-accent-soft);
+  color: var(--color-accent-soft);
 }
 
 .admin-record-count {
@@ -857,14 +894,14 @@ input[type="checkbox"] {
 }
 
 /* Selected record: aria-current is BOTH the accessible marker and the
-   styling hook — purple, consistent with the editor chrome. */
+   styling hook — gold, consistent with the rest of the admin shell. */
 .admin-record-link[aria-current="page"] {
   background: var(--color-surface-soft);
-  border-left-color: var(--color-admin-accent);
+  border-left-color: var(--color-accent);
 }
 
 .admin-record-link[aria-current="page"] .admin-record-primary {
-  color: var(--color-admin-accent-soft);
+  color: var(--color-accent-soft);
   font-weight: 700;
 }
 
@@ -887,6 +924,13 @@ input[type="checkbox"] {
   font-size: 14px;
 }
 
+/* Every resource workspace's empty/no-match message is a single <p>
+   inside this wrapper; resetting its default margin here (Slice 9H)
+   replaces the identical inline style ten call sites repeated. */
+.admin-record-empty p {
+  margin: 0;
+}
+
 .admin-record-pagination {
   display: flex;
   align-items: center;
@@ -907,4 +951,47 @@ input[type="checkbox"] {
   opacity: 0.5;
   font-size: 16px;
   line-height: 1.2;
+}
+
+/* ---- Admin dashboard summary card (Slice 9G.1; moved out of inline
+   styles in Slice 9H) ---------------------------------------------------
+   The whole card is one anchor (paired with the existing .interactive-card
+   hover treatment); count uses the gold accent, matching every other
+   active/emphasis use of it across the admin shell. */
+.admin-dashboard-card {
+  display: block;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.admin-dashboard-card-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.admin-dashboard-card-count {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.admin-dashboard-card-unit {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.admin-dashboard-card-context {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 14px;
 }

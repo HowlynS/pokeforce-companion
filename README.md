@@ -11,7 +11,7 @@ This project is based on:
 
 ## Current Milestone
 
-Milestone 0 — Preparation
+Milestone 9 — Admin Workspace & Game Version Management (Complete)
 
 ## Development Status
 

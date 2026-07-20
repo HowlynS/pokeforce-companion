@@ -99,11 +99,9 @@ export async function ItemWorkspace({
               // Distinct no-match state: the applied query is shown, and
               // the list's own Clear link (rendered because a query is
               // active) is the way out.
-              <p style={{ margin: 0 }}>
-                No items match &ldquo;{query}&rdquo;.
-              </p>
+              <p>No items match &ldquo;{query}&rdquo;.</p>
             ) : (
-              <p style={{ margin: 0 }}>
+              <p>
                 No items yet. Use &ldquo;+ New item&rdquo; to create the
                 first one.
               </p>

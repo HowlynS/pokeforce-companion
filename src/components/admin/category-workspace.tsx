@@ -112,11 +112,9 @@ export async function CategoryWorkspace({
               // Distinct no-match state: the applied query is shown, and
               // the list's own Clear link (rendered because a query is
               // active) is the way out.
-              <p style={{ margin: 0 }}>
-                No categories match &ldquo;{query}&rdquo;.
-              </p>
+              <p>No categories match &ldquo;{query}&rdquo;.</p>
             ) : (
-              <p style={{ margin: 0 }}>
+              <p>
                 No categories yet. Use &ldquo;+ New category&rdquo; to
                 create the first one.
               </p>

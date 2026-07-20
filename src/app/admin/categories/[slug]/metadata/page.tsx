@@ -85,7 +85,7 @@ export default async function CategoryMetadataPage({
       }
     >
       <ContextPanel title="Category">
-        <dl style={{ margin: 0, display: "grid", gap: "6px" }}>
+        <dl className="admin-panel-dl">
           <div className="admin-panel-row">
             <dt>Items</dt>
             <dd>{category._count.items}</dd>

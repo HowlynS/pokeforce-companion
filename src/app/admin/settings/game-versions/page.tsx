@@ -107,9 +107,7 @@ export default async function GameVersionSettingsPage({
                     <td>{formatReleaseDate(version.releaseDate)}</td>
                     <td>
                       {version.isCurrent ? (
-                        <strong style={{ color: designTokens.colors.accent }}>
-                          Current
-                        </strong>
+                        <strong className="text-accent">Current</strong>
                       ) : (
                         "No"
                       )}

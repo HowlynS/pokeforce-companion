@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
@@ -150,7 +149,7 @@ export default async function EditRecipePage({
         <>
           <ImagePanel>
             {imageUrl ? (
-              <div style={{ position: "relative", justifySelf: "start" }}>
+              <div className="admin-image-preview-wrap">
                 <input
                   type="checkbox"
                   name="removeImage"
@@ -163,15 +162,7 @@ export default async function EditRecipePage({
                   <img
                     src={imageUrl}
                     alt={`Current image for ${recipe.name}`}
-                    style={{
-                      maxWidth: "128px",
-                      height: "auto",
-                      border: `1px solid ${designTokens.colors.border}`,
-                      borderRadius: designTokens.radius.sm,
-                      background: designTokens.colors.surface,
-                      padding: "8px",
-                      display: "block",
-                    }}
+                    className="admin-image-preview"
                   />
                   <label
                     htmlFor="removeImage"

@@ -94,7 +94,7 @@ export default async function ProfessionMetadataPage({
       }
     >
       <ContextPanel title="Profession">
-        <dl style={{ margin: 0, display: "grid", gap: "6px" }}>
+        <dl className="admin-panel-dl">
           <div className="admin-panel-row">
             <dt>Recipes</dt>
             <dd>{profession._count.recipes}</dd>

@@ -24,7 +24,7 @@ export function TimestampsPanel({
 }: TimestampsPanelProps) {
   return (
     <ContextPanel title="Timestamps">
-      <dl style={{ margin: 0, display: "grid", gap: "6px" }}>
+      <dl className="admin-panel-dl">
         <div className="admin-panel-row">
           <dt>Created</dt>
           <dd>{formatStableDate(createdAt)}</dd>
