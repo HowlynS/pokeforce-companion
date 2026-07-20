@@ -4,8 +4,10 @@ import {
   ACQUISITION_TYPE_LABELS,
   buildAcquisitionSourceCard,
   groupAcquisitionSourcesByType,
+  groupObtainableItemsByType,
   parseAcquisitionSourceInput,
   type AcquisitionSourceForDisplay,
+  type AcquisitionSourceForLocationDisplay,
 } from "@/lib/validation/acquisition-source";
 
 function source(
@@ -17,6 +19,21 @@ function source(
     quantity: null,
     notes: null,
     location: null,
+    profession: null,
+    ...overrides,
+  };
+}
+
+function locationSource(
+  overrides: Partial<AcquisitionSourceForLocationDisplay> & {
+    item: AcquisitionSourceForLocationDisplay["item"];
+  }
+): AcquisitionSourceForLocationDisplay {
+  return {
+    type: "OTHER",
+    sourceLabel: null,
+    quantity: null,
+    notes: null,
     profession: null,
     ...overrides,
   };
@@ -246,5 +263,139 @@ describe("buildAcquisitionSourceCard", () => {
     expect(card.description).not.toMatch(/Profession:\s*(·|$)/);
     expect(card.description).not.toMatch(/Notes:\s*(·|$)/);
     expect(card.description).not.toMatch(/Source:\s*(·|$)/);
+  });
+});
+
+describe("groupObtainableItemsByType", () => {
+  const ironOre = { slug: "iron-ore", name: "Iron Ore", image: null };
+  const copperOre = { slug: "copper-ore", name: "Copper Ore", image: null };
+
+  it("returns no groups for an empty source list", () => {
+    expect(groupObtainableItemsByType([])).toEqual([]);
+  });
+
+  it("omits any type with zero matching items", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({ type: "MINING", item: ironOre }),
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].type).toBe("MINING");
+    expect(groups[0].label).toBe(ACQUISITION_TYPE_LABELS.MINING);
+  });
+
+  it("orders groups by the enum's declared order, not input order", () => {
+    // FORAGING is declared before SMITHING in ACQUISITION_TYPES; supplying
+    // them in the opposite order must not change the group order.
+    const groups = groupObtainableItemsByType([
+      locationSource({ type: "SMITHING", item: ironOre }),
+      locationSource({ type: "FORAGING", item: copperOre }),
+    ]);
+
+    expect(groups.map((group) => group.type)).toEqual(["FORAGING", "SMITHING"]);
+    expect(
+      ACQUISITION_TYPES.indexOf("FORAGING") < ACQUISITION_TYPES.indexOf("SMITHING")
+    ).toBe(true);
+  });
+
+  it("orders items within a group by name ascending, regardless of input order", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({ type: "MINING", item: ironOre }),
+      locationSource({ type: "MINING", item: copperOre }),
+    ]);
+
+    expect(groups[0].items.map((entry) => entry.item.name)).toEqual([
+      "Copper Ore",
+      "Iron Ore",
+    ]);
+  });
+
+  it("uses slug as a stable tie-breaker when two items share a name", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({
+        type: "MINING",
+        item: { slug: "iron-ore-b", name: "Same Name", image: null },
+      }),
+      locationSource({
+        type: "MINING",
+        item: { slug: "iron-ore-a", name: "Same Name", image: null },
+      }),
+    ]);
+
+    expect(groups[0].items.map((entry) => entry.item.slug)).toEqual([
+      "iron-ore-a",
+      "iron-ore-b",
+    ]);
+  });
+
+  it("collapses repeated sources for the same item into one card", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({ type: "MINING", item: ironOre, notes: "Common." }),
+      locationSource({ type: "MINING", item: ironOre, notes: "Rare vein." }),
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].items).toHaveLength(1);
+    expect(groups[0].items[0].item.slug).toBe("iron-ore");
+  });
+
+  it("keeps every distinct populated fact combination on the one collapsed card", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({ type: "MINING", item: ironOre, notes: "Common." }),
+      locationSource({ type: "MINING", item: ironOre, notes: "Rare vein." }),
+    ]);
+
+    expect(groups[0].items[0].description).toContain("Notes: Common.");
+    expect(groups[0].items[0].description).toContain("Notes: Rare vein.");
+  });
+
+  it("collapses an exact duplicate fact combination instead of repeating it", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({ type: "MINING", item: ironOre, quantity: "1-2" }),
+      locationSource({ type: "MINING", item: ironOre, quantity: "1-2" }),
+    ]);
+
+    const description = groups[0].items[0].description;
+    expect(description).toBe("Quantity: 1-2");
+    expect(description.match(/Quantity: 1-2/g)).toHaveLength(1);
+  });
+
+  it("yields an empty description when nothing is populated on any source", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({ type: "EVENT", item: ironOre }),
+      locationSource({ type: "EVENT", item: ironOre }),
+    ]);
+
+    expect(groups[0].items[0].description).toBe("");
+  });
+
+  it("lets the same item appear in different type groups for genuinely different methods", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({ type: "MINING", item: ironOre }),
+      locationSource({ type: "FORAGING", item: ironOre }),
+    ]);
+
+    expect(groups.map((group) => group.type)).toEqual(["FORAGING", "MINING"]);
+    expect(groups[0].items[0].item.slug).toBe("iron-ore");
+    expect(groups[1].items[0].item.slug).toBe("iron-ore");
+  });
+
+  it("includes profession and source label facts alongside quantity and notes", () => {
+    const groups = groupObtainableItemsByType([
+      locationSource({
+        type: "COOKING",
+        item: ironOre,
+        sourceLabel: "Camp Kitchen",
+        profession: { name: "Cooking" },
+        quantity: "1-2",
+        notes: "Requires a lit campfire.",
+      }),
+    ]);
+
+    const description = groups[0].items[0].description;
+    expect(description).toContain("Source: Camp Kitchen");
+    expect(description).toContain("Profession: Cooking");
+    expect(description).toContain("Quantity: 1-2");
+    expect(description).toContain("Notes: Requires a lit campfire.");
   });
 });

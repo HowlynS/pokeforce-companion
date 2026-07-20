@@ -103,6 +103,109 @@ export function groupAcquisitionSourcesByType(
   })).filter((group) => group.sources.length > 0);
 }
 
+// --- Public Location "Obtainable Items" helpers (Slice 10A) ------------
+//
+// The mirror image of the Item page's "How to obtain" section above: here
+// the caller already knows the Location (it is the page itself), and the
+// section instead lists every ITEM obtainable there. Reuses the same
+// canonical ACQUISITION_TYPES order and ACQUISITION_TYPE_LABELS map — no
+// second ordering or label map. The one genuinely new concern is that a
+// single Item can have more than one Acquisition Source of the same type
+// at the same Location (e.g. two MINING rows with different notes), and
+// the section must render ONE card per Item, not one per source row.
+
+export type AcquisitionSourceForLocationDisplay = {
+  type: AcquisitionType;
+  sourceLabel: string | null;
+  quantity: string | null;
+  notes: string | null;
+  profession: { name: string } | null;
+  item: { slug: string; name: string; image: string | null };
+};
+
+export type ObtainableItemCard = {
+  item: { slug: string; name: string; image: string | null };
+  /** Every DISTINCT populated fact combination across this Item's
+      sources of this type at this Location, joined for display — an
+      exact duplicate combination collapses instead of repeating; an
+      Item with nothing populated on any of its sources yields "". */
+  description: string;
+};
+
+export type ObtainableItemGroup = {
+  type: AcquisitionType;
+  label: string;
+  items: ObtainableItemCard[];
+};
+
+/**
+ * Groups a Location's Acquisition Sources into the public "Obtainable
+ * Items" section: type groups in the enum's declared order (any type
+ * with no matching Item omitted entirely), and within each group one
+ * card per distinct Item ordered by name ascending (slug as a stable
+ * tie-breaker) — never one card per source row, and never reliant on
+ * the caller's own input order. The same Item may appear in more than
+ * one type group when it is genuinely obtainable more than one way.
+ */
+export function groupObtainableItemsByType(
+  sources: readonly AcquisitionSourceForLocationDisplay[]
+): ObtainableItemGroup[] {
+  return ACQUISITION_TYPES.map((type) => {
+    const itemsBySlug = new Map<
+      string,
+      { item: AcquisitionSourceForLocationDisplay["item"]; factLines: Set<string> }
+    >();
+
+    for (const source of sources) {
+      if (source.type !== type) {
+        continue;
+      }
+
+      const facts: string[] = [];
+      if (source.sourceLabel) {
+        facts.push(`Source: ${source.sourceLabel}`);
+      }
+      if (source.profession) {
+        facts.push(`Profession: ${source.profession.name}`);
+      }
+      if (source.quantity) {
+        facts.push(`Quantity: ${source.quantity}`);
+      }
+      if (source.notes) {
+        facts.push(`Notes: ${source.notes}`);
+      }
+      const factLine = facts.join(" · ");
+
+      const existing = itemsBySlug.get(source.item.slug);
+      if (existing) {
+        if (factLine) {
+          existing.factLines.add(factLine);
+        }
+      } else {
+        const factLines = new Set<string>();
+        if (factLine) {
+          factLines.add(factLine);
+        }
+        itemsBySlug.set(source.item.slug, { item: source.item, factLines });
+      }
+    }
+
+    const items: ObtainableItemCard[] = Array.from(itemsBySlug.values())
+      .map(({ item, factLines }) => ({
+        item,
+        description: Array.from(factLines).join("; "),
+      }))
+      .sort((a, b) => {
+        if (a.item.name !== b.item.name) {
+          return a.item.name < b.item.name ? -1 : 1;
+        }
+        return a.item.slug < b.item.slug ? -1 : a.item.slug > b.item.slug ? 1 : 0;
+      });
+
+    return { type, label: ACQUISITION_TYPE_LABELS[type], items };
+  }).filter((group) => group.items.length > 0);
+}
+
 /**
  * Builds one source's card content. The title is the strongest available
  * identifying fact (location, then source label, then profession, then

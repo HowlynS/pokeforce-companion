@@ -12,7 +12,10 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { Prisma } from "@/generated/prisma/client";
 import { isForeignKeyError } from "@/lib/prisma-errors";
-import { ACQUISITION_TYPES } from "@/lib/validation/acquisition-source";
+import {
+  ACQUISITION_TYPES,
+  groupObtainableItemsByType,
+} from "@/lib/validation/acquisition-source";
 import { sortLocationAcquisitionSourcesByType } from "@/lib/admin/location-workspace";
 import {
   ACQUISITION_TEST_SLUG_PREFIX,
@@ -549,6 +552,272 @@ describe("acquisition sources (integration)", () => {
 
       expect(reloadedA?.acquisitionSources).toHaveLength(1);
       expect(reloadedA?.acquisitionSources[0].item.name).toBe(itemA.name);
+    });
+  });
+
+  describe("public Location Obtainable Items query (Slice 10A)", () => {
+    // The exact restrained `select` shape the public Location detail page
+    // uses — never a database id, never verification/Game Version fields.
+    async function loadObtainableSources(locationId: string) {
+      const prisma = await getVerifiedTestPrisma();
+      const reloaded = await prisma.location.findUnique({
+        where: { id: locationId },
+        include: {
+          acquisitionSources: {
+            select: {
+              type: true,
+              sourceLabel: true,
+              quantity: true,
+              notes: true,
+              profession: { select: { name: true } },
+              item: { select: { slug: true, name: true, image: true } },
+            },
+            orderBy: { item: { name: "asc" } },
+          },
+        },
+      });
+      return reloaded?.acquisitionSources ?? [];
+    }
+
+    it("returns only Acquisition Sources whose locationId references this location", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public Own",
+          slug: `${P}location-public-own`,
+          type: "TOWN",
+        },
+      });
+      const item = await prisma.item.create({
+        data: { name: "Acquisition Test Item Public Own", slug: `${P}item-public-own` },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: item.id, type: "FISHING", locationId: location.id },
+      });
+
+      const sources = await loadObtainableSources(location.id);
+      expect(sources).toHaveLength(1);
+      expect(sources[0].item.name).toBe(item.name);
+    });
+
+    it("excludes Acquisition Sources that reference a different location", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const locationA = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public A",
+          slug: `${P}location-public-a`,
+          type: "REGION",
+        },
+      });
+      const locationB = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public B",
+          slug: `${P}location-public-b`,
+          type: "REGION",
+        },
+      });
+      const itemB = await prisma.item.create({
+        data: { name: "Acquisition Test Item Public B", slug: `${P}item-public-b` },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: itemB.id, type: "FARMING", locationId: locationB.id },
+      });
+
+      const sources = await loadObtainableSources(locationA.id);
+      expect(sources).toEqual([]);
+    });
+
+    it("excludes Acquisition Sources with no location at all", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public No Location Source",
+          slug: `${P}location-public-no-loc-source`,
+          type: "DUNGEON",
+        },
+      });
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item Public Unlocated",
+          slug: `${P}item-public-unlocated`,
+        },
+      });
+      // Deliberately no locationId at all.
+      await prisma.acquisitionSource.create({
+        data: { itemId: item.id, type: "REWARD" },
+      });
+
+      const sources = await loadObtainableSources(location.id);
+      expect(sources).toEqual([]);
+    });
+
+    it("returns related Item data and handles an absent Profession", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public Item Data",
+          slug: `${P}location-public-item-data`,
+          type: "ROUTE",
+        },
+      });
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item Public Item Data",
+          slug: `${P}item-public-item-data`,
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: item.id, type: "FORAGING", locationId: location.id },
+      });
+
+      const sources = await loadObtainableSources(location.id);
+      expect(sources).toHaveLength(1);
+      expect(sources[0].item).toEqual({
+        slug: item.slug,
+        name: item.name,
+        image: null,
+      });
+      expect(sources[0].profession).toBeNull();
+    });
+
+    it("returns the linked Profession's name when one is set", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public Profession",
+          slug: `${P}location-public-profession`,
+          type: "TOWN",
+        },
+      });
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item Public Profession",
+          slug: `${P}item-public-profession`,
+        },
+      });
+      const profession = await prisma.profession.create({
+        data: {
+          name: "Acquisition Test Profession Public",
+          slug: `${P}profession-public`,
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: {
+          itemId: item.id,
+          type: "COOKING",
+          locationId: location.id,
+          professionId: profession.id,
+        },
+      });
+
+      const sources = await loadObtainableSources(location.id);
+      expect(sources[0].profession?.name).toBe(profession.name);
+    });
+
+    it("keeps repeated source rows for the same item as distinct rows, so unique-item grouping has correct input", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public Repeated",
+          slug: `${P}location-public-repeated`,
+          type: "DUNGEON",
+        },
+      });
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item Public Repeated",
+          slug: `${P}item-public-repeated`,
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: {
+          itemId: item.id,
+          type: "MINING",
+          locationId: location.id,
+          notes: "Common.",
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: {
+          itemId: item.id,
+          type: "MINING",
+          locationId: location.id,
+          notes: "Rare vein.",
+        },
+      });
+
+      const sources = await loadObtainableSources(location.id);
+      // The raw query correctly returns both rows...
+      expect(sources).toHaveLength(2);
+
+      // ...and the pure grouping function collapses them into one item.
+      const groups = groupObtainableItemsByType(sources);
+      expect(groups).toHaveLength(1);
+      expect(groups[0].items).toHaveLength(1);
+      expect(groups[0].items[0].description).toContain("Notes: Common.");
+      expect(groups[0].items[0].description).toContain("Notes: Rare vein.");
+    });
+
+    it("orders multiple Acquisition Types canonically once grouped", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public Multi Type",
+          slug: `${P}location-public-multi-type`,
+          type: "SPECIAL_AREA",
+        },
+      });
+      const miningItem = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item Public Mining",
+          slug: `${P}item-public-mining`,
+        },
+      });
+      const foragingItem = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item Public Foraging",
+          slug: `${P}item-public-foraging`,
+        },
+      });
+      // Created out of enum order — MINING first — so a correct grouped
+      // result can only come from the canonical ACQUISITION_TYPES order.
+      await prisma.acquisitionSource.create({
+        data: { itemId: miningItem.id, type: "MINING", locationId: location.id },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: foragingItem.id, type: "FORAGING", locationId: location.id },
+      });
+
+      const sources = await loadObtainableSources(location.id);
+      const groups = groupObtainableItemsByType(sources);
+
+      expect(groups.map((group) => group.type)).toEqual(["FORAGING", "MINING"]);
+      expect(
+        ACQUISITION_TYPES.indexOf("FORAGING") < ACQUISITION_TYPES.indexOf("MINING")
+      ).toBe(true);
+    });
+
+    it("keeps a sparse location (zero Acquisition Sources) valid, with no groups", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location Public Sparse",
+          slug: `${P}location-public-sparse`,
+          type: "SUB_AREA",
+        },
+      });
+
+      const sources = await loadObtainableSources(location.id);
+      expect(sources).toEqual([]);
+      expect(groupObtainableItemsByType(sources)).toEqual([]);
     });
   });
 });
