@@ -5,6 +5,7 @@ import {
   locationDeleteHref,
   locationEditHref,
   locationEditorTabs,
+  locationHierarchyHref,
   normalizeLocationSearchQuery,
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
@@ -63,60 +64,91 @@ describe("location workspace hrefs", () => {
       "/admin/locations/sunken-cave/delete?q=cave"
     );
   });
+
+  it("builds the Hierarchy tab route, preserving the query", () => {
+    expect(locationHierarchyHref("sunken-cave", "")).toBe(
+      "/admin/locations/sunken-cave/hierarchy"
+    );
+    expect(locationHierarchyHref("sunken-cave", "cave")).toBe(
+      "/admin/locations/sunken-cave/hierarchy?q=cave"
+    );
+  });
 });
 
 describe("locationEditorTabs", () => {
-  it("marks General active, real, and linking to the edit route", () => {
-    const tabs = locationEditorTabs("sunken-cave", "");
+  it("marks General active and links Hierarchy as a real destination", () => {
+    const tabs = locationEditorTabs("sunken-cave", "", "general");
 
-    expect(tabs[0]).toEqual({
-      label: "General",
-      href: "/admin/locations/sunken-cave/edit",
-      active: true,
-    });
+    expect(tabs).toEqual([
+      {
+        label: "General",
+        href: "/admin/locations/sunken-cave/edit",
+        active: true,
+      },
+      {
+        label: "Hierarchy",
+        href: "/admin/locations/sunken-cave/hierarchy",
+        active: false,
+      },
+      {
+        label: "Acquisition Sources",
+        href: "",
+        active: false,
+        disabled: true,
+      },
+      { label: "Metadata", href: "", active: false, disabled: true },
+    ]);
   });
 
-  it("preserves the query on General's own href", () => {
-    const tabs = locationEditorTabs("sunken-cave", "cave");
+  it("marks Hierarchy active when that is the current tab", () => {
+    const tabs = locationEditorTabs("sunken-cave", "cave", "hierarchy");
 
     expect(tabs[0]).toEqual({
       label: "General",
       href: "/admin/locations/sunken-cave/edit?q=cave",
+      active: false,
+    });
+    expect(tabs[1]).toEqual({
+      label: "Hierarchy",
+      href: "/admin/locations/sunken-cave/hierarchy?q=cave",
       active: true,
     });
   });
 
-  it("marks exactly one tab active", () => {
-    const tabs = locationEditorTabs("sunken-cave", "");
-    expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+  it("preserves the query on both real tabs' own hrefs", () => {
+    const tabs = locationEditorTabs("sunken-cave", "cave", "general");
+
+    expect(tabs[0].href).toBe("/admin/locations/sunken-cave/edit?q=cave");
+    expect(tabs[1].href).toBe("/admin/locations/sunken-cave/hierarchy?q=cave");
   });
 
-  it("renders Hierarchy, Acquisition Sources, and Metadata as disabled placeholders", () => {
-    const tabs = locationEditorTabs("sunken-cave", "");
-
-    expect(tabs[1]).toEqual({
-      label: "Hierarchy",
-      href: "",
-      active: false,
-      disabled: true,
-    });
-    expect(tabs[2]).toEqual({
-      label: "Acquisition Sources",
-      href: "",
-      active: false,
-      disabled: true,
-    });
-    expect(tabs[3]).toEqual({
-      label: "Metadata",
-      href: "",
-      active: false,
-      disabled: true,
-    });
+  it("marks exactly one tab active for every valid key", () => {
+    for (const active of ["general", "hierarchy"] as const) {
+      const tabs = locationEditorTabs("sunken-cave", "", active);
+      expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+    }
   });
 
-  it("never renders General as disabled", () => {
-    const tabs = locationEditorTabs("sunken-cave", "");
-    expect(tabs[0].disabled).toBeUndefined();
-    expect(tabs[0].href).not.toBe("");
+  it("renders only Acquisition Sources and Metadata as disabled placeholders", () => {
+    for (const active of ["general", "hierarchy"] as const) {
+      const tabs = locationEditorTabs("sunken-cave", "", active);
+
+      expect(tabs[2]).toEqual({
+        label: "Acquisition Sources",
+        href: "",
+        active: false,
+        disabled: true,
+      });
+      expect(tabs[3]).toEqual({
+        label: "Metadata",
+        href: "",
+        active: false,
+        disabled: true,
+      });
+      expect(tabs[0].disabled).toBeUndefined();
+      expect(tabs[1].disabled).toBeUndefined();
+      expect(tabs[0].href).not.toBe("");
+      expect(tabs[1].href).not.toBe("");
+    }
   });
 });

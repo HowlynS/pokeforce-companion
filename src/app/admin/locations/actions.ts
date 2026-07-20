@@ -9,7 +9,11 @@ import {
   isMissingRecordError,
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
-import { parseLocationInput } from "@/lib/validation/location";
+import {
+  parseLocationGeneralInput,
+  parseLocationHierarchyInput,
+  parseLocationInput,
+} from "@/lib/validation/location";
 import { isLocationNameTaken } from "@/lib/admin/record-name";
 import { wouldCreateLocationCycle } from "@/lib/locations/location-hierarchy";
 import { resolveVerificationStamp } from "@/lib/game-versions";
@@ -146,7 +150,11 @@ export async function createLocationAction(formData: FormData) {
   redirect("/admin/locations?success=created");
 }
 
-export async function updateLocationAction(formData: FormData) {
+// The General editor's own action (Slice 9F.3): every Location field
+// EXCEPT parentId, which now belongs to the separate Hierarchy tab and
+// its own action below. Never touches parentId, so General saves
+// preserve the location's existing parent assignment exactly.
+export async function updateLocationGeneralAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
   await requireAdminUser();
@@ -159,7 +167,7 @@ export async function updateLocationAction(formData: FormData) {
     redirect("/admin/locations?error=missing_location");
   }
 
-  const parsed = parseLocationInput(formData);
+  const parsed = parseLocationGeneralInput(formData);
 
   if (!parsed.ok) {
     redirect(`${editPath ?? "/admin/locations"}?error=${parsed.error}`);
@@ -192,23 +200,6 @@ export async function updateLocationAction(formData: FormData) {
 
   if (verification.failed) {
     redirect(`${editPath ?? "/admin/locations"}?error=${verification.error}`);
-  }
-
-  // A submitted parent id is never trusted blindly: it must correspond to
-  // an existing Location, must not be the location itself, and must not be
-  // one of the location's own descendants (which would create a cycle).
-  if (parsed.value.parentId) {
-    const parent = await prisma.location.findUnique({
-      where: { id: parsed.value.parentId },
-    });
-
-    if (!parent) {
-      redirect(`${editPath ?? "/admin/locations"}?error=invalid_parent`);
-    }
-
-    if (await wouldCreateLocationCycle(prisma, id, parsed.value.parentId)) {
-      redirect(`${editPath ?? "/admin/locations"}?error=cyclic_parent`);
-    }
   }
 
   const existingImagePath = existingLocation.image;
@@ -244,16 +235,17 @@ export async function updateLocationAction(formData: FormData) {
   try {
     // Located by the stable cuid `id`, not the editable slug, so changing
     // the slug in this same submission cannot lose the target record.
-    // Verification fields are included ONLY when the opt-in checkbox was
-    // checked — a normal edit never alters or clears existing verification
-    // metadata, because Prisma leaves omitted fields untouched.
+    // parentId is never included, so a General save can never alter the
+    // location's hierarchy assignment. Verification fields are included
+    // ONLY when the opt-in checkbox was checked — a normal edit never
+    // alters or clears existing verification metadata, because Prisma
+    // leaves omitted fields untouched.
     await prisma.location.update({
       where: { id },
       data: {
         name: parsed.value.name,
         slug: parsed.value.slug,
         type: parsed.value.type,
-        parentId: parsed.value.parentId,
         description: parsed.value.description,
         accessNote: parsed.value.accessNote,
         image: imageValue,
@@ -270,9 +262,6 @@ export async function updateLocationAction(formData: FormData) {
     }
     if (isMissingRecordError(error)) {
       redirect("/admin/locations?error=missing_location");
-    }
-    if (isForeignKeyError(error)) {
-      redirect(`${editPath ?? "/admin/locations"}?error=invalid_parent`);
     }
     throw error;
   }
@@ -304,6 +293,89 @@ export async function updateLocationAction(formData: FormData) {
       ? "/admin/locations?success=updated_image_cleanup"
       : "/admin/locations?success=updated"
   );
+}
+
+// The Hierarchy tab's own action (Slice 9F.3): touches ONLY parentId —
+// name, slug, type, description, access note, image, and verification
+// metadata are never read from the submission and never written here, so
+// a hierarchy save leaves every other Location field byte-for-byte
+// unchanged. Reuses the exact same existence/cycle-prevention rules the
+// combined action always used — never a second implementation.
+export async function updateLocationHierarchyAction(formData: FormData) {
+  // Repeated here deliberately: every mutation re-checks authorization and
+  // never relies solely on the admin layout having already run.
+  await requireAdminUser();
+
+  const id = String(formData.get("id") ?? "").trim();
+  const originalSlug = String(formData.get("originalSlug") ?? "").trim();
+  const hierarchyPath = originalSlug
+    ? `/admin/locations/${originalSlug}/hierarchy`
+    : null;
+
+  if (!id) {
+    redirect("/admin/locations?error=missing_location");
+  }
+
+  // Loaded from the database, not trusted from the client, so the cycle
+  // guard and revalidation both use the record's real current state even
+  // if the form's hidden fields were tampered with or are stale.
+  const existingLocation = await prisma.location.findUnique({
+    where: { id },
+  });
+
+  if (!existingLocation) {
+    redirect("/admin/locations?error=missing_location");
+  }
+
+  const parsed = parseLocationHierarchyInput(formData);
+
+  // A submitted parent id is never trusted blindly: it must correspond to
+  // an existing Location, must not be the location itself, and must not be
+  // one of the location's own descendants (which would create a cycle) —
+  // the exact same rule the combined action always enforced.
+  if (parsed.parentId) {
+    const parent = await prisma.location.findUnique({
+      where: { id: parsed.parentId },
+    });
+
+    if (!parent) {
+      redirect(`${hierarchyPath ?? "/admin/locations"}?error=invalid_parent`);
+    }
+
+    if (await wouldCreateLocationCycle(prisma, id, parsed.parentId)) {
+      redirect(`${hierarchyPath ?? "/admin/locations"}?error=cyclic_parent`);
+    }
+  }
+
+  try {
+    // A single, narrow update — no other field is ever included, so a
+    // hierarchy save can never alter name, slug, type, description,
+    // access note, image, or verification metadata. A failure here
+    // leaves the location's previous parentId completely untouched.
+    await prisma.location.update({
+      where: { id },
+      data: { parentId: parsed.parentId },
+    });
+  } catch (error) {
+    if (isMissingRecordError(error)) {
+      redirect("/admin/locations?error=missing_location");
+    }
+    if (isForeignKeyError(error)) {
+      // The parent was removed between validation and the write; treat it
+      // the same as a normal invalid-parent error rather than crashing.
+      redirect(`${hierarchyPath ?? "/admin/locations"}?error=invalid_parent`);
+    }
+    throw error;
+  }
+
+  revalidatePath("/admin/locations");
+  if (hierarchyPath) {
+    revalidatePath(hierarchyPath);
+  }
+  revalidatePath("/locations");
+  revalidatePath(`/locations/${existingLocation.slug}`);
+
+  redirect("/admin/locations?success=updated");
 }
 
 export async function deleteLocationAction(formData: FormData) {

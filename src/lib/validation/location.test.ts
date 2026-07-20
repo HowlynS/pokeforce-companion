@@ -3,6 +3,8 @@ import {
   LOCATION_TYPES,
   LOCATION_TYPE_LABELS,
   normalizeSlug,
+  parseLocationGeneralInput,
+  parseLocationHierarchyInput,
   parseLocationInput,
 } from "@/lib/validation/location";
 
@@ -141,5 +143,87 @@ describe("parseLocationInput", () => {
       expect(withBlank.value.accessNote).toBeNull();
       expect(withBlank.value.parentId).toBeNull();
     }
+  });
+});
+
+// Slice 9F.3: the General editor and the Hierarchy tab each parse only
+// their own half of the fields, via functions that reuse — never
+// re-implement — the exact field validation `parseLocationInput` has
+// always used. These tests prove the delegation, not the underlying
+// per-field rules already exhaustively covered above.
+describe("parseLocationGeneralInput", () => {
+  it("validates every non-parent field, ignoring any parentId present", () => {
+    const result = parseLocationGeneralInput(
+      formDataFrom({
+        name: "Old Mine",
+        type: "DUNGEON",
+        description: "A collapsed shaft.",
+        accessNote: "Requires a lantern.",
+        parentId: "some-parent-id",
+      })
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        name: "Old Mine",
+        slug: "old-mine",
+        type: "DUNGEON",
+        description: "A collapsed shaft.",
+        accessNote: "Requires a lantern.",
+      },
+    });
+  });
+
+  it("rejects a missing name exactly like the full parser", () => {
+    const result = parseLocationGeneralInput(
+      formDataFrom({ name: "", type: "REGION" })
+    );
+
+    expect(result).toEqual({ ok: false, error: "missing_name" });
+  });
+
+  it("rejects a missing type exactly like the full parser", () => {
+    const result = parseLocationGeneralInput(formDataFrom({ name: "Old Mine" }));
+
+    expect(result).toEqual({ ok: false, error: "missing_type" });
+  });
+
+  it("succeeds with no parentId at all — parent assignment is not its concern", () => {
+    const result = parseLocationGeneralInput(
+      formDataFrom({ name: "Old Mine", type: "REGION" })
+    );
+
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("parseLocationHierarchyInput", () => {
+  it("parses a submitted parentId", () => {
+    const result = parseLocationHierarchyInput(
+      formDataFrom({ parentId: " parent123 " })
+    );
+
+    expect(result).toEqual({ parentId: "parent123" });
+  });
+
+  it("treats a blank parentId as No parent", () => {
+    const result = parseLocationHierarchyInput(formDataFrom({ parentId: "  " }));
+
+    expect(result).toEqual({ parentId: null });
+  });
+
+  it("treats an absent parentId as No parent", () => {
+    const result = parseLocationHierarchyInput(formDataFrom({}));
+
+    expect(result).toEqual({ parentId: null });
+  });
+
+  it("ignores any non-parent fields present — those are not its concern", () => {
+    const result = parseLocationHierarchyInput(
+      formDataFrom({ name: "Ignored Name", type: "IGNORED", parentId: "parent123" })
+    );
+
+    expect(result).toEqual({ parentId: "parent123" });
   });
 });

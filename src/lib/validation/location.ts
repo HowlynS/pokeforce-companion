@@ -35,6 +35,17 @@ export type LocationInput = {
   accessNote: string | null;
 };
 
+/** The Location General editor's own field set (Slice 9F.3) — everything
+    `LocationInput` carries except `parentId`, which now belongs to the
+    separate Hierarchy tab. */
+export type LocationGeneralInput = Omit<LocationInput, "parentId">;
+
+/** Hierarchy tab's own field set (Slice 9F.3) — nothing but the parent
+    assignment. */
+export type LocationHierarchyInput = {
+  parentId: string | null;
+};
+
 export type LocationValidationError =
   | "missing_name"
   | "invalid_slug"
@@ -43,6 +54,10 @@ export type LocationValidationError =
 
 export type LocationParseResult =
   | { ok: true; value: LocationInput }
+  | { ok: false; error: LocationValidationError };
+
+export type LocationGeneralParseResult =
+  | { ok: true; value: LocationGeneralInput }
   | { ok: false; error: LocationValidationError };
 
 export function normalizeSlug(value: string): string {
@@ -57,11 +72,22 @@ function isLocationType(value: string): value is LocationType {
   return (LOCATION_TYPES as readonly string[]).includes(value);
 }
 
-export function parseLocationInput(formData: FormData): LocationParseResult {
+function parseParentId(formData: FormData): string | null {
+  const rawParentId = String(formData.get("parentId") ?? "").trim();
+  return rawParentId || null;
+}
+
+// Every field EXCEPT parentId — shared by the full parser (create page,
+// which still submits parent selection together) and the General-only
+// parser (Slice 9F.3's edit page, which never touches parentId).
+// Extracted once so the two callers can never validate these fields
+// differently.
+function parseLocationGeneralFields(
+  formData: FormData
+): LocationGeneralParseResult {
   const name = String(formData.get("name") ?? "").trim();
   const rawSlug = String(formData.get("slug") ?? "").trim();
   const rawType = String(formData.get("type") ?? "").trim();
-  const rawParentId = String(formData.get("parentId") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const accessNote = String(formData.get("accessNote") ?? "").trim();
 
@@ -90,9 +116,42 @@ export function parseLocationInput(formData: FormData): LocationParseResult {
       name,
       slug,
       type: rawType,
-      parentId: rawParentId || null,
       description: description || null,
       accessNote: accessNote || null,
     },
+  };
+}
+
+/** The Location General editor's own parser (Slice 9F.3): every field
+    except parentId, reusing the exact field-by-field validation
+    `parseLocationInput` has always used — never a second
+    implementation. */
+export function parseLocationGeneralInput(
+  formData: FormData
+): LocationGeneralParseResult {
+  return parseLocationGeneralFields(formData);
+}
+
+/** The Hierarchy tab's own parser (Slice 9F.3): reuses the exact same
+    parentId parsing rule `parseLocationInput` has always used — trim,
+    empty means "No parent". Existence and cycle validation happen in the
+    action (`wouldCreateLocationCycle`), exactly as they always have —
+    never duplicated here. */
+export function parseLocationHierarchyInput(
+  formData: FormData
+): LocationHierarchyInput {
+  return { parentId: parseParentId(formData) };
+}
+
+export function parseLocationInput(formData: FormData): LocationParseResult {
+  const generalResult = parseLocationGeneralFields(formData);
+
+  if (!generalResult.ok) {
+    return generalResult;
+  }
+
+  return {
+    ok: true,
+    value: { ...generalResult.value, parentId: parseParentId(formData) },
   };
 }

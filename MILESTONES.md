@@ -364,8 +364,8 @@ Slice 9E.1 (Category workspace navigation foundation) complete; Slice
 Items relationship tab) complete; Slice 9E.4 (Category Metadata tab)
 complete — the Category reference workspace is functionally complete;
 Slice 9F.1 (Location workspace navigation foundation) complete; Slice
-9F.2 (Location General editor conversion) complete; later slices not
-started
+9F.2 (Location General editor conversion) complete; Slice 9F.3 (Location
+Hierarchy tab) complete; later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1504,12 +1504,101 @@ workspace.
 - [x] No Hierarchy tab, no Acquisition Sources tab, no Metadata content,
       and no other resource workspace was converted
 
+### Slice 9F.3 — Location Hierarchy tab (complete, 2026-07-20)
+
+- [x] `/admin/locations/[slug]/hierarchy` is a new, real, editable tab
+      inside `LocationWorkspace`, mirroring the Recipe workspace's own
+      General/Ingredients split (Slice 9C.3) in shape — a mutation tab
+      splitting off from General — while also showing a read-only
+      relationship list like the Profession workspace's Recipes tab
+      (Slice 9D.3)
+- [x] `locationEditorTabs` now takes an `active: "general" | "hierarchy"`
+      key (its new `LocationEditorTabKey`, structurally identical to
+      `professionEditorTabs`'s shape) — General and Hierarchy are both
+      real links; Acquisition Sources and Metadata remain the only
+      disabled placeholders
+- [x] A new `locationHierarchyHref(slug, query)` helper builds the tab's
+      own route; `LocationWorkspace` gained an optional `recordHref` prop
+      (default `locationEditHref`, mirroring `ProfessionWorkspace`'s own)
+      so quick-switching locations while on this tab stays on the
+      Hierarchy tab, with `q` preserved
+- [x] Parent assignment moved OUT of General's own fields and into this
+      tab: the "Parent location" `<select>` no longer appears anywhere
+      on `/admin/locations/[slug]/edit`; the create page is unaffected
+      (it never had a General/Hierarchy split — there is no record yet
+      for a Hierarchy tab to describe — so its own inline parent
+      selector stays exactly where it was)
+- [x] `updateLocationAction` was replaced by two narrow actions in
+      `src/app/admin/locations/actions.ts`: `updateLocationGeneralAction`
+      (name/slug/type/description/accessNote/image/verification — never
+      touching `parentId`) and `updateLocationHierarchyAction` (a single
+      `prisma.location.update({ data: { parentId } } )` — never touching
+      any other field)
+- [x] Both actions reuse — never reimplement — validation and the
+      existing cycle guard: `src/lib/validation/location.ts` now
+      extracts a private `parseLocationGeneralFields` helper that
+      `parseLocationInput` (unchanged, still the create page's parser),
+      the new exported `parseLocationGeneralInput`, and the new exported
+      `parseLocationHierarchyInput` all share — the same field-by-field
+      rules in exactly one place; `updateLocationHierarchyAction` calls
+      the exact same `wouldCreateLocationCycle` helper the combined
+      action always used, never a second cycle-prevention implementation
+- [x] The Hierarchy tab's own content is a narrow `<form>`
+      (`<fieldset><legend>Parent Location</legend>` holding just the
+      parent `<select>`, self excluded from its own options exactly as
+      before) plus sticky `EditorActions` ("Save Hierarchy"/Cancel/
+      "Delete Location" — Delete via `EditorActions`' own `deleteHref`,
+      unconditionally reachable since Locations carry no capacity guard)
+- [x] A read-only `ContextPanel` titled "Sub-locations" lists this
+      location's DIRECT children only (never a recursive descendant
+      walk) via one restrained
+      `prisma.location.findUnique({ include: { children: { orderBy: { name: "asc" } } } })`
+      query — no N+1, no `acquisitionSources` include; each child's name
+      links to the EXISTING `/admin/locations/[slug]/edit` route with
+      its type label as concise context, and a restrained `EmptyState`
+      ("No sub-locations yet") replaces the panel entirely when there
+      are none, never an empty table or placeholder dash
+- [x] No `ImagePanel`, `VerificationPanel`, or `TimestampsPanel` render
+      on this tab — none apply to hierarchy assignment; no name, slug,
+      type, description, access-note, image, or verification control
+      exists anywhere on this tab
+- [x] Every hierarchy/cycle-prevention rule (self-parent rejection,
+      descendant-cycle rejection, missing-parent handling), the
+      child-location delete-blocking rule, image behavior, and
+      verification behavior are byte-for-byte unchanged
+- [x] Tests: `locationEditorTabs`/`locationHierarchyHref` unit coverage
+      (Hierarchy active/real, query preservation, exactly-one-active,
+      Acquisition Sources/Metadata the only disabled tabs);
+      `parseLocationGeneralInput`/`parseLocationHierarchyInput` unit
+      coverage proving the delegation to the shared field validation; a
+      new integration describe block proving a General-shaped update
+      preserves `parentId`, a Hierarchy-shaped update changes ONLY
+      `parentId` (name/slug/type/description/accessNote/image/
+      verifiedAt/verifiedGameVersionId all provably preserved), removing
+      the parent works, a failed hierarchy update (invalid parent id)
+      leaves the location's data completely unchanged, reassigning a
+      location's own parent never mutates its children, and direct
+      children are returned alphabetically without a recursive
+      descendant load; new "Location editor" E2E coverage (Hierarchy tab
+      navigation, real/active tab state, no General/create field leakage
+      onto Hierarchy) plus a dedicated Hierarchy E2E test (current parent
+      preselected, self excluded, changing/removing the parent,
+      sub-location list updates, General/image/verification preserved,
+      Delete Location reachable) and a quick-switching test (mirroring
+      the Recipe Ingredients tab's own); the existing cycle-rejection
+      test retargeted to the Hierarchy route and its "Save Hierarchy"
+      button; an unknown-slug 404 test for the hierarchy route; the
+      unauthenticated-protection route list extended with the hierarchy
+      route
+- [x] No Acquisition Sources tab, no Metadata content, no tree control,
+      no child-mutation control, and no other resource workspace was
+      converted
+
 ### Remaining (not started)
 
-- [ ] The Location reference workspace's own Hierarchy/Acquisition
-      Sources/Metadata tabs, dashboard summaries, and Route Hubs — do
-      not begin until explicitly instructed in the milestone
-      conversation
+- [ ] The Location reference workspace's own Acquisition Sources/
+      Metadata tabs, dashboard summaries, and Route Hubs — do not begin
+      until explicitly instructed in the milestone conversation
 
 ---
 

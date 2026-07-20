@@ -1590,3 +1590,64 @@ Alternatives considered:
   preservation for General — rejected once the truncation risk on
   General was identified; General needed its OWN narrow action just as
   much as Ingredients did, so both got one, kept deliberately symmetric.
+
+### 2026-07-20 — Slice 9F.3: `updateLocationAction` splits into two narrow actions instead of one action serving both General and Hierarchy
+
+Decision:
+
+Moving parent assignment out of General onto its own Hierarchy tab meant
+the single `updateLocationAction` — which validated and wrote every
+Location field, including `parentId`, in one transaction — no longer
+matched either page's actual submission, for the same reason Slice
+9C.3's Recipe split did: a shared action cannot safely infer "no change"
+from a field's absence. If General's form stopped submitting `parentId`
+entirely but the combined action still ran `parentId: rawParentId ||
+null` against it, every General-only save would silently clear the
+location's existing parent, since an absent field and an explicit "No
+parent" selection are indistinguishable once parsed the same way. The
+alternative — General's form carrying a hidden `parentId` field mirroring
+the record's current value — would work, but duplicates Hierarchy's own
+concern inside General and risks the two forms drifting out of sync
+(e.g. a future General change that forgets to keep the hidden field's
+value current would corrupt hierarchy data through a page that has
+nothing to do with hierarchy). `updateLocationAction` was therefore split
+into `updateLocationGeneralAction` (touches only Location's own General
+columns, never `parentId`) and `updateLocationHierarchyAction` (touches
+ONLY `parentId`, carrying no General field to preserve or corrupt).
+Both reuse the exact same field validation via new
+`parseLocationGeneralInput`/`parseLocationHierarchyInput` functions built
+from one shared, unexported `parseLocationGeneralFields` helper that
+`parseLocationInput` (still the create page's parser, unmodified) also
+calls, and `updateLocationHierarchyAction` calls the exact same
+`wouldCreateLocationCycle` guard the combined action always used — never
+a second cycle-prevention implementation.
+
+Reason:
+
+A field that is silently absent from one tab's submission must never be
+interpreted as "clear this value" by a shared action — that ambiguity is
+exactly the kind of the data-loss risk Slice 9C.3 already established a
+precedent for avoiding. Splitting the action removes the ambiguity
+entirely: since `updateLocationGeneralAction` never reads or writes
+`parentId`, there is no absent-field case to misinterpret, no matter
+which tab last saved the record.
+
+Alternatives considered:
+
+- Hidden-field preservation on the General form (mirroring the pattern
+  rejected for Recipe's own General/Ingredients split) — rejected here
+  for the same reason: a General page has no business re-deriving or
+  re-submitting the current parent just to keep a shared action safe,
+  and a forgotten hidden field would corrupt hierarchy data silently.
+- One shared action with conditional parentId handling based on whether
+  the field is present in the submission — rejected; it would require
+  the two tabs to agree on a signal for "not my concern" (e.g. a marker
+  field), a larger and more fragile change than two independently
+  simple, purpose-built actions.
+- Keeping parent editing in General entirely and adding ONLY a read-only
+  child list on Hierarchy — rejected; it does not match the task's
+  explicit requirement that parent assignment move to the Hierarchy tab,
+  and it would leave General's own field set inconsistent with every
+  other converted resource's General/relationship-tab split (Recipe,
+  Profession, Category all moved their own tab-specific concern fully
+  off General).

@@ -22,6 +22,10 @@
 // concise secondary context only. `include: { parent: true }` loads that
 // context in the same query — never a per-row follow-up — so showing it
 // introduces no N+1 behavior.
+//
+// Slice 9F.3 added the optional `recordHref` prop, mirroring
+// `ProfessionWorkspace`'s own (Slice 9D.3): the Hierarchy tab route
+// passes `locationHierarchyHref` so quick switching stays on that tab.
 
 import { prisma } from "@/lib/db";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
@@ -54,6 +58,12 @@ type LocationWorkspaceProps = {
       a later editor-conversion slice, matching the slot AdminWorkspace
       already exposes. */
   aside?: React.ReactNode;
+  /** Builds each record row's link (Slice 9F.3) — defaults to the
+      General edit route. The Hierarchy tab route passes
+      `locationHierarchyHref` so quick switching between locations stays
+      on the Hierarchy tab instead of dropping back to General, mirroring
+      `ProfessionWorkspace`'s own `recordHref` prop. */
+  recordHref?: (slug: string, query: string) => string;
 };
 
 /** Concise secondary row context: the type label, plus the parent's name
@@ -74,6 +84,7 @@ export async function LocationWorkspace({
   header,
   children,
   aside,
+  recordHref = locationEditHref,
 }: LocationWorkspaceProps) {
   const query = normalizeLocationSearchQuery(rawQuery);
 
@@ -108,7 +119,7 @@ export async function LocationWorkspace({
   });
 
   const rows = locations.map((location) => ({
-    href: locationEditHref(location.slug, query),
+    href: recordHref(location.slug, query),
     primary: location.name,
     secondary: locationSecondaryContext(location),
     selected: location.slug === selectedSlug,

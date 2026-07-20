@@ -26,7 +26,7 @@
 // and rows. Every CRUD, hierarchy, verification, and image behavior below
 // is otherwise unchanged.
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestLocationRecords,
@@ -159,6 +159,15 @@ function panelRow(page: Page, panelTitle: string, label: string) {
     .filter({ hasText: new RegExp(`^${label}`) });
 }
 
+// Reads the visible text of a <select>'s currently selected option, for
+// prefill assertions where option values (database ids) are unknown.
+async function selectedOptionLabel(select: Locator): Promise<string> {
+  return select.evaluate(
+    (el) =>
+      (el as HTMLSelectElement).selectedOptions[0]?.textContent?.trim() ?? ""
+  );
+}
+
 // Fills the create form on /admin/locations/new (the page must already be
 // open — the dedicated creation route since Slice 9F.1) and submits it.
 // The optional image input, parent, description, and access note are only
@@ -234,11 +243,15 @@ test("Create Location opens the dedicated creation route", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("Location editor: create shows only General; edit marks General active with Hierarchy, Acquisition Sources, and Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
+test("Location editor: create shows only General with its own parent selector; edit marks General active with Hierarchy real and Acquisition Sources/Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
-  // Image panel present, no Timestamps panel (nothing to show yet) ------
+  // Image panel present, no Timestamps panel (nothing to show yet), and
+  // the parent selector still lives right here (Slice 9F.3 moved parent
+  // assignment out of General edit, but create never had a General/
+  // Hierarchy split — there is no record yet to have a Hierarchy tab
+  // for) -----------------------------------------------------------------
   await page.goto("/admin/locations/new");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   const createTabNav = page.getByRole("navigation", {
@@ -250,6 +263,9 @@ test("Location editor: create shows only General; edit marks General active with
   await expect(createTabNav.getByText("Hierarchy")).toHaveCount(0);
   await expect(createTabNav.getByText("Acquisition Sources")).toHaveCount(0);
   await expect(createTabNav.getByText("Metadata")).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: "Parent location", exact: true })
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { level: 2, name: "Image", exact: true })
   ).toBeVisible();
@@ -265,8 +281,10 @@ test("Location editor: create shows only General; edit marks General active with
   });
 
   // --- Edit: exactly one h1 (the location's own name), General active,
-  // Hierarchy/Acquisition Sources/Metadata all inert placeholders,
-  // Timestamps present (Created/Updated, no Verified stamp yet) --------
+  // Hierarchy now a real (but not current) tab, Acquisition Sources and
+  // Metadata still inert placeholders, Timestamps present (Created/
+  // Updated, no Verified stamp yet), and NO parent selector anywhere on
+  // General (Slice 9F.3 moved it to Hierarchy) --------------------------
   await recordRow(page, "Test E2E Location Tabs").click();
   await expect(page).toHaveURL("/admin/locations/test-e2e-location-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -277,6 +295,9 @@ test("Location editor: create shows only General; edit marks General active with
       exact: true,
     })
   ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "Parent location", exact: true })
+  ).toHaveCount(0);
 
   const editTabNav = page.getByRole("navigation", {
     name: "Location editor sections",
@@ -286,11 +307,11 @@ test("Location editor: create shows only General; edit marks General active with
   ).toHaveAttribute("aria-current", "page");
   await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
   await expect(
-    editTabNav.getByText("Hierarchy", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
     editTabNav.getByRole("link", { name: "Hierarchy", exact: true })
-  ).toHaveCount(0);
+  ).not.toHaveAttribute("aria-current", "page");
+  await expect(
+    editTabNav.getByText("Hierarchy", { exact: true })
+  ).not.toHaveAttribute("aria-disabled", "true");
   await expect(
     editTabNav.getByText("Acquisition Sources", { exact: true })
   ).toHaveAttribute("aria-disabled", "true");
@@ -313,6 +334,47 @@ test("Location editor: create shows only General; edit marks General active with
   await expect(panelRow(page, "Timestamps", "Created")).toBeVisible();
   await expect(panelRow(page, "Timestamps", "Updated")).toBeVisible();
   await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
+
+  // --- Hierarchy tab: marks itself active, General becomes the real
+  // link back, no image/verification/unrelated General controls render
+  // here at all --------------------------------------------------------
+  await editTabNav.getByRole("link", { name: "Hierarchy", exact: true }).click();
+  await expect(page).toHaveURL(
+    "/admin/locations/test-e2e-location-tabs/hierarchy"
+  );
+  const hierarchyTabNav = page.getByRole("navigation", {
+    name: "Location editor sections",
+  });
+  await expect(
+    hierarchyTabNav.getByRole("link", { name: "Hierarchy", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    hierarchyTabNav.getByRole("link", { name: "General", exact: true })
+  ).not.toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByRole("combobox", { name: "Parent location", exact: true })
+  ).toBeVisible();
+  await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Slug", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: "Type", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Image", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Verification", exact: true })
+  ).toHaveCount(0);
+  await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Save Hierarchy", exact: true })
+  ).toBeVisible();
+  // No sub-locations yet: the restrained empty state renders, never an
+  // empty table.
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Sub-locations", exact: true })
+  ).toHaveCount(0);
+  await expect(page.getByText("No sub-locations yet")).toBeVisible();
 });
 
 test("location create/edit/delete lifecycle through the real admin UI", async ({
@@ -601,19 +663,18 @@ test("assigning a location's own descendant as its parent is rejected server-sid
   });
 
   // Attempt to reassign the ancestor's parent to its own descendant, which
-  // would create a cycle (ancestor -> descendant -> ancestor).
-  await page.goto("/admin/locations");
-  await recordRow(page, CYCLE_ANCESTOR.name).click();
-  await expect(page).toHaveURL(
-    `/admin/locations/${CYCLE_ANCESTOR.slug}/edit`
-  );
+  // would create a cycle (ancestor -> descendant -> ancestor). Parent
+  // assignment lives on the Hierarchy tab since Slice 9F.3.
+  await page.goto(`/admin/locations/${CYCLE_ANCESTOR.slug}/hierarchy`);
   await page
     .getByRole("combobox", { name: "Parent location", exact: true })
     .selectOption({ label: CYCLE_DESCENDANT.name });
-  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Save Hierarchy", exact: true })
+    .click();
 
   await expect(page).toHaveURL(
-    `/admin/locations/${CYCLE_ANCESTOR.slug}/edit?error=cyclic_parent`
+    `/admin/locations/${CYCLE_ANCESTOR.slug}/hierarchy?error=cyclic_parent`
   );
   await expect(
     page.getByRole("alert").filter({
@@ -621,10 +682,220 @@ test("assigning a location's own descendant as its parent is rejected server-sid
         "A location cannot be its own parent or one of its own sub-locations.",
     })
   ).toBeVisible();
+  // The picker itself still excludes the ancestor from its own choices —
+  // self-parenting was never even offerable.
+  await expect(
+    page
+      .getByRole("combobox", { name: "Parent location", exact: true })
+      .locator("option", { hasText: CYCLE_ANCESTOR.name })
+  ).toHaveCount(0);
 
   // The ancestor's parent assignment was never applied.
   await page.goto(`/locations/${CYCLE_ANCESTOR.slug}`);
   await expect(page.getByText(/^Part of/)).toHaveCount(0);
+});
+
+test("Hierarchy tab: changing and removing the parent preserves General fields, image, and verification, and updates sub-location lists", async ({
+  page,
+}) => {
+  const PARENT_A = {
+    name: "Test E2E Location Hierarchy Parent A",
+    slug: "test-e2e-location-hierarchy-parent-a",
+    type: "Region",
+  };
+  const PARENT_B = {
+    name: "Test E2E Location Hierarchy Parent B",
+    slug: "test-e2e-location-hierarchy-parent-b",
+    type: "Region",
+  };
+  const SUBJECT = {
+    name: "Test E2E Location Hierarchy Subject",
+    slug: "test-e2e-location-hierarchy-subject",
+    type: "Dungeon",
+    description: "Original description.",
+    accessNote: "Original access note.",
+  };
+
+  await page.goto("/admin/locations/new");
+  await createLocationThroughForm(page, PARENT_A);
+  await page.goto("/admin/locations/new");
+  await createLocationThroughForm(page, PARENT_B);
+  await page.goto("/admin/locations/new");
+  await createLocationThroughForm(page, { ...SUBJECT, parentName: PARENT_A.name });
+
+  // Verify the subject through General first, so the later Hierarchy
+  // saves have a real stamp to prove untouched.
+  await recordRow(page, SUBJECT.name).click();
+  await expect(page).toHaveURL(`/admin/locations/${SUBJECT.slug}/edit`);
+  await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/locations?success=updated");
+
+  await page.goto(`/locations/${SUBJECT.slug}`);
+  await expect(page.getByText(`Part of ${PARENT_A.name}.`)).toBeVisible();
+
+  // --- Hierarchy tab shows the current parent preselected, self excluded,
+  // Parent A's sub-locations list includes the subject --------------------
+  await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
+  const parentSelect = page.getByRole("combobox", {
+    name: "Parent location",
+    exact: true,
+  });
+  expect(await selectedOptionLabel(parentSelect)).toBe(PARENT_A.name);
+  await expect(
+    parentSelect.locator("option", { hasText: SUBJECT.name })
+  ).toHaveCount(0);
+
+  await page.goto(`/admin/locations/${PARENT_A.slug}/hierarchy`);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Sub-locations", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: SUBJECT.name, exact: true })
+  ).toBeVisible();
+  await expect(page.getByText("Dungeon", { exact: true })).toBeVisible();
+
+  // --- Reassign to Parent B: only parentId changes ------------------------
+  await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
+  await page
+    .getByRole("combobox", { name: "Parent location", exact: true })
+    .selectOption({ label: PARENT_B.name });
+  await page
+    .getByRole("button", { name: "Save Hierarchy", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/locations?success=updated");
+
+  // Parent A no longer lists the subject as a sub-location; Parent B does.
+  await page.goto(`/admin/locations/${PARENT_A.slug}/hierarchy`);
+  await expect(page.getByText("No sub-locations yet")).toBeVisible();
+  await page.goto(`/admin/locations/${PARENT_B.slug}/hierarchy`);
+  await expect(
+    page.getByRole("cell", { name: SUBJECT.name, exact: true })
+  ).toBeVisible();
+
+  // General fields, image state, and the verification stamp are all
+  // exactly as they were — a Hierarchy save touches nothing else.
+  await page.goto(`/admin/locations/${SUBJECT.slug}/edit`);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
+    SUBJECT.name
+  );
+  await expect(page.getByLabel(/^Description/)).toHaveValue(
+    SUBJECT.description
+  );
+  await expect(page.getByLabel(/^Access or unlock note/)).toHaveValue(
+    SUBJECT.accessNote
+  );
+  await expect(
+    page.locator(".admin-status-badge", {
+      hasText: "Verified — current version",
+    })
+  ).toBeVisible();
+
+  await page.goto(`/locations/${SUBJECT.slug}`);
+  await expect(page.getByText(`Part of ${PARENT_B.name}.`)).toBeVisible();
+  await expect(page.getByText(SUBJECT.description)).toBeVisible();
+  await expect(page.getByText(SUBJECT.accessNote)).toBeVisible();
+
+  // --- Removing the parent (No parent) works, and Delete Location stays
+  // reachable directly from the Hierarchy tab --------------------------
+  await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
+  await page
+    .getByRole("combobox", { name: "Parent location", exact: true })
+    .selectOption({ label: "No parent" });
+  await page
+    .getByRole("button", { name: "Save Hierarchy", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/locations?success=updated");
+
+  await page.goto(`/admin/locations/${PARENT_B.slug}/hierarchy`);
+  await expect(page.getByText("No sub-locations yet")).toBeVisible();
+
+  await page.goto(`/locations/${SUBJECT.slug}`);
+  await expect(page.getByText(/^Part of/)).toHaveCount(0);
+
+  await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
+  await page
+    .getByRole("link", { name: "Delete Location", exact: true })
+    .click();
+  await expect(page).toHaveURL(`/admin/locations/${SUBJECT.slug}/delete`);
+});
+
+test("switching locations while on the Hierarchy tab preserves the tab and q, and General's own tab link preserves q too", async ({
+  page,
+}) => {
+  const LOCATION_A = {
+    name: "Test E2E Location Hierarchy Switch A",
+    slug: "test-e2e-location-hierarchy-switch-a",
+    type: "Region",
+  };
+  const LOCATION_B = {
+    name: "Test E2E Location Hierarchy Switch B",
+    slug: "test-e2e-location-hierarchy-switch-b",
+    type: "Region",
+  };
+
+  await page.goto("/admin/locations/new");
+  await createLocationThroughForm(page, LOCATION_A);
+  await page.goto("/admin/locations/new");
+  await createLocationThroughForm(page, LOCATION_B);
+
+  // A shared, distinguishing query so only these two temporary locations
+  // match.
+  await page.goto("/admin/locations");
+  await page
+    .getByRole("searchbox", { name: "Search locations" })
+    .fill("test e2e location hierarchy switch");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(recordRow(page, LOCATION_A.name)).toBeVisible();
+  await expect(recordRow(page, LOCATION_B.name)).toBeVisible();
+
+  await recordRow(page, LOCATION_A.name).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/locations/${LOCATION_A.slug}/edit\\?q=`)
+  );
+
+  const tabNav = page.getByRole("navigation", {
+    name: "Location editor sections",
+  });
+  await tabNav.getByRole("link", { name: "Hierarchy", exact: true }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/locations/${LOCATION_A.slug}/hierarchy\\?q=`)
+  );
+  await expect(recordRow(page, LOCATION_A.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+
+  // Switching records while ON the Hierarchy tab opens the OTHER
+  // location's Hierarchy tab — not its General tab — with q intact.
+  await recordRow(page, LOCATION_B.name).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/locations/${LOCATION_B.slug}/hierarchy\\?q=`)
+  );
+  await expect(
+    page.getByRole("heading", { level: 1, name: LOCATION_B.name, exact: true })
+  ).toBeVisible();
+  await expect(
+    tabNav.getByRole("link", { name: "Hierarchy", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(recordRow(page, LOCATION_B.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  await expect(recordRow(page, LOCATION_A.name)).not.toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+
+  // General's own tab link, followed from the Hierarchy tab, preserves q
+  // too.
+  await tabNav.getByRole("link", { name: "General", exact: true }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/locations/${LOCATION_B.slug}/edit\\?q=`)
+  );
+  await expect(
+    tabNav.getByRole("link", { name: "General", exact: true })
+  ).toHaveAttribute("aria-current", "page");
 });
 
 test("deletion is blocked while a sub-location exists", async ({ page }) => {
@@ -696,6 +967,15 @@ test("a sparse location (no description, no image, no parent) renders without em
 
 test("visiting an unknown location slug returns 404", async ({ page }) => {
   const response = await page.goto("/locations/test-e2e-location-does-not-exist");
+  expect(response?.status()).toBe(404);
+});
+
+test("an unknown location slug fails safely on the hierarchy route", async ({
+  page,
+}) => {
+  const response = await page.goto(
+    "/admin/locations/test-e2e-location-does-not-exist/hierarchy"
+  );
   expect(response?.status()).toBe(404);
 });
 

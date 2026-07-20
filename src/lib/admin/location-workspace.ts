@@ -14,6 +14,12 @@
 // is the only real tab so far — Hierarchy, Acquisition Sources, and
 // Metadata (all later slices, not yet implemented) render as disabled
 // placeholders, never links to empty pages.
+//
+// Slice 9F.3 (Hierarchy tab) made Hierarchy a real destination too,
+// mirroring the Profession workspace's Recipes tab (Slice 9D.3) shape:
+// `locationEditorTabs` now takes an `active` key (General or Hierarchy)
+// exactly like `professionEditorTabs` does. Acquisition Sources and
+// Metadata remain the only disabled placeholders.
 
 export const LOCATION_LIST_PATH = "/admin/locations";
 export const LOCATION_CREATE_PATH = "/admin/locations/new";
@@ -53,6 +59,20 @@ export function locationDeleteHref(slug: string, query: string): string {
   return withLocationSearchQuery(`${LOCATION_LIST_PATH}/${slug}/delete`, query);
 }
 
+/** The Hierarchy tab route for one location, preserving the query (Slice
+    9F.3) — parent assignment plus the read-only sub-location list. */
+export function locationHierarchyHref(slug: string, query: string): string {
+  return withLocationSearchQuery(
+    `${LOCATION_LIST_PATH}/${slug}/hierarchy`,
+    query
+  );
+}
+
+/** Which Location editor tab is active — General (the record's own
+    fields) or Hierarchy (Slice 9F.3). Acquisition Sources and Metadata
+    are not yet implemented and always render as disabled placeholders. */
+export type LocationEditorTabKey = "general" | "hierarchy";
+
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
     component into this pure, React-free module. */
@@ -64,24 +84,31 @@ export type LocationEditorTab = {
 };
 
 /**
- * The Location edit route's tab strip (Slice 9F.2): General is the only
- * real destination this slice — Hierarchy, Acquisition Sources, and
- * Metadata (all later slices) render as disabled placeholders, never
- * links to empty pages. The create page shows only General with no
- * placeholders at all (mirroring the Item/Recipe/Profession workspaces'
- * create-page precedent), so this helper is deliberately edit-only.
+ * The Location editor's tab strip, shared by every route inside the
+ * Location workspace that renders tabs (General edit, and the Hierarchy
+ * route added in Slice 9F.3) — one function so every tab's href/active
+ * state can never drift out of sync between pages. Acquisition Sources
+ * and Metadata remain disabled placeholders (not yet implemented); the
+ * create page shows only General with no placeholders at all (mirroring
+ * the Item/Recipe/Profession workspaces' create-page precedent), so this
+ * helper stays edit-only.
  */
 export function locationEditorTabs(
   slug: string,
-  query: string
+  query: string,
+  active: LocationEditorTabKey
 ): LocationEditorTab[] {
   return [
     {
       label: "General",
       href: locationEditHref(slug, query),
-      active: true,
+      active: active === "general",
     },
-    { label: "Hierarchy", href: "", active: false, disabled: true },
+    {
+      label: "Hierarchy",
+      href: locationHierarchyHref(slug, query),
+      active: active === "hierarchy",
+    },
     {
       label: "Acquisition Sources",
       href: "",

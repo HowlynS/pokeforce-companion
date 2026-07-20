@@ -19,7 +19,7 @@ import {
 } from "@/lib/admin/location-workspace";
 import { RecordNameField } from "@/components/admin/record-name-field";
 import { LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/lib/validation/location";
-import { updateLocationAction } from "../../actions";
+import { updateLocationGeneralAction } from "../../actions";
 import { checkLocationNameAvailability } from "../../name-availability";
 
 export const dynamic = "force-dynamic";
@@ -30,15 +30,15 @@ export const dynamic = "force-dynamic";
 // with one ordinary form submission.
 const LOCATION_EDIT_FORM_ID = "location-edit-form";
 
+// Errors updateLocationGeneralAction can actually produce (Slice 9F.3):
+// parent-specific errors (invalid_parent, cyclic_parent) belong to the
+// Hierarchy tab's own action and route now.
 const errorMessages: Record<string, string> = {
   missing_name: "Location name is required.",
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
   missing_type: "Select a location type.",
   invalid_type: "Select a valid location type.",
-  invalid_parent: "Select an existing location, or choose No parent.",
-  cyclic_parent:
-    "A location cannot be its own parent or one of its own sub-locations.",
   duplicate: "A location with that name or slug already exists.",
   duplicate_name: "A location with that name already exists.",
   image_too_large: "The image must be 5 MB or smaller.",
@@ -70,28 +70,19 @@ export default async function EditLocationPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const query = normalizeLocationSearchQuery(q);
 
-  const [location, allLocations] = await Promise.all([
-    prisma.location.findUnique({
-      where: { slug },
-      // Admin-only visibility of the verification stamp: the related Game
-      // Version's name is shown in the aside's VerificationPanel below. No
-      // children or acquisitionSources include — General never touches or
-      // displays those relations (Hierarchy and Acquisition Sources tabs
-      // are later slices).
-      include: { verifiedGameVersion: true },
-    }),
-    prisma.location.findMany({ orderBy: { name: "asc" } }),
-  ]);
+  // Admin-only visibility of the verification stamp: the related Game
+  // Version's name is shown in the aside's VerificationPanel below. No
+  // parent, children, or acquisitionSources include — General never
+  // touches or displays those relations (parent assignment moved to the
+  // Hierarchy tab in Slice 9F.3; Acquisition Sources is a later slice).
+  const location = await prisma.location.findUnique({
+    where: { slug },
+    include: { verifiedGameVersion: true },
+  });
 
   if (!location) {
     notFound();
   }
-
-  // A location can never usefully be its own parent — filtered out here for
-  // a cleaner picker. Its descendants are NOT filtered from this list (that
-  // would need a tree walk just to build the options); choosing one is
-  // still rejected server-side by the same cycle guard the submission uses.
-  const parentOptions = allLocations.filter((candidate) => candidate.id !== location.id);
 
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(location.image);
@@ -102,17 +93,19 @@ export default async function EditLocationPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  const tabs = locationEditorTabs(location.slug, query);
+  const tabs = locationEditorTabs(location.slug, query, "general");
 
   // The General edit route inside the Location workspace (Slice 9F.1),
-  // now composed from the shared editor primitives (Slice 9F.2): the
-  // record list marks this location selected and keeps the active search
-  // applied for quick switching. Every field, redirect, server action,
-  // image behavior, verification rule, and hierarchy/cycle guard is
-  // unchanged — only the presentation moved. Hierarchy, Acquisition
-  // Sources, and Metadata remain disabled placeholders. Delete lives in
-  // `EditorActions`' own `deleteHref` since Locations carry no capacity
-  // guard that would ever need to hide the form.
+  // composed from the shared editor primitives (Slice 9F.2). Slice 9F.3
+  // moved parent assignment out of General and into the new Hierarchy
+  // tab — General no longer submits or displays parentId at all, and
+  // `updateLocationGeneralAction` never touches it, so a General save
+  // always preserves the location's existing parent exactly. Every other
+  // field, redirect, server action, and image/verification behavior is
+  // unchanged — only the presentation moved. Hierarchy is now a real tab;
+  // Acquisition Sources and Metadata remain disabled placeholders. Delete
+  // lives in `EditorActions`' own `deleteHref` since Locations carry no
+  // capacity guard that would ever need to hide the form.
   return (
     <LocationWorkspace
       rawQuery={q}
@@ -214,7 +207,7 @@ export default async function EditLocationPage({
     >
       <form
         id={LOCATION_EDIT_FORM_ID}
-        action={updateLocationAction}
+        action={updateLocationGeneralAction}
         className="form-grid"
       >
         <input type="hidden" name="id" value={location.id} />
@@ -223,7 +216,8 @@ export default async function EditLocationPage({
         {/* Client-enhanced Name field with live duplicate feedback. The
             saved name counts as "current" (never queried), and the record's
             own id is excluded server-side so it cannot conflict with
-            itself; updateLocationAction stays the authoritative check. */}
+            itself; updateLocationGeneralAction stays the authoritative
+            check. */}
         <RecordNameField
           checkAvailabilityAction={checkLocationNameAvailability}
           takenText="A location with that name already exists."
@@ -253,22 +247,6 @@ export default async function EditLocationPage({
             {LOCATION_TYPES.map((type) => (
               <option key={type} value={type}>
                 {LOCATION_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="form-field">
-          <span className="form-field-label">Parent location</span>
-          <select
-            name="parentId"
-            defaultValue={location.parentId ?? ""}
-            className="form-input"
-          >
-            <option value="">No parent</option>
-            {parentOptions.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.name}
               </option>
             ))}
           </select>

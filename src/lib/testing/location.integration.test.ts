@@ -264,6 +264,251 @@ describe("location hierarchy and verification (integration)", () => {
     });
   });
 
+  describe("General/Hierarchy update split (Slice 9F.3)", () => {
+    it("a General-shaped update preserves parentId exactly", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const parent = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Parent",
+          slug: `${P}split-parent`,
+          type: "REGION",
+        },
+      });
+      const child = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Child",
+          slug: `${P}split-child`,
+          type: "TOWN",
+          parentId: parent.id,
+        },
+      });
+
+      // The exact write shape updateLocationGeneralAction uses: every
+      // General field, but never parentId — Prisma leaves an omitted
+      // field completely untouched.
+      const edited = await prisma.location.update({
+        where: { id: child.id },
+        data: {
+          name: "Test Integration Location Split Child Renamed",
+          slug: `${P}split-child-renamed`,
+          type: "BUILDING",
+          description: "Edited by the General action.",
+          accessNote: "Edited by the General action.",
+        },
+      });
+
+      expect(edited.parentId).toBe(parent.id);
+    });
+
+    it("a Hierarchy-shaped update changes only parentId, preserving every other field", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const originalParent = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Original Parent",
+          slug: `${P}split-original-parent`,
+          type: "REGION",
+        },
+      });
+      const newParent = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split New Parent",
+          slug: `${P}split-new-parent`,
+          type: "REGION",
+        },
+      });
+      const version = await prisma.gameVersion.create({
+        data: { name: `${GV}-split` },
+      });
+      const verifiedAt = new Date();
+      const created = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Subject",
+          slug: `${P}split-subject`,
+          type: "DUNGEON",
+          parentId: originalParent.id,
+          description: "Original description.",
+          accessNote: "Original access note.",
+          image: "locations/original-image.png",
+          verifiedAt,
+          verifiedGameVersionId: version.id,
+        },
+      });
+
+      // The exact write shape updateLocationHierarchyAction uses: ONLY
+      // parentId — every other field is omitted entirely, so Prisma
+      // leaves name, slug, type, description, accessNote, image, and
+      // verification metadata completely untouched.
+      const reparented = await prisma.location.update({
+        where: { id: created.id },
+        data: { parentId: newParent.id },
+      });
+
+      expect(reparented.parentId).toBe(newParent.id);
+      expect(reparented.name).toBe(created.name);
+      expect(reparented.slug).toBe(created.slug);
+      expect(reparented.type).toBe(created.type);
+      expect(reparented.description).toBe(created.description);
+      expect(reparented.accessNote).toBe(created.accessNote);
+      expect(reparented.image).toBe(created.image);
+      expect(reparented.verifiedAt?.getTime()).toBe(verifiedAt.getTime());
+      expect(reparented.verifiedGameVersionId).toBe(version.id);
+    });
+
+    it("a Hierarchy-shaped update can remove the parent (set parentId to null)", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const parent = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Removable Parent",
+          slug: `${P}split-removable-parent`,
+          type: "REGION",
+        },
+      });
+      const child = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Removable Child",
+          slug: `${P}split-removable-child`,
+          type: "TOWN",
+          parentId: parent.id,
+        },
+      });
+
+      const cleared = await prisma.location.update({
+        where: { id: child.id },
+        data: { parentId: null },
+      });
+
+      expect(cleared.parentId).toBeNull();
+    });
+
+    it("a failed Hierarchy update (invalid parent id) leaves the location's data completely unchanged", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const location = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Failed Update",
+          slug: `${P}split-failed-update`,
+          type: "TOWN",
+          description: "Untouched description.",
+        },
+      });
+
+      // A parentId that does not resolve to any row is a genuine foreign
+      // key violation at the database level — the same failure mode the
+      // action's own pre-check (a missing `parent` lookup) exists to
+      // avoid ever reaching in the first place.
+      let caught: unknown = null;
+      try {
+        await prisma.location.update({
+          where: { id: location.id },
+          data: { parentId: "not-a-real-location-id" },
+        });
+      } catch (error) {
+        caught = error;
+      }
+      expect(isForeignKeyError(caught)).toBe(true);
+
+      const reloaded = await prisma.location.findUnique({
+        where: { id: location.id },
+      });
+      expect(reloaded?.parentId).toBeNull();
+      expect(reloaded?.description).toBe("Untouched description.");
+    });
+
+    it("reassigning a location's parent never mutates its own children", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const grandparent = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Grandparent",
+          slug: `${P}split-grandparent`,
+          type: "REGION",
+        },
+      });
+      const middle = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Middle",
+          slug: `${P}split-middle`,
+          type: "TOWN",
+        },
+      });
+      const leaf = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Leaf",
+          slug: `${P}split-leaf`,
+          type: "BUILDING",
+          parentId: middle.id,
+        },
+      });
+
+      // Reassign the middle node's own parent — its child (leaf) must
+      // stay linked to it throughout.
+      await prisma.location.update({
+        where: { id: middle.id },
+        data: { parentId: grandparent.id },
+      });
+
+      const reloadedLeaf = await prisma.location.findUnique({
+        where: { id: leaf.id },
+      });
+      expect(reloadedLeaf?.parentId).toBe(middle.id);
+    });
+
+    it("returns only direct children, ordered alphabetically, never a recursive descendant load", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const parent = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Ordered Parent",
+          slug: `${P}split-ordered-parent`,
+          type: "REGION",
+        },
+      });
+      // Created out of alphabetical order, so a correct query result can
+      // only come from an explicit orderBy, never insertion order.
+      const childZebra = await prisma.location.create({
+        data: {
+          name: "Zebra Sub-location",
+          slug: `${P}split-child-zebra`,
+          type: "TOWN",
+          parentId: parent.id,
+        },
+      });
+      const childAlpha = await prisma.location.create({
+        data: {
+          name: "Alpha Sub-location",
+          slug: `${P}split-child-alpha`,
+          type: "TOWN",
+          parentId: parent.id,
+        },
+      });
+      // A grandchild one level deeper — must never appear in the
+      // parent's own direct-children list.
+      await prisma.location.create({
+        data: {
+          name: "Test Integration Location Split Grandchild",
+          slug: `${P}split-grandchild`,
+          type: "BUILDING",
+          parentId: childAlpha.id,
+        },
+      });
+
+      // The exact query shape the Hierarchy tab page uses: direct
+      // children only, ordered by name.
+      const reloadedParent = await prisma.location.findUnique({
+        where: { id: parent.id },
+        include: { children: { orderBy: { name: "asc" } } },
+      });
+
+      expect(reloadedParent?.children.map((child) => child.id)).toEqual([
+        childAlpha.id,
+        childZebra.id,
+      ]);
+    });
+  });
+
   describe("gameplay-verification metadata", () => {
     it("preserves verification metadata through a normal edit and advances updatedAt", async () => {
       const prisma = await getVerifiedTestPrisma();

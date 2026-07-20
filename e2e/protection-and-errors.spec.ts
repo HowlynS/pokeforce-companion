@@ -95,6 +95,11 @@ test.describe("unauthenticated admin protection", () => {
     // workspace, following the Item/Recipe/Profession/Category workspaces'
     // navigation-foundation precedent.
     "/admin/locations/new",
+    // The Slice 9F.3 Hierarchy tab (parent assignment plus read-only
+    // sub-location content is still strictly admin-only); the auth gate
+    // runs in the admin layout before the page's own database lookup, so
+    // no seeded Location fixture is needed — this slug never resolves.
+    "/admin/locations/test-e2e-missing-location/hierarchy",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",
