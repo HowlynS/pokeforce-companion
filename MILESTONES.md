@@ -363,7 +363,8 @@ Slice 9E.1 (Category workspace navigation foundation) complete; Slice
 9E.2 (Category General editor conversion) complete; Slice 9E.3 (Category
 Items relationship tab) complete; Slice 9E.4 (Category Metadata tab)
 complete — the Category reference workspace is functionally complete;
-later slices not started
+Slice 9F.1 (Location workspace navigation foundation) complete; later
+slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1377,10 +1378,89 @@ workspace.
       functionally complete, matching the Item, Recipe, and Profession
       workspaces' shape; Locations remain unconverted
 
+### Slice 9F.1 — Location workspace navigation foundation (complete, 2026-07-20)
+
+- [x] Locations are the FIFTH production adoption of
+      `AdminWorkspace`/`RecordList`, via a new, independent thin wrapper —
+      `LocationWorkspace` (`src/components/admin/location-workspace.tsx`)
+      — over new pure helpers in `src/lib/admin/location-workspace.ts`
+      (`locationEditHref`, `locationDeleteHref`,
+      `normalizeLocationSearchQuery`, `withLocationSearchQuery`),
+      mirroring the Item/Recipe/Profession/Category workspaces' own
+      navigation-foundation slices exactly but sharing no code with any
+      of them
+- [x] `/admin/locations` is the workspace landing state (searchable
+      record list + restrained guidance; the embedded creation form and
+      admin table are gone); `/admin/locations/new` is the dedicated
+      creation route the form moved to unchanged (same fields — name,
+      slug, type, parent, description, access note, image,
+      `GameVersionVerificationControls`); `/admin/locations/[slug]/edit`
+      and `/admin/locations/[slug]/delete` render inside
+      `LocationWorkspace` unchanged otherwise (same PageHeader, same
+      form, same confirm-card)
+- [x] The edit page's toolbar gained a "Delete Location" link (replacing
+      the old table's per-row Delete action, mirroring the
+      Category/Profession precedent) — reachable unconditionally since
+      Locations carry no editor-only capacity guard to withhold it
+- [x] The record list shows the location name as primary text and
+      concise secondary context — the type label alone for a root
+      location, or `"{Type} · {Parent name}"` when a parent exists —
+      loaded via `prisma.location.findMany({ include: { parent: true }, orderBy: { name: "asc" } })`,
+      never a per-row follow-up query, so parent context introduces no
+      N+1 behavior; this slice deliberately does NOT build a tree
+      control, expandable hierarchy, or nested navigation — the list
+      stays a single flat, alphabetically ordered list exactly like
+      every other converted resource
+- [x] Search matches name OR slug, trimmed, case-insensitive,
+      server-rendered via `?q=`, plus a type-label match against the
+      small, fixed `LOCATION_TYPE_LABELS` lookup (clean and predictable,
+      never per-row or guessed); preserved through record links, the
+      create link, and Cancel/Delete links
+- [x] Because the create form moved, `createLocationAction`'s
+      validation/duplicate/verification/invalid-parent/image error
+      redirects now target `/admin/locations/new` instead of
+      `/admin/locations` — the success redirect and every other action
+      (`updateLocationAction`, `deleteLocationAction`), the Prisma
+      schema, image storage, Game Version verification,
+      hierarchy/cycle-prevention rules, and the child-location
+      delete-blocking rule are all byte-for-byte unchanged
+- [x] Pagination is deliberately deferred (zero seeded Location
+      fixtures — an even smaller baseline than Category's own 5)
+- [x] No Location tabs (General/Hierarchy/Acquisition Sources/Metadata
+      split), no shared editor primitives
+      (`EditorHeader`/`EditorTabs`/`ImagePanel`/`VerificationPanel`/
+      `TimestampsPanel`/sticky `EditorActions`) adopted this pass — the
+      existing `PageHeader` and plain-form presentation stayed as-is;
+      only the navigation wrapper moved; no tree control,
+      expandable hierarchy, or drag-and-drop was built
+- [x] Tests: `location-workspace.ts` unit coverage (query normalization,
+      preservation, slug-based edit/delete hrefs) mirroring the
+      Profession/Category workspaces' own navigation-foundation unit
+      tests; a rewritten `admin-locations.spec.ts` (workspace landing,
+      dedicated creation route, create/edit/delete lifecycle, gameplay
+      verification, duplicate-name rejection, cycle rejection,
+      child-location delete-blocking, sparse-location rendering,
+      unknown-slug 404, record-list search by name/slug/type label,
+      quick-switching with `q` preservation across create/cancel/delete
+      links, secondary-context rendering) replacing the old
+      table-row-based helpers with a `recordRow` RecordList helper
+      mirroring every other resource's own navigation-foundation
+      rewrite; `admin-location-images.spec.ts` updated for the same
+      route/helper changes; the unauthenticated-protection route list
+      extended with `/admin/locations/new`; two OTHER suites that use
+      `/admin/locations` purely as a fixture-creation helper
+      (`admin-item-sources.spec.ts`, `admin-item-how-to-obtain.spec.ts`)
+      updated to target `/admin/locations/new` instead, since the
+      embedded form they relied on moved
+- [x] No Location General/Hierarchy/Acquisition Sources/Metadata editor
+      conversion, no dashboard summaries, and no Route Hubs were started
+
 ### Remaining (not started)
 
-- [ ] Locations conversion, dashboard summaries, and Route Hubs — do not
-      begin until explicitly instructed in the milestone conversation
+- [ ] The Location reference workspace's own General/Hierarchy/
+      Acquisition Sources/Metadata editor conversion, dashboard
+      summaries, and Route Hubs — do not begin until explicitly
+      instructed in the milestone conversation
 
 ---
 

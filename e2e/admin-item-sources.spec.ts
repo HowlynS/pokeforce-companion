@@ -100,7 +100,7 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   // --- Set up the temporary Item, Location, and Profession --------------
   await createTemporaryItem(page, ITEM);
 
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Slug/).fill(LOCATION.slug);
   await page

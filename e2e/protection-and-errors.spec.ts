@@ -91,6 +91,10 @@ test.describe("unauthenticated admin protection", () => {
     // timestamps and Item count — is still strictly admin-only); the
     // seeded "materials" slug is only ever read here, never modified.
     "/admin/categories/materials/metadata",
+    // The Slice 9F.1 dedicated Location creation route inside the Location
+    // workspace, following the Item/Recipe/Profession/Category workspaces'
+    // navigation-foundation precedent.
+    "/admin/locations/new",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

@@ -3,13 +3,19 @@ import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
+import { LocationWorkspace } from "@/components/admin/location-workspace";
+import {
+  LOCATION_LIST_PATH,
+  normalizeLocationSearchQuery,
+  withLocationSearchQuery,
+} from "@/lib/admin/location-workspace";
 import { deleteLocationAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
 type DeleteLocationPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 function describeLinkedLocations(count: number): string {
@@ -25,7 +31,8 @@ export default async function DeleteLocationPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
+  const query = normalizeLocationSearchQuery(q);
 
   const location = await prisma.location.findUnique({
     where: { slug },
@@ -42,30 +49,44 @@ export default async function DeleteLocationPage({
   const childCount = location._count.children;
   const canDelete = childCount === 0;
 
+  // The delete confirmation inside the Location workspace, mirroring the
+  // edit route exactly: the record list marks this location selected and
+  // keeps the active search applied. Every field, redirect, server action,
+  // and the child-location delete-protection rule are unchanged — only the
+  // navigation wrapper moved.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Delete Location"
-        description={`Review before permanently deleting "${location.name}".`}
-      />
+    <LocationWorkspace
+      rawQuery={q}
+      selectedSlug={location.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Delete Location"
+            description={`Review before permanently deleting "${location.name}".`}
+          />
 
-      <p className="admin-toolbar">
-        <a href="/admin/locations" className="link-accent">
-          &larr; Back to Location Management
-        </a>
-      </p>
+          <p className="admin-toolbar">
+            <a
+              href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+              className="link-accent"
+            >
+              &larr; Back to Location Management
+            </a>
+          </p>
 
-      {error ? (
-        <p role="alert" className="banner banner-error">
-          {error === "linked_locations"
-            ? `This location cannot be deleted because it is assigned to ${describeLinkedLocations(
-                childCount
-              )}.`
-            : "Something went wrong."}
-        </p>
-      ) : null}
-
+          {error ? (
+            <p role="alert" className="banner banner-error">
+              {error === "linked_locations"
+                ? `This location cannot be deleted because it is assigned to ${describeLinkedLocations(
+                    childCount
+                  )}.`
+                : "Something went wrong."}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       <div className="confirm-card">
         <p>
           You are about to permanently delete <strong>{location.name}</strong>{" "}
@@ -101,11 +122,14 @@ export default async function DeleteLocationPage({
             </form>
           ) : null}
 
-          <a href="/admin/locations" className="btn btn-secondary">
+          <a
+            href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+            className="btn btn-secondary"
+          >
             Cancel
           </a>
         </div>
       </div>
-    </>
+    </LocationWorkspace>
   );
 }

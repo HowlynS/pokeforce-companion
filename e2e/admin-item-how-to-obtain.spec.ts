@@ -190,7 +190,7 @@ test("a source's location links to its public location page", async ({
   };
   await createTemporaryItem(page, ITEM);
 
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Slug/).fill(LOCATION.slug);
   await page

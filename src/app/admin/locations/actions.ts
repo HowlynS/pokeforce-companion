@@ -60,13 +60,13 @@ export async function createLocationAction(formData: FormData) {
   const parsed = parseLocationInput(formData);
 
   if (!parsed.ok) {
-    redirect(`/admin/locations?error=${parsed.error}`);
+    redirect(`/admin/locations/new?error=${parsed.error}`);
   }
 
   // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
   // live availability feedback queries, so the two can never disagree.
   if (await isLocationNameTaken(prisma, parsed.value.name)) {
-    redirect("/admin/locations?error=duplicate_name");
+    redirect("/admin/locations/new?error=duplicate_name");
   }
 
   // Resolved before any upload so a missing current Game Version rejects
@@ -78,7 +78,7 @@ export async function createLocationAction(formData: FormData) {
   const verification = await resolveVerificationStamp(prisma, formData);
 
   if (verification.failed) {
-    redirect(`/admin/locations?error=${verification.error}`);
+    redirect(`/admin/locations/new?error=${verification.error}`);
   }
 
   // A submitted parent id is never trusted blindly: it must correspond to
@@ -91,7 +91,7 @@ export async function createLocationAction(formData: FormData) {
     });
 
     if (!parent) {
-      redirect("/admin/locations?error=invalid_parent");
+      redirect("/admin/locations/new?error=invalid_parent");
     }
   }
 
@@ -104,13 +104,13 @@ export async function createLocationAction(formData: FormData) {
     const imageValidation = validateImageFile(imageFile);
 
     if (!imageValidation.ok) {
-      redirect(`/admin/locations?error=${imageValidation.error}`);
+      redirect(`/admin/locations/new?error=${imageValidation.error}`);
     }
 
     try {
       imagePath = await uploadImage("locations", imageFile);
     } catch {
-      redirect("/admin/locations?error=upload_failed");
+      redirect("/admin/locations/new?error=upload_failed");
     }
   }
 
@@ -135,7 +135,7 @@ export async function createLocationAction(formData: FormData) {
     await tryDeleteImage(imagePath);
 
     if (isUniqueConstraintError(error)) {
-      redirect("/admin/locations?error=duplicate");
+      redirect("/admin/locations/new?error=duplicate");
     }
     throw error;
   }

@@ -5,6 +5,13 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { GameVersionVerificationControls } from "@/components/admin/game-version-verification-controls";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
+import { LocationWorkspace } from "@/components/admin/location-workspace";
+import {
+  LOCATION_LIST_PATH,
+  locationDeleteHref,
+  normalizeLocationSearchQuery,
+  withLocationSearchQuery,
+} from "@/lib/admin/location-workspace";
 import { RecordNameField } from "@/components/admin/record-name-field";
 import { LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 import { updateLocationAction } from "../../actions";
@@ -36,7 +43,7 @@ const errorMessages: Record<string, string> = {
 
 type EditLocationPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function EditLocationPage({
@@ -48,8 +55,9 @@ export default async function EditLocationPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
+  const query = normalizeLocationSearchQuery(q);
 
   const [location, allLocations] = await Promise.all([
     prisma.location.findUnique({
@@ -80,26 +88,50 @@ export default async function EditLocationPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
+  // The edit route inside the Location workspace, following the
+  // Item/Recipe/Profession/Category workspaces' navigation-foundation
+  // precedent: the record list marks this location selected and keeps
+  // the active search applied for quick switching. Every field, redirect,
+  // server action, image behavior, verification rule, and hierarchy/
+  // cycle guard is unchanged — only the navigation wrapper moved. Delete
+  // is now reached from this page's toolbar (the old table's per-row
+  // Delete link is gone).
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Edit Location"
-        description={`Update details for "${location.name}".`}
-      />
+    <LocationWorkspace
+      rawQuery={q}
+      selectedSlug={location.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Edit Location"
+            description={`Update details for "${location.name}".`}
+          />
 
-      <p className="admin-toolbar">
-        <a href="/admin/locations" className="link-accent">
-          &larr; Back to Location Management
-        </a>
-      </p>
+          <nav className="admin-toolbar" aria-label="Location editor actions">
+            <a
+              href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+              className="link-accent"
+            >
+              &larr; Back to Location Management
+            </a>
 
-      {errorMessage ? (
-        <p role="alert" className="banner banner-error">
-          {errorMessage}
-        </p>
-      ) : null}
+            <a
+              href={locationDeleteHref(location.slug, query)}
+              className="link-danger"
+            >
+              Delete Location
+            </a>
+          </nav>
 
+          {errorMessage ? (
+            <p role="alert" className="banner banner-error">
+              {errorMessage}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       <form action={updateLocationAction} className="form-grid">
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
@@ -308,11 +340,14 @@ export default async function EditLocationPage({
             Save Changes
           </button>
 
-          <a href="/admin/locations" className="btn btn-secondary">
+          <a
+            href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+            className="btn btn-secondary"
+          >
             Cancel
           </a>
         </div>
       </form>
-    </>
+    </LocationWorkspace>
   );
 }

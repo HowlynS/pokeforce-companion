@@ -10,6 +10,15 @@
 // relation helper is needed, unlike Profession/Item). No image file is
 // ever provided in the non-image tests: the optional image input stays
 // empty, so no Storage object is written or deleted.
+//
+// Slice 9F.1 moved Location onto the shared admin workspace/record-list:
+// the embedded creation form is gone from /admin/locations (now the
+// workspace landing state), creation moved to the dedicated
+// /admin/locations/new route, and Delete is reached from the edit page's
+// toolbar instead of a per-row table action — mirroring the Item/Recipe/
+// Profession/Category workspaces' own navigation-foundation slices
+// exactly. Every CRUD, hierarchy, verification, and image behavior below
+// is otherwise unchanged.
 
 import { expect, test, type Page } from "@playwright/test";
 import {
@@ -102,25 +111,21 @@ test.afterAll(async () => {
   expect(remaining).toBe(0);
 });
 
-// Escapes a value for safe use inside a RegExp literal.
-function exactTextPattern(value: string): RegExp {
-  return new RegExp(`^${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
+// One row of the shared Location record list (Slice 9F.1), located by its
+// exact primary text inside the list's navigation landmark. The row link
+// itself opens the edit route — there is no separate per-row Edit/Delete
+// action any more (Delete is reached from the edit page's toolbar).
+function recordRow(page: Page, name: string) {
+  return page
+    .getByRole("navigation", { name: "Locations records" })
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
-// The admin table row for a location, located by its exact Name cell
-// SPECIFICALLY (the table's first column) — not just any cell, because the
-// Parent column can legitimately display another row's name (a parent
-// referenced by one of its children), which a plain "any cell matches"
-// filter would also match.
-function adminRow(page: Page, name: string) {
-  return page.getByRole("row").filter({
-    has: page.locator("td:nth-child(1)", { hasText: exactTextPattern(name) }),
-  });
-}
-
-// Fills the create form on /admin/locations (the page must already be
-// open) and submits it. The optional image input, parent, description, and
-// access note are only filled when supplied.
+// Fills the create form on /admin/locations/new (the page must already be
+// open — the dedicated creation route since Slice 9F.1) and submits it.
+// The optional image input, parent, description, and access note are only
+// filled when supplied.
 async function createLocationThroughForm(
   page: Page,
   data: {
@@ -152,9 +157,7 @@ async function createLocationThroughForm(
 
   await expect(page).toHaveURL("/admin/locations?success=created");
   await expect(page.getByRole("status")).toHaveText("Location created.");
-  await expect(
-    page.getByRole("cell", { name: data.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, data.name)).toBeVisible();
 }
 
 test("authenticated location admin access uses the saved storage state", async ({
@@ -166,6 +169,28 @@ test("authenticated location admin access uses the saved storage state", async (
   await expect(page).toHaveURL("/admin/locations");
   await expect(
     page.getByRole("heading", { level: 1, name: "Location Management" })
+  ).toBeVisible();
+
+  // The workspace landing state: the record list with its create link —
+  // the embedded creation form is gone from this page (Slice 9F.1,
+  // following the Item/Recipe/Profession/Category workspaces' own
+  // navigation-foundation precedent).
+  await expect(
+    page.getByRole("link", { name: "+ New location", exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Create Location", exact: true })
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
+});
+
+test("Create Location opens the dedicated creation route", async ({ page }) => {
+  await page.goto("/admin/locations");
+  await page.getByRole("link", { name: "+ New location", exact: true }).click();
+
+  await expect(page).toHaveURL("/admin/locations/new");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Create Location" })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Location", exact: true })
@@ -183,6 +208,8 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
     page.getByRole("heading", { level: 1, name: "Location Management" })
   ).toBeVisible();
 
+  await page.getByRole("link", { name: "+ New location", exact: true }).click();
+  await expect(page).toHaveURL("/admin/locations/new");
   await createLocationThroughForm(page, INITIAL);
 
   // Public detail page renders the new location with the no-image
@@ -205,9 +232,15 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
   // --- Edit (name, slug, type, description, access note; image untouched) -
+  // Quick switching: the record-list row itself is the edit link, and the
+  // open record is marked selected (aria-current) in the list.
   await page.goto("/admin/locations");
-  await adminRow(page, INITIAL.name).getByRole("link", { name: "Edit" }).click();
+  await recordRow(page, INITIAL.name).click();
   await expect(page).toHaveURL(`/admin/locations/${INITIAL.slug}/edit`);
+  await expect(recordRow(page, INITIAL.name)).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
   await expect(
     page.getByRole("heading", { level: 1, name: "Edit Location" })
   ).toBeVisible();
@@ -229,9 +262,7 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
 
   await expect(page).toHaveURL("/admin/locations?success=updated");
   await expect(page.getByRole("status")).toHaveText("Location updated.");
-  await expect(
-    page.getByRole("cell", { name: EDITED.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, EDITED.name)).toBeVisible();
 
   // The slug changed, so the original public route must be gone...
   const staleResponse = await page.goto(`/locations/${INITIAL.slug}`);
@@ -247,9 +278,13 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText(EDITED.accessNote)).toBeVisible();
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
-  // --- Delete -----------------------------------------------------------
+  // --- Delete -------------------------------------------------------------
+  // Delete is reached from the edit page's toolbar (the old table's
+  // per-row Delete link is gone).
   await page.goto("/admin/locations");
-  await adminRow(page, EDITED.name).getByRole("link", { name: "Delete" }).click();
+  await recordRow(page, EDITED.name).click();
+  await expect(page).toHaveURL(`/admin/locations/${EDITED.slug}/edit`);
+  await page.getByRole("link", { name: "Delete Location", exact: true }).click();
   await expect(page).toHaveURL(`/admin/locations/${EDITED.slug}/delete`);
   await expect(
     page.getByRole("heading", { level: 1, name: "Delete Location" })
@@ -264,9 +299,7 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
 
   await expect(page).toHaveURL("/admin/locations?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Location deleted.");
-  await expect(
-    page.getByRole("cell", { name: EDITED.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, EDITED.name)).toHaveCount(0);
 
   // Gone from the public site as well.
   const deletedResponse = await page.goto(`/locations/${EDITED.slug}`);
@@ -277,7 +310,7 @@ test("gameplay verification stamps the current game version, stays admin-only, a
   page,
 }) => {
   // --- Create unverified (checkbox untouched) ---------------------------
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, VERIFY_LOCATION);
 
   await page.goto(`/locations/${VERIFY_LOCATION.slug}`);
@@ -339,13 +372,14 @@ test("gameplay verification stamps the current game version, stays admin-only, a
 test("creating a location with a duplicate name is rejected server-side", async ({
   page,
 }) => {
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, {
     name: "Test E2E Location Duplicate Source",
     slug: "test-e2e-location-duplicate-source",
     type: "Route",
   });
 
+  await page.goto("/admin/locations/new");
   // Same name in different casing with surrounding whitespace: the server
   // trims the name and its duplicate check is case-insensitive, so this
   // must be rejected.
@@ -358,7 +392,7 @@ test("creating a location with a duplicate name is rejected server-side", async 
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/locations?error=duplicate_name");
+  await expect(page).toHaveURL("/admin/locations/new?error=duplicate_name");
   // Next.js injects a hidden route-announcer div that also has role=alert,
   // so the application's alert is located by its exact readable text.
   await expect(
@@ -372,16 +406,18 @@ test("creating a location with a duplicate name is rejected server-side", async 
   ).toBeVisible();
   // Only the one source location exists — the duplicate attempt wrote
   // nothing.
+  await page.goto("/admin/locations");
   await expect(
-    page.getByRole("cell", { name: "Test E2E Location Duplicate Source", exact: true })
+    recordRow(page, "Test E2E Location Duplicate Source")
   ).toHaveCount(1);
 });
 
 test("assigning a location's own descendant as its parent is rejected server-side", async ({
   page,
 }) => {
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, CYCLE_ANCESTOR);
+  await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, {
     ...CYCLE_DESCENDANT,
     parentName: CYCLE_ANCESTOR.name,
@@ -389,9 +425,8 @@ test("assigning a location's own descendant as its parent is rejected server-sid
 
   // Attempt to reassign the ancestor's parent to its own descendant, which
   // would create a cycle (ancestor -> descendant -> ancestor).
-  await adminRow(page, CYCLE_ANCESTOR.name)
-    .getByRole("link", { name: "Edit" })
-    .click();
+  await page.goto("/admin/locations");
+  await recordRow(page, CYCLE_ANCESTOR.name).click();
   await expect(page).toHaveURL(
     `/admin/locations/${CYCLE_ANCESTOR.slug}/edit`
   );
@@ -416,8 +451,9 @@ test("assigning a location's own descendant as its parent is rejected server-sid
 });
 
 test("deletion is blocked while a sub-location exists", async ({ page }) => {
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, BLOCKED_PARENT);
+  await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, {
     ...BLOCKED_CHILD,
     parentName: BLOCKED_PARENT.name,
@@ -436,10 +472,7 @@ test("deletion is blocked while a sub-location exists", async ({ page }) => {
   ).toHaveCount(0);
 
   // The safe workflow: remove the child first, then the parent.
-  await page.goto("/admin/locations");
-  await adminRow(page, BLOCKED_CHILD.name)
-    .getByRole("link", { name: "Delete" })
-    .click();
+  await page.goto(`/admin/locations/${BLOCKED_CHILD.slug}/delete`);
   await page
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
@@ -456,7 +489,7 @@ test("deletion is blocked while a sub-location exists", async ({ page }) => {
 test("a sparse location (no description, no image, no parent) renders without empty optional content", async ({
   page,
 }) => {
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, {
     name: "Test E2E Location Sparse",
     slug: "test-e2e-location-sparse",
@@ -487,6 +520,154 @@ test("a sparse location (no description, no image, no parent) renders without em
 test("visiting an unknown location slug returns 404", async ({ page }) => {
   const response = await page.goto("/locations/test-e2e-location-does-not-exist");
   expect(response?.status()).toBe(404);
+});
+
+test("record-list search filters by name, slug, and type, preserves the query across switching, and clears", async ({
+  page,
+}) => {
+  // Two temporary locations sharing the test prefix, so one query matches
+  // both; a third, differently-named location carries a distinct type so
+  // it can be found purely by its type label.
+  await page.goto("/admin/locations/new");
+  await createLocationThroughForm(page, {
+    name: "Test E2E Location Search A",
+    slug: "test-e2e-location-search-a",
+    type: "Town",
+  });
+  await page.goto("/admin/locations/new");
+  await createLocationThroughForm(page, {
+    name: "Test E2E Location Search B",
+    slug: "test-e2e-location-search-b",
+    type: "Route",
+  });
+  await page.goto("/admin/locations/new");
+  await createLocationThroughForm(page, {
+    name: "Test E2E Location Search C",
+    slug: "test-e2e-location-search-c",
+    type: "Dungeon",
+    parentName: "Test E2E Location Search A",
+  });
+
+  // --- Secondary row context shows type, and parent when present --------
+  await page.goto("/admin/locations");
+  await expect(
+    recordRow(page, "Test E2E Location Search A").getByText("Town", {
+      exact: true,
+    })
+  ).toBeVisible();
+  await expect(
+    recordRow(page, "Test E2E Location Search C").getByText(
+      "Dungeon · Test E2E Location Search A",
+      { exact: true }
+    )
+  ).toBeVisible();
+
+  // --- Search by NAME (trimmed, case-insensitive) -----------------------
+  await page
+    .getByRole("searchbox", { name: "Search locations" })
+    .fill("  test e2e location search  ");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/locations\?q=/);
+  await expect(recordRow(page, "Test E2E Location Search A")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Location Search B")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Location Search C")).toBeVisible();
+  await expect(page.getByText("3 matches")).toBeVisible();
+
+  // --- Quick switching keeps the query applied --------------------------
+  // Row hrefs carry the TRIMMED query, %20-encoded by the server helper.
+  await recordRow(page, "Test E2E Location Search A").click();
+  await expect(page).toHaveURL(
+    "/admin/locations/test-e2e-location-search-a/edit?q=test%20e2e%20location%20search"
+  );
+  await expect(
+    recordRow(page, "Test E2E Location Search A")
+  ).toHaveAttribute("aria-current", "page");
+
+  // Switch directly to another match: the list stays filtered, the
+  // selection follows, and the first record is no longer marked.
+  await recordRow(page, "Test E2E Location Search B").click();
+  await expect(page).toHaveURL(
+    "/admin/locations/test-e2e-location-search-b/edit?q=test%20e2e%20location%20search"
+  );
+  await expect(
+    recordRow(page, "Test E2E Location Search B")
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    recordRow(page, "Test E2E Location Search A")
+  ).not.toHaveAttribute("aria-current", "page");
+
+  // The create action, and this edit page's own Cancel/Delete links, keep
+  // the search context too.
+  await expect(
+    page.getByRole("link", { name: "+ New location", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/locations/new?q=test%20e2e%20location%20search"
+  );
+  await expect(
+    page.getByRole("link", { name: "Cancel", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/locations?q=test%20e2e%20location%20search"
+  );
+  await expect(
+    page.getByRole("link", { name: "Delete Location", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/locations/test-e2e-location-search-b/delete?q=test%20e2e%20location%20search"
+  );
+
+  // The delete confirmation page's own Cancel link keeps the query too.
+  await page
+    .getByRole("link", { name: "Delete Location", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    "/admin/locations/test-e2e-location-search-b/delete?q=test%20e2e%20location%20search"
+  );
+  await expect(
+    page.getByRole("link", { name: "Cancel", exact: true })
+  ).toHaveAttribute(
+    "href",
+    "/admin/locations?q=test%20e2e%20location%20search"
+  );
+
+  // --- Search by SLUG ---------------------------------------------------
+  await page.goto("/admin/locations");
+  await page
+    .getByRole("searchbox", { name: "Search locations" })
+    .fill("test-e2e-location-search-b");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(recordRow(page, "Test E2E Location Search B")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Location Search A")).toHaveCount(0);
+  await expect(page.getByText("1 match", { exact: true })).toBeVisible();
+
+  // --- Search by TYPE LABEL ----------------------------------------------
+  await page.goto("/admin/locations");
+  await page
+    .getByRole("searchbox", { name: "Search locations" })
+    .fill("Dungeon");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(recordRow(page, "Test E2E Location Search C")).toBeVisible();
+  await expect(recordRow(page, "Test E2E Location Search A")).toHaveCount(0);
+  await expect(recordRow(page, "Test E2E Location Search B")).toHaveCount(0);
+
+  // --- No-match state (distinct from the no-locations-at-all state) -----
+  await page
+    .getByRole("searchbox", { name: "Search locations" })
+    .fill("zzz-no-such-location");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  const emptyRegion = page.locator(".admin-record-empty");
+  await expect(emptyRegion).toContainText("No locations match");
+  await expect(emptyRegion).toContainText("zzz-no-such-location");
+  await expect(page.getByText("0 matches")).toBeVisible();
+
+  // --- Clear search returns the full list -------------------------------
+  await page.getByRole("link", { name: "Clear search", exact: true }).click();
+  await expect(page).toHaveURL("/admin/locations");
+  await expect(recordRow(page, "Test E2E Location Search A")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Clear search", exact: true })
+  ).toHaveCount(0);
 });
 
 test("seeded fixtures are unaffected and no test location remains", async () => {

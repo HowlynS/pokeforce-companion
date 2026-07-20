@@ -66,11 +66,13 @@ test.afterAll(async () => {
   expect(remaining).toBe(0);
 });
 
-// The admin table row for a location, located by its exact Name cell.
-function adminRow(page: Page, name: string) {
+// One row of the shared Location record list (Slice 9F.1), located by its
+// exact primary text inside the list's navigation landmark.
+function recordRow(page: Page, name: string) {
   return page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name, exact: true }) });
+    .getByRole("navigation", { name: "Locations records" })
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
 // Asserts a real rendered image: visible AND actually decoded (non-zero
@@ -95,7 +97,7 @@ async function createLocationWithImage(
   data: { name: string; slug: string },
   imageFile: string
 ) {
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
   await page
@@ -108,9 +110,7 @@ async function createLocationWithImage(
 
   await expect(page).toHaveURL("/admin/locations?success=created");
   await expect(page.getByRole("status")).toHaveText("Location created.");
-  await expect(
-    page.getByRole("cell", { name: data.name, exact: true })
-  ).toBeVisible();
+  await expect(recordRow(page, data.name)).toBeVisible();
 }
 
 test("creating a location with a valid PNG stores, serves, and renders it", async ({
@@ -240,7 +240,7 @@ test("removing the location image clears the row, deletes the object, and restor
 test("an unsupported file type is rejected and nothing is written", async ({
   page,
 }) => {
-  await page.goto("/admin/locations");
+  await page.goto("/admin/locations/new");
   await page
     .getByLabel("Name", { exact: true })
     .fill("Test E2E Location Image Invalid");
@@ -255,7 +255,9 @@ test("an unsupported file type is rejected and nothing is written", async ({
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/locations?error=invalid_image_type");
+  await expect(page).toHaveURL(
+    "/admin/locations/new?error=invalid_image_type"
+  );
   await expect(
     page
       .getByRole("alert")
@@ -282,7 +284,7 @@ test("an oversized image is rejected and nothing is written", async ({
   fs.writeFileSync(oversizedPath, Buffer.alloc(5 * 1024 * 1024 + 1));
 
   try {
-    await page.goto("/admin/locations");
+    await page.goto("/admin/locations/new");
     await page
       .getByLabel("Name", { exact: true })
       .fill("Test E2E Location Image Oversized");
@@ -295,7 +297,9 @@ test("an oversized image is rejected and nothing is written", async ({
       .getByRole("button", { name: "Create Location", exact: true })
       .click();
 
-    await expect(page).toHaveURL("/admin/locations?error=image_too_large");
+    await expect(page).toHaveURL(
+      "/admin/locations/new?error=image_too_large"
+    );
     await expect(
       page
         .getByRole("alert")
@@ -324,9 +328,12 @@ test("deleting the location also deletes its stored image object", async ({
   // Real confirmation flow (no sub-locations reference the temporary
   // location, so deletion is offered); the plain "Location deleted."
   // message also proves the image cleanup succeeded (a failed cleanup uses
-  // a distinct message).
-  await adminRow(page, LOCATION.name)
-    .getByRole("link", { name: "Delete" })
+  // a distinct message). Quick switching opens the edit route; Delete is
+  // reached from its toolbar (the old table's per-row Delete link is gone).
+  await recordRow(page, LOCATION.name).click();
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
+  await page
+    .getByRole("link", { name: "Delete Location", exact: true })
     .click();
   await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/delete`);
   await page
@@ -335,9 +342,7 @@ test("deleting the location also deletes its stored image object", async ({
 
   await expect(page).toHaveURL("/admin/locations?success=deleted");
   await expect(page.getByRole("status")).toHaveText("Location deleted.");
-  await expect(
-    page.getByRole("cell", { name: LOCATION.name, exact: true })
-  ).toHaveCount(0);
+  await expect(recordRow(page, LOCATION.name)).toHaveCount(0);
 
   // The row is gone and so is its exact Storage object.
   expect(await countE2eTestLocationImageRecords()).toBe(0);
