@@ -166,7 +166,7 @@ test("Create category opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
-test("Category editor: create shows only General; edit marks General active with Items real and Metadata inert; exactly one h1 renders; Timestamps render on edit only; no image or verification controls appear", async ({
+test("Category editor: create shows only General; edit marks General active with Items and Metadata both real; exactly one h1 renders; Timestamps render on edit only; no image or verification controls appear", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -200,7 +200,7 @@ test("Category editor: create shows only General; edit marks General active with
   });
 
   // --- Edit: exactly one h1 (the category's own name), General active,
-  // Items real and Metadata inert, Timestamps present (Created/Updated),
+  // Items and Metadata both real, Timestamps present (Created/Updated),
   // still no image or verification controls ------------------------------
   await recordRow(page, "Test E2E Category Tabs").click();
   await expect(page).toHaveURL("/admin/categories/test-e2e-category-tabs/edit");
@@ -218,17 +218,15 @@ test("Category editor: create shows only General; edit marks General active with
     editTabNav.getByRole("link", { name: "General", exact: true })
   ).toHaveAttribute("aria-current", "page");
   await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
-  // Items is a real tab since Slice 9E.3 — only Metadata remains a
-  // disabled placeholder.
+  // Items (Slice 9E.3) and Metadata (Slice 9E.4) are both real tabs now —
+  // no Category tab remains disabled.
   await expect(
     editTabNav.getByRole("link", { name: "Items", exact: true })
   ).toBeVisible();
   await expect(
-    editTabNav.getByText("Metadata", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
     editTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
+  await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(
     page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })

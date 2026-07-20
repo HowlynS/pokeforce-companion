@@ -21,6 +21,12 @@
 // `categoryEditorTabs` now takes an `active` key (General or Items)
 // exactly like `professionEditorTabs` does. Metadata remains the only
 // disabled placeholder.
+//
+// Slice 9E.4 (Metadata tab) made Metadata a real destination too,
+// completing the Category workspace: every Category tab is now a real
+// link — none renders as a disabled placeholder, matching the Item
+// (Slice 9B.8), Recipe (Slice 9C.4), and Profession (Slice 9D.4)
+// workspaces' finished shape.
 
 export const CATEGORY_LIST_PATH = "/admin/categories";
 export const CATEGORY_CREATE_PATH = "/admin/categories/new";
@@ -67,10 +73,20 @@ export function categoryItemsHref(slug: string, query: string): string {
   return withCategorySearchQuery(`${CATEGORY_LIST_PATH}/${slug}/items`, query);
 }
 
+/** The Metadata tab route for one category, preserving the query (Slice
+    9E.4) — read-only administrative information (timestamps and Item
+    count), never internal ids, mirroring `professionMetadataHref`. */
+export function categoryMetadataHref(slug: string, query: string): string {
+  return withCategorySearchQuery(
+    `${CATEGORY_LIST_PATH}/${slug}/metadata`,
+    query
+  );
+}
+
 /** Which Category editor tab is active — General (the record's own
-    fields) or Items (Slice 9E.3). Metadata is not yet implemented and
-    always renders as a disabled placeholder. */
-export type CategoryEditorTabKey = "general" | "items";
+    fields), Items (Slice 9E.3), or Metadata (Slice 9E.4). Every tab is
+    now a real destination — none renders as a disabled placeholder. */
+export type CategoryEditorTabKey = "general" | "items" | "metadata";
 
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
@@ -84,13 +100,13 @@ export type CategoryEditorTab = {
 
 /**
  * The Category editor's tab strip, shared by every route inside the
- * Category workspace that renders tabs (General edit, and the Items
- * route added in Slice 9E.3) — one function so every tab's href/active
- * state can never drift out of sync between pages. Metadata remains a
- * disabled placeholder (not yet implemented); the create page shows only
- * General with no placeholders at all (mirroring the Item/Recipe/
- * Profession workspaces' create-page precedent), so this helper stays
- * edit-only.
+ * Category workspace that renders tabs (General edit, Items, and the
+ * Metadata route added in Slice 9E.4) — one function so every tab's
+ * href/active state can never drift out of sync between pages. As of
+ * Slice 9E.4 every tab is a real link; none renders as a disabled
+ * placeholder. The create page shows only General with no placeholders
+ * at all (mirroring the Item/Recipe/Profession workspaces' create-page
+ * precedent), so this helper stays edit-only.
  */
 export function categoryEditorTabs(
   slug: string,
@@ -108,6 +124,10 @@ export function categoryEditorTabs(
       href: categoryItemsHref(slug, query),
       active: active === "items",
     },
-    { label: "Metadata", href: "", active: false, disabled: true },
+    {
+      label: "Metadata",
+      href: categoryMetadataHref(slug, query),
+      active: active === "metadata",
+    },
   ];
 }

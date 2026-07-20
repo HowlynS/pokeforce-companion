@@ -87,6 +87,10 @@ test.describe("unauthenticated admin protection", () => {
     // strictly admin-only); the seeded "materials" slug is only ever
     // read here, never modified.
     "/admin/categories/materials/items",
+    // The Slice 9E.4 Metadata tab (read-only administrative information —
+    // timestamps and Item count — is still strictly admin-only); the
+    // seeded "materials" slug is only ever read here, never modified.
+    "/admin/categories/materials/metadata",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

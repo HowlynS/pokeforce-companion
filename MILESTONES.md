@@ -361,7 +361,8 @@ Recipes relationship tab) complete; Slice 9D.4 (Profession Metadata tab)
 complete — the Profession reference workspace is functionally complete;
 Slice 9E.1 (Category workspace navigation foundation) complete; Slice
 9E.2 (Category General editor conversion) complete; Slice 9E.3 (Category
-Items relationship tab) complete — Category Metadata remains pending;
+Items relationship tab) complete; Slice 9E.4 (Category Metadata tab)
+complete — the Category reference workspace is functionally complete;
 later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
@@ -1324,11 +1325,62 @@ workspace.
       the new route
 - [x] No Metadata content, and no other resource workspace was converted
 
+### Slice 9E.4 — Category Metadata tab (complete, 2026-07-20)
+
+- [x] `/admin/categories/[slug]/metadata` is a new, real, read-only tab
+      inside `CategoryWorkspace`, completing the Category workspace —
+      mirroring the Item (Slice 9B.8), Recipe (Slice 9C.4), and
+      Profession (Slice 9D.4) Metadata tabs' shape but deliberately
+      leaner, since Categories carry no image or gameplay-verification
+      behavior
+- [x] `categoryEditorTabs`'s `CategoryEditorTabKey` now accepts
+      `"metadata"`; no Category tab renders as a disabled placeholder any
+      more — every one of the three (General, Items, Metadata) is a real
+      link, via the new `categoryMetadataHref(slug, query)` helper
+- [x] `CategoryWorkspace`'s existing `recordHref` prop (introduced in
+      Slice 9E.3) takes `categoryMetadataHref` so quick-switching
+      categories while on this tab stays on the Metadata tab, with `q`
+      preserved
+- [x] One restrained query —
+      `prisma.category.findUnique({ include: { _count: { select: { items: true } } } })`
+      — an Item `_count` only, never the full `items` relation (the
+      Items tab already covers that relationship); no `gameVersions`
+      query at all, unlike Item/Recipe/Profession's own Metadata tabs
+- [x] Content is a `ContextPanel` titled "Category" showing the Item
+      count (always rendered — zero is itself meaningful administrative
+      context); `TimestampsPanel` (created/updated dates, no ids, no
+      Verified row since Categories carry no verification stamp) — no
+      `VerificationPanel`, `ImagePanel`, or `GameVersionVerificationControls`
+      exist anywhere on this tab
+- [x] The description field is deliberately NOT repeated here — it is an
+      editable General field, and this tab exists to show administrative
+      facts General doesn't, not to duplicate it
+- [x] No form, picker, checkbox, submit button, file input, hidden
+      mutation field, image control, verification control, or
+      Item-relationship control exists anywhere on this tab; no database
+      id, foreign key, or storage path is ever surfaced
+- [x] General/Items actions, the Prisma schema, storage, and
+      authorization are all unchanged
+- [x] Tests: `categoryEditorTabs`/`categoryMetadataHref` unit coverage
+      (Metadata active/real, query preservation, exactly-one-active
+      across all three tabs, no disabled tabs remain); a new dedicated
+      "admin-category-metadata" E2E spec (direct route access,
+      created/updated dates, accurate Item count including zero, tab
+      navigation, quick switching with `q` preservation, no
+      image/verification content, read-only-content assertions,
+      unknown-slug 404) mirroring `admin-profession-metadata.spec.ts`'s
+      structure minus every verification-specific assertion; the
+      existing Category editor E2E test and the Items-tab navigation
+      test updated for Metadata becoming a real tab, and the
+      unauthenticated-protection route list extended with the new route
+- [x] The Category reference workspace (General, Items, Metadata) is now
+      functionally complete, matching the Item, Recipe, and Profession
+      workspaces' shape; Locations remain unconverted
+
 ### Remaining (not started)
 
-- [ ] Category Metadata content, Locations conversion, dashboard
-      summaries, and Route Hubs — do not begin until explicitly
-      instructed in the milestone conversation
+- [ ] Locations conversion, dashboard summaries, and Route Hubs — do not
+      begin until explicitly instructed in the milestone conversation
 
 ---
 
