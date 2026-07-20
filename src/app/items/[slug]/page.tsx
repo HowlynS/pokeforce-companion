@@ -45,8 +45,21 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
         include: { recipe: true },
         orderBy: { recipe: { name: "asc" } },
       },
+      // Only the fields the public "How to obtain" section needs — never
+      // verification/Game Version fields, and never a database id beyond
+      // the source's own (used only as this list's React key, never
+      // rendered). Matches the same restrained shape the Location page's
+      // own "Obtainable Items" query uses (Slice 10A).
       acquisitionSources: {
-        include: { location: true, profession: true },
+        select: {
+          id: true,
+          type: true,
+          sourceLabel: true,
+          quantity: true,
+          notes: true,
+          location: { select: { name: true, slug: true } },
+          profession: { select: { name: true } },
+        },
         orderBy: { createdAt: "asc" },
       },
     },

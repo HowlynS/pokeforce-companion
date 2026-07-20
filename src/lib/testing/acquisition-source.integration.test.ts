@@ -820,4 +820,153 @@ describe("acquisition sources (integration)", () => {
       expect(groupObtainableItemsByType(sources)).toEqual([]);
     });
   });
+
+  describe("public Item How to obtain query (Slice 10B)", () => {
+    // The exact restrained `select` shape the public Item detail page uses
+    // (tightened in Slice 10B to match the Location page's own Slice 10A
+    // shape) — never a database id beyond the source's own, never
+    // verification/Game Version fields.
+    async function loadHowToObtainSources(itemId: string) {
+      const prisma = await getVerifiedTestPrisma();
+      const reloaded = await prisma.item.findUnique({
+        where: { id: itemId },
+        include: {
+          acquisitionSources: {
+            select: {
+              id: true,
+              type: true,
+              sourceLabel: true,
+              quantity: true,
+              notes: true,
+              location: { select: { name: true, slug: true } },
+              profession: { select: { name: true } },
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      });
+      return reloaded?.acquisitionSources ?? [];
+    }
+
+    it("loads the linked Location's name and slug alongside the source", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item How To Obtain Location",
+          slug: `${P}item-hto-location`,
+        },
+      });
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location How To Obtain",
+          slug: `${P}location-hto`,
+          type: "ROUTE",
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: item.id, type: "FISHING", locationId: location.id },
+      });
+
+      const sources = await loadHowToObtainSources(item.id);
+      expect(sources).toHaveLength(1);
+      expect(sources[0].location).toEqual({
+        name: location.name,
+        slug: location.slug,
+      });
+    });
+
+    it("keeps a source with no Location valid, with a null location field", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item How To Obtain No Location",
+          slug: `${P}item-hto-no-location`,
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: item.id, type: "REWARD" },
+      });
+
+      const sources = await loadHowToObtainSources(item.id);
+      expect(sources).toHaveLength(1);
+      expect(sources[0].location).toBeNull();
+    });
+
+    it("keeps sources for different Locations distinct", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item How To Obtain Multi Location",
+          slug: `${P}item-hto-multi-location`,
+        },
+      });
+      const locationA = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location How To Obtain A",
+          slug: `${P}location-hto-a`,
+          type: "TOWN",
+        },
+      });
+      const locationB = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location How To Obtain B",
+          slug: `${P}location-hto-b`,
+          type: "TOWN",
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: item.id, type: "FISHING", locationId: locationA.id },
+      });
+      await prisma.acquisitionSource.create({
+        data: { itemId: item.id, type: "MINING", locationId: locationB.id },
+      });
+
+      const sources = await loadHowToObtainSources(item.id);
+      expect(sources).toHaveLength(2);
+      const locationSlugs = sources.map((source) => source.location?.slug).sort();
+      expect(locationSlugs).toEqual([locationA.slug, locationB.slug].sort());
+    });
+
+    it("returns the linked Profession's name alongside a Location, with nothing extra", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const item = await prisma.item.create({
+        data: {
+          name: "Acquisition Test Item How To Obtain Profession",
+          slug: `${P}item-hto-profession`,
+        },
+      });
+      const location = await prisma.location.create({
+        data: {
+          name: "Acquisition Test Location How To Obtain Profession",
+          slug: `${P}location-hto-profession`,
+          type: "BUILDING",
+        },
+      });
+      const profession = await prisma.profession.create({
+        data: {
+          name: "Acquisition Test Profession How To Obtain",
+          slug: `${P}profession-hto`,
+        },
+      });
+      await prisma.acquisitionSource.create({
+        data: {
+          itemId: item.id,
+          type: "COOKING",
+          locationId: location.id,
+          professionId: profession.id,
+        },
+      });
+
+      const sources = await loadHowToObtainSources(item.id);
+      expect(sources[0].profession).toEqual({ name: profession.name });
+      expect(sources[0].location).toEqual({
+        name: location.name,
+        slug: location.slug,
+      });
+    });
+  });
 });

@@ -354,3 +354,185 @@ test("a CRAFTING acquisition source coexists with the structured Produced by rec
     page.getByText("Notes: Also craftable at any workbench.")
   ).toBeVisible();
 });
+
+// --- Slice 10B: Item -> Location bidirectional navigation audit ---------
+
+test("a source with a location AND a source label still exposes a working location link", async ({
+  page,
+}) => {
+  const ITEM = {
+    name: "Test E2E Acqsrc Item Location Plus Label",
+    slug: "test-e2e-acqsrc-item-location-plus-label",
+  };
+  const LOCATION = {
+    name: "Test E2E Acqsrc Location Plus Label",
+    slug: "test-e2e-acqsrc-location-plus-label",
+    type: "Route",
+  };
+  await createTemporaryItem(page, ITEM);
+
+  await page.goto("/admin/locations/new");
+  await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
+  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page
+    .getByRole("combobox", { name: "Type", exact: true })
+    .selectOption({ label: LOCATION.type });
+  await page
+    .getByRole("button", { name: "Create Location", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/locations?success=created");
+
+  await addSourceThroughForm(page, ITEM.slug, {
+    type: "Fishing",
+    locationName: LOCATION.name,
+    sourceLabel: "Old Pier",
+  });
+
+  await page.goto(`/items/${ITEM.slug}`);
+  // The location, not the source label, is still the strongest identifying
+  // fact and the card's own link target — the source label becomes an
+  // additional description fact instead of replacing the link.
+  const locationCard = cardLink(page, LOCATION.name);
+  await expect(locationCard).toBeVisible();
+  await expect(locationCard).toHaveAttribute(
+    "href",
+    `/locations/${LOCATION.slug}`
+  );
+  await expect(page.getByText("Source: Old Pier")).toBeVisible();
+});
+
+test("a source with a location, profession, quantity, and notes all set still exposes a working location link", async ({
+  page,
+}) => {
+  const ITEM = {
+    name: "Test E2E Acqsrc Item Location Plus All",
+    slug: "test-e2e-acqsrc-item-location-plus-all",
+  };
+  const LOCATION = {
+    name: "Test E2E Acqsrc Location Plus All",
+    slug: "test-e2e-acqsrc-location-plus-all",
+    type: "Town",
+  };
+  const PROFESSION = {
+    name: "Test E2E Acqsrc Profession Location Plus All",
+    slug: "test-e2e-acqsrc-profession-location-plus-all",
+  };
+  await createTemporaryItem(page, ITEM);
+
+  await page.goto("/admin/locations/new");
+  await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
+  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page
+    .getByRole("combobox", { name: "Type", exact: true })
+    .selectOption({ label: LOCATION.type });
+  await page
+    .getByRole("button", { name: "Create Location", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/locations?success=created");
+
+  await page.goto("/admin/professions/new");
+  await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
+  await page.getByLabel(/^Slug/).fill(PROFESSION.slug);
+  await page
+    .getByRole("button", { name: "Create Profession", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/professions?success=created");
+
+  await addSourceThroughForm(page, ITEM.slug, {
+    type: "Cooking",
+    locationName: LOCATION.name,
+    professionName: PROFESSION.name,
+    quantity: "1-2",
+    notes: "Best at dawn.",
+  });
+
+  await page.goto(`/items/${ITEM.slug}`);
+  const locationCard = cardLink(page, LOCATION.name);
+  await expect(locationCard).toBeVisible();
+  await expect(locationCard).toHaveAttribute(
+    "href",
+    `/locations/${LOCATION.slug}`
+  );
+  await expect(page.getByText(`Profession: ${PROFESSION.name}`)).toBeVisible();
+  await expect(page.getByText("Quantity: 1-2")).toBeVisible();
+  await expect(page.getByText("Notes: Best at dawn.")).toBeVisible();
+
+  // Keyboard reachability: the location link is a real, focusable anchor
+  // that navigates on Enter, not merely mouse-clickable.
+  await locationCard.focus();
+  await expect(locationCard).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(`/locations/${LOCATION.slug}`);
+});
+
+test("multiple distinct sources at the same location remain understandable and both link correctly", async ({
+  page,
+}) => {
+  const ITEM = {
+    name: "Test E2E Acqsrc Item Same Location Multi",
+    slug: "test-e2e-acqsrc-item-same-location-multi",
+  };
+  const LOCATION = {
+    name: "Test E2E Acqsrc Location Same Multi",
+    slug: "test-e2e-acqsrc-location-same-multi",
+    type: "Dungeon",
+  };
+  await createTemporaryItem(page, ITEM);
+
+  await page.goto("/admin/locations/new");
+  await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
+  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page
+    .getByRole("combobox", { name: "Type", exact: true })
+    .selectOption({ label: LOCATION.type });
+  await page
+    .getByRole("button", { name: "Create Location", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/locations?success=created");
+
+  // Two distinct sources at the SAME location — same type, different
+  // notes. The Item page never dedupes by location (only the Location
+  // page's own Obtainable Items section dedupes by item), so both remain
+  // their own cards; they must stay distinguishable via their own facts.
+  await addSourceThroughForm(page, ITEM.slug, {
+    type: "Mining",
+    locationName: LOCATION.name,
+    notes: "Common near the entrance.",
+  });
+  await addSourceThroughForm(page, ITEM.slug, {
+    type: "Mining",
+    locationName: LOCATION.name,
+    notes: "Rare in the deepest chamber.",
+  });
+
+  await page.goto(`/items/${ITEM.slug}`);
+  const locationCards = page.getByRole("link").filter({
+    has: cardTitle(page, LOCATION.name),
+  });
+  await expect(locationCards).toHaveCount(2);
+  for (const card of await locationCards.all()) {
+    await expect(card).toHaveAttribute("href", `/locations/${LOCATION.slug}`);
+  }
+  await expect(page.getByText("Common near the entrance.", { exact: false })).toBeVisible();
+  await expect(
+    page.getByText("Rare in the deepest chamber.", { exact: false })
+  ).toBeVisible();
+});
+
+test("no game version or verification information appears in the how to obtain section", async ({
+  page,
+}) => {
+  const ITEM = {
+    name: "Test E2E Acqsrc Item No Verification Text",
+    slug: "test-e2e-acqsrc-item-no-verification-text",
+  };
+  await createTemporaryItem(page, ITEM);
+  await addSourceThroughForm(page, ITEM.slug, { type: "Foraging" });
+
+  await page.goto(`/items/${ITEM.slug}`);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "How to obtain", exact: true })
+  ).toBeVisible();
+  await expect(page.getByText(/verified/i)).toHaveCount(0);
+  await expect(page.getByText(/game version/i)).toHaveCount(0);
+});

@@ -369,3 +369,34 @@ test("existing description, hierarchy, and notFound behavior remain intact", asy
   );
   expect(response?.status()).toBe(404);
 });
+
+// --- Slice 10B: Location -> Item bidirectional navigation audit ---------
+
+test("the item link is a real, focusable anchor that navigates on Enter, not merely mouse-clickable", async ({
+  page,
+}) => {
+  const LOCATION = {
+    name: "Test E2E Acqsrc Location Keyboard Nav",
+    slug: "test-e2e-acqsrc-location-keyboard-nav",
+    type: "Region",
+  };
+  const ITEM = {
+    name: "Test E2E Acqsrc Item Keyboard Nav",
+    slug: "test-e2e-acqsrc-item-keyboard-nav",
+  };
+  await createTemporaryLocation(page, LOCATION);
+  await createTemporaryItem(page, ITEM);
+  await addSourceThroughForm(page, ITEM.slug, {
+    type: "Foraging",
+    locationName: LOCATION.name,
+  });
+
+  await page.goto(`/locations/${LOCATION.slug}`);
+  const itemCard = cardLink(page, ITEM.name);
+  await expect(itemCard).toBeVisible();
+
+  await itemCard.focus();
+  await expect(itemCard).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(`/items/${ITEM.slug}`);
+});
