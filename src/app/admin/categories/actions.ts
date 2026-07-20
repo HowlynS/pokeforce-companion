@@ -19,20 +19,20 @@ export async function createCategoryAction(formData: FormData) {
   const parsed = parseCategoryInput(formData);
 
   if (!parsed.ok) {
-    redirect(`/admin/categories?error=${parsed.error}`);
+    redirect(`/admin/categories/new?error=${parsed.error}`);
   }
 
   // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
   // live availability feedback queries, so the two can never disagree.
   if (await isCategoryNameTaken(prisma, parsed.value.name)) {
-    redirect("/admin/categories?error=duplicate_name");
+    redirect("/admin/categories/new?error=duplicate_name");
   }
 
   try {
     await prisma.category.create({ data: parsed.value });
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      redirect("/admin/categories?error=duplicate");
+      redirect("/admin/categories/new?error=duplicate");
     }
     throw error;
   }

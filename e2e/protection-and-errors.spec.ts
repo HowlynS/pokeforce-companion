@@ -79,6 +79,10 @@ test.describe("unauthenticated admin protection", () => {
     // timestamps and verification — is still strictly admin-only); the
     // seeded "smithing" slug is only ever read here, never modified.
     "/admin/professions/smithing/metadata",
+    // The dedicated Category creation route inside the Category
+    // workspace, following the Item/Recipe/Profession workspaces'
+    // navigation-foundation precedent.
+    "/admin/categories/new",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

@@ -1,17 +1,14 @@
-import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
-import { prisma } from "@/lib/db";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
   CATEGORY_LIST_PATH,
-  categoryDeleteHref,
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
 import { RecordNameField } from "@/components/admin/record-name-field";
-import { updateCategoryAction } from "../../actions";
-import { checkCategoryNameAvailability } from "../../name-availability";
+import { createCategoryAction } from "../actions";
+import { checkCategoryNameAvailability } from "../name-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -23,64 +20,47 @@ const errorMessages: Record<string, string> = {
   duplicate_name: "A category with that name already exists.",
 };
 
-type EditCategoryPageProps = {
-  params: Promise<{ slug: string }>;
+type NewCategoryPageProps = {
   searchParams: Promise<{ q?: string; error?: string }>;
 };
 
-export default async function EditCategoryPage({
-  params,
+export default async function NewCategoryPage({
   searchParams,
-}: EditCategoryPageProps) {
+}: NewCategoryPageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
   await requireAdminUser();
 
-  const { slug } = await params;
   const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const query = normalizeCategorySearchQuery(q);
 
-  const category = await prisma.category.findUnique({ where: { slug } });
-
-  if (!category) {
-    notFound();
-  }
-
-  // The edit route inside the Category workspace, following the
-  // Item/Recipe/Profession workspaces' navigation-foundation precedent:
-  // the record list marks this category selected and keeps the active
-  // search applied for quick switching. Every field, redirect, and
-  // server action is unchanged — only the navigation wrapper moved.
-  // Delete is now reached from this page's toolbar (the old table's
-  // per-row Delete link is gone).
+  // The dedicated creation page, following the Item/Recipe/Profession
+  // workspaces' navigation-foundation precedent: the form previously
+  // embedded at the bottom of /admin/categories, moved here with
+  // unchanged action, fields, and validation. No row is selected in the
+  // list while creating. Field grouping, EditorHeader/tabs/sticky
+  // EditorActions are deliberately NOT adopted in this pass — only the
+  // navigation/wrapper moved.
   return (
     <CategoryWorkspace
       rawQuery={q}
-      selectedSlug={category.slug}
       header={
         <>
           <PageHeader
             eyebrow="Admin"
-            title="Edit Category"
-            description={`Update details for "${category.name}".`}
+            title="Create Category"
+            description="Add a new category to the wiki."
           />
 
-          <nav className="admin-toolbar" aria-label="Category editor actions">
+          <p className="admin-toolbar">
             <a
               href={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
               className="link-accent"
             >
               &larr; Back to Category Management
             </a>
-
-            <a
-              href={categoryDeleteHref(category.slug, query)}
-              className="link-danger"
-            >
-              Delete Category
-            </a>
-          </nav>
+          </p>
 
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
@@ -90,45 +70,31 @@ export default async function EditCategoryPage({
         </>
       }
     >
-      <form action={updateCategoryAction} className="form-grid">
-        <input type="hidden" name="id" value={category.id} />
-        <input type="hidden" name="originalSlug" value={category.slug} />
-
-        {/* Client-enhanced Name field with live duplicate feedback. The
-            saved name counts as "current" (never queried), and the record's
-            own id is excluded server-side so it cannot conflict with
-            itself; updateCategoryAction stays the authoritative check. */}
+      <form action={createCategoryAction} className="form-grid">
+        {/* Client-enhanced Name field with live duplicate feedback; the
+            submission-time duplicate check in createCategoryAction
+            remains the authoritative protection. */}
         <RecordNameField
           checkAvailabilityAction={checkCategoryNameAvailability}
           takenText="A category with that name already exists."
           regionId="category-name-availability"
-          originalName={category.name}
-          excludeId={category.id}
         />
 
         <label className="form-field">
-          <span className="form-field-label">Slug</span>
-          <input
-            type="text"
-            name="slug"
-            defaultValue={category.slug}
-            className="form-input"
-          />
+          <span className="form-field-label">
+            Slug (optional — generated from name if left blank)
+          </span>
+          <input type="text" name="slug" className="form-input" />
         </label>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>
-          <textarea
-            name="description"
-            rows={3}
-            defaultValue={category.description ?? ""}
-            className="form-input"
-          />
+          <textarea name="description" rows={3} className="form-input" />
         </label>
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary">
-            Save Changes
+            Create Category
           </button>
 
           <a

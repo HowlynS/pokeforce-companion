@@ -38,7 +38,7 @@ type ResourceCase = {
 const RESOURCES: ResourceCase[] = [
   {
     label: "Category",
-    createUrl: "/admin/categories",
+    createUrl: "/admin/categories/new",
     editUrl: "/admin/categories/materials/edit",
     regionId: "#category-name-availability",
     seededName: "Materials",
@@ -47,7 +47,7 @@ const RESOURCES: ResourceCase[] = [
     uniqueName: "Test E2E Unique Category Feedback",
     takenText: "A category with that name already exists.",
     createButton: "Create Category",
-    duplicateErrorUrl: "/admin/categories?error=duplicate_name",
+    duplicateErrorUrl: "/admin/categories/new?error=duplicate_name",
   },
   {
     label: "Profession",

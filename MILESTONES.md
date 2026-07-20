@@ -359,7 +359,9 @@ the Recipe reference workspace is functionally complete; Slice 9D.1
 (Profession General editor conversion) complete; Slice 9D.3 (Profession
 Recipes relationship tab) complete; Slice 9D.4 (Profession Metadata tab)
 complete — the Profession reference workspace is functionally complete;
-later slices not started
+Slice 9E.1 (Category workspace navigation foundation) complete — the
+Category General/Items/Metadata editor conversion remains pending; later
+slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1178,11 +1180,69 @@ workspace.
       now functionally complete, matching the Item and Recipe workspaces'
       shape; no other resource workspace was converted
 
+### Slice 9E.1 — Category workspace navigation foundation (complete, 2026-07-20)
+
+- [x] Categories are the FOURTH production adoption of
+      `AdminWorkspace`/`RecordList`, via a new, independent thin wrapper —
+      `CategoryWorkspace` (`src/components/admin/category-workspace.tsx`)
+      — over new pure helpers in `src/lib/admin/category-workspace.ts`
+      (`categoryEditHref`, `categoryDeleteHref`,
+      `normalizeCategorySearchQuery`, `withCategorySearchQuery`),
+      mirroring the Item/Recipe/Profession workspaces' own
+      navigation-foundation slices exactly but sharing no code with any
+      of them
+- [x] `/admin/categories` is the workspace landing state (searchable
+      record list + restrained guidance; the embedded creation form and
+      admin table are gone); `/admin/categories/new` is the dedicated
+      creation route the form moved to unchanged (same fields — name,
+      slug, description); `/admin/categories/[slug]/edit` and
+      `/admin/categories/[slug]/delete` render inside `CategoryWorkspace`
+      unchanged otherwise (same PageHeader, same form, same confirm-card)
+- [x] The edit page's toolbar gained a "Delete Category" link (replacing
+      the old table's per-row Delete action, mirroring the Profession
+      precedent) — reachable unconditionally since Categories carry no
+      capacity guard to withhold it
+- [x] The record list shows the category name as primary text and its
+      linked-item count ("N items") as secondary context, loaded via
+      `prisma.category.findMany({ include: { _count: { select: { items: true } } } })`
+      — never the full `items` relation, so the list never triggers an
+      N+1 query; search matches name OR slug, trimmed, case-insensitive,
+      server-rendered via `?q=`, preserved through record links, the
+      create link, and Cancel/Delete links
+- [x] Because the create form moved, `createCategoryAction`'s
+      validation/duplicate error redirects now target
+      `/admin/categories/new` instead of `/admin/categories` — the
+      success redirect and every other action (`updateCategoryAction`,
+      `deleteCategoryAction`), the Prisma schema, and the item-linked
+      delete-blocking rule are all byte-for-byte unchanged
+- [x] Pagination is deliberately deferred (five seeded categories, the
+      smallest record count of any converted resource so far)
+- [x] No Category tabs, no Items relationship tab, no shared editor
+      primitives (`EditorHeader`/`EditorTabs`/`TimestampsPanel`/sticky
+      `EditorActions`) adopted this pass — the existing `PageHeader` and
+      plain-form presentation stayed as-is; only the navigation wrapper
+      moved
+- [x] Tests: `category-workspace.ts` unit coverage (query normalization,
+      preservation, slug-based edit/delete hrefs) mirroring the
+      Profession workspace's own navigation-foundation unit tests; a
+      rewritten `admin-categories.spec.ts` (workspace landing, dedicated
+      creation route, create/edit/delete lifecycle, duplicate-name
+      rejection, record-list search/quick-switching/`q` preservation, and
+      a NEW linked-Item delete-blocking test using a new
+      `createTemporaryItemForCategory`/`removeTemporaryItemForCategory`
+      DB helper pair mirroring the Profession/Recipe relation-helper
+      pattern); `admin-name-feedback.spec.ts`'s Category case updated for
+      the new creation route and error redirect; the
+      unauthenticated-protection route list extended with
+      `/admin/categories/new`
+- [x] No Category General/Items/Metadata editor conversion, no Locations
+      conversion, no dashboard summaries, and no Route Hubs were started
+
 ### Remaining (not started)
 
-- [ ] Every other resource workspace conversion (Categories, Locations),
-      dashboard summaries, and Route Hubs — do not begin until explicitly
-      instructed in the milestone conversation
+- [ ] The Category General/Items/Metadata editor conversion, Locations
+      conversion, dashboard summaries, and Route Hubs — do not begin
+      until explicitly instructed in the milestone conversation
 
 ---
 

@@ -2,13 +2,19 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { CategoryWorkspace } from "@/components/admin/category-workspace";
+import {
+  CATEGORY_LIST_PATH,
+  normalizeCategorySearchQuery,
+  withCategorySearchQuery,
+} from "@/lib/admin/category-workspace";
 import { deleteCategoryAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
 type DeleteCategoryPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 function describeLinkedItems(count: number): string {
@@ -24,7 +30,8 @@ export default async function DeleteCategoryPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { q, error } = await searchParams;
+  const query = normalizeCategorySearchQuery(q);
 
   const category = await prisma.category.findUnique({
     where: { slug },
@@ -38,30 +45,44 @@ export default async function DeleteCategoryPage({
   const itemCount = category._count.items;
   const canDelete = itemCount === 0;
 
+  // The delete confirmation inside the Category workspace, following the
+  // Item/Recipe/Profession workspaces' navigation-foundation precedent:
+  // the record list marks this category selected. The confirmation card,
+  // its summary, and the delete action are unchanged — only the
+  // navigation wrapper moved.
   return (
-    <>
-      <PageHeader
-        eyebrow="Admin"
-        title="Delete Category"
-        description={`Review before permanently deleting "${category.name}".`}
-      />
+    <CategoryWorkspace
+      rawQuery={q}
+      selectedSlug={category.slug}
+      header={
+        <>
+          <PageHeader
+            eyebrow="Admin"
+            title="Delete Category"
+            description={`Review before permanently deleting "${category.name}".`}
+          />
 
-      <p className="admin-toolbar">
-        <a href="/admin/categories" className="link-accent">
-          &larr; Back to Category Management
-        </a>
-      </p>
+          <p className="admin-toolbar">
+            <a
+              href={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+              className="link-accent"
+            >
+              &larr; Back to Category Management
+            </a>
+          </p>
 
-      {error ? (
-        <p role="alert" className="banner banner-error">
-          {error === "linked_items"
-            ? `This category cannot be deleted because it is assigned to ${describeLinkedItems(
-                itemCount
-              )}.`
-            : "Something went wrong."}
-        </p>
-      ) : null}
-
+          {error ? (
+            <p role="alert" className="banner banner-error">
+              {error === "linked_items"
+                ? `This category cannot be deleted because it is assigned to ${describeLinkedItems(
+                    itemCount
+                  )}.`
+                : "Something went wrong."}
+            </p>
+          ) : null}
+        </>
+      }
+    >
       <div className="confirm-card">
         <p>
           You are about to permanently delete{" "}
@@ -90,11 +111,14 @@ export default async function DeleteCategoryPage({
             </form>
           ) : null}
 
-          <a href="/admin/categories" className="btn btn-secondary">
+          <a
+            href={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+            className="btn btn-secondary"
+          >
             Cancel
           </a>
         </div>
       </div>
-    </>
+    </CategoryWorkspace>
   );
 }

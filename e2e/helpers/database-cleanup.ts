@@ -26,6 +26,12 @@ import {
 // match a seeded slug (materials, components, consumables, tools, gear).
 export const E2E_CATEGORY_SLUG_PREFIX = "test-e2e-category";
 
+// Temporary Item rows created ONLY so an Item can reference a test
+// Category for the relation-blocked deletion test. Deliberately a
+// separate, unmistakable prefix so relation cleanup can never touch a
+// seeded Item (whose slugs are plain names like iron-ore).
+export const E2E_CATEGORY_RELATION_SLUG_PREFIX = "test-e2e-category-relation-";
+
 // Covers every Profession slug the browser tests use (test-e2e-profession,
 // test-e2e-profession-updated, test-e2e-profession-duplicate,
 // test-e2e-profession-blocked) and can never match a seeded slug (e.g.
@@ -140,37 +146,119 @@ async function withVerifiedDatabase<T>(
   }
 }
 
-/**
- * Deletes ONLY Category rows whose slug starts with the browser-test
- * prefix. Returns how many rows were removed. Throws (failing the calling
- * test or hook loudly) if the database rejects the delete.
- */
-export async function deleteE2eTestCategories(): Promise<number> {
-  // Defense in depth: a broad delete must be impossible even if the prefix
-  // constant is ever edited carelessly.
-  if (E2E_CATEGORY_SLUG_PREFIX.length < 5) {
+// Defense in depth for every Category helper below: a broad delete or a
+// link against a seeded row must be impossible even if a prefix constant
+// is ever edited carelessly.
+function assertCategoryPrefixesAreSafe(): void {
+  if (
+    E2E_CATEGORY_SLUG_PREFIX.length < 5 ||
+    !E2E_CATEGORY_RELATION_SLUG_PREFIX.startsWith(E2E_CATEGORY_SLUG_PREFIX)
+  ) {
     throw new Error(
-      "Refusing prefix-scoped cleanup: the browser-test slug prefix is suspiciously short."
+      "Refusing prefix-scoped cleanup: the browser-test Category slug prefixes are unsafe."
     );
   }
+}
+
+/**
+ * Deletes ONLY the browser-test Category rows and the temporary relation
+ * Item row created for the blocked-deletion test, in foreign-key-safe
+ * order: Item first (Item.categoryId is ON DELETE SET NULL, so this is
+ * defensive tidiness rather than a hard requirement), then Category.
+ * Returns how many rows were removed in total. Throws (failing the
+ * calling test or hook loudly) if the database rejects a delete.
+ */
+export async function deleteE2eTestCategories(): Promise<number> {
+  assertCategoryPrefixesAreSafe();
 
   return withVerifiedDatabase(async (client) => {
-    const result = await client.query(
+    const items = await client.query(
+      `delete from "Item" where slug like $1`,
+      [`${E2E_CATEGORY_RELATION_SLUG_PREFIX}%`]
+    );
+    const categories = await client.query(
       `delete from "Category" where slug like $1`,
       [`${E2E_CATEGORY_SLUG_PREFIX}%`]
     );
-    return result.rowCount ?? 0;
+    return (items.rowCount ?? 0) + (categories.rowCount ?? 0);
   });
 }
 
-/** Read-only count of leftover browser-test Category rows. */
+/**
+ * Read-only count of leftover browser-test Category rows plus any
+ * temporary relation Item row.
+ */
 export async function countE2eTestCategories(): Promise<number> {
   return withVerifiedDatabase(async (client) => {
     const result = await client.query(
-      `select count(*)::int as n from "Category" where slug like $1`,
-      [`${E2E_CATEGORY_SLUG_PREFIX}%`]
+      `select
+         (select count(*) from "Category" where slug like $1)::int
+           + (select count(*) from "Item" where slug like $2)::int as n`,
+      [`${E2E_CATEGORY_SLUG_PREFIX}%`, `${E2E_CATEGORY_RELATION_SLUG_PREFIX}%`]
     );
     return result.rows[0].n as number;
+  });
+}
+
+/**
+ * Creates one temporary Item referencing a browser-test Category, so the
+ * relation-blocked deletion test can be exercised. The target Category
+ * slug MUST carry the browser-test prefix, so a seeded Category can never
+ * be linked. Item admin browser workflows are deliberately not used —
+ * those workflows are out of scope for this suite.
+ */
+export async function createTemporaryItemForCategory(
+  categorySlug: string
+): Promise<void> {
+  assertCategoryPrefixesAreSafe();
+
+  if (!categorySlug.startsWith(E2E_CATEGORY_SLUG_PREFIX)) {
+    throw new Error(
+      "Refusing to link an Item: the target Category slug does not carry the browser-test prefix."
+    );
+  }
+
+  await withVerifiedDatabase(async (client) => {
+    const category = await client.query(
+      `select id from "Category" where slug = $1`,
+      [categorySlug]
+    );
+
+    if (category.rowCount !== 1) {
+      throw new Error(
+        "Cannot create the temporary Item relation: the browser-test Category was not found."
+      );
+    }
+
+    // id has no database default (Prisma cuids are client-generated) and
+    // updatedAt has no database default (@updatedAt is client-maintained),
+    // so both are supplied explicitly.
+    await client.query(
+      `insert into "Item" (id, slug, name, "categoryId", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, now())`,
+      [
+        `${E2E_CATEGORY_RELATION_SLUG_PREFIX}item`,
+        "Test E2E Category Relation Item",
+        category.rows[0].id as string,
+      ]
+    );
+  });
+}
+
+/**
+ * Removes ONLY the temporary relation Item row, leaving the browser-test
+ * Category in place so the deletion flow can be retried through the real
+ * UI. Returns how many rows were removed.
+ */
+export async function removeTemporaryItemForCategory(): Promise<number> {
+  assertCategoryPrefixesAreSafe();
+
+  return withVerifiedDatabase(async (client) => {
+    const items = await client.query(
+      `delete from "Item" where slug like $1`,
+      [`${E2E_CATEGORY_RELATION_SLUG_PREFIX}%`]
+    );
+    return items.rowCount ?? 0;
   });
 }
 
