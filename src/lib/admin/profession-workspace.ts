@@ -20,6 +20,11 @@
 // shape: `professionEditorTabs` now takes an `active` key (General or
 // Recipes) exactly like `itemEditorTabs`/`recipeEditorTabs` do. Metadata
 // remains the only disabled placeholder.
+//
+// Slice 9D.4 (Metadata tab) made Metadata a real destination too,
+// completing the Profession workspace: every Profession tab is now a
+// real link — none renders as a disabled placeholder, matching the Item
+// (Slice 9B.8) and Recipe (Slice 9C.4) workspaces' finished shape.
 
 export const PROFESSION_LIST_PATH = "/admin/professions";
 export const PROFESSION_CREATE_PATH = "/admin/professions/new";
@@ -75,10 +80,21 @@ export function professionRecipesHref(slug: string, query: string): string {
   );
 }
 
+/** The Metadata tab route for one profession, preserving the query (Slice
+    9D.4) — read-only administrative information (timestamps and
+    verification), never internal ids, mirroring `itemMetadataHref`/
+    `recipeMetadataHref`. */
+export function professionMetadataHref(slug: string, query: string): string {
+  return withProfessionSearchQuery(
+    `${PROFESSION_LIST_PATH}/${slug}/metadata`,
+    query
+  );
+}
+
 /** Which Profession editor tab is active — General (the record's own
-    fields) or Recipes (Slice 9D.3). Metadata is not yet implemented and
-    always renders as a disabled placeholder. */
-export type ProfessionEditorTabKey = "general" | "recipes";
+    fields), Recipes (Slice 9D.3), or Metadata (Slice 9D.4). Every tab is
+    now a real destination — none renders as a disabled placeholder. */
+export type ProfessionEditorTabKey = "general" | "recipes" | "metadata";
 
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
@@ -92,12 +108,13 @@ export type ProfessionEditorTab = {
 
 /**
  * The Profession editor's tab strip, shared by every route inside the
- * Profession workspace that renders tabs (General edit, and the Recipes
- * route added in Slice 9D.3) — one function so every tab's href/active
- * state can never drift out of sync between pages. Metadata remains a
- * disabled placeholder (not yet implemented); the create page shows only
- * General with no placeholders at all (mirroring the Item/Recipe
- * workspaces' create-page precedent), so this helper stays edit-only.
+ * Profession workspace that renders tabs (General edit, Recipes, and the
+ * Metadata route added in Slice 9D.4) — one function so every tab's href/
+ * active state can never drift out of sync between pages. As of Slice
+ * 9D.4 every tab is a real link; none renders as a disabled placeholder.
+ * The create page shows only General with no placeholders at all
+ * (mirroring the Item/Recipe workspaces' create-page precedent), so this
+ * helper stays edit-only.
  */
 export function professionEditorTabs(
   slug: string,
@@ -115,6 +132,10 @@ export function professionEditorTabs(
       href: professionRecipesHref(slug, query),
       active: active === "recipes",
     },
-    { label: "Metadata", href: "", active: false, disabled: true },
+    {
+      label: "Metadata",
+      href: professionMetadataHref(slug, query),
+      active: active === "metadata",
+    },
   ];
 }

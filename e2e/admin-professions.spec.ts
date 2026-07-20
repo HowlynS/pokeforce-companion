@@ -195,7 +195,7 @@ test("Create profession opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
-test("Profession editor: create shows only General; edit marks General active with Recipes real and Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
+test("Profession editor: create shows only General; edit marks General active with Recipes and Metadata both real; exactly one h1 renders; Timestamps render on edit only", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -224,8 +224,8 @@ test("Profession editor: create shows only General; edit marks General active wi
   });
 
   // --- Edit: exactly one h1 (the profession's own name), General
-  // active, Recipes and Metadata both inert placeholders, Timestamps
-  // present (Created/Updated, no Verified stamp yet) --------------------
+  // active, Recipes and Metadata both real links, Timestamps present
+  // (Created/Updated, no Verified stamp yet) ----------------------------
   await recordRow(page, "Test E2E Profession Tabs").click();
   await expect(page).toHaveURL("/admin/professions/test-e2e-profession-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -244,17 +244,15 @@ test("Profession editor: create shows only General; edit marks General active wi
     editTabNav.getByRole("link", { name: "General", exact: true })
   ).toHaveAttribute("aria-current", "page");
   await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
-  // Recipes is a real tab since Slice 9D.3 — only Metadata remains a
-  // disabled placeholder.
+  // Recipes (Slice 9D.3) and Metadata (Slice 9D.4) are both real tabs now —
+  // no Profession tab remains disabled.
   await expect(
     editTabNav.getByRole("link", { name: "Recipes", exact: true })
   ).toBeVisible();
   await expect(
-    editTabNav.getByText("Metadata", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
     editTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
+  await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(
     page.getByRole("heading", { level: 2, name: "Image", exact: true })

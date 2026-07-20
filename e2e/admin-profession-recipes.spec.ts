@@ -292,7 +292,7 @@ test("a profession with no linked recipe shows a valid empty state", async ({
   await expect(page.getByRole("table")).toHaveCount(0);
 });
 
-test("General remains a real link from the Recipes tab, and Metadata stays the only inert tab", async ({
+test("General and Metadata remain real links from the Recipes tab, and no Profession tab is disabled", async ({
   page,
 }) => {
   const PROFESSION = {
@@ -307,12 +307,12 @@ test("General remains a real link from the Recipes tab, and Metadata stays the o
   ).toHaveAttribute("aria-current", "page");
   await expect(tabNav(page).locator('[aria-current="page"]')).toHaveCount(1);
 
-  await expect(
-    tabNav(page).getByText("Metadata", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
+  // Metadata is a real tab since Slice 9D.4 — no Profession tab remains a
+  // disabled placeholder.
   await expect(
     tabNav(page).getByRole("link", { name: "Metadata", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
+  await expect(tabNav(page).locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await tabNav(page).getByRole("link", { name: "General", exact: true }).click();
   await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
@@ -324,6 +324,14 @@ test("General remains a real link from the Recipes tab, and Metadata stays the o
   await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/recipes`);
   await expect(
     tabNav(page).getByRole("link", { name: "Recipes", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+
+  await tabNav(page)
+    .getByRole("link", { name: "Metadata", exact: true })
+    .click();
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/metadata`);
+  await expect(
+    tabNav(page).getByRole("link", { name: "Metadata", exact: true })
   ).toHaveAttribute("aria-current", "page");
 });
 

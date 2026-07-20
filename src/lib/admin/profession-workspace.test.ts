@@ -6,6 +6,7 @@ import {
   professionDeleteHref,
   professionEditHref,
   professionEditorTabs,
+  professionMetadataHref,
   professionRecipesHref,
   withProfessionSearchQuery,
 } from "@/lib/admin/profession-workspace";
@@ -73,10 +74,19 @@ describe("profession workspace hrefs", () => {
       "/admin/professions/smithing/recipes?q=smith"
     );
   });
+
+  it("builds the Metadata tab route, preserving the query", () => {
+    expect(professionMetadataHref("smithing", "")).toBe(
+      "/admin/professions/smithing/metadata"
+    );
+    expect(professionMetadataHref("smithing", "smith")).toBe(
+      "/admin/professions/smithing/metadata?q=smith"
+    );
+  });
 });
 
 describe("professionEditorTabs", () => {
-  it("marks General active and links Recipes as a real destination", () => {
+  it("marks General active and links every other tab as a real destination", () => {
     const tabs = professionEditorTabs("smithing", "", "general");
 
     expect(tabs).toEqual([
@@ -90,7 +100,11 @@ describe("professionEditorTabs", () => {
         href: "/admin/professions/smithing/recipes",
         active: false,
       },
-      { label: "Metadata", href: "", active: false, disabled: true },
+      {
+        label: "Metadata",
+        href: "/admin/professions/smithing/metadata",
+        active: false,
+      },
     ]);
   });
 
@@ -107,35 +121,41 @@ describe("professionEditorTabs", () => {
       href: "/admin/professions/smithing/recipes?q=iron",
       active: true,
     });
+    expect(tabs[2].active).toBe(false);
   });
 
-  it("preserves the query on both real tabs' own hrefs", () => {
+  it("marks Metadata active when that is the current tab", () => {
+    const tabs = professionEditorTabs("smithing", "iron", "metadata");
+
+    expect(tabs[2]).toEqual({
+      label: "Metadata",
+      href: "/admin/professions/smithing/metadata?q=iron",
+      active: true,
+    });
+    expect(tabs[0].active).toBe(false);
+    expect(tabs[1].active).toBe(false);
+  });
+
+  it("preserves the query on every tab's own href", () => {
     const tabs = professionEditorTabs("smithing", "smith", "general");
 
     expect(tabs[0].href).toBe("/admin/professions/smithing/edit?q=smith");
     expect(tabs[1].href).toBe("/admin/professions/smithing/recipes?q=smith");
+    expect(tabs[2].href).toBe("/admin/professions/smithing/metadata?q=smith");
   });
 
   it("marks exactly one tab active for every valid key", () => {
-    for (const active of ["general", "recipes"] as const) {
+    for (const active of ["general", "recipes", "metadata"] as const) {
       const tabs = professionEditorTabs("smithing", "", active);
       expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
     }
   });
 
-  it("renders only Metadata as a disabled placeholder", () => {
-    for (const active of ["general", "recipes"] as const) {
+  it("renders no disabled tabs — every Profession tab is now a real destination", () => {
+    for (const active of ["general", "recipes", "metadata"] as const) {
       const tabs = professionEditorTabs("smithing", "", active);
-      expect(tabs[2]).toEqual({
-        label: "Metadata",
-        href: "",
-        active: false,
-        disabled: true,
-      });
-      expect(tabs[0].disabled).toBeUndefined();
-      expect(tabs[1].disabled).toBeUndefined();
-      expect(tabs[0].href).not.toBe("");
-      expect(tabs[1].href).not.toBe("");
+      expect(tabs.every((tab) => !tab.disabled)).toBe(true);
+      expect(tabs.every((tab) => tab.href !== "")).toBe(true);
     }
   });
 });

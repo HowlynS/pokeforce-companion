@@ -357,7 +357,8 @@ Ingredients tab) complete; Slice 9C.4 (Recipe Metadata tab) complete —
 the Recipe reference workspace is functionally complete; Slice 9D.1
 (Profession workspace navigation foundation) complete; Slice 9D.2
 (Profession General editor conversion) complete; Slice 9D.3 (Profession
-Recipes relationship tab) complete — Profession Metadata remains pending;
+Recipes relationship tab) complete; Slice 9D.4 (Profession Metadata tab)
+complete — the Profession reference workspace is functionally complete;
 later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
@@ -1126,11 +1127,62 @@ workspace.
       route list extended with the new route
 - [x] No Metadata content, and no other resource workspace was converted
 
+### Slice 9D.4 — Profession Metadata tab (complete, 2026-07-20)
+
+- [x] `/admin/professions/[slug]/metadata` is a new, real, read-only tab
+      inside `ProfessionWorkspace`, completing the Profession workspace —
+      mirroring the Item (Slice 9B.8) and Recipe (Slice 9C.4) Metadata
+      tabs' shape exactly
+- [x] `professionEditorTabs`'s `ProfessionEditorTabKey` now accepts
+      `"metadata"`; no Profession tab renders as a disabled placeholder
+      any more — every one of the three (General, Recipes, Metadata) is a
+      real link, via the new `professionMetadataHref(slug, query)` helper
+- [x] `ProfessionWorkspace`'s existing `recordHref` prop (introduced in
+      Slice 9D.3) takes `professionMetadataHref` so quick-switching
+      professions while on this tab stays on the Metadata tab, with `q`
+      preserved
+- [x] One restrained query —
+      `prisma.profession.findUnique({ include: { verifiedGameVersion: true, _count: { select: { recipes: true } } } })`
+      — the same `verifiedGameVersion` relation the General edit page
+      already loads, plus a Recipe `_count` (never the full `recipes`
+      relation, which the Recipes tab already covers) — no per-row
+      follow-up query
+- [x] Content is a `ContextPanel` titled "Profession" showing the Recipe
+      count (always rendered — zero is itself meaningful administrative
+      context); `VerificationPanel` in its existing `readOnly` mode
+      (status badge, Verified against/Verified on/Current version rows,
+      each hidden when its own data is absent); `TimestampsPanel`
+      (created/updated/verified dates, no ids)
+- [x] The description field is deliberately NOT repeated here — it is an
+      editable General field, and this tab exists to show administrative
+      facts General doesn't, not to duplicate it
+- [x] No form, picker, checkbox, submit button, file input, hidden
+      mutation field, image control, Recipe-relationship control, or
+      delete action exists anywhere on this tab; no database id, foreign
+      key, or storage path is ever surfaced
+- [x] General/Recipes actions, the Prisma schema, storage, and
+      authorization are all unchanged
+- [x] Tests: `professionEditorTabs`/`professionMetadataHref` unit
+      coverage (Metadata active/real, query preservation, exactly-one-
+      active across all three tabs, no disabled tabs remain); a new
+      dedicated "admin-profession-metadata" E2E spec (direct route
+      access, created/updated dates, current Game Version, unverified vs.
+      verified status with verified-against/verification date, accurate
+      Recipe count including zero, tab navigation, quick switching with
+      `q` preservation, read-only-content assertions, unknown-slug 404)
+      mirroring `admin-item-metadata.spec.ts`'s structure; the existing
+      Profession editor E2E test and the Recipes-tab navigation test
+      updated for Metadata becoming a real tab, and the
+      unauthenticated-protection route list extended with the new route
+- [x] The Profession reference workspace (General, Recipes, Metadata) is
+      now functionally complete, matching the Item and Recipe workspaces'
+      shape; no other resource workspace was converted
+
 ### Remaining (not started)
 
-- [ ] Profession Metadata content, every other resource workspace
-      conversion, dashboard summaries, and Route Hubs — do not begin
-      until explicitly instructed in the milestone conversation
+- [ ] Every other resource workspace conversion (Categories, Locations),
+      dashboard summaries, and Route Hubs — do not begin until explicitly
+      instructed in the milestone conversation
 
 ---
 

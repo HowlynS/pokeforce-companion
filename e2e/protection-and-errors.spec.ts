@@ -75,6 +75,10 @@ test.describe("unauthenticated admin protection", () => {
     // strictly admin-only); the seeded "smithing" slug is only ever read
     // here, never modified.
     "/admin/professions/smithing/recipes",
+    // The Slice 9D.4 Metadata tab (read-only administrative information —
+    // timestamps and verification — is still strictly admin-only); the
+    // seeded "smithing" slug is only ever read here, never modified.
+    "/admin/professions/smithing/metadata",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",
