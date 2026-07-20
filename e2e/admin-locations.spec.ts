@@ -243,7 +243,7 @@ test("Create Location opens the dedicated creation route", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("Location editor: create shows only General with its own parent selector; edit marks General active with Hierarchy and Acquisition Sources real and only Metadata inert; exactly one h1 renders; Timestamps render on edit only", async ({
+test("Location editor: create shows only General with its own parent selector; edit marks General active with Hierarchy, Acquisition Sources, and Metadata all real; exactly one h1 renders; Timestamps render on edit only", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -281,10 +281,10 @@ test("Location editor: create shows only General with its own parent selector; e
   });
 
   // --- Edit: exactly one h1 (the location's own name), General active,
-  // Hierarchy and Acquisition Sources both now real (but not current)
-  // tabs, Metadata still the only inert placeholder, Timestamps present
-  // (Created/Updated, no Verified stamp yet), and NO parent selector
-  // anywhere on General (Slice 9F.3 moved it to Hierarchy) --------------
+  // Hierarchy, Acquisition Sources, and Metadata all now real (but not
+  // current) tabs — no Location tab remains disabled — Timestamps
+  // present (Created/Updated, no Verified stamp yet), and NO parent
+  // selector anywhere on General (Slice 9F.3 moved it to Hierarchy) -----
   await recordRow(page, "Test E2E Location Tabs").click();
   await expect(page).toHaveURL("/admin/locations/test-e2e-location-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -322,11 +322,12 @@ test("Location editor: create shows only General with its own parent selector; e
     editTabNav.getByText("Acquisition Sources", { exact: true })
   ).not.toHaveAttribute("aria-disabled", "true");
   await expect(
-    editTabNav.getByText("Metadata", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
     editTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toHaveCount(0);
+  ).not.toHaveAttribute("aria-current", "page");
+  await expect(
+    editTabNav.getByText("Metadata", { exact: true })
+  ).not.toHaveAttribute("aria-disabled", "true");
+  await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(
     page.getByRole("heading", { level: 2, name: "Image", exact: true })

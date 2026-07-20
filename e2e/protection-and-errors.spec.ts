@@ -105,6 +105,12 @@ test.describe("unauthenticated admin protection", () => {
     // admin layout before the page's own database lookup, so no seeded
     // Location fixture is needed — this slug never resolves.
     "/admin/locations/test-e2e-missing-location/sources",
+    // The Slice 9F.5 Metadata tab (read-only administrative information —
+    // timestamps and verification — is still strictly admin-only); the
+    // auth gate runs in the admin layout before the page's own database
+    // lookup, so no seeded Location fixture is needed — this slug never
+    // resolves.
+    "/admin/locations/test-e2e-missing-location/metadata",
     // The Slice 9A secondary settings destination: Game Version management
     // (and every verification detail) is strictly admin-only.
     "/admin/settings/game-versions",

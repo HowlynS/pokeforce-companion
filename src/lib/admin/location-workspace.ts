@@ -26,6 +26,12 @@
 // remains the only disabled placeholder. Acquisition Sources stays a
 // READ-ONLY relationship view — every mutation continues to happen
 // through the existing Item-owned source routes, never here.
+//
+// Slice 9F.5 (Metadata tab) made Metadata a real destination too,
+// completing the Location workspace: every one of General, Hierarchy,
+// Acquisition Sources, and Metadata is now a real link — no Location tab
+// remains a disabled placeholder, matching the Item/Recipe/Profession/
+// Category workspaces' own finished shape.
 
 import {
   ACQUISITION_TYPES,
@@ -89,11 +95,25 @@ export function locationSourcesHref(slug: string, query: string): string {
   );
 }
 
+/** The Metadata tab route for one location, preserving the query (Slice
+    9F.5) — read-only administrative information (timestamps and
+    verification), never internal ids. */
+export function locationMetadataHref(slug: string, query: string): string {
+  return withLocationSearchQuery(
+    `${LOCATION_LIST_PATH}/${slug}/metadata`,
+    query
+  );
+}
+
 /** Which Location editor tab is active — General (the record's own
-    fields), Hierarchy (Slice 9F.3), or Acquisition Sources (Slice 9F.4).
-    Metadata is not yet implemented and always renders as a disabled
-    placeholder. */
-export type LocationEditorTabKey = "general" | "hierarchy" | "sources";
+    fields), Hierarchy (Slice 9F.3), Acquisition Sources (Slice 9F.4), or
+    Metadata (Slice 9F.5). Every tab is now a real destination — none
+    renders as a disabled placeholder. */
+export type LocationEditorTabKey =
+  | "general"
+  | "hierarchy"
+  | "sources"
+  | "metadata";
 
 /**
  * Sorts Acquisition Sources for the Location Sources tab: grouped by
@@ -124,13 +144,13 @@ export type LocationEditorTab = {
 
 /**
  * The Location editor's tab strip, shared by every route inside the
- * Location workspace that renders tabs (General edit, Hierarchy, and the
- * Acquisition Sources route added in Slice 9F.4) — one function so every
- * tab's href/active state can never drift out of sync between pages.
- * Metadata remains a disabled placeholder (not yet implemented); the
- * create page shows only General with no placeholders at all (mirroring
- * the Item/Recipe/Profession workspaces' create-page precedent), so this
- * helper stays edit-only.
+ * Location workspace that renders tabs (General edit, Hierarchy,
+ * Acquisition Sources, and the Metadata route added in Slice 9F.5) — one
+ * function so every tab's href/active state can never drift out of sync
+ * between pages. As of Slice 9F.5 every tab is a real link; none renders
+ * as a disabled placeholder. The create page shows only General with no
+ * placeholders at all (mirroring the Item/Recipe/Profession workspaces'
+ * create-page precedent), so this helper stays edit-only.
  */
 export function locationEditorTabs(
   slug: string,
@@ -153,6 +173,10 @@ export function locationEditorTabs(
       href: locationSourcesHref(slug, query),
       active: active === "sources",
     },
-    { label: "Metadata", href: "", active: false, disabled: true },
+    {
+      label: "Metadata",
+      href: locationMetadataHref(slug, query),
+      active: active === "metadata",
+    },
   ];
 }

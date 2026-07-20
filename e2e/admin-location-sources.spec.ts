@@ -371,7 +371,7 @@ test("a location with no acquisition sources shows a valid empty state", async (
   await expect(page.getByRole("table")).toHaveCount(0);
 });
 
-test("General and Hierarchy remain real links from the Acquisition Sources tab, and only Metadata is disabled", async ({
+test("General, Hierarchy, and Metadata remain real links from the Acquisition Sources tab, and no Location tab is disabled", async ({
   page,
 }) => {
   const LOCATION = {
@@ -390,13 +390,8 @@ test("General and Hierarchy remain real links from the Acquisition Sources tab, 
   ).toHaveAttribute("aria-current", "page");
   await expect(tabNav(page).locator('[aria-current="page"]')).toHaveCount(1);
 
-  // Only Metadata remains a disabled placeholder.
-  await expect(
-    tabNav(page).getByText("Metadata", { exact: true })
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(
-    tabNav(page).getByRole("link", { name: "Metadata", exact: true })
-  ).toHaveCount(0);
+  // No Location tab remains a disabled placeholder (Slice 9F.5).
+  await expect(tabNav(page).locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await tabNav(page).getByRole("link", { name: "General", exact: true }).click();
   await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
@@ -410,6 +405,14 @@ test("General and Hierarchy remain real links from the Acquisition Sources tab, 
   await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/hierarchy`);
   await expect(
     tabNav(page).getByRole("link", { name: "Hierarchy", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+
+  await tabNav(page)
+    .getByRole("link", { name: "Metadata", exact: true })
+    .click();
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/metadata`);
+  await expect(
+    tabNav(page).getByRole("link", { name: "Metadata", exact: true })
   ).toHaveAttribute("aria-current", "page");
 
   await tabNav(page)

@@ -366,7 +366,8 @@ complete — the Category reference workspace is functionally complete;
 Slice 9F.1 (Location workspace navigation foundation) complete; Slice
 9F.2 (Location General editor conversion) complete; Slice 9F.3 (Location
 Hierarchy tab) complete; Slice 9F.4 (Location Acquisition Sources tab)
-complete; later slices not started
+complete; Slice 9F.5 (Location Metadata tab) complete — the Location
+reference workspace is functionally complete; later slices not started
 
 Numbering note: this file previously listed "Milestone 9 - Route Hubs".
 The milestone conversation runs Admin Workspace & Game Version Management
@@ -1664,10 +1665,68 @@ workspace.
 - [x] No Location Metadata content, and no other resource workspace was
       converted
 
+### Slice 9F.5 — Location Metadata tab (complete, 2026-07-20)
+
+- [x] `/admin/locations/[slug]/metadata` is a new, real, read-only tab
+      inside `LocationWorkspace`, completing the Location workspace —
+      mirroring the Item (Slice 9B.8), Recipe (Slice 9C.4), Profession
+      (Slice 9D.4), and Category (Slice 9E.4) Metadata tabs' shape
+      exactly
+- [x] `locationEditorTabs`'s `LocationEditorTabKey` now accepts
+      `"metadata"` and `locationEditorTabs` no longer renders any
+      disabled placeholder — every one of the four Location tabs
+      (General, Hierarchy, Acquisition Sources, Metadata) is a real
+      link, via the new `locationMetadataHref(slug, query)` helper
+      alongside the existing three
+- [x] `LocationWorkspace`'s existing `recordHref` prop (introduced in
+      Slice 9F.3) takes `locationMetadataHref` so quick-switching
+      locations while on this tab stays on the Metadata tab, with `q`
+      preserved
+- [x] One restrained query —
+      `prisma.location.findUnique({ include: { parent: true, verifiedGameVersion: true, _count: { select: { children: true, acquisitionSources: true } } } })`
+      — a parent relation plus child/Acquisition-Source `_count`s only,
+      never the full collections (which the Hierarchy and Acquisition
+      Sources tabs already cover in full) — no per-row follow-up query
+- [x] Content is a `ContextPanel` titled "Location" showing the type
+      (always rendered, since it is a required field), the parent's
+      name (only when present — a root location simply omits the row),
+      and the sub-location/Acquisition-Source counts (via `_count`,
+      always rendered since zero is itself meaningful administrative
+      context); `VerificationPanel` (created/updated/verified dates, no
+      ids, `readOnly` — status badge and Verified-against/Verified-on/
+      Current-version rows, each hidden when its own data is absent);
+      `TimestampsPanel` shows created/updated/verified dates
+- [x] The description and access-note fields are deliberately NOT
+      repeated here — both are editable General fields, and duplicating
+      them would add no administrative information this tab exists to
+      show
+- [x] No form, picker, checkbox, submit button, file input, hidden
+      mutation field, image control, hierarchy-mutation control, or
+      Acquisition-Source-mutation control exists anywhere on this tab;
+      no database id, foreign key, or storage path is ever surfaced
+- [x] General/Hierarchy/Acquisition Sources behavior, Location/Item/
+      AcquisitionSource actions, the Prisma schema, storage, and
+      authorization are all unchanged
+- [x] Tests: `locationEditorTabs`/`locationMetadataHref` unit coverage
+      (Metadata active/real, query preservation, exactly-one-active
+      across all four tabs, no disabled tabs remain); a new dedicated
+      "admin-location-metadata" E2E spec (direct route access,
+      created/updated dates, type, parent-when-present, accurate
+      sub-location/Acquisition-Source counts including zero, current
+      Game Version, unverified/verified status, tab navigation, quick
+      switching with `q` preservation, read-only-content assertions,
+      unknown-slug 404) mirroring `admin-profession-metadata.spec.ts`'s
+      structure; the existing Location editor tabs E2E test and the
+      Acquisition Sources tab's own navigation test updated for
+      Metadata becoming a real tab; the unauthenticated-protection route
+      list extended with the metadata route
+- [x] The Location reference workspace (General, Hierarchy, Acquisition
+      Sources, Metadata) is now functionally complete, matching the
+      Item, Recipe, Profession, and Category workspaces' shape
+
 ### Remaining (not started)
 
-- [ ] The Location reference workspace's own Metadata tab, dashboard
-      summaries, and Route Hubs — do not begin until explicitly
+- [ ] Dashboard summaries and Route Hubs — do not begin until explicitly
       instructed in the milestone conversation
 
 ---

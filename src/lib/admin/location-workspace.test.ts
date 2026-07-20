@@ -6,6 +6,7 @@ import {
   locationEditHref,
   locationEditorTabs,
   locationHierarchyHref,
+  locationMetadataHref,
   locationSourcesHref,
   normalizeLocationSearchQuery,
   sortLocationAcquisitionSourcesByType,
@@ -84,10 +85,19 @@ describe("location workspace hrefs", () => {
       "/admin/locations/sunken-cave/sources?q=cave"
     );
   });
+
+  it("builds the Metadata tab route, preserving the query", () => {
+    expect(locationMetadataHref("sunken-cave", "")).toBe(
+      "/admin/locations/sunken-cave/metadata"
+    );
+    expect(locationMetadataHref("sunken-cave", "cave")).toBe(
+      "/admin/locations/sunken-cave/metadata?q=cave"
+    );
+  });
 });
 
 describe("locationEditorTabs", () => {
-  it("marks General active and links Hierarchy and Acquisition Sources as real destinations", () => {
+  it("marks General active and links every other tab as a real destination", () => {
     const tabs = locationEditorTabs("sunken-cave", "", "general");
 
     expect(tabs).toEqual([
@@ -106,7 +116,11 @@ describe("locationEditorTabs", () => {
         href: "/admin/locations/sunken-cave/sources",
         active: false,
       },
-      { label: "Metadata", href: "", active: false, disabled: true },
+      {
+        label: "Metadata",
+        href: "/admin/locations/sunken-cave/metadata",
+        active: false,
+      },
     ]);
   });
 
@@ -124,6 +138,7 @@ describe("locationEditorTabs", () => {
       active: true,
     });
     expect(tabs[2].active).toBe(false);
+    expect(tabs[3].active).toBe(false);
   });
 
   it("marks Acquisition Sources active when that is the current tab", () => {
@@ -136,39 +151,53 @@ describe("locationEditorTabs", () => {
     });
     expect(tabs[0].active).toBe(false);
     expect(tabs[1].active).toBe(false);
+    expect(tabs[3].active).toBe(false);
   });
 
-  it("preserves the query on all three real tabs' own hrefs", () => {
+  it("marks Metadata active when that is the current tab", () => {
+    const tabs = locationEditorTabs("sunken-cave", "cave", "metadata");
+
+    expect(tabs[3]).toEqual({
+      label: "Metadata",
+      href: "/admin/locations/sunken-cave/metadata?q=cave",
+      active: true,
+    });
+    expect(tabs[0].active).toBe(false);
+    expect(tabs[1].active).toBe(false);
+    expect(tabs[2].active).toBe(false);
+  });
+
+  it("preserves the query on every tab's own href", () => {
     const tabs = locationEditorTabs("sunken-cave", "cave", "general");
 
     expect(tabs[0].href).toBe("/admin/locations/sunken-cave/edit?q=cave");
     expect(tabs[1].href).toBe("/admin/locations/sunken-cave/hierarchy?q=cave");
     expect(tabs[2].href).toBe("/admin/locations/sunken-cave/sources?q=cave");
+    expect(tabs[3].href).toBe("/admin/locations/sunken-cave/metadata?q=cave");
   });
 
   it("marks exactly one tab active for every valid key", () => {
-    for (const active of ["general", "hierarchy", "sources"] as const) {
+    for (const active of [
+      "general",
+      "hierarchy",
+      "sources",
+      "metadata",
+    ] as const) {
       const tabs = locationEditorTabs("sunken-cave", "", active);
       expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
     }
   });
 
-  it("renders only Metadata as a disabled placeholder", () => {
-    for (const active of ["general", "hierarchy", "sources"] as const) {
+  it("renders no disabled tabs — every Location tab is now a real destination", () => {
+    for (const active of [
+      "general",
+      "hierarchy",
+      "sources",
+      "metadata",
+    ] as const) {
       const tabs = locationEditorTabs("sunken-cave", "", active);
-
-      expect(tabs[3]).toEqual({
-        label: "Metadata",
-        href: "",
-        active: false,
-        disabled: true,
-      });
-      expect(tabs[0].disabled).toBeUndefined();
-      expect(tabs[1].disabled).toBeUndefined();
-      expect(tabs[2].disabled).toBeUndefined();
-      expect(tabs[0].href).not.toBe("");
-      expect(tabs[1].href).not.toBe("");
-      expect(tabs[2].href).not.toBe("");
+      expect(tabs.every((tab) => !tab.disabled)).toBe(true);
+      expect(tabs.every((tab) => tab.href !== "")).toBe(true);
     }
   });
 });
