@@ -30,6 +30,14 @@ describe("ADMIN_NAV_ITEMS", () => {
       "/admin/categories",
       "/admin/locations",
     ]);
+    expect(ADMIN_NAV_ITEMS.map((item) => item.icon)).toEqual([
+      "dashboard",
+      "items",
+      "recipes",
+      "professions",
+      "categories",
+      "locations",
+    ]);
   });
 
   it("never includes Game Versions, Acquisition Sources, or other excluded destinations", () => {

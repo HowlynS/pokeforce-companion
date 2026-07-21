@@ -55,6 +55,14 @@ test("the sidebar carries exactly the six primary destinations with their approv
     const link = links.nth(index);
     await expect(link).toHaveText(destination.label);
     await expect(link).toHaveAttribute("href", destination.href);
+    // Each destination carries exactly one decorative icon — aria-hidden,
+    // so it never becomes part of the link's own accessible name (proven
+    // above by the exact-text match against the label alone).
+    await expect(link.locator("svg.admin-nav-icon")).toHaveCount(1);
+    await expect(link.locator("svg.admin-nav-icon")).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
   }
 
   // Excluded destinations never join primary navigation: Game Versions
@@ -71,6 +79,41 @@ test("the sidebar carries exactly the six primary destinations with their approv
   await expect(
     page.getByRole("link", { name: "Game Versions", exact: true })
   ).toBeVisible();
+});
+
+test("the active destination's icon and label both turn gold; keyboard focus stays visible", async ({
+  page,
+}) => {
+  await page.goto("/admin/items");
+
+  const active = activeLink(page);
+  await expect(active).toHaveText("Items");
+  const activeColor = await active.evaluate(
+    (el) => getComputedStyle(el).color
+  );
+  const activeIconColor = await active
+    .locator("svg.admin-nav-icon")
+    .evaluate((el) => getComputedStyle(el).color);
+  // The icon has no color of its own — it inherits currentColor from the
+  // active link, so both computed colors must match exactly.
+  expect(activeIconColor).toBe(activeColor);
+
+  // Keyboard focus on a nav link is still visible (the shared
+  // a:focus-visible outline rule), unaffected by the added icon markup.
+  // Focused directly (rather than counting Tab presses) so the assertion
+  // does not depend on how many focusable elements precede the sidebar.
+  const recipesLink = sidebar(page).getByRole("link", {
+    name: "Recipes",
+    exact: true,
+  });
+  await recipesLink.focus();
+  await expect(recipesLink).toBeFocused();
+  const { outlineStyle, outlineColor } = await recipesLink.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { outlineStyle: style.outlineStyle, outlineColor: style.outlineColor };
+  });
+  expect(outlineStyle).toBe("solid");
+  expect(outlineColor).toBe("rgb(250, 204, 21)");
 });
 
 test("the sidebar persists across admin sections and marks the active one", async ({

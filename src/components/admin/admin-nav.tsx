@@ -12,7 +12,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ADMIN_NAV_ITEMS, isAdminNavItemActive } from "@/lib/admin/admin-nav";
+import {
+  Hammer,
+  LayoutDashboard,
+  MapPinned,
+  Package,
+  ScrollText,
+  Shapes,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  ADMIN_NAV_ITEMS,
+  isAdminNavItemActive,
+  type AdminNavIcon,
+} from "@/lib/admin/admin-nav";
+
+// Maps each pure identifier (admin-nav.ts) to its Lucide icon component —
+// the only place this module's data touches a React/icon-library import.
+const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  items: Package,
+  recipes: ScrollText,
+  professions: Hammer,
+  categories: Shapes,
+  locations: MapPinned,
+};
 
 export function AdminNav() {
   const pathname = usePathname() ?? "";
@@ -21,6 +45,7 @@ export function AdminNav() {
     <nav aria-label="Admin navigation" className="admin-nav">
       {ADMIN_NAV_ITEMS.map((item) => {
         const isActive = isAdminNavItemActive(item.href, pathname);
+        const Icon = ADMIN_NAV_ICONS[item.icon];
 
         return (
           <Link
@@ -29,6 +54,9 @@ export function AdminNav() {
             className="admin-nav-link"
             aria-current={isActive ? "page" : undefined}
           >
+            {/* Decorative only — the adjacent label already names the
+                destination, so the icon carries no accessible text. */}
+            <Icon aria-hidden="true" className="admin-nav-icon" />
             {item.label}
           </Link>
         );

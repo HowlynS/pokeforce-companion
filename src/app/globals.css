@@ -434,7 +434,9 @@ input[type="checkbox"] {
 }
 
 .admin-nav-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 10px 12px;
   border-radius: 8px;
   color: var(--color-text-muted);
@@ -455,6 +457,17 @@ input[type="checkbox"] {
   background: var(--color-surface-soft);
   color: var(--color-accent);
   font-weight: 700;
+}
+
+/* Decorative destination icon (aria-hidden, set in admin-nav.tsx): a
+   fixed column so every label aligns, and no explicit color — it
+   inherits currentColor, so the same hover/active rules above that
+   recolor the link's text recolor the icon identically, with no
+   separate icon-specific styling. */
+.admin-nav-icon {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
 }
 
 .admin-content {
