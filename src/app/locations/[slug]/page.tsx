@@ -34,16 +34,19 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Semantic breadcrumb navigation (Slice 10C): a labeled <nav> around an
-// <ol>, so the hierarchy is understandable to assistive technology without
-// relying on the decorative "/" separators (each marked aria-hidden) or on
-// color alone. "Locations" is a stable root entry point; every ancestor is
-// a real link; the current Location is the final, non-linked item with
-// aria-current="page" — never itself a link, matching every other
-// "current page" convention already used in this codebase (e.g. the admin
-// nav's own aria-current="page"). Ancestor links are muted and underlined
-// so they read as interactive independent of hover; the current item is
-// full-strength text with no underline, the same non-color distinction.
+// Semantic breadcrumb navigation (Slice 10C; visual pass in Slice 10D): a
+// labeled <nav> around an <ol>, so the hierarchy is understandable to
+// assistive technology without relying on the decorative "/" separators
+// (each marked aria-hidden) or on color alone. "Locations" is a stable
+// root entry point; every ancestor is a real link; the current Location
+// is the final, non-linked item with aria-current="page" — never itself
+// a link, matching every other "current page" convention already used in
+// this codebase (e.g. the admin nav's own aria-current="page"). Ancestor
+// links use the shared .breadcrumb-link class (muted + underlined at
+// rest, gold only on hover — restrained, matching the rest of the public
+// site's own hover-only accent convention); the current item stays
+// full-strength text with no underline and no gold, so it never reads as
+// a second, redundant link.
 function LocationBreadcrumb({
   ancestors,
   currentName,
@@ -66,13 +69,7 @@ function LocationBreadcrumb({
         }}
       >
         <li>
-          <Link
-            href="/locations"
-            style={{
-              color: designTokens.colors.textMuted,
-              textDecoration: "underline",
-            }}
-          >
+          <Link href="/locations" className="breadcrumb-link">
             Locations
           </Link>
         </li>
@@ -85,13 +82,7 @@ function LocationBreadcrumb({
             <span aria-hidden="true" style={{ color: designTokens.colors.textMuted }}>
               /
             </span>
-            <a
-              href={`/locations/${ancestor.slug}`}
-              style={{
-                color: designTokens.colors.textMuted,
-                textDecoration: "underline",
-              }}
-            >
+            <a href={`/locations/${ancestor.slug}`} className="breadcrumb-link">
               {ancestor.name}
             </a>
           </li>
@@ -167,15 +158,19 @@ export default async function LocationDetailPage({
   // when there are no groups at all.
   const obtainableGroups = groupObtainableItemsByType(location.acquisitionSources);
 
-  // Only meaningful metadata is shown: unset optional fields are omitted
-  // rather than rendered as placeholder values.
-  const details = [`Type: ${LOCATION_TYPE_LABELS[location.type]}`];
-
   return (
     <AppShell>
       <LocationBreadcrumb ancestors={ancestors} currentName={location.name} />
 
+      {/* The Location type is the page's one other always-present identity
+          fact besides the name — shown as PageHeader's eyebrow (small,
+          gold, above the h1) so it reads as visible but clearly
+          subordinate to the title, per the same convention the admin
+          shell's own eyebrow usage already established. With type moved
+          here, there is no longer a standing "Details" card that would
+          otherwise hold nothing else. */}
       <PageHeader
+        eyebrow={LOCATION_TYPE_LABELS[location.type]}
         title={location.name}
         description={location.description ?? undefined}
       />
@@ -187,17 +182,20 @@ export default async function LocationDetailPage({
           size="detail"
         />
 
-        <div className="detail-hero-facts">
-          <Card title="Details" description={details.join(" · ")} />
-
-          {location.accessNote ? (
+        {/* The facts column is entirely omitted (not just emptied) when
+            there is no access note: with type now in the eyebrow above,
+            Access is the only fact this column can ever hold, and an
+            empty .detail-hero-facts would still reserve its own
+            260px-wide flex-basis next to the image — a blank container
+            the universal hide-empty rule does not allow.
+            Verification metadata is deliberately NOT rendered here:
+            since Slice 9A, Game Version and verification information is
+            admin-only and never appears on public pages. */}
+        {location.accessNote ? (
+          <div className="detail-hero-facts">
             <Card title="Access" description={location.accessNote} />
-          ) : null}
-
-          {/* Verification metadata is deliberately NOT rendered here:
-              since Slice 9A, Game Version and verification information is
-              admin-only and never appears on public pages. */}
-        </div>
+          </div>
+        ) : null}
       </section>
 
       {/* The entire section is omitted when there are no children — no

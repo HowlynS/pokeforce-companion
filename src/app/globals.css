@@ -92,6 +92,21 @@ select:focus-visible {
   min-width: 0;
 }
 
+/* Public breadcrumb links (Slice 10D): muted and underlined so they read
+   as interactive without relying on hover alone; gold on hover only,
+   matching the same restrained, hover-only accent every other public
+   interactive element already uses (.nav-pill, .interactive-card). A CSS
+   class instead of an inline style object because inline styles cannot
+   express :hover. */
+.breadcrumb-link {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+}
+
+.breadcrumb-link:hover {
+  color: var(--color-accent);
+}
+
 /* Linked cards lift slightly and pick up the accent border so they read
    as clickable, not just decorated boxes. */
 .interactive-card {

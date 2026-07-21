@@ -402,7 +402,9 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
     page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
-  await expect(page.getByText(`Type: ${INITIAL.type}`)).toBeVisible();
+  // Slice 10D: the type is the PageHeader's own eyebrow, shown as its
+  // plain label ("Town") rather than a "Type: Town" fact row.
+  await expect(page.getByText(INITIAL.type, { exact: true })).toBeVisible();
   await expect(page.getByText(INITIAL.accessNote)).toBeVisible();
   await expect(page.getByText("No image available")).toBeVisible();
   await expect(
@@ -457,7 +459,9 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
     page.getByRole("heading", { level: 1, name: EDITED.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(EDITED.description)).toBeVisible();
-  await expect(page.getByText(`Type: ${EDITED.type}`)).toBeVisible();
+  // Slice 10D: the type is the PageHeader's own eyebrow, shown as its
+  // plain label ("Region") rather than a "Type: Region" fact row.
+  await expect(page.getByText(EDITED.type, { exact: true })).toBeVisible();
   await expect(page.getByText(EDITED.accessNote)).toBeVisible();
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
@@ -964,7 +968,9 @@ test("a sparse location (no description, no image, no parent) renders without em
       exact: true,
     })
   ).toBeVisible();
-  await expect(page.getByText("Type: Special area")).toBeVisible();
+  // Slice 10D: the type is the PageHeader's own eyebrow ("Special area"),
+  // not a "Type: Special area" fact row.
+  await expect(page.getByText("Special area", { exact: true })).toBeVisible();
   await expect(page.getByText("No image available")).toBeVisible();
   // No children: the entire Sub-locations section — heading and empty
   // state alike — must be absent, not just its content hidden.
@@ -975,6 +981,10 @@ test("a sparse location (no description, no image, no parent) renders without em
   await expect(page.getByText(/^Part of/)).toHaveCount(0);
   await expect(page.getByText("Access", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
+  // Slice 10D: with no access note, the facts column next to the image is
+  // omitted entirely — never rendered empty just to reserve its own
+  // width beside the image.
+  await expect(page.locator(".detail-hero-facts")).toHaveCount(0);
 });
 
 test("visiting an unknown location slug returns 404", async ({ page }) => {
