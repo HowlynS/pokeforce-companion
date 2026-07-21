@@ -214,6 +214,7 @@ export default async function EditRecipePage({
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={RECIPE_EDIT_FORM_ID}
         action={updateRecipeGeneralAction}
@@ -306,6 +307,7 @@ export default async function EditRecipePage({
           cancelHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
         />
       </form>
+      </div>
     </RecipeWorkspace>
   );
 }

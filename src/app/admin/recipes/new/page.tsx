@@ -160,6 +160,7 @@ export default async function NewRecipePage({
           description="Create at least one item before creating a recipe."
         />
       ) : (
+        <div className="admin-editor-surface">
         <form
           id={RECIPE_CREATE_FORM_ID}
           action={createRecipeAction}
@@ -272,6 +273,7 @@ export default async function NewRecipePage({
             cancelHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
           />
         </form>
+        </div>
       )}
     </RecipeWorkspace>
   );

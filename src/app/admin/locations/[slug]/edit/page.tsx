@@ -196,6 +196,7 @@ export default async function EditLocationPage({
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={LOCATION_EDIT_FORM_ID}
         action={updateLocationGeneralAction}
@@ -247,7 +248,7 @@ export default async function EditLocationPage({
           <span className="form-field-label">Description (optional)</span>
           <textarea
             name="description"
-            rows={3}
+            rows={4}
             defaultValue={location.description ?? ""}
             className="form-input"
           />
@@ -259,7 +260,7 @@ export default async function EditLocationPage({
           </span>
           <textarea
             name="accessNote"
-            rows={3}
+            rows={4}
             defaultValue={location.accessNote ?? ""}
             className="form-input"
           />
@@ -272,6 +273,7 @@ export default async function EditLocationPage({
           deleteLabel="Delete Location"
         />
       </form>
+      </div>
     </LocationWorkspace>
   );
 }

@@ -163,6 +163,7 @@ export default async function EditCategoryPage({
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={CATEGORY_EDIT_FORM_ID}
         action={updateCategoryAction}
@@ -197,7 +198,7 @@ export default async function EditCategoryPage({
           <span className="form-field-label">Description (optional)</span>
           <textarea
             name="description"
-            rows={3}
+            rows={4}
             defaultValue={category.description ?? ""}
             className="form-input"
           />
@@ -210,6 +211,7 @@ export default async function EditCategoryPage({
           deleteLabel="Delete Category"
         />
       </form>
+      </div>
     </CategoryWorkspace>
   );
 }

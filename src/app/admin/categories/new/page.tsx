@@ -105,6 +105,7 @@ export default async function NewCategoryPage({
         </ImagePanel>
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={CATEGORY_CREATE_FORM_ID}
         action={createCategoryAction}
@@ -128,7 +129,7 @@ export default async function NewCategoryPage({
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>
-          <textarea name="description" rows={3} className="form-input" />
+          <textarea name="description" rows={4} className="form-input" />
         </label>
 
         <EditorActions
@@ -136,6 +137,7 @@ export default async function NewCategoryPage({
           cancelHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
         />
       </form>
+      </div>
     </CategoryWorkspace>
   );
 }

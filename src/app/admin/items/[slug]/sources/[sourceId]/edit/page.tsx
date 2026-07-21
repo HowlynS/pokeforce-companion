@@ -123,6 +123,7 @@ export default async function EditAcquisitionSourcePage({
         />
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={SOURCE_EDIT_FORM_ID}
         action={updateAcquisitionSourceAction}
@@ -206,7 +207,7 @@ export default async function EditAcquisitionSourcePage({
           <span className="form-field-label">Notes (optional)</span>
           <textarea
             name="notes"
-            rows={3}
+            rows={4}
             defaultValue={source.notes ?? ""}
             className="form-input"
           />
@@ -217,6 +218,7 @@ export default async function EditAcquisitionSourcePage({
           cancelHref={itemSourcesHref(item.slug, query)}
         />
       </form>
+      </div>
     </ItemWorkspace>
   );
 }

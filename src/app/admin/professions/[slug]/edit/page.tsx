@@ -187,6 +187,7 @@ export default async function EditProfessionPage({
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={PROFESSION_EDIT_FORM_ID}
         action={updateProfessionAction}
@@ -221,7 +222,7 @@ export default async function EditProfessionPage({
           <span className="form-field-label">Description (optional)</span>
           <textarea
             name="description"
-            rows={3}
+            rows={4}
             defaultValue={profession.description ?? ""}
             className="form-input"
           />
@@ -234,6 +235,7 @@ export default async function EditProfessionPage({
           deleteLabel="Delete Profession"
         />
       </form>
+      </div>
     </ProfessionWorkspace>
   );
 }

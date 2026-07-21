@@ -136,6 +136,7 @@ export default async function LocationHierarchyPage({
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form action={updateLocationHierarchyAction} className="form-grid">
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
@@ -167,6 +168,7 @@ export default async function LocationHierarchyPage({
           deleteLabel="Delete Location"
         />
       </form>
+      </div>
 
       {!hasChildren ? (
         <EmptyState

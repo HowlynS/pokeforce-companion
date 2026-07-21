@@ -129,6 +129,7 @@ export default async function NewProfessionPage({
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={PROFESSION_CREATE_FORM_ID}
         action={createProfessionAction}
@@ -152,7 +153,7 @@ export default async function NewProfessionPage({
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>
-          <textarea name="description" rows={3} className="form-input" />
+          <textarea name="description" rows={4} className="form-input" />
         </label>
 
         <EditorActions
@@ -160,6 +161,7 @@ export default async function NewProfessionPage({
           cancelHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
         />
       </form>
+      </div>
     </ProfessionWorkspace>
   );
 }

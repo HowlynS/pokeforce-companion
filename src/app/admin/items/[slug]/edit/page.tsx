@@ -192,6 +192,7 @@ export default async function EditItemPage({
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form id={ITEM_EDIT_FORM_ID} action={updateItemAction} className="form-grid">
         <input type="hidden" name="id" value={item.id} />
         <input type="hidden" name="originalSlug" value={item.slug} />
@@ -216,7 +217,7 @@ export default async function EditItemPage({
           <span className="form-field-label">Description (optional)</span>
           <textarea
             name="description"
-            rows={3}
+            rows={4}
             defaultValue={item.description ?? ""}
             className="form-input"
           />
@@ -238,23 +239,25 @@ export default async function EditItemPage({
           </select>
         </label>
 
-        <label className="form-checkbox-field">
-          <input
-            type="checkbox"
-            name="heldItem"
-            defaultChecked={item.heldItem}
-          />
-          <span>Held item</span>
-        </label>
+        <div className="form-checkbox-group">
+          <label className="form-checkbox-field">
+            <input
+              type="checkbox"
+              name="heldItem"
+              defaultChecked={item.heldItem}
+            />
+            <span>Held item</span>
+          </label>
 
-        <label className="form-checkbox-field">
-          <input
-            type="checkbox"
-            name="tradeable"
-            defaultChecked={item.tradeable}
-          />
-          <span>Tradeable</span>
-        </label>
+          <label className="form-checkbox-field">
+            <input
+              type="checkbox"
+              name="tradeable"
+              defaultChecked={item.tradeable}
+            />
+            <span>Tradeable</span>
+          </label>
+        </div>
 
         <label className="form-field">
           <span className="form-field-label">Base value (optional)</span>
@@ -275,6 +278,7 @@ export default async function EditItemPage({
           deleteLabel="Delete item"
         />
       </form>
+      </div>
     </ItemWorkspace>
   );
 }

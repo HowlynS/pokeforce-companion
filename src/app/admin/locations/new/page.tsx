@@ -144,6 +144,7 @@ export default async function NewLocationPage({
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={LOCATION_CREATE_FORM_ID}
         action={createLocationAction}
@@ -193,14 +194,14 @@ export default async function NewLocationPage({
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>
-          <textarea name="description" rows={3} className="form-input" />
+          <textarea name="description" rows={4} className="form-input" />
         </label>
 
         <label className="form-field">
           <span className="form-field-label">
             Access or unlock note (optional)
           </span>
-          <textarea name="accessNote" rows={3} className="form-input" />
+          <textarea name="accessNote" rows={4} className="form-input" />
         </label>
 
         <EditorActions
@@ -208,6 +209,7 @@ export default async function NewLocationPage({
           cancelHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
         />
       </form>
+      </div>
     </LocationWorkspace>
   );
 }

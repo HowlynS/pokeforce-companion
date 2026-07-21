@@ -134,6 +134,7 @@ export default async function RecipeIngredientsPage({
           General fields remain editable from the General tab.
         </p>
       ) : (
+        <div className="admin-editor-surface">
         <form
           action={updateRecipeIngredientsAction}
           className="form-grid form-grid-wide"
@@ -181,6 +182,7 @@ export default async function RecipeIngredientsPage({
             cancelHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
           />
         </form>
+        </div>
       )}
     </RecipeWorkspace>
   );

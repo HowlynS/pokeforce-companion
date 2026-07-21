@@ -55,6 +55,7 @@ export default async function EditGameVersionPage({
         </p>
       ) : null}
 
+      <div className="admin-editor-surface">
       <form action={updateGameVersionAction} className="form-grid">
         <input type="hidden" name="id" value={version.id} />
 
@@ -103,6 +104,7 @@ export default async function EditGameVersionPage({
           </a>
         </div>
       </form>
+      </div>
     </>
   );
 }

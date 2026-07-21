@@ -128,6 +128,7 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
         </>
       }
     >
+      <div className="admin-editor-surface">
       <form
         id={ITEM_CREATE_FORM_ID}
         action={createItemAction}
@@ -147,7 +148,7 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>
-          <textarea name="description" rows={3} className="form-input" />
+          <textarea name="description" rows={4} className="form-input" />
         </label>
 
         <label className="form-field">
@@ -162,15 +163,17 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
           </select>
         </label>
 
-        <label className="form-checkbox-field">
-          <input type="checkbox" name="heldItem" />
-          <span>Held item</span>
-        </label>
+        <div className="form-checkbox-group">
+          <label className="form-checkbox-field">
+            <input type="checkbox" name="heldItem" />
+            <span>Held item</span>
+          </label>
 
-        <label className="form-checkbox-field">
-          <input type="checkbox" name="tradeable" />
-          <span>Tradeable</span>
-        </label>
+          <label className="form-checkbox-field">
+            <input type="checkbox" name="tradeable" />
+            <span>Tradeable</span>
+          </label>
+        </div>
 
         <label className="form-field">
           <span className="form-field-label">Base value (optional)</span>
@@ -188,6 +191,7 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
           cancelHref={withItemSearchQuery(ITEM_LIST_PATH, query)}
         />
       </form>
+      </div>
     </ItemWorkspace>
   );
 }

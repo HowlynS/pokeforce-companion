@@ -242,7 +242,7 @@ export default async function AdminItemSourcesPage({
 
           <label className="form-field">
             <span className="form-field-label">Notes (optional)</span>
-            <textarea name="notes" rows={3} className="form-input" />
+            <textarea name="notes" rows={4} className="form-input" />
           </label>
 
           {/* No fake existing verification state on create: both fields

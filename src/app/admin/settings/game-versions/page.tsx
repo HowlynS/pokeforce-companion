@@ -158,6 +158,7 @@ export default async function GameVersionSettingsPage({
       <section id="create-game-version">
         <h2 className="section-title">Create Game Version</h2>
 
+        <div className="admin-editor-surface">
         <form action={createGameVersionAction} className="form-grid">
           <label className="form-field">
             <span className="form-field-label">Name</span>
@@ -175,6 +176,7 @@ export default async function GameVersionSettingsPage({
             </button>
           </div>
         </form>
+        </div>
       </section>
     </>
   );
