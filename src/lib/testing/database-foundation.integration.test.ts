@@ -74,6 +74,7 @@ const SMITHING_RECIPE_SLUGS = [
 const CYCLE_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}category`;
 const NO_DESCRIPTION_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}category-no-description`;
 const DUPLICATE_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}duplicate-slug`;
+const IMAGE_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}category-image`;
 
 describe("database foundation (integration)", () => {
   beforeAll(async () => {
@@ -241,6 +242,109 @@ describe("database foundation (integration)", () => {
         });
         expect(readBack).not.toBeNull();
         expect(readBack?.description).toBeNull();
+      } finally {
+        await deleteIntegrationTestCategories();
+      }
+    });
+  });
+
+  describe("category image (Category Images slice)", () => {
+    it("stores a missing optional image as null", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      try {
+        const created = await prisma.category.create({
+          data: {
+            name: "Integration Test Category Image Missing",
+            slug: IMAGE_SLUG,
+          },
+        });
+        expect(created.image).toBeNull();
+      } finally {
+        await deleteIntegrationTestCategories();
+      }
+    });
+
+    it("stores and reads back an image path", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      try {
+        await prisma.category.create({
+          data: {
+            name: "Integration Test Category Image",
+            slug: IMAGE_SLUG,
+            image: "categories/original-image.png",
+          },
+        });
+
+        const readBack = await prisma.category.findUnique({
+          where: { slug: IMAGE_SLUG },
+        });
+        expect(readBack?.image).toBe("categories/original-image.png");
+      } finally {
+        await deleteIntegrationTestCategories();
+      }
+    });
+
+    it("update replaces a stored image path", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      try {
+        await prisma.category.create({
+          data: {
+            name: "Integration Test Category Image",
+            slug: IMAGE_SLUG,
+            image: "categories/original-image.png",
+          },
+        });
+
+        const replaced = await prisma.category.update({
+          where: { slug: IMAGE_SLUG },
+          data: { image: "categories/replacement-image.png" },
+        });
+        expect(replaced.image).toBe("categories/replacement-image.png");
+      } finally {
+        await deleteIntegrationTestCategories();
+      }
+    });
+
+    it("update clears a stored image path back to null", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      try {
+        await prisma.category.create({
+          data: {
+            name: "Integration Test Category Image",
+            slug: IMAGE_SLUG,
+            image: "categories/original-image.png",
+          },
+        });
+
+        const cleared = await prisma.category.update({
+          where: { slug: IMAGE_SLUG },
+          data: { image: null },
+        });
+        expect(cleared.image).toBeNull();
+      } finally {
+        await deleteIntegrationTestCategories();
+      }
+    });
+
+    it("an update that omits image leaves the stored path untouched", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      try {
+        await prisma.category.create({
+          data: {
+            name: "Integration Test Category Image",
+            slug: IMAGE_SLUG,
+            image: "categories/original-image.png",
+          },
+        });
+
+        // The exact write shape a NORMAL General save uses (image omitted
+        // entirely, not set to undefined-as-null) — an untouched image
+        // control must never clear the stored path.
+        const untouched = await prisma.category.update({
+          where: { slug: IMAGE_SLUG },
+          data: { description: "Edited without touching the image." },
+        });
+        expect(untouched.image).toBe("categories/original-image.png");
       } finally {
         await deleteIntegrationTestCategories();
       }

@@ -1,6 +1,7 @@
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { ImagePanel } from "@/components/admin/image-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
@@ -14,12 +15,20 @@ import { checkCategoryNameAvailability } from "../name-availability";
 
 export const dynamic = "force-dynamic";
 
+// Associates the file input — rendered in the aside column, outside this
+// <form> element — with this form via the standard HTML `form` attribute,
+// so every field still submits together with one ordinary form submission.
+const CATEGORY_CREATE_FORM_ID = "category-create-form";
+
 const errorMessages: Record<string, string> = {
   missing_name: "Category name is required.",
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
   duplicate: "A category with that name or slug already exists.",
   duplicate_name: "A category with that name already exists.",
+  image_too_large: "The image must be 5 MB or smaller.",
+  invalid_image_type: "Only PNG, JPEG, and WebP images are allowed.",
+  upload_failed: "The image could not be uploaded. Please try again.",
 };
 
 type NewCategoryPageProps = {
@@ -53,11 +62,11 @@ export default async function NewCategoryPage({
   // The dedicated creation page, now composed from the shared editor
   // primitives (Slice 9E.2): the form previously plain, moved here
   // unchanged in field/action/validation terms — only the presentation
-  // now uses EditorHeader/EditorTabs/EditorActions. Categories have no
-  // image or gameplay-verification behavior, so no ImagePanel or
-  // VerificationPanel exists here — unlike Item/Recipe/Profession. Items
-  // and Metadata tabs, and TimestampsPanel, do not apply to a record that
-  // doesn't exist yet.
+  // now uses EditorHeader/EditorTabs/EditorActions. Categories carry no
+  // gameplay-verification behavior, so no VerificationPanel exists here —
+  // unlike Item/Recipe/Profession. ImagePanel was added for Category
+  // Images; Items and Metadata tabs, and TimestampsPanel, still do not
+  // apply to a record that doesn't exist yet.
   return (
     <CategoryWorkspace
       rawQuery={q}
@@ -79,8 +88,28 @@ export default async function NewCategoryPage({
           ) : null}
         </>
       }
+      aside={
+        <ImagePanel>
+          <label className="form-field">
+            <span className="form-field-label">
+              Image (optional — PNG, JPEG, or WebP, up to 5 MB)
+            </span>
+            <input
+              type="file"
+              name="image"
+              accept="image/png,image/jpeg,image/webp"
+              form={CATEGORY_CREATE_FORM_ID}
+              className="form-input"
+            />
+          </label>
+        </ImagePanel>
+      }
     >
-      <form action={createCategoryAction} className="form-grid">
+      <form
+        id={CATEGORY_CREATE_FORM_ID}
+        action={createCategoryAction}
+        className="form-grid"
+      >
         {/* Client-enhanced Name field with live duplicate feedback; the
             submission-time duplicate check in createCategoryAction
             remains the authoritative protection. */}

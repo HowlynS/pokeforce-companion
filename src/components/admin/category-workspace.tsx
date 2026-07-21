@@ -19,6 +19,7 @@
 import { prisma } from "@/lib/db";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { RecordList } from "@/components/admin/record-list";
+import { getImagePublicUrl } from "@/lib/storage/images";
 import {
   CATEGORY_CREATE_PATH,
   CATEGORY_LIST_PATH,
@@ -78,13 +79,21 @@ export async function CategoryWorkspace({
     orderBy: { name: "asc" },
   });
 
-  const rows = categories.map((category) => ({
+  // Resolved concurrently — image is already a scalar field on every row
+  // from the query above (include only adds the item _count), so this is
+  // pure URL construction, never a second database query.
+  const imageUrls = await Promise.all(
+    categories.map((category) => getImagePublicUrl(category.image))
+  );
+
+  const rows = categories.map((category, index) => ({
     href: recordHref(category.slug, query),
     primary: category.name,
     secondary: `${category._count.items} ${
       category._count.items === 1 ? "item" : "items"
     }`,
     selected: category.slug === selectedSlug,
+    image: imageUrls[index],
   }));
 
   const countLabel = query
@@ -106,6 +115,7 @@ export async function CategoryWorkspace({
           createHref={withCategorySearchQuery(CATEGORY_CREATE_PATH, query)}
           createLabel="+ New category"
           rows={rows}
+          showImages
           countLabel={countLabel}
           empty={
             query ? (

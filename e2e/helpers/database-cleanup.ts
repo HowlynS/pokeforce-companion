@@ -32,6 +32,11 @@ export const E2E_CATEGORY_SLUG_PREFIX = "test-e2e-category";
 // seeded Item (whose slugs are plain names like iron-ore).
 export const E2E_CATEGORY_RELATION_SLUG_PREFIX = "test-e2e-category-relation-";
 
+// Covers every Category slug the image browser tests use — the same
+// sub-prefix arrangement (and the same run-order caveat) as the Item image
+// prefix below, relative to test-e2e-category.
+export const E2E_CATEGORY_IMAGE_SLUG_PREFIX = "test-e2e-category-image";
+
 // Covers every Profession slug the browser tests use (test-e2e-profession,
 // test-e2e-profession-updated, test-e2e-profession-duplicate,
 // test-e2e-profession-blocked) and can never match a seeded slug (e.g.
@@ -1088,8 +1093,8 @@ export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
 // runtime input — so interpolating them into SQL identifiers and path
 // patterns is safe.
 type ImageSuite = {
-  folder: "items" | "professions" | "recipes" | "locations";
-  table: "Item" | "Profession" | "Recipe" | "Location";
+  folder: "items" | "professions" | "recipes" | "locations" | "categories";
+  table: "Item" | "Profession" | "Recipe" | "Location" | "Category";
   slugPrefix: string;
   parentPrefix: string;
 };
@@ -1120,6 +1125,13 @@ const LOCATION_IMAGE_SUITE: ImageSuite = {
   table: "Location",
   slugPrefix: E2E_LOCATION_IMAGE_SLUG_PREFIX,
   parentPrefix: E2E_LOCATION_SLUG_PREFIX,
+};
+
+const CATEGORY_IMAGE_SUITE: ImageSuite = {
+  folder: "categories",
+  table: "Category",
+  slugPrefix: E2E_CATEGORY_IMAGE_SLUG_PREFIX,
+  parentPrefix: E2E_CATEGORY_SLUG_PREFIX,
 };
 
 // Defense in depth for every image helper below.
@@ -1494,6 +1506,41 @@ export async function countE2eTestLocationImageRecords(): Promise<number> {
 
 export async function deleteE2eTestLocationImageRecords(): Promise<number> {
   return deleteImageSuiteRecordsFor(LOCATION_IMAGE_SUITE);
+}
+
+// --- Category image suite exports -----------------------------------------
+
+export async function readCategoryImagePath(
+  slug: string
+): Promise<string | null> {
+  return readImagePathFor(CATEGORY_IMAGE_SUITE, slug);
+}
+
+/** True when the exact generated categories/ object currently exists. */
+export async function categoryImageObjectExists(
+  objectPath: string
+): Promise<boolean> {
+  return withStorageAdmin((admin) =>
+    storageObjectExists(CATEGORY_IMAGE_SUITE, admin, objectPath)
+  );
+}
+
+export async function fetchCategoryImageContentType(
+  objectPath: string
+): Promise<string | null> {
+  return fetchImageContentTypeFor(CATEGORY_IMAGE_SUITE, objectPath);
+}
+
+export async function countCategoryFolderObjects(): Promise<number> {
+  return countFolderObjectsFor(CATEGORY_IMAGE_SUITE);
+}
+
+export async function countE2eTestCategoryImageRecords(): Promise<number> {
+  return countImageSuiteRecordsFor(CATEGORY_IMAGE_SUITE);
+}
+
+export async function deleteE2eTestCategoryImageRecords(): Promise<number> {
+  return deleteImageSuiteRecordsFor(CATEGORY_IMAGE_SUITE);
 }
 
 // Defense in depth for every Game Version helper below.

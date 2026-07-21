@@ -25,7 +25,12 @@ export type AllowedImageMimeType = (typeof ALLOWED_IMAGE_MIME_TYPES)[number];
  * The only resource folders an object path may start with. Callers pick one
  * of these; arbitrary folder names are never accepted.
  */
-export type ImageResourceType = "items" | "recipes" | "professions" | "locations";
+export type ImageResourceType =
+  | "items"
+  | "recipes"
+  | "professions"
+  | "locations"
+  | "categories";
 
 // Controlled extensions derived from the validated MIME type. The client
 // filename (and its extension) is never used for anything.
@@ -41,7 +46,7 @@ const MIME_EXTENSIONS: Record<AllowedImageMimeType, string> = {
 // empty strings — fails to match. No normalization is applied before the
 // check, so an unsafe path can never be rewritten into an allowed one.
 const SAFE_OBJECT_PATH_PATTERN =
-  /^(items|recipes|professions|locations)\/[a-z0-9-]+\.(png|jpg|webp)$/;
+  /^(items|recipes|professions|locations|categories)\/[a-z0-9-]+\.(png|jpg|webp)$/;
 
 export type ImageStorageErrorKind =
   | "validation"
@@ -198,8 +203,9 @@ export async function getImagePublicUrl(
  * Removes one object from game-images. A missing/blank path is a harmless
  * no-op (the record simply had no image). Callers must pass a path read
  * from a trusted database record — never a client-submitted value — and the
- * path guard rejects anything outside items/, recipes/, or professions/.
- * Throws ImageStorageError with kind "unsafe_path" or "delete".
+ * path guard rejects anything outside the resource folders listed in
+ * ImageResourceType above. Throws ImageStorageError with kind "unsafe_path"
+ * or "delete".
  */
 export async function deleteImage(
   objectPath: string | null | undefined

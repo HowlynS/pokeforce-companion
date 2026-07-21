@@ -1,5 +1,6 @@
 ﻿import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
+import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -46,6 +47,13 @@ export default async function CategoriesPage() {
               title={category.name}
               description={buildCategoryDescription(category)}
               href={`/categories/${category.slug}`}
+              media={
+                <ContentImage
+                  imagePath={category.image}
+                  alt={`Image of ${category.name}`}
+                  size="card"
+                />
+              }
             />
           ))}
         </ContentGrid>

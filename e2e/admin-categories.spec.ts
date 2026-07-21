@@ -166,12 +166,13 @@ test("Create category opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
-test("Category editor: create shows only General; edit marks General active with Items and Metadata both real; exactly one h1 renders; Timestamps render on edit only; no image or verification controls appear", async ({
+test("Category editor: create shows only General; edit marks General active with Items and Metadata both real; exactly one h1 renders; Timestamps and Image render on edit; no verification controls ever appear", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
-  // no Timestamps panel (nothing to show yet), no image/verification
-  // controls (Categories have neither) ------------------------------------
+  // no Timestamps panel (nothing to show yet), Image present (Category
+  // Images), no verification controls (Categories are never gameplay-
+  // verified) --------------------------------------------------------------
   await page.goto("/admin/categories/new");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   const createTabNav = tabNav(page);
@@ -185,11 +186,11 @@ test("Category editor: create shows only General; edit marks General active with
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { level: 2, name: "Image", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { level: 2, name: "Verification", exact: true })
   ).toHaveCount(0);
-  await expect(page.locator('input[type="file"]')).toHaveCount(0);
+  await expect(page.locator('input[type="file"]')).toHaveCount(1);
   await expect(page.locator('input[type="checkbox"]')).toHaveCount(0);
   await expect(page.locator("select")).toHaveCount(0);
 
@@ -200,8 +201,8 @@ test("Category editor: create shows only General; edit marks General active with
   });
 
   // --- Edit: exactly one h1 (the category's own name), General active,
-  // Items and Metadata both real, Timestamps present (Created/Updated),
-  // still no image or verification controls ------------------------------
+  // Items and Metadata both real, Timestamps and Image present, still no
+  // verification controls --------------------------------------------------
   await recordRow(page, "Test E2E Category Tabs").click();
   await expect(page).toHaveURL("/admin/categories/test-e2e-category-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -235,11 +236,13 @@ test("Category editor: create shows only General; edit marks General active with
   await expect(panelRow(page, "Timestamps", "Updated")).toBeVisible();
   await expect(
     page.getByRole("heading", { level: 2, name: "Image", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { level: 2, name: "Verification", exact: true })
   ).toHaveCount(0);
-  await expect(page.locator('input[type="file"]')).toHaveCount(0);
+  // No existing image on this category: exactly the optional file input,
+  // no remove-image checkbox (that only appears alongside a real preview).
+  await expect(page.locator('input[type="file"]')).toHaveCount(1);
   await expect(page.locator('input[type="checkbox"]')).toHaveCount(0);
   await expect(page.locator("select")).toHaveCount(0);
 });

@@ -115,6 +115,7 @@ describe("generateImageObjectPath", () => {
     ["items", "image/png", /^items\/[0-9a-f-]+\.png$/],
     ["professions", "image/jpeg", /^professions\/[0-9a-f-]+\.jpg$/],
     ["recipes", "image/webp", /^recipes\/[0-9a-f-]+\.webp$/],
+    ["categories", "image/png", /^categories\/[0-9a-f-]+\.png$/],
   ] as const)(
     "builds a %s path with the controlled extension for %s",
     (resourceType, mimeType, expectedPattern) => {
@@ -148,6 +149,7 @@ describe("generateImageObjectPath", () => {
       ["items", "image/png"],
       ["professions", "image/jpeg"],
       ["recipes", "image/webp"],
+      ["categories", "image/png"],
     ] as const) {
       const path = generateImageObjectPath(resourceType, mimeType);
 
@@ -161,12 +163,13 @@ describe("isSafeImageObjectPath", () => {
     "items/550e8400-e29b-41d4-a716-446655440000.png",
     "professions/abc-123.jpg",
     "recipes/xyz-789.webp",
+    "categories/def-456.png",
   ])("accepts the generated-shape path %j", (path) => {
     expect(isSafeImageObjectPath(path)).toBe(true);
   });
 
   it.each([
-    ["a wrong top-level folder", "categories/file.png"],
+    ["a wrong top-level folder", "users/file.png"],
     ["a missing filename", "items/"],
     ["a nested extra directory", "items/nested/file.png"],
     ["a path traversal attempt", "../items/file.png"],

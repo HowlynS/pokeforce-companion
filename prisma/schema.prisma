@@ -44,6 +44,7 @@ model Category {
   slug        String   @unique
   name        String
   description String?
+  image       String?
   items       Item[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

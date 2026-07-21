@@ -6,10 +6,12 @@
 // and its Recipe/Profession/Location siblings; GET search, q preservation,
 // quick-switching mechanics, and empty states — see each resource's own
 // admin-<resource>.spec.ts). It targets only what THIS refinement changed:
-// RecordList's new image-capable row mode (thumbnail + fallback,
-// consistent across Items/Recipes/Professions/Locations, absent for
-// Categories) and the record-list column's viewport-bounded height with
-// internally scrolling rows.
+// RecordList's new image-capable row mode (thumbnail + fallback) and the
+// record-list column's viewport-bounded height with internally scrolling
+// rows. At the time this suite was written, Categories had not yet joined
+// the image-capable resources — the Category Images slice added that
+// afterward (see admin-category-images.spec.ts), so this suite's own
+// Categories check now proves the same thumbnail mode applies there too.
 //
 // No seed fixture carries a stored image (the seed script never sets
 // `image`), so every seeded row already exercises the missing-image
@@ -92,9 +94,11 @@ function thumbWrap(row: Locator): Locator {
   return row.locator(".admin-record-thumb-wrap");
 }
 
-test("Items, Recipes, and Professions record lists render image-capable rows; Categories renders text-only rows", async ({
+test("Items, Recipes, Professions, and Categories record lists render image-capable rows", async ({
   page,
 }) => {
+  // Categories joined the image-capable resources in the Category Images
+  // slice — every converted resource now shares the same thumbnail mode.
   await page.goto("/admin/items");
   await expect(
     recordRows(page).locator(".admin-record-thumb-wrap").first()
@@ -114,12 +118,12 @@ test("Items, Recipes, and Professions record lists render image-capable rows; Ca
   ).toBeVisible();
 
   await page.goto("/admin/categories");
-  await expect(recordRows(page).locator(".admin-record-thumb-wrap")).toHaveCount(
-    0
-  );
-  await expect(recordRows(page).locator(".admin-record-link-media")).toHaveCount(
-    0
-  );
+  await expect(
+    recordRows(page).locator(".admin-record-thumb-wrap").first()
+  ).toBeVisible();
+  await expect(
+    recordRows(page).locator(".admin-record-link-media").first()
+  ).toBeVisible();
 });
 
 test("a real uploaded image renders a decoded, decorative thumbnail; a seeded item without one shows the hidden fallback", async ({
