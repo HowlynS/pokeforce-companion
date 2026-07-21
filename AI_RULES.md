@@ -14,6 +14,28 @@ AI tools must not invent features, architecture, database tables, or design syst
 
 The current phase is:
 
+Milestone 10 - Route Hubs is complete (finalized 2026-07-21; see MILESTONES.md and DECISIONS.md). Route Hubs turned public Location pages into linked-data hubs centered on hierarchy and acquisition, entirely as a presentation layer over the existing Location and AcquisitionSource models — no Prisma schema change anywhere in the milestone.
+
+Durable rules established by this milestone, to guide future work:
+
+- Public Locations are linked-data hubs centered on hierarchy and acquisition, not a separate content type with its own concerns.
+- Description remains the primary authored Location field; no new authored Location fields were added.
+- Optional public sections (Obtainable Items, Sub-locations, the detail-hero facts column) are omitted completely — heading included — when empty, never rendered with a placeholder empty state, extending the Milestone 8 hide-empty rule.
+- Obtainable Items on a Location page derive strictly from Acquisition Sources whose own `locationId` is that Location; parent Locations never inherit or aggregate their children's acquisition data.
+- Hierarchy means containment via the existing parent/child self-relation, not adjacency — arbitrary connected, sibling, or nearby Locations must never be inferred from parent/child relations, and no `LocationConnection` model exists.
+- Item ↔ Location navigation is bidirectional: an Item's Acquisition Source links to its Location (`/locations/[slug]`, established in Milestone 8), and a Location's Obtainable Items card links to its Item (`/items/[slug]`, added this milestone) — both ordinary semantic links, never client-side navigation code.
+- Public Location pages never expose Game Version or verification metadata, matching the Slice 9A admin-only rule.
+- Public queries use restrained Prisma `select` clauses, never `include` — only the fields a page actually renders.
+- Locations are discoverable through three public surfaces: main navigation, the homepage resource grid, and global search.
+- Global Location search currently covers name and description only (the same restrained shape Profession/Category search already use) — no relational matching.
+- `/locations` remains a simple, flat, deterministic alphabetical index at the current record count, mirroring every other resource's list page; it does not render a nested tree, and hierarchy is presented only on each Location's own detail page (breadcrumb, Sub-locations).
+
+Slice-by-slice implementation record (Slices 10A–10E, all complete 2026-07-21): 10A added `groupObtainableItemsByType` (one card per Item, not per source row, deduplicating repeated same-type sources) and the "Obtainable Items" section. 10B tightened the Item/Location public queries to restrained `select` clauses and confirmed both navigation directions. 10C added the bounded, cycle-defensive `loadLocationAncestors` ancestor walk, the semantic `LocationBreadcrumb` (replacing the old separate "Parent location" card), and the new public `/locations` index. 10D moved Location type into `PageHeader`'s eyebrow, removed the now-redundant single-fact "Details" card, made the facts column conditional on an access note, and moved breadcrumb styling into a shared `.breadcrumb-link` CSS class (gold on hover only, matching the site's existing hover-only accent convention). 10E added Locations to main navigation, the homepage resource grid, and global search, and introduced no new search architecture, filters, pagination, or metadata system. See MILESTONES.md for full per-slice detail and DECISIONS.md for the reasoning behind each of these choices.
+
+The final Milestone 10 audit confirmed: every changed file belonged to one of the five slices; zero Prisma schema or migration changes anywhere in the milestone; no excluded system was introduced (Pokémon encounter databases, trainer databases, NPC/shop/service/quest databases, maps or coordinates, marketplace features, accounts, contributor tooling, audit logs, advanced/fuzzy search, filters or pagination, public verification, deployment work, or a dedicated mobile redesign); the complete verification matrix passed; and documentation was corrected to state completion accurately. Milestone 10 — Route Hubs — is fully complete.
+
+Do not begin Deployment, contributor tooling, audit logs, user accounts, public-page redesign, mobile redesign, or the admin record-list thumbnail/viewport-scrolling improvement until explicitly instructed in the milestone conversation.
+
 Milestone 9 - Admin Workspace & Game Version Management is complete (finalized 2026-07-20; see MILESTONES.md and DECISIONS.md). Slice 9A (Game Version foundation) is complete (see MILESTONES.md and DECISIONS.md 2026-07-17): the database-backed GameVersion model with at most one current version (advisory-lock-serialized service transactions); relational verification (`verifiedGameVersionId`, ON DELETE RESTRICT) on Item, Location, AcquisitionSource, Recipe, and Profession (Categories deliberately have none); verification against a selected Game Version — the shared picker on every verification form submits a server-validated id, historical versions are valid selections, and a blank selection falls back to the current version; the retirement of the CURRENT_GAME_BUILD_ID environment variable; and admin-only Game Version management as a secondary settings destination (`/admin/settings/game-versions`) — never in primary navigation, never public.
 
 Terminology: the contributor-facing term is "Game Version" everywhere. Never display "Build" in the UI.

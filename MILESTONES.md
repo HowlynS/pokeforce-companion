@@ -1918,12 +1918,228 @@ instructed in the milestone conversation.
 
 ---
 
-## Route Hubs (renumbered; previously Milestone 9)
+## Milestone 10 - Route Hubs
 
-Status: Not started (deferred)
+Status: Complete (2026-07-21)
 
-Do not begin route-hub work until explicitly instructed in the milestone
-conversation.
+Numbering note: this file previously listed "Route Hubs (renumbered;
+previously Milestone 9)" as a status stub with no slices. That stub is now
+this completed milestone.
+
+Goal:
+
+Turn public Location pages into linked-data hubs: show which Items are
+obtainable at a Location, connect Item and Location pages to each other,
+present Location hierarchy through navigable breadcrumbs, and make
+Locations discoverable through the same navigation, homepage, and search
+surfaces every other public resource already uses. No Prisma schema
+change — Route Hubs are a presentation layer over the AcquisitionSource
+and Location models Milestone 8 already established.
+
+### Slice 10A — Route Hub obtainable-item foundation (complete, 2026-07-21)
+
+- [x] `groupObtainableItemsByType` added to
+      `src/lib/validation/acquisition-source.ts`: the mirror image of the
+      existing Item-page `groupAcquisitionSourcesByType`, reusing the same
+      canonical `ACQUISITION_TYPES` order and `ACQUISITION_TYPE_LABELS`
+      map — no second ordering or label map
+- [x] One card per ITEM, not per source row: a single Item can have more
+      than one Acquisition Source of the same type at the same Location
+      (e.g. two `MINING` rows with different notes); distinct populated
+      fact combinations across those rows are collected into a `Set` and
+      joined for display, so an exact duplicate collapses instead of
+      repeating
+- [x] Type groups render in the enum's declared order with any type
+      matching zero Items omitted; within a group, Items are ordered by
+      name ascending with slug as a stable tie-breaker
+- [x] `/locations/[slug]` renders a new "Obtainable Items" section, each
+      card linking to `/items/[slug]`, the whole section (heading
+      included) omitted entirely when the Location has no Acquisition
+      Sources — never a public empty state, matching the Milestone 8
+      hide-empty rule already established for "How to obtain" and every
+      other relationship section
+- [x] No Prisma schema change; no `LocationConnection` model; no
+      child-location acquisition aggregation — only Acquisition Sources
+      whose own `locationId` is this exact Location appear
+- [x] Tests: new `groupObtainableItemsByType` unit suite (empty input,
+      type omission, enum-order grouping, name/slug ordering, same-item
+      multi-source collapsing); extended
+      `acquisition-source.integration.test.ts`; a new
+      `admin-location-obtainable-items.spec.ts` E2E suite
+
+### Slice 10B — bidirectional Item ↔ Location navigation (complete, 2026-07-21)
+
+- [x] The Item detail page's `acquisitionSources` query and the Location
+      detail page's `children`/`acquisitionSources` queries were tightened
+      from Prisma `include` to restrained `select` clauses — only the
+      fields each public section actually renders (name, slug, type,
+      image, source label, quantity, notes, and the related
+      item's/location's/profession's name) — never a database id beyond a
+      source's own React-key `id`, and never a verification or Game
+      Version field
+- [x] Item → Location: each Acquisition Source card's existing link to
+      `/locations/[slug]` (added in Milestone 8, `buildAcquisitionSourceCard`)
+      was confirmed unchanged and now reads from the tightened `select`
+      shape
+- [x] Location → Item: Slice 10A's "Obtainable Items" cards link to
+      `/items/[slug]`
+- [x] Both directions use the existing semantic `Card`/`Link` components
+      (real `<a>` elements), so both are keyboard-reachable with no new
+      interaction code
+- [x] Tests: extended `acquisition-source.integration.test.ts` proving the
+      tightened selects still return every field each page renders and
+      nothing else; a new `admin-item-how-to-obtain.spec.ts` E2E suite
+      (including a dedicated test proving no Game Version or verification
+      text appears in the section); `admin-location-obtainable-items.spec.ts`
+      extended for the reverse direction
+
+### Slice 10C — public Location hierarchy presentation (complete, 2026-07-21)
+
+- [x] `loadLocationAncestors(db, startParentId)` added to
+      `src/lib/locations/location-hierarchy.ts`: walks UP the parent chain
+      one restrained query per level (never a database-specific recursive
+      query), returning each ancestor's name and slug in root-first order
+      — never a database id, never a verification/Game Version field
+- [x] Bounded and cycle-defensive: a `MAX_BREADCRUMB_ANCESTORS` (10) step
+      limit and a `visited` id set stop the walk defensively even though
+      the admin's own `wouldCreateLocationCycle` guard should make a real
+      cycle unreachable through normal use; a parent id that does not
+      resolve to any row simply ends the walk at that point
+- [x] `LocationBreadcrumb` renders a labeled `<nav aria-label="Breadcrumb">`
+      around an `<ol>`: a stable "Locations" root link, one real link per
+      ancestor, and the current Location as the final, non-linked item
+      with `aria-current="page"` — the same "current page is never itself
+      a link" convention the admin nav already established. The direct
+      parent's context is represented entirely through the breadcrumb; the
+      page no longer also shows a separate "Parent location" card
+      repeating the same fact
+- [x] Sub-locations section unchanged in spirit but tightened to a
+      restrained `select` (name, slug, type) with `[{ name: "asc" },
+      { slug: "asc" }]` ordering — a deterministic tie-breaker for the
+      rare case of two children sharing a name; still direct children
+      only, never a recursive descendant walk
+- [x] `src/app/locations/page.tsx` added: the public `/locations` index —
+      a flat, alphabetically ordered grid mirroring the existing
+      Items/Recipes/Professions/Categories list pages exactly, with an
+      `EmptyState` when there are zero Locations; no search, filters, or
+      nested tree — hierarchy itself lives on each Location's own detail
+      page
+- [x] No adjacency, sibling, or connected-location inference anywhere —
+      the breadcrumb and Sub-locations section both derive strictly from
+      the existing `parentId` self-relation
+- [x] Tests: `location-hierarchy.test.ts` extended for `loadLocationAncestors`
+      (root Location, multi-level chain, defensive cycle stop, step-limit
+      stop); `location.integration.test.ts` extended; a new
+      `admin-location-hierarchy-breadcrumb.spec.ts` E2E suite (multi-level
+      breadcrumb rendering, root-location breadcrumb, `/locations` index
+      reachability, a dedicated test proving no Game Version or
+      verification text appears in or around the breadcrumb)
+
+### Slice 10D — Route Hub visual integration (complete, 2026-07-21)
+
+- [x] Location type moved from a standalone "Details" card into
+      `PageHeader`'s `eyebrow` prop (small, gold, above the h1) — the same
+      eyebrow convention already used elsewhere in the admin shell; with
+      type moved there, the single-fact "Details" card (which held only
+      `Type: …`) is removed entirely as redundant
+- [x] The facts column (`.detail-hero-facts`) is now rendered only when an
+      access note exists — previously it always rendered (holding at
+      least the Details card), so an empty column next to the image would
+      have violated the existing hide-empty rule now that Details is gone
+- [x] Breadcrumb styling moved from inline `style` objects to a new shared
+      `.breadcrumb-link` class in `globals.css` (inline styles cannot
+      express `:hover`): muted and underlined at rest, gold
+      (`--color-accent`) on hover only — the same restrained, hover-only
+      accent convention `.nav-pill` and `.interactive-card` already use;
+      the current (non-linked) breadcrumb item stays full-strength text
+      with no underline and no gold, so it never reads as a second,
+      redundant link
+- [x] Existing single-column public-detail layout (image beside facts,
+      stacked on narrow screens) retained unchanged; sparse pages (a root
+      Location with no access note, no children, no Acquisition Sources)
+      and narrow-width rendering were verified to show no blank
+      containers or layout gaps
+- [x] No route, query, breadcrumb data, hierarchy, or Acquisition Source
+      behavior changed — presentation only
+- [x] Tests: `admin-locations.spec.ts` updated for the eyebrow/removed
+      Details card; existing breadcrumb and obtainable-items E2E suites
+      re-verified against the new markup
+
+### Slice 10E — public Location search and discovery (complete, 2026-07-21)
+
+- [x] Locations added to the main public navigation (`MainNav`) as the
+      fifth entry, after Categories — the existing nav-item pattern, no
+      new navigation architecture
+- [x] Locations added to the homepage resource grid as a fifth `Card`,
+      using the existing resource-card pattern; homepage copy (the
+      overview description and the search callout) updated to name
+      Locations
+- [x] Global search (`src/lib/search/global-search.ts`) extended with a
+      fifth bounded, deterministic (name then slug, ascending) resource
+      query for Location: direct name/description matching only, the same
+      restrained shape already used for Profession and Category — no
+      relational matching (there is no "find a Location by the Items
+      obtainable there" path)
+- [x] `GlobalSearchResults`, `countSearchResults`, `buildSearchSummary`,
+      and the `/search` page's `RESULT_GROUPS`/copy all include the new
+      `locations` group consistently; Location search results link to
+      `/locations/[slug]`
+- [x] `/locations` itself is unchanged by this slice — it remains the
+      flat, alphabetically ordered index Slice 10C added
+- [x] No fuzzy search, autocomplete, external search service, filters, or
+      pagination introduced anywhere; no per-page metadata or new SEO
+      infrastructure added
+- [x] Tests: `global-search.test.ts` and
+      `global-search.integration.test.ts` extended for the Location group
+      (name match, description match, empty-group omission, per-type
+      result cap, deterministic ordering); `search.spec.ts` and
+      `public-navigation.spec.ts` updated for the new copy, nav entry, and
+      homepage card; a new `admin-search-locations.spec.ts` E2E suite
+      (a Location created through the real admin form found through
+      public search and linking to its detail page; an unrelated query
+      unaffected by the new group) reusing the existing
+      `test-e2e-location` prefix and cleanup helpers from
+      `admin-locations.spec.ts` — no new prefix or cleanup surface
+
+### Final Milestone 10 audit (complete, 2026-07-21)
+
+- [x] Full diff inspected from the Milestone 9 completion commit
+      (`e535bfe`) through the milestone's last feature commit (`3fd172b`):
+      every changed file belongs to one of the five slices above; no
+      stale disabled placeholder UI, no dead links, no internal ids or
+      verification/Game Version fields rendered publicly anywhere; hide-
+      empty behavior confirmed consistent across "Obtainable Items,"
+      Sub-locations, and the facts column; no child-location acquisition
+      aggregation; no connected-location language or inference; the
+      ancestor breadcrumb traversal confirmed bounded and cycle-defensive;
+      every new public link confirmed semantic and keyboard-reachable;
+      design tokens and shared classes reused, not duplicated; no
+      unrelated admin behavior changed
+- [x] Confirmed no Prisma schema or migration file changed anywhere in
+      the milestone (the most recent migration remains
+      `20260717011230_add_game_version_relational_verification`, from
+      Slice 9A)
+- [x] Confirmed the milestone did NOT add: Pokémon encounter databases,
+      trainer databases, NPC/shop/service/quest databases, maps or
+      coordinates, marketplace features, accounts, contributor tooling,
+      audit logs, advanced or fuzzy search, filters or pagination, public
+      verification information, deployment work, or a dedicated mobile
+      redesign
+- [x] Full verification matrix run and green: `pnpm test:unit`,
+      `pnpm test:env:check`, `pnpm test:integration`, `pnpm test:service`,
+      `pnpm test:e2e`, `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`,
+      `git diff --check` — see the closeout commit for exact totals
+- [x] Documentation corrected to reflect actual completion: this
+      milestone's own status section (replacing the old "Route Hubs
+      (renumbered; previously Milestone 9)" stub), and `CLAUDE.md`'s and
+      `AI_RULES.md`'s "Current Phase"/"Current Scope" headers
+
+### Remaining (not started)
+
+Nothing remains in Milestone 10. Do not begin Deployment, contributor
+tooling, audit logs, user accounts, public-page redesign, mobile redesign,
+or the admin record-list thumbnail/viewport-scrolling improvement until
+explicitly instructed in the milestone conversation.
 
 ---
 

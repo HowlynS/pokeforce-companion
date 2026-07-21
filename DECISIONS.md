@@ -1761,3 +1761,157 @@ Alternatives considered:
   admin shell, and introducing a third color to reconcile two existing
   ones would be pure churn with no benefit over reusing what already
   works.
+
+---
+
+### 2026-07-21 — Milestone 10 Route Hubs: presentation-only, no schema change; Acquisition Sources stay the sole source of truth
+
+Decision:
+
+Route Hubs — turning public Location pages into linked-data hubs — are
+implemented entirely as a presentation layer over the Location and
+AcquisitionSource models Milestone 8 already established. No Prisma
+schema or migration change was made anywhere in the milestone (the most
+recent migration remains Slice 9A's
+`20260717011230_add_game_version_relational_verification`). A Location's
+"Obtainable Items" section (`groupObtainableItemsByType` in
+`src/lib/validation/acquisition-source.ts`, Slice 10A) is derived
+strictly from AcquisitionSource rows whose own `locationId` references
+that exact Location — never from a child Location's sources, and never
+from any inferred connection. No `LocationConnection` model, adjacency
+table, or similar was added, and no child-source aggregation exists: a
+parent Location's page never lists items obtainable at its children, and
+a child's page never lists items obtainable at its parent or siblings.
+
+Reason:
+
+AcquisitionSource already models "this Item is obtainable this way,
+optionally at this Location, optionally via this Profession" completely;
+Route Hubs only needed a second way to query and group that existing
+fact (by Location instead of by Item), not a new fact to store. Treating
+containment (parent/child) as a boundary — rather than aggregating
+upward or across siblings — keeps each Location page describing exactly
+what an admin recorded for it, with no derived or inferred claim that
+would need its own correctness guarantee.
+
+Alternatives considered:
+
+- A `LocationConnection`/adjacency model for "nearby" or "reachable"
+  Locations — rejected; explicitly excluded scope, and nothing in the
+  Acquisition Source or Location models represents physical adjacency at
+  all.
+- Aggregating a parent Location's Obtainable Items to include everything
+  obtainable in any descendant Location — rejected; it would silently
+  misattribute where an item is actually found, and "obtainable in
+  Route 1" is a different fact from "obtainable somewhere inside Route
+  1's sub-areas."
+
+---
+
+### 2026-07-21 — Slice 10C: bounded application-level ancestor traversal replaces the parent-location card
+
+Decision:
+
+The Location breadcrumb's full ancestor chain is computed by
+`loadLocationAncestors` (`src/lib/locations/location-hierarchy.ts`) — a
+plain application-level loop issuing one restrained `findUnique` per
+level, bounded by a `MAX_BREADCRUMB_ANCESTORS` (10) step limit and
+defended by a `visited` id set — never a database-specific recursive
+query (e.g. a Postgres recursive CTE). With the full ancestor chain
+available, the old single-level "Parent location" card (linking to just
+the immediate parent) was removed from the Location detail page: the
+breadcrumb now states that exact same fact, plus every level above it,
+in one place, so keeping both would have repeated the immediate parent's
+name twice on the same page.
+
+Reason:
+
+Prisma has no built-in recursive-query helper, and a hand-written raw
+recursive SQL query would be the first raw-SQL escape hatch in a
+codebase that otherwise reaches the database exclusively through Prisma.
+A bounded loop of ordinary `findUnique` calls is slower per request than
+a single recursive query, but authored location hierarchies are shallow
+by design (the brief's own examples top out around Region -> Town ->
+Building) and the step bound plus cycle guard make an unbounded or
+runaway walk structurally impossible regardless of query strategy — the
+same "defense over trust" posture already applied to
+`wouldCreateLocationCycle`.
+
+Alternatives considered:
+
+- A raw recursive SQL query (Postgres `WITH RECURSIVE`) — rejected; it
+  would be the first raw-SQL access path in a Prisma-only data layer for
+  a performance gain the shallow, small hierarchy does not need.
+- Keeping the "Parent location" card alongside the new breadcrumb —
+  rejected; once the breadcrumb states the same immediate-parent fact
+  (plus the rest of the chain), the card becomes pure duplication with
+  no new information.
+
+---
+
+### 2026-07-21 — Slice 10D: single-column public detail layout retained
+
+Decision:
+
+The Location detail page's visual integration pass (moving type into the
+`PageHeader` eyebrow, removing the redundant "Details" card, making the
+facts column conditional) reused the existing responsive detail-hero
+layout (image beside facts on desktop, stacked on narrow screens)
+unchanged, rather than introducing a Route-Hub-specific layout. The facts
+column now renders only when an access note exists, so a sparse Location
+(no access note, no children, no Acquisition Sources) renders no blank
+containers anywhere on the page.
+
+Reason:
+
+Item, Recipe, and Profession detail pages already share this exact
+detail-hero structure (established in Milestone 7's public visual
+polish); introducing a second, Location-specific layout for Route Hubs
+would fracture that consistency for a milestone whose own goal is
+presentation, not a redesign. Making the facts column conditional
+extends the Milestone 8 "omit empty optional sections" rule to the
+column itself, not just its contents.
+
+Alternatives considered:
+
+- A dedicated multi-column "hub" layout for Locations only — rejected;
+  out of scope for a milestone about linking existing content, and would
+  need its own narrow-width verification separate from the shared layout
+  every other detail page already has covered.
+
+---
+
+### 2026-07-21 — Slice 10E: Locations join existing discovery surfaces; search extended, not replaced
+
+Decision:
+
+Locations became discoverable through the three existing public
+discovery surfaces — main navigation (`MainNav`), the homepage resource
+grid, and global search — using each surface's established pattern
+exactly (a new nav item, a new `Card`, a fifth bounded per-resource
+query in `searchGameData`). No new discovery mechanism (a dedicated
+"browse by hierarchy" widget, a map, a filter panel) was added. Global
+search's existing `searchGameData` function gained one more
+`Promise.all` branch matching Profession/Category's own restrained
+name-or-description shape — the function's existing bounded,
+deterministic, per-type-capped architecture was extended, not
+redesigned or replaced.
+
+Reason:
+
+The milestone brief calls for making Locations discoverable "through
+navigation, homepage, and global search" using the surfaces that already
+exist for every other resource — inventing a Location-specific discovery
+mechanism would contradict that instruction and add a second search or
+navigation architecture to maintain going forward.
+
+Alternatives considered:
+
+- A relational Location search matching by obtainable Item name (e.g.
+  finding "Iron Vale" by searching "iron ore") — rejected; explicitly
+  excluded scope, and no other non-Recipe resource in global search
+  matches relationally either, so it would be an asymmetric addition.
+- A separate `/locations/search` or hierarchy-aware browse page —
+  rejected; `/locations` already exists as the flat index Slice 10C
+  added, and the shared `/search` page already covers keyword search for
+  every resource.
