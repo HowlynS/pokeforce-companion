@@ -349,16 +349,17 @@ test("existing description, hierarchy, and notFound behavior remain intact", asy
   ).toBeVisible();
   await expect(cardLink(page, CHILD.name)).toBeVisible();
 
-  // Child's own detail page still shows its parent, with no Obtainable
-  // Items section since it has no acquisition sources.
+  // Child's own detail page still shows its parent (Slice 10C: via the
+  // breadcrumb, not a separate "Parent location" card), with no
+  // Obtainable Items section since it has no acquisition sources.
   await page.goto(`/locations/${CHILD.slug}`);
   await expect(
     page.getByRole("heading", { level: 1, name: CHILD.name, exact: true })
   ).toBeVisible();
-  const parentCard = cardLink(page, "Parent location");
-  await expect(parentCard).toBeVisible();
-  await expect(parentCard).toHaveAttribute("href", `/locations/${PARENT.slug}`);
-  await expect(page.getByText(`Part of ${PARENT.name}.`)).toBeVisible();
+  const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
+  const parentLink = breadcrumb.getByRole("link", { name: PARENT.name, exact: true });
+  await expect(parentLink).toBeVisible();
+  await expect(parentLink).toHaveAttribute("href", `/locations/${PARENT.slug}`);
   await expect(
     page.getByRole("heading", { level: 2, name: "Obtainable Items", exact: true })
   ).toHaveCount(0);

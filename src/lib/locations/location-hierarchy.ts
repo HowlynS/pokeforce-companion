@@ -1,7 +1,9 @@
-// Cycle guard for the Location self-relation. Like the other shared data
-// modules, the only Prisma reference here is type-level — callers pass
-// their own client — so importing this file never creates a database
-// connection (safe for unit tests, guard-first for integration tests).
+// Hierarchy helpers for the Location self-relation: the admin cycle guard
+// below, and (Slice 10C) the public breadcrumb's ancestor walk. Like the
+// other shared data modules, the only Prisma reference here is type-level
+// — callers pass their own client — so importing this file never creates
+// a database connection (safe for unit tests, guard-first for
+// integration tests).
 
 type GameDataClient = (typeof import("@/lib/db"))["prisma"];
 
@@ -58,4 +60,66 @@ export async function wouldCreateLocationCycle(
   // Exceeded the bound without resolving: treat as unsafe rather than risk
   // an unbounded walk.
   return true;
+}
+
+export type LocationAncestor = { name: string; slug: string };
+
+// Defensive upper bound on how many ancestors the public breadcrumb walks
+// before giving up. Authored game locations are never anywhere near this
+// deep (the examples in the brief top out around Region -> Town ->
+// Building); this exists only so a corrupted or unexpectedly deep chain
+// truncates safely instead of walking without end. Deliberately smaller
+// than MAX_ANCESTOR_STEPS above: that constant guards a worst-case cycle
+// check the admin action runs once per save, while this one runs on every
+// public page view and only ever needs to cover plausible authored depth.
+const MAX_BREADCRUMB_ANCESTORS = 10;
+
+/**
+ * Walks UP from `startParentId` through the chain of parents, returning
+ * each ancestor's name and slug in ROOT-FIRST order (the order a
+ * breadcrumb reads left to right) — never a database id, never
+ * verification/Game Version fields. Plain application code, one small
+ * restrained query per level (never a database-specific recursive
+ * query), stopping the moment it runs out of parents, revisits an id
+ * already seen (a defensive cycle guard — the admin's own
+ * wouldCreateLocationCycle check should make this unreachable through
+ * normal use), or reaches MAX_BREADCRUMB_ANCESTORS. A parent id that does
+ * not resolve to any row simply ends the walk at that point.
+ */
+export async function loadLocationAncestors(
+  db: GameDataClient,
+  startParentId: string | null
+): Promise<LocationAncestor[]> {
+  const ancestors: LocationAncestor[] = [];
+  const visited = new Set<string>();
+  let currentId = startParentId;
+
+  for (
+    let step = 0;
+    step < MAX_BREADCRUMB_ANCESTORS && currentId !== null;
+    step += 1
+  ) {
+    if (visited.has(currentId)) {
+      break;
+    }
+    visited.add(currentId);
+
+    // Explicit result type: TypeScript cannot otherwise infer the awaited
+    // value's type inside this loop without circularity, matching
+    // wouldCreateLocationCycle's own reasoning above.
+    const current: { name: string; slug: string; parentId: string | null } | null =
+      await db.location.findUnique({
+        where: { id: currentId },
+        select: { name: true, slug: true, parentId: true },
+      });
+
+    if (!current) {
+      break;
+    }
+
+    ancestors.push({ name: current.name, slug: current.slug });
+    currentId = current.parentId;
+  }
+
+  return ancestors.reverse();
 }

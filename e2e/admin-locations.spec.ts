@@ -733,8 +733,14 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/locations?success=updated");
 
+  // Slice 10C: the public page shows the parent via its breadcrumb, not a
+  // separate "Parent location" card.
   await page.goto(`/locations/${SUBJECT.slug}`);
-  await expect(page.getByText(`Part of ${PARENT_A.name}.`)).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Breadcrumb" })
+      .getByRole("link", { name: PARENT_A.name, exact: true })
+  ).toBeVisible();
 
   // --- Hierarchy tab shows the current parent preselected, self excluded,
   // Parent A's sub-locations list includes the subject --------------------
@@ -794,7 +800,11 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   ).toBeVisible();
 
   await page.goto(`/locations/${SUBJECT.slug}`);
-  await expect(page.getByText(`Part of ${PARENT_B.name}.`)).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Breadcrumb" })
+      .getByRole("link", { name: PARENT_B.name, exact: true })
+  ).toBeVisible();
   await expect(page.getByText(SUBJECT.description)).toBeVisible();
   await expect(page.getByText(SUBJECT.accessNote)).toBeVisible();
 

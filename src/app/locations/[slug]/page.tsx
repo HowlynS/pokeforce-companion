@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
@@ -8,6 +9,10 @@ import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 import { groupObtainableItemsByType } from "@/lib/validation/acquisition-source";
+import {
+  loadLocationAncestors,
+  type LocationAncestor,
+} from "@/lib/locations/location-hierarchy";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +34,82 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Semantic breadcrumb navigation (Slice 10C): a labeled <nav> around an
+// <ol>, so the hierarchy is understandable to assistive technology without
+// relying on the decorative "/" separators (each marked aria-hidden) or on
+// color alone. "Locations" is a stable root entry point; every ancestor is
+// a real link; the current Location is the final, non-linked item with
+// aria-current="page" — never itself a link, matching every other
+// "current page" convention already used in this codebase (e.g. the admin
+// nav's own aria-current="page"). Ancestor links are muted and underlined
+// so they read as interactive independent of hover; the current item is
+// full-strength text with no underline, the same non-color distinction.
+function LocationBreadcrumb({
+  ancestors,
+  currentName,
+}: {
+  ancestors: readonly LocationAncestor[];
+  currentName: string;
+}) {
+  return (
+    <nav aria-label="Breadcrumb" style={{ marginBottom: "16px" }}>
+      <ol
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: "6px",
+          margin: 0,
+          padding: 0,
+          listStyle: "none",
+          fontSize: "14px",
+        }}
+      >
+        <li>
+          <Link
+            href="/locations"
+            style={{
+              color: designTokens.colors.textMuted,
+              textDecoration: "underline",
+            }}
+          >
+            Locations
+          </Link>
+        </li>
+
+        {ancestors.map((ancestor) => (
+          <li
+            key={ancestor.slug}
+            style={{ display: "flex", alignItems: "center", gap: "6px" }}
+          >
+            <span aria-hidden="true" style={{ color: designTokens.colors.textMuted }}>
+              /
+            </span>
+            <a
+              href={`/locations/${ancestor.slug}`}
+              style={{
+                color: designTokens.colors.textMuted,
+                textDecoration: "underline",
+              }}
+            >
+              {ancestor.name}
+            </a>
+          </li>
+        ))}
+
+        <li style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span aria-hidden="true" style={{ color: designTokens.colors.textMuted }}>
+            /
+          </span>
+          <span aria-current="page" style={{ color: designTokens.colors.text }}>
+            {currentName}
+          </span>
+        </li>
+      </ol>
+    </nav>
+  );
+}
+
 export default async function LocationDetailPage({
   params,
 }: LocationDetailPageProps) {
@@ -37,8 +118,15 @@ export default async function LocationDetailPage({
   const location = await prisma.location.findUnique({
     where: { slug },
     include: {
-      parent: true,
-      children: { orderBy: { name: "asc" } },
+      // Only the fields the Sub-locations section needs — never
+      // verification/Game Version fields, and never a database id.
+      // Ordered by name first, slug second: a deterministic tie-breaker
+      // for the (rare) case of two children sharing a name, since name
+      // alone is not guaranteed unique.
+      children: {
+        select: { name: true, slug: true, type: true },
+        orderBy: [{ name: "asc" }, { slug: "asc" }],
+      },
       // Only the fields the public "Obtainable Items" section needs —
       // never verification/Game Version fields, and never a database id.
       // Navigating this to-many relation from the Location itself already
@@ -63,6 +151,15 @@ export default async function LocationDetailPage({
     notFound();
   }
 
+  // Full ancestor chain (Slice 10C), root-first — empty for a root
+  // Location. This is the breadcrumb's only source of parent context; the
+  // page no longer also shows a separate "Parent location" card, since
+  // that would repeat the exact same fact the breadcrumb already states
+  // right above the title.
+  const ancestors = location.parentId
+    ? await loadLocationAncestors(prisma, location.parentId)
+    : [];
+
   // Grouped by type (enum order) and deduplicated by item — a single item
   // can have more than one source of the same type at this location, and
   // must render as one card, not several. Any type with zero matching
@@ -71,12 +168,13 @@ export default async function LocationDetailPage({
   const obtainableGroups = groupObtainableItemsByType(location.acquisitionSources);
 
   // Only meaningful metadata is shown: unset optional fields are omitted
-  // rather than rendered as placeholder values. The parent relation gets
-  // its own linked card below instead of repeating the name here.
+  // rather than rendered as placeholder values.
   const details = [`Type: ${LOCATION_TYPE_LABELS[location.type]}`];
 
   return (
     <AppShell>
+      <LocationBreadcrumb ancestors={ancestors} currentName={location.name} />
+
       <PageHeader
         title={location.name}
         description={location.description ?? undefined}
@@ -91,14 +189,6 @@ export default async function LocationDetailPage({
 
         <div className="detail-hero-facts">
           <Card title="Details" description={details.join(" · ")} />
-
-          {location.parent ? (
-            <Card
-              title="Parent location"
-              description={`Part of ${location.parent.name}.`}
-              href={`/locations/${location.parent.slug}`}
-            />
-          ) : null}
 
           {location.accessNote ? (
             <Card title="Access" description={location.accessNote} />
@@ -120,7 +210,7 @@ export default async function LocationDetailPage({
           <ContentGrid>
             {location.children.map((child) => (
               <Card
-                key={child.id}
+                key={child.slug}
                 title={child.name}
                 description={LOCATION_TYPE_LABELS[child.type]}
                 href={`/locations/${child.slug}`}

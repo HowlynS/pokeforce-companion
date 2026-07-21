@@ -13,7 +13,10 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { Prisma } from "@/generated/prisma/client";
 import { isForeignKeyError } from "@/lib/prisma-errors";
 import { LOCATION_TYPES } from "@/lib/validation/location";
-import { wouldCreateLocationCycle } from "@/lib/locations/location-hierarchy";
+import {
+  loadLocationAncestors,
+  wouldCreateLocationCycle,
+} from "@/lib/locations/location-hierarchy";
 import {
   GAME_VERSION_TEST_NAME_PREFIX,
   LOCATIONS_TEST_SLUG_PREFIX,
@@ -547,6 +550,142 @@ describe("location hierarchy and verification (integration)", () => {
       expect(edited.updatedAt.getTime()).toBeGreaterThan(
         stamped.updatedAt.getTime()
       );
+    });
+  });
+
+  describe("public breadcrumb ancestor chain (Slice 10C)", () => {
+    it("returns an empty chain for a root location (no parent)", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const root = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Breadcrumb Root",
+          slug: `${P}breadcrumb-root`,
+          type: "REGION",
+        },
+      });
+
+      expect(await loadLocationAncestors(prisma, root.parentId)).toEqual([]);
+    });
+
+    it("returns the direct parent for a one-level-deep location", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const parent = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Breadcrumb Parent",
+          slug: `${P}breadcrumb-parent`,
+          type: "REGION",
+        },
+      });
+      const child = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Breadcrumb Child",
+          slug: `${P}breadcrumb-child`,
+          type: "TOWN",
+          parentId: parent.id,
+        },
+      });
+
+      expect(await loadLocationAncestors(prisma, child.parentId)).toEqual([
+        { name: parent.name, slug: parent.slug },
+      ]);
+    });
+
+    it("returns a three-level ancestor chain in root-first order", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const region = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Breadcrumb Region",
+          slug: `${P}breadcrumb-region`,
+          type: "REGION",
+        },
+      });
+      const town = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Breadcrumb Town",
+          slug: `${P}breadcrumb-town`,
+          type: "TOWN",
+          parentId: region.id,
+        },
+      });
+      const building = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Breadcrumb Building",
+          slug: `${P}breadcrumb-building`,
+          type: "BUILDING",
+          parentId: town.id,
+        },
+      });
+
+      expect(await loadLocationAncestors(prisma, building.parentId)).toEqual([
+        { name: region.name, slug: region.slug },
+        { name: town.name, slug: town.slug },
+      ]);
+    });
+
+    it("stops at a parent id that does not resolve to any row", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      expect(
+        await loadLocationAncestors(prisma, `${P}breadcrumb-nonexistent-id`)
+      ).toEqual([]);
+    });
+
+    it("defends against a corrupted self-referencing chain instead of looping forever", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      // A genuine cycle can never be created through the application (the
+      // admin action's own wouldCreateLocationCycle guard prevents it),
+      // so this simulates data corruption directly at the database level:
+      // two locations pointing at each other.
+      const a = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Breadcrumb Cycle A",
+          slug: `${P}breadcrumb-cycle-a`,
+          type: "REGION",
+        },
+      });
+      const b = await prisma.location.create({
+        data: {
+          name: "Test Integration Location Breadcrumb Cycle B",
+          slug: `${P}breadcrumb-cycle-b`,
+          type: "TOWN",
+          parentId: a.id,
+        },
+      });
+      await prisma.location.update({
+        where: { id: a.id },
+        data: { parentId: b.id },
+      });
+
+      try {
+        const ancestors = await Promise.race([
+          loadLocationAncestors(prisma, a.id),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new Error("loadLocationAncestors did not return")),
+              5000
+            )
+          ),
+        ]);
+
+        // Terminates (does not hang) and returns a finite, bounded result
+        // instead of looping between A and B forever.
+        expect(Array.isArray(ancestors)).toBe(true);
+        expect((ancestors as unknown[]).length).toBeLessThanOrEqual(2);
+      } finally {
+        // Break the cycle before this test ends: the standard cleanup
+        // helper deletes only "leaf" rows (locations with no remaining
+        // child), and A/B are mutually each other's child for as long as
+        // the cycle stands — no leaf would ever be found, and both rows
+        // would otherwise be stranded past every afterEach/afterAll.
+        await prisma.location.update({
+          where: { id: a.id },
+          data: { parentId: null },
+        });
+      }
     });
   });
 });
