@@ -44,6 +44,19 @@ test.describe("homepage", () => {
       page.getByRole("navigation", { name: "Main navigation" })
     ).toBeVisible();
   });
+
+  // Slice 10E: Locations became a public resource-card entry point on the
+  // homepage's own grid, matching the existing Items/Recipes/Professions/
+  // Categories cards.
+  test("the Locations card is visible and links to /locations", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const card = cardLink(page, "Locations");
+    await expect(card).toBeVisible();
+    await expect(card).toHaveAttribute("href", "/locations");
+  });
 });
 
 const NAV_TARGETS = [
@@ -51,6 +64,7 @@ const NAV_TARGETS = [
   { label: "Recipes", path: "/recipes", heading: "Recipes" },
   { label: "Professions", path: "/professions", heading: "Professions" },
   { label: "Categories", path: "/categories", heading: "Categories" },
+  { label: "Locations", path: "/locations", heading: "Locations" },
 ] as const;
 
 test.describe("main navigation", () => {

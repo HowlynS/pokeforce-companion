@@ -5,6 +5,10 @@ const navItems = [
   { label: "Recipes", href: "/recipes" },
   { label: "Professions", href: "/professions" },
   { label: "Categories", href: "/categories" },
+  // Slice 10E: Locations is now a complete, symmetric public resource
+  // (its own list page, detail pages, and Route Hub features) — added
+  // last, matching the admin nav's own established ordering.
+  { label: "Locations", href: "/locations" },
 ];
 
 export function MainNav() {

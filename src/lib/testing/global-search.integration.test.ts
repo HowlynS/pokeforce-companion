@@ -27,6 +27,11 @@ import {
 // has no ingredients and no profession, so deleting it cascades nothing.
 const RESULT_PROBE_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}search-result-probe`;
 
+// The seed has zero Location fixtures at all (Slice 10E audit), so proving
+// the Location search path needs its own prefixed fixture, cleaned up the
+// same way as the Recipe probe above.
+const LOCATION_PROBE_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}search-location-probe`;
+
 // Prefix-scoped cleanup for this file's fixture Recipe. Deletes ONLY
 // Recipes carrying the integration-test slug prefix; seeded recipes can
 // never match.
@@ -44,6 +49,22 @@ async function deleteSearchFixtureRecipes(): Promise<number> {
   return result.count;
 }
 
+// Prefix-scoped cleanup for this file's fixture Location. Deletes ONLY
+// Locations carrying the integration-test slug prefix; the seed has none.
+async function deleteSearchFixtureLocations(): Promise<number> {
+  if (INTEGRATION_TEST_SLUG_PREFIX.length < 5) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the integration-test slug prefix is suspiciously short."
+    );
+  }
+
+  const prisma = await getVerifiedTestPrisma();
+  const result = await prisma.location.deleteMany({
+    where: { slug: { startsWith: INTEGRATION_TEST_SLUG_PREFIX } },
+  });
+  return result.count;
+}
+
 describe("global search (integration)", () => {
   beforeAll(async () => {
     // First database contact of the file: the guard inside
@@ -51,16 +72,20 @@ describe("global search (integration)", () => {
     // verified test project. Also removes any prefixed leftovers an
     // interrupted earlier run may have stranded.
     await deleteSearchFixtureRecipes();
+    await deleteSearchFixtureLocations();
   });
 
   afterEach(async () => {
     await deleteSearchFixtureRecipes();
+    await deleteSearchFixtureLocations();
   });
 
   afterAll(async () => {
-    const remaining = await deleteSearchFixtureRecipes();
+    const remainingRecipes = await deleteSearchFixtureRecipes();
+    const remainingLocations = await deleteSearchFixtureLocations();
     await disconnectTestPrisma();
-    expect(remaining).toBe(0);
+    expect(remainingRecipes).toBe(0);
+    expect(remainingLocations).toBe(0);
   });
 
   it("matches partial item names case-insensitively", async () => {
@@ -85,6 +110,7 @@ describe("global search (integration)", () => {
     ]);
     expect(lower.professions).toEqual([]);
     expect(lower.categories).toEqual([]);
+    expect(lower.locations).toEqual([]);
 
     // Case must not change the result set or its order.
     expect(upper).toEqual(lower);
@@ -133,6 +159,7 @@ describe("global search (integration)", () => {
     ]);
     expect(results.categories[0].context).toBeNull();
     expect(results.recipes).toEqual([]);
+    expect(results.locations).toEqual([]);
   });
 
   it("finds recipes through an ingredient item name, case-insensitively", async () => {
@@ -152,6 +179,7 @@ describe("global search (integration)", () => {
       expect(recipe.context).toBe("Ingredient: Leather Strap");
     }
     expect(lower.items.map((item) => item.slug)).toEqual(["leather-strap"]);
+    expect(lower.locations).toEqual([]);
     expect(upper).toEqual(lower);
   });
 
@@ -173,6 +201,7 @@ describe("global search (integration)", () => {
       "alchemy",
     ]);
     expect(results.items).toEqual([]);
+    expect(results.locations).toEqual([]);
   });
 
   it("finds a recipe through its resulting item name", async () => {
@@ -203,6 +232,7 @@ describe("global search (integration)", () => {
     ]);
     expect(results.recipes[0].context).toBe("Result: Whetstone");
     expect(results.items.map((item) => item.slug)).toEqual(["whetstone"]);
+    expect(results.locations).toEqual([]);
   });
 
   it("matches inside a word, not only at the start", async () => {
@@ -213,6 +243,7 @@ describe("global search (integration)", () => {
     // "Whetstone" is the only seeded record containing "hetsto".
     expect(results.items.map((item) => item.slug)).toEqual(["whetstone"]);
     expect(results.recipes).toEqual([]);
+    expect(results.locations).toEqual([]);
   });
 
   it("matches descriptions where the field exists", async () => {
@@ -230,6 +261,55 @@ describe("global search (integration)", () => {
     ]);
     expect(results.items).toEqual([]);
     expect(results.recipes).toEqual([]);
+    expect(results.locations).toEqual([]);
+  });
+
+  it("finds a location through its own name, case-insensitively", async () => {
+    const prisma = await getVerifiedTestPrisma();
+
+    // The seed has zero Location fixtures, so this fixture proves the
+    // Location search path end to end: direct name match, no relational
+    // matching (Location has none), and no context line.
+    await prisma.location.create({
+      data: {
+        slug: LOCATION_PROBE_SLUG,
+        name: "Zzz Integration Search Location Probe",
+        type: "REGION",
+      },
+    });
+
+    const lower = await searchGameData(prisma, "zzz integration search location probe");
+    const upper = await searchGameData(prisma, "ZZZ INTEGRATION SEARCH LOCATION PROBE");
+
+    expect(lower.locations.map((location) => location.slug)).toEqual([
+      LOCATION_PROBE_SLUG,
+    ]);
+    expect(lower.locations[0].context).toBeNull();
+    expect(lower.items).toEqual([]);
+    expect(lower.recipes).toEqual([]);
+    expect(lower.professions).toEqual([]);
+    expect(lower.categories).toEqual([]);
+    expect(upper).toEqual(lower);
+  });
+
+  it("finds a location through its description", async () => {
+    const prisma = await getVerifiedTestPrisma();
+
+    await prisma.location.create({
+      data: {
+        slug: LOCATION_PROBE_SLUG,
+        name: "Zzz Integration Search Location Probe",
+        type: "REGION",
+        description: "A remote testing-only outpost with nothing else nearby.",
+      },
+    });
+
+    const results = await searchGameData(prisma, "testing-only outpost");
+
+    expect(results.locations.map((location) => location.slug)).toEqual([
+      LOCATION_PROBE_SLUG,
+    ]);
+    expect(results.locations[0].context).toBeNull();
   });
 
   it("returns empty groups when nothing matches", async () => {
@@ -242,6 +322,7 @@ describe("global search (integration)", () => {
       recipes: [],
       professions: [],
       categories: [],
+      locations: [],
     });
   });
 
@@ -253,12 +334,14 @@ describe("global search (integration)", () => {
       recipes: [],
       professions: [],
       categories: [],
+      locations: [],
     });
     expect(await searchGameData(prisma, "   ")).toEqual({
       items: [],
       recipes: [],
       professions: [],
       categories: [],
+      locations: [],
     });
   });
 
@@ -283,6 +366,7 @@ describe("global search (integration)", () => {
       results.recipes,
       results.professions,
       results.categories,
+      results.locations,
     ]) {
       expect(group.length).toBeLessThanOrEqual(SEARCH_RESULTS_PER_TYPE);
       const names = group.map((entry) => entry.name);
@@ -304,6 +388,7 @@ describe("global search (integration)", () => {
       ...results.recipes,
       ...results.professions,
       ...results.categories,
+      ...results.locations,
     ]) {
       expect(Object.keys(entry).sort()).toEqual([
         "context",

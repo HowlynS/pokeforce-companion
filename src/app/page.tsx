@@ -9,7 +9,7 @@ export default function Home() {
     <AppShell>
       <PageHeader
         title="PokeForce Companion"
-        description="A crafting wiki companion for browsing items, recipes, professions, and categories."
+        description="A crafting wiki companion for browsing items, recipes, professions, categories, and locations."
       />
 
       <ContentGrid>
@@ -33,6 +33,11 @@ export default function Home() {
           description="Navigate grouped content faster with clear categories."
           href="/categories"
         />
+        <Card
+          title="Locations"
+          description="Discover where items can be found across the world."
+          href="/locations"
+        />
       </ContentGrid>
 
       <section
@@ -52,8 +57,8 @@ export default function Home() {
           }}
         >
           Looking for something specific? Use the search box in the header —
-          it finds items, recipes, professions, and categories by name, and
-          recipes by their result, profession, or ingredients.
+          it finds items, recipes, professions, categories, and locations by
+          name, and recipes by their result, profession, or ingredients.
         </p>
       </section>
     </AppShell>

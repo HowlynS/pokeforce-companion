@@ -1,4 +1,4 @@
-// Global public search across the four game-data resources, through Prisma
+// Global public search across the five game-data resources, through Prisma
 // only. This module never creates a database client itself: the Prisma
 // client is passed in by the caller (the /search page passes the shared
 // client from src/lib/db.ts; integration tests pass the guard-verified test
@@ -91,14 +91,25 @@ export type GlobalSearchResults = {
   recipes: SearchResultEntry[];
   professions: SearchResultEntry[];
   categories: SearchResultEntry[];
+  // Slice 10E: Locations searched the same restrained way as Professions
+  // and Categories — direct name/description matching only, no relational
+  // matching (there is no "find a Location by the Items obtainable there"
+  // path here, matching the existing scope of every other resource).
+  locations: SearchResultEntry[];
 };
 
 export function emptySearchResults(): GlobalSearchResults {
-  return { items: [], recipes: [], professions: [], categories: [] };
+  return {
+    items: [],
+    recipes: [],
+    professions: [],
+    categories: [],
+    locations: [],
+  };
 }
 
 /**
- * Runs the four bounded, deterministic (name then slug, ascending) resource
+ * Runs the five bounded, deterministic (name then slug, ascending) resource
  * queries for a normalized query string. A blank query short-circuits to
  * empty results without touching the database.
  */
@@ -115,7 +126,7 @@ export async function searchGameData(
   const contains = { contains: query, mode: "insensitive" as const };
   const ordering = [{ name: "asc" as const }, { slug: "asc" as const }];
 
-  const [items, recipes, professions, categories] = await Promise.all([
+  const [items, recipes, professions, categories, locations] = await Promise.all([
     // Direct fields plus the Category relation by NAME. Relation names
     // selected here are internal input for the context line only and are
     // stripped from the returned entries below.
@@ -176,6 +187,14 @@ export async function searchGameData(
       orderBy: ordering,
       take: SEARCH_RESULTS_PER_TYPE,
     }),
+    // Same restrained shape as Profession/Category: direct name/description
+    // matching only, no relational matching (never Item-by-Location).
+    db.location.findMany({
+      where: { OR: [{ name: contains }, { description: contains }] },
+      select: { slug: true, name: true, description: true },
+      orderBy: ordering,
+      take: SEARCH_RESULTS_PER_TYPE,
+    }),
   ]);
 
   return {
@@ -213,6 +232,7 @@ export async function searchGameData(
       context: null,
     })),
     categories: categories.map((category) => ({ ...category, context: null })),
+    locations: locations.map((location) => ({ ...location, context: null })),
   };
 }
 
@@ -222,7 +242,8 @@ export function countSearchResults(results: GlobalSearchResults): number {
     results.items.length +
     results.recipes.length +
     results.professions.length +
-    results.categories.length
+    results.categories.length +
+    results.locations.length
   );
 }
 
@@ -241,6 +262,7 @@ export function buildSearchSummary(results: GlobalSearchResults): string {
     results.recipes,
     results.professions,
     results.categories,
+    results.locations,
   ].filter((group) => group.length > 0).length;
 
   const resultWord = total === 1 ? "result" : "results";

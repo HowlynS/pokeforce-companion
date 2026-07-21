@@ -70,7 +70,7 @@ test("visiting /search without a query shows the empty-query guidance", async ({
   // the resource-type phrasing).
   await expect(
     page.getByText(
-      "Search Items, Recipes, Professions, and Categories by name or description — for example a material like iron."
+      "Search Items, Recipes, Professions, Categories, and Locations by name or description — for example a material like iron."
     )
   ).toBeVisible();
   await expect(
@@ -117,12 +117,16 @@ test("a seeded query returns grouped items and recipes with counts", async ({
     cardLink(page, "Reinforced Shield").getByText("Ingredient: Iron Ingot")
   ).toBeVisible();
 
-  // No profession or category matches "iron": those groups are omitted.
+  // No profession, category, or location matches "iron": those groups are
+  // omitted.
   await expect(
     page.getByRole("heading", { level: 2, name: /^Professions/ })
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { level: 2, name: /^Categories/ })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 2, name: /^Locations/ })
   ).toHaveCount(0);
 
   // The submitted query is retained in the page form.
@@ -260,7 +264,7 @@ test("a query with no matches shows actionable no-results guidance with the quer
   // The message names the query safely and suggests a concrete next step.
   await expect(
     page.getByText(
-      'No items, recipes, professions, or categories matched "test-e2e-no-such-thing".'
+      'No items, recipes, professions, categories, or locations matched "test-e2e-no-such-thing".'
     )
   ).toBeVisible();
   await expect(
