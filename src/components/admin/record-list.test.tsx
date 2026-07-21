@@ -150,6 +150,65 @@ describe("RecordList optional regions", () => {
   });
 });
 
+describe("RecordList image-capable mode (showImages)", () => {
+  const IMAGE_ROWS = [
+    {
+      href: "/admin/items/iron-ore/edit",
+      primary: "Iron Ore",
+      secondary: "Materials",
+      selected: true,
+      image: "https://example.test/storage/items/iron-ore.png",
+    },
+    { href: "/admin/items/oak-log/edit", primary: "Oak Log", image: null },
+  ] as const;
+
+  it("renders a real image with an empty decorative alt attribute", () => {
+    const html = renderList({ showImages: true, rows: IMAGE_ROWS });
+
+    expect(html).toMatch(
+      /<img [^>]*src="https:\/\/example\.test\/storage\/items\/iron-ore\.png"[^>]*>/
+    );
+    expect(html).toMatch(/<img [^>]*alt=""[^>]*>/);
+    expect(html).toMatch(/<img [^>]*class="admin-record-thumb-img"[^>]*>/);
+  });
+
+  it("renders the fallback slot (no <img>) for a null image, hidden from assistive technology", () => {
+    const html = renderList({ showImages: true, rows: IMAGE_ROWS });
+
+    // Oak Log's row has no image: its media wrap carries the empty
+    // modifier and aria-hidden, and contains no <img> at all — never a
+    // broken src.
+    expect(html).toMatch(
+      /<span class="admin-record-thumb-wrap admin-record-thumb-empty" aria-hidden="true"\s*\/?>\s*<\/span>/
+    );
+    // Exactly one <img> across both rows — the populated one only.
+    expect(html.match(/<img /g)).toHaveLength(1);
+  });
+
+  it("gives every row the same media slot regardless of whether its own image is populated", () => {
+    const html = renderList({ showImages: true, rows: IMAGE_ROWS });
+
+    expect(html.match(/admin-record-thumb-wrap/g)).toHaveLength(2);
+  });
+
+  it("renders no media wrapper at all in text-only mode (the default)", () => {
+    const html = renderList({ rows: BASE_ROWS });
+
+    expect(html).not.toContain("admin-record-thumb-wrap");
+    expect(html).not.toContain("admin-record-link-media");
+  });
+
+  it("keeps primary/secondary text, hrefs, and selection unchanged in image-capable mode", () => {
+    const html = renderList({ showImages: true, rows: IMAGE_ROWS });
+
+    expect(html).toContain('href="/admin/items/iron-ore/edit"');
+    expect(html).toContain("Iron Ore");
+    expect(html).toContain("Materials");
+    expect(html).toContain("Oak Log");
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+  });
+});
+
 describe("RecordListPagination", () => {
   it("renders enabled directions as links that preserve search parameters", () => {
     const html = renderToStaticMarkup(

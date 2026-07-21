@@ -25,6 +25,12 @@ export type RecordListRow = {
   secondary?: string;
   /** Marks the record currently open in the editor. */
   selected?: boolean;
+  /** Resolved public image URL for image-capable lists (already
+      converted by the caller via getImagePublicUrl — this component
+      never resolves storage paths itself). Null/undefined renders the
+      fixed-size fallback slot. Ignored unless the list's own
+      `showImages` is set. */
+  image?: string | null;
 };
 
 type RecordListProps = {
@@ -50,6 +56,12 @@ type RecordListProps = {
   countLabel?: string;
   /** Optional pagination node (see RecordListPagination). */
   pagination?: React.ReactNode;
+  /** List-level image-capable mode: every row reserves the same fixed
+      64×64 media slot (populated or the missing-image fallback), rather
+      than each row deciding its own layout from whether it happens to
+      have an image. Resources without an image field (e.g. Category)
+      leave this false/omitted for the original text-only row. */
+  showImages?: boolean;
 };
 
 export function RecordList({
@@ -64,6 +76,7 @@ export function RecordList({
   empty,
   countLabel,
   pagination,
+  showImages = false,
 }: RecordListProps) {
   return (
     <section aria-label={label} className="admin-record-list">
@@ -111,15 +124,55 @@ export function RecordList({
               <li key={row.href}>
                 <a
                   href={row.href}
-                  className="admin-record-link"
+                  className={
+                    showImages
+                      ? "admin-record-link admin-record-link-media"
+                      : "admin-record-link"
+                  }
                   aria-current={row.selected ? "page" : undefined}
                 >
-                  <span className="admin-record-primary">{row.primary}</span>
-                  {row.secondary ? (
-                    <span className="admin-record-secondary">
-                      {row.secondary}
+                  {showImages ? (
+                    <span
+                      className={
+                        row.image
+                          ? "admin-record-thumb-wrap"
+                          : "admin-record-thumb-wrap admin-record-thumb-empty"
+                      }
+                      aria-hidden={row.image ? undefined : true}
+                    >
+                      {row.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- admin-only thumbnail; matches the existing ImagePanel preview convention (plain <img>, no next/image optimization pipeline)
+                        <img
+                          src={row.image}
+                          alt=""
+                          className="admin-record-thumb-img"
+                        />
+                      ) : null}
                     </span>
                   ) : null}
+                  {showImages ? (
+                    <span className="admin-record-text">
+                      <span className="admin-record-primary">
+                        {row.primary}
+                      </span>
+                      {row.secondary ? (
+                        <span className="admin-record-secondary">
+                          {row.secondary}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="admin-record-primary">
+                        {row.primary}
+                      </span>
+                      {row.secondary ? (
+                        <span className="admin-record-secondary">
+                          {row.secondary}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 </a>
               </li>
             ))}

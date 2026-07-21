@@ -816,27 +816,44 @@ input[type="checkbox"] {
 }
 
 /* ---- Admin record list (Slice 9B.3; accent unified to gold in Slice
-   9H) -----------------------------------------------------------------
+   9H; viewport/thumbnail refinement below) ------------------------------
    The shared quick-switching column for AdminWorkspace's recordList
    slot: compact dark list, restrained separators, gold selected state
-   matching the rest of the admin shell. Sticks below the top of the
-   content area and scrolls INTERNALLY once the rows outgrow the
-   viewport, so the list stays reachable beside a long editor. */
+   matching the rest of the admin shell. The whole column is capped to
+   the viewport (sticky top 24px, content area's own 48px bottom
+   padding — 100vh/100dvh minus 72px) so it can never extend past the
+   bottom of the screen; only the row region inside it scrolls, so
+   header/search/count/pagination stay permanently reachable while rows
+   scroll internally beneath them. */
 
 .admin-record-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-content: start;
   position: sticky;
   top: 24px;
+  max-height: calc(100vh - 72px);
+  max-height: calc(100dvh - 72px);
 }
 
 /* Every child of the list column may shrink below its intrinsic width
-   (grid items default to min-width: auto): without this, the search
+   (flex items default to min-width: auto): without this, the search
    form's intrinsic input width forces the whole 260px column wider and
    the list overflows onto the editor beside it — covering its controls. */
 .admin-record-list > * {
   min-width: 0;
+}
+
+/* Every child EXCEPT the row region keeps its natural height and never
+   shrinks — only .admin-record-rows (below) gives up space when the
+   column hits its viewport cap. */
+.admin-record-list-header,
+.admin-record-search,
+.admin-record-clear,
+.admin-record-count,
+.admin-record-empty,
+.admin-record-pagination {
+  flex-shrink: 0;
 }
 
 .admin-record-list-header {
@@ -874,13 +891,19 @@ input[type="checkbox"] {
 }
 
 /* Internal scrolling keeps the column usable at any record count; the
-   surrounding page never grows a second scrollbar for the list. */
+   surrounding page never grows a second scrollbar for the list. Flexes
+   into whatever space remains under .admin-record-list's viewport cap
+   (min-height: 0 lets it shrink below its content size instead of
+   pushing the column past the cap); short lists simply size to their
+   own content, well under the cap, with no forced blank space. */
 .admin-record-rows {
+  flex: 1 1 auto;
+  min-height: 0;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
-  max-height: calc(100vh - 260px);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .admin-record-row-list {
@@ -895,8 +918,13 @@ input[type="checkbox"] {
 
 .admin-record-link {
   display: grid;
+  grid-template-columns: 1fr;
   gap: 2px;
-  padding: 10px 12px;
+  /* Modestly reduced from the original 10px 12px — Categories (the only
+     resource still using this text-only default) gets slightly denser
+     rows now that every image-capable resource has its own compact
+     media-row padding below. */
+  padding: 8px 12px;
   text-decoration: none;
   border-left: 2px solid transparent;
   transition:
@@ -920,14 +948,76 @@ input[type="checkbox"] {
   font-weight: 700;
 }
 
+/* Image-capable row mode (RecordList's showImages): a fixed 64px media
+   track beside a flexible text track. Declared after .admin-record-link
+   so its grid-template-columns/padding win over the text-only default
+   when both classes are applied together. */
+.admin-record-link-media {
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+}
+
+/* Stacked name/secondary text beside the thumbnail; min-width: 0 lets it
+   shrink below its content size so long text wraps instead of widening
+   the row (and the list) rather than overflowing horizontally. */
+.admin-record-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Fixed 64×64 media slot, present on every row alike (populated or not)
+   so image-capable rows never jump in height depending on which records
+   happen to have an image. box-sizing: border-box keeps the true
+   occupied size at exactly 64×64 including the border and padding. */
+.admin-record-thumb-wrap {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+/* Missing-image fallback: the same bordered box, just empty and with a
+   slightly softer fill — no icon, no text, no illustration. The wrap
+   itself carries aria-hidden (set in RecordList) so it is silent to
+   assistive technology. */
+.admin-record-thumb-empty {
+  background: var(--color-surface-soft);
+}
+
+/* max-width/max-height (rather than width/height: 100%) plus
+   object-fit: contain scales the source down or up to fit the 64×64
+   slot without cropping or distorting it, preserving its aspect ratio;
+   a decorative thumbnail beside the record's own name, so alt is always
+   empty. */
+.admin-record-thumb-img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
 .admin-record-primary {
   color: var(--color-text);
   font-size: 15px;
+  overflow-wrap: anywhere;
 }
 
 .admin-record-secondary {
   color: var(--color-text-muted);
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .admin-record-empty {

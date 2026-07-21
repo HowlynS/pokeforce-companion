@@ -30,6 +30,7 @@
 import { prisma } from "@/lib/db";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { RecordList } from "@/components/admin/record-list";
+import { getImagePublicUrl } from "@/lib/storage/images";
 import {
   LOCATION_TYPES,
   LOCATION_TYPE_LABELS,
@@ -118,11 +119,19 @@ export async function LocationWorkspace({
     orderBy: { name: "asc" },
   });
 
-  const rows = locations.map((location) => ({
+  // Resolved concurrently — image is already a scalar field on every row
+  // from the query above (include only adds the parent relation), so
+  // this is pure URL construction, never a second database query.
+  const imageUrls = await Promise.all(
+    locations.map((location) => getImagePublicUrl(location.image))
+  );
+
+  const rows = locations.map((location, index) => ({
     href: recordHref(location.slug, query),
     primary: location.name,
     secondary: locationSecondaryContext(location),
     selected: location.slug === selectedSlug,
+    image: imageUrls[index],
   }));
 
   const countLabel = query
@@ -144,6 +153,7 @@ export async function LocationWorkspace({
           createHref={withLocationSearchQuery(LOCATION_CREATE_PATH, query)}
           createLabel="+ New location"
           rows={rows}
+          showImages
           countLabel={countLabel}
           empty={
             query ? (

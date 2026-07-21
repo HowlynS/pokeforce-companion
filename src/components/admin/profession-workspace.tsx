@@ -19,6 +19,7 @@
 import { prisma } from "@/lib/db";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { RecordList } from "@/components/admin/record-list";
+import { getImagePublicUrl } from "@/lib/storage/images";
 import {
   PROFESSION_CREATE_PATH,
   PROFESSION_LIST_PATH,
@@ -78,13 +79,21 @@ export async function ProfessionWorkspace({
     orderBy: { name: "asc" },
   });
 
-  const rows = professions.map((profession) => ({
+  // Resolved concurrently — image is already a scalar field on every row
+  // from the query above (include only adds the recipe _count), so this
+  // is pure URL construction, never a second database query.
+  const imageUrls = await Promise.all(
+    professions.map((profession) => getImagePublicUrl(profession.image))
+  );
+
+  const rows = professions.map((profession, index) => ({
     href: recordHref(profession.slug, query),
     primary: profession.name,
     secondary: `${profession._count.recipes} ${
       profession._count.recipes === 1 ? "recipe" : "recipes"
     }`,
     selected: profession.slug === selectedSlug,
+    image: imageUrls[index],
   }));
 
   const countLabel = query
@@ -106,6 +115,7 @@ export async function ProfessionWorkspace({
           createHref={withProfessionSearchQuery(PROFESSION_CREATE_PATH, query)}
           createLabel="+ New profession"
           rows={rows}
+          showImages
           countLabel={countLabel}
           empty={
             query ? (

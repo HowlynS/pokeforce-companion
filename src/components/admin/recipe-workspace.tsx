@@ -13,6 +13,7 @@
 import { prisma } from "@/lib/db";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { RecordList } from "@/components/admin/record-list";
+import { getImagePublicUrl } from "@/lib/storage/images";
 import {
   RECIPE_CREATE_PATH,
   RECIPE_LIST_PATH,
@@ -71,11 +72,19 @@ export async function RecipeWorkspace({
     orderBy: { name: "asc" },
   });
 
-  const rows = recipes.map((recipe) => ({
+  // Resolved concurrently — image is already a scalar field on every row
+  // from the query above (include only adds the resultingItem relation),
+  // so this is pure URL construction, never a second database query.
+  const imageUrls = await Promise.all(
+    recipes.map((recipe) => getImagePublicUrl(recipe.image))
+  );
+
+  const rows = recipes.map((recipe, index) => ({
     href: recordHref(recipe.slug, query),
     primary: recipe.name,
     secondary: recipe.resultingItem.name,
     selected: recipe.slug === selectedSlug,
+    image: imageUrls[index],
   }));
 
   const countLabel = query
@@ -95,6 +104,7 @@ export async function RecipeWorkspace({
           createHref={withRecipeSearchQuery(RECIPE_CREATE_PATH, query)}
           createLabel="+ New recipe"
           rows={rows}
+          showImages
           countLabel={countLabel}
           empty={
             query ? (
