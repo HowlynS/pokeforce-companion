@@ -829,7 +829,7 @@ input[type="checkbox"] {
 }
 
 /* ---- Admin record list (Slice 9B.3; accent unified to gold in Slice
-   9H; viewport/thumbnail refinement below) ------------------------------
+   9H; viewport/thumbnail refinement below; row visual polish pass) ------
    The shared quick-switching column for AdminWorkspace's recordList
    slot: compact dark list, restrained separators, gold selected state
    matching the rest of the admin shell. The whole column is capped to
@@ -837,7 +837,24 @@ input[type="checkbox"] {
    padding — 100vh/100dvh minus 72px) so it can never extend past the
    bottom of the screen; only the row region inside it scrolls, so
    header/search/count/pagination stay permanently reachable while rows
-   scroll internally beneath them. */
+   scroll internally beneath them.
+
+   The row visual polish pass is CSS-only (no markup, query, route, or
+   accessibility change): populated thumbnails lost their framed tile so
+   transparent sprites and category emblems float in the reserved media
+   slot, the missing-image slot became a quiet dashed placeholder, the
+   name/secondary hierarchy sharpened, and hover/selected gained a soft
+   gold tint derived from the existing tokens via color-mix (the tokens
+   themselves are opaque, so an alpha/blend expression is the only way to
+   tint without hardcoding a second gold).
+
+   Every color-mix() below deliberately names the QUIET color first: the
+   build's CSS transform emits the first operand alone as its fallback
+   for engines without color-mix, so this ordering degrades to the
+   pre-polish surface rather than to a full-strength gold fill. Column
+   width, geometry, and the viewport-bounded scrolling system above are
+   deliberately untouched — those belong to the later shell/proportions
+   work. */
 
 .admin-record-list {
   display: flex;
@@ -897,10 +914,14 @@ input[type="checkbox"] {
   color: var(--color-accent-soft);
 }
 
+/* Quieter than the row text it introduces (the rows are the content;
+   this is a status line about them) — same wording, same DOM position,
+   just a clearer tier below the 15px record names. */
 .admin-record-count {
   margin: 0;
-  color: var(--color-text-muted);
-  font-size: 13px;
+  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
+  font-size: 12px;
+  letter-spacing: 0.01em;
 }
 
 /* Internal scrolling keeps the column usable at any record count; the
@@ -925,35 +946,65 @@ input[type="checkbox"] {
   padding: 0;
 }
 
+/* Softened from the full-strength border token: with the rows now
+   carrying their own hover/selected surfaces, a hard divider competed
+   with them for attention. */
 .admin-record-row-list li + li {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
 }
 
 .admin-record-link {
   display: grid;
   grid-template-columns: 1fr;
   gap: 2px;
-  /* Modestly reduced from the original 10px 12px — Categories (the only
-     resource still using this text-only default) gets slightly denser
-     rows now that every image-capable resource has its own compact
-     media-row padding below. */
+  /* Text-only fallback density (no production resource uses this mode
+     any more — every converted resource is image-capable — but the
+     RecordList component still supports it, so it keeps real styling). */
   padding: 8px 12px;
   text-decoration: none;
+  /* Reserved on EVERY row in every state, so gaining/losing the gold
+     selected edge can never shift the row's layout. */
   border-left: 2px solid transparent;
   transition:
     background-color 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
 }
 
+/* Hover: a slight surface lift with a very soft gold cast (a low
+   percentage of the accent mixed into the soft surface, never a loud
+   yellow fill) plus a faint accent hint on the reserved left edge. No
+   transform, no scaling, no shadow — nothing that moves the row. */
 .admin-record-link:hover {
-  background: var(--color-surface-soft);
+  background: color-mix(in srgb, var(--color-surface-soft) 95%, var(--color-accent));
+  border-left-color: color-mix(in srgb, transparent 55%, var(--color-accent));
+}
+
+/* Keyboard focus, scoped so the outline sits INSIDE the row: the row
+   region clips horizontally (overflow-x: hidden), which would shave the
+   global 2px-offset outline off the left and right edges. Same gold,
+   same width — only the offset changes. */
+.admin-record-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
 }
 
 /* Selected record: aria-current is BOTH the accessible marker and the
-   styling hook — gold, consistent with the rest of the admin shell. */
+   styling hook — gold, consistent with the rest of the admin shell.
+   Deliberately stronger than hover on three independent channels, so
+   selection is never signalled by color alone: a brighter tinted
+   surface, a solid gold left edge visually doubled to 4px by an inset
+   shadow (a shadow rather than a wider border, so no row reflows when
+   the selection moves), and the gold-emphasised name below. */
 .admin-record-link[aria-current="page"] {
-  background: var(--color-surface-soft);
+  background: color-mix(in srgb, var(--color-surface-soft) 90%, var(--color-accent));
   border-left-color: var(--color-accent);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.admin-record-link[aria-current="page"]:hover {
+  background: color-mix(in srgb, var(--color-surface-soft) 86%, var(--color-accent));
 }
 
 .admin-record-link[aria-current="page"] .admin-record-primary {
@@ -968,8 +1019,12 @@ input[type="checkbox"] {
 .admin-record-link-media {
   grid-template-columns: 64px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
+  /* Compact but not cramped: the 64px media slot still sets the row
+     height, so the padding only decides how much air surrounds it. The
+     gap widened alongside the thumbnail losing its frame — without a
+     border to separate them, art and text need a little more space. */
+  gap: 12px;
+  padding: 8px 12px;
 }
 
 /* Stacked name/secondary text beside the thumbnail; min-width: 0 lets it
@@ -977,14 +1032,21 @@ input[type="checkbox"] {
    the row (and the list) rather than overflowing horizontally. */
 .admin-record-text {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
 /* Fixed 64×64 media slot, present on every row alike (populated or not)
    so image-capable rows never jump in height depending on which records
    happen to have an image. box-sizing: border-box keeps the true
-   occupied size at exactly 64×64 including the border and padding. */
+   occupied size at exactly 64×64 including any border and padding.
+
+   A POPULATED slot is now pure alignment scaffolding and nothing else —
+   no border, no background, no shadow — so transparent sprites and
+   category emblems read as floating beside the record name instead of
+   sitting in a framed tile on an opaque canvas. The 2px of padding is
+   safe breathing room only, so a full-bleed source never butts against
+   the row's own edges. */
 .admin-record-thumb-wrap {
   box-sizing: border-box;
   display: flex;
@@ -992,26 +1054,35 @@ input[type="checkbox"] {
   justify-content: center;
   width: 64px;
   height: 64px;
-  padding: 4px;
-  border: 1px solid var(--color-border);
+  padding: 2px;
+  border: 0;
   border-radius: 8px;
-  background: var(--color-surface);
+  background: transparent;
   overflow: hidden;
 }
 
-/* Missing-image fallback: the same bordered box, just empty and with a
-   slightly softer fill — no icon, no text, no illustration. The wrap
-   itself carries aria-hidden (set in RecordList) so it is silent to
-   assistive technology. */
+/* Missing-image fallback: the ONLY state that draws anything in the
+   slot, and deliberately quieter than a real thumbnail — a faint dashed
+   outline over a barely-there fill, so the reserved space explains
+   itself without competing with the record name. Dashed rather than
+   solid so it never reads as an empty form input; no "No image" text,
+   no broken-image glyph, no icon. The wrap itself carries aria-hidden
+   (set in RecordList) so it stays silent to assistive technology, and
+   border-box sizing keeps it at exactly 64×64 despite the border. */
 .admin-record-thumb-empty {
-  background: var(--color-surface-soft);
+  border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface-soft) 45%, transparent);
 }
 
-/* max-width/max-height (rather than width/height: 100%) plus
-   object-fit: contain scales the source down or up to fit the 64×64
-   slot without cropping or distorting it, preserving its aspect ratio;
-   a decorative thumbnail beside the record's own name, so alt is always
-   empty. */
+/* max-width/max-height (rather than width/height: 100%) with auto
+   dimensions: the source renders at its own intrinsic size, shrunk to
+   fit the 64×64 slot when it is larger, and left alone when it is
+   smaller — never upscaled, so a small sprite is shown at its true size
+   rather than blurred up to fill the slot. Either way the aspect ratio
+   is preserved and nothing is cropped or distorted; object-fit: contain
+   is a safety net for the same guarantee if the box is ever given
+   explicit dimensions. A decorative thumbnail beside the record's own
+   name, so alt is always empty. */
 .admin-record-thumb-img {
   display: block;
   max-width: 100%;
@@ -1021,15 +1092,36 @@ input[type="checkbox"] {
   object-fit: contain;
 }
 
+/* Primary/secondary hierarchy: the record name carries full text colour
+   and a heavier weight; the context line sits a tier down in size and a
+   softened muted colour. Both wrap on any character (long slugs and
+   compound names cannot force horizontal overflow inside the 260px
+   column), and both are line-bounded so one unusually long record can
+   never stretch every row: the name is allowed two lines, the context
+   line one. Two clamped name lines plus one context line still fit
+   inside the 64px media slot, so image-capable rows stay uniform. */
 .admin-record-primary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   color: var(--color-text);
   font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
 .admin-record-secondary {
-  color: var(--color-text-muted);
-  font-size: 13px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--color-text-muted) 82%, transparent);
+  font-size: 12px;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
