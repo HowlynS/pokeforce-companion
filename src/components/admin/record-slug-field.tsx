@@ -2,13 +2,16 @@
 
 // Live Page-address (slug) field for an admin create/edit form (Phase B1,
 // System B): auto-generates from the current Name while in "auto" mode,
-// switches to "manual" mode the instant the contributor edits the field
-// themselves (typing OR pasting — both fire the same onChange), and
-// offers a small "Use name" control to deliberately resume auto-generation
-// on demand. Combines two things RecordNameField already does well
-// (controlled input + debounced/sequence-guarded availability checking)
-// with the one thing this field alone needs: reconciling its own value
-// against a live sibling field's value.
+// switching to "manual" mode the instant the contributor edits the field
+// themselves (typing OR pasting — both fire the same onChange). Manual
+// override is final for the rest of that form session — the earlier
+// visible "Use name" reset control was removed in a later UI-cleanup
+// pass (no way remains to flip back to auto mode without reloading the
+// page), so `isManual` can now only ever transition false→true. Combines
+// two things RecordNameField already does well (controlled input +
+// debounced/sequence-guarded availability checking) with the one thing
+// this field alone needs: reconciling its own value against a live
+// sibling field's value.
 //
 // The displayed feedback state is DERIVED during render, mirroring
 // RecordNameField's own shape (idle/checking/available/taken/current/
@@ -104,14 +107,12 @@ export function RecordSlugField({
   const [result, setResult] = useState<CheckResult | null>(null);
   const requestSequence = useRef(0);
 
-  // While still auto (`mode` only decides the STARTING value of
-  // `isManual` — create starts auto, edit starts manual, per B2/B4), the
+  // While still auto (`mode` decides the STARTING value of `isManual` —
+  // create starts auto, edit starts manual, per B2/B4, and nothing ever
+  // sets it back to false again now that the reset control is gone), the
   // field's value simply IS the live Name's own generated slug —
   // recomputed every render, never stored separately, so it can never
-  // drift from `nameValue`. "Use name" (below) sets `isManual` back to
-  // false in EITHER mode, which is what lets it work deliberately on an
-  // edit form too (B3/B4): once requested, auto-follow resumes exactly
-  // like a fresh create form, until the next manual edit.
+  // drift from `nameValue`.
   const slug = !isManual ? normalizeSlug(nameValue) : manualSlug;
 
   const candidate = normalizeSlug(slug);
@@ -194,41 +195,20 @@ export function RecordSlugField({
     setManualSlug(event.target.value);
   }
 
-  function handleUseName() {
-    // Returning to auto mode is enough on its own: `slug` above is
-    // re-derived from the current Name on this very render, and stays
-    // that way as Name keeps changing — no separate value to assign.
-    setIsManual(false);
-  }
-
   return (
     <div className="form-field">
-      <div className="form-field-label-row">
-        <label className="form-field" htmlFor={`${regionId}-input`}>
-          <span className="form-field-label">
-            {mode === "create"
-              ? "Page address (optional — generated from name if left blank)"
-              : "Page address"}
-          </span>
-        </label>
-        <button
-          type="button"
-          onClick={handleUseName}
-          className="form-field-inline-action"
-        >
-          Use name
-        </button>
-      </div>
-      <input
-        id={`${regionId}-input`}
-        type="text"
-        name="slug"
-        value={slug}
-        onChange={handleChange}
-        onPaste={() => setIsManual(true)}
-        aria-describedby={regionId}
-        className="form-input"
-      />
+      <label className="form-field">
+        <span className="form-field-label">Page address</span>
+        <input
+          type="text"
+          name="slug"
+          value={slug}
+          onChange={handleChange}
+          onPaste={() => setIsManual(true)}
+          aria-describedby={regionId}
+          className="form-input"
+        />
+      </label>
       <p
         id={regionId}
         aria-live="polite"

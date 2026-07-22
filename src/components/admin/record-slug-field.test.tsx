@@ -3,11 +3,11 @@
 // library — the established component-test approach). react-dom/server
 // renders exactly once and never runs effects, so genuinely interactive
 // behavior (typing switching the field to manual mode, the debounced
-// availability check actually resolving, the "Use name" click) is E2E
-// territory — matching this codebase's own established precedent, where
-// the equivalent Name field (RecordNameField) has no component test file
-// of its own either, only full E2E coverage (admin-name-feedback.spec.ts
-// / admin-item-name-feedback.spec.ts).
+// availability check actually resolving) is E2E territory — matching
+// this codebase's own established precedent, where the equivalent Name
+// field (RecordNameField) has no component test file of its own either,
+// only full E2E coverage (admin-name-feedback.spec.ts /
+// admin-item-name-feedback.spec.ts).
 //
 // What IS fully verifiable from a single static render, because auto-
 // generation is derived from props during render rather than pushed from
@@ -17,6 +17,15 @@
 // async response exists (idle, invalid, current, and the "checking"
 // fallback — "available"/"taken"/"failed" all require the debounced
 // effect to actually resolve, which never happens in a static render).
+//
+// UI-cleanup pass: the field's visible label is now exactly "Page
+// address" in both create and edit mode (the earlier create-only
+// "(optional — generated from name if left blank)" hint is gone), and
+// the "Use name" reset button is gone entirely — manual override is now
+// final for the rest of a create form's session, with no way back to
+// auto mode short of reloading the page. Auto-generation, manual-
+// override tracking, edit-starts-manual, and availability checking are
+// all unchanged in mechanism.
 
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -63,12 +72,12 @@ describe("RecordSlugField create mode: auto-generation from Name", () => {
     expect(html).toMatch(/<input [^>]*value="stamina-brew-s-mk2"/);
   });
 
-  it("renders the create-only helper hint in the label", () => {
+  it("renders the plain 'Page address' label with no explanatory hint", () => {
     const html = renderField({ mode: "create" });
 
-    expect(html).toContain(
-      "Page address (optional — generated from name if left blank)"
-    );
+    expect(html).toContain("Page address");
+    expect(html).not.toContain("optional");
+    expect(html).not.toContain("generated from name");
   });
 });
 
@@ -83,10 +92,11 @@ describe("RecordSlugField edit mode: manually controlled from the start", () => 
     expect(html).toMatch(/<input [^>]*value="original-slug"/);
   });
 
-  it("renders the plain label with no create-only hint", () => {
+  it("renders the identical plain label as create mode", () => {
     const html = renderField({ mode: "edit", initialSlug: "original-slug" });
 
     expect(html).toContain("Page address");
+    expect(html).not.toContain("optional");
     expect(html).not.toContain("generated from name");
   });
 
@@ -155,23 +165,33 @@ describe("RecordSlugField structure and accessibility", () => {
     expect(html).toMatch(/<input [^>]*name="slug"/);
   });
 
-  it("associates the label with the input via a real id/for pair, not nesting", () => {
+  it("associates the label with the input via nesting (no separate id/for pair)", () => {
     const html = renderField({ regionId: "recipe-slug-availability" });
 
-    expect(html).toMatch(/<label [^>]*for="recipe-slug-availability-input"/);
-    expect(html).toMatch(/<input id="recipe-slug-availability-input"/);
+    expect(html).toMatch(
+      /<label class="form-field"><span class="form-field-label">Page address<\/span><input [^>]*name="slug"/
+    );
   });
 
-  it("renders exactly one real, keyboard-accessible 'Use name' button, never a link", () => {
+  it("renders no button at all — the 'Use name' reset control was removed", () => {
     const html = renderField();
 
-    expect(html).toMatch(/<button type="button"[^>]*>Use name<\/button>/);
-    expect(html.match(/<button/g)).toHaveLength(1);
+    expect(html.match(/<button/g)).toBeNull();
+    expect(html).not.toContain("Use name");
   });
 
   it("never disables or hides the field itself", () => {
     const html = renderField();
 
     expect(html).not.toContain("disabled");
+  });
+
+  it("renders exactly one input and one feedback paragraph — no extra row/wrapper markup", () => {
+    const html = renderField();
+
+    expect(html.match(/<input /g)).toHaveLength(1);
+    expect(html.match(/<p /g)).toHaveLength(1);
+    expect(html).not.toContain("form-field-label-row");
+    expect(html).not.toContain("form-field-inline-action");
   });
 });

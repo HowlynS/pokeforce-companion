@@ -475,45 +475,6 @@ select:focus-visible {
   letter-spacing: 0.01em;
 }
 
-/* Phase B1, System B: the Page address label and its compact "Use name"
-   reset control share one row, the label on the left (its own .form-field
-   wrapper keeps the same 14px inset every other label uses) and the
-   control on the right — small enough that it never distorts the field's
-   own layout or competes with the label for attention. */
-.form-field-label-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.form-field-label-row .form-field {
-  gap: 0;
-}
-
-/* A plain text-link-styled button, matching .admin-record-clear's own
-   quiet muted/gold-hover language rather than a second visually-loud
-   button beside Save/Cancel. */
-.form-field-inline-action {
-  flex-shrink: 0;
-  border: 0;
-  background: none;
-  padding: 0;
-  color: var(--color-text-muted);
-  font-size: 13px;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.form-field-inline-action:hover {
-  color: var(--color-accent-soft);
-}
-
-.form-field-inline-action:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
 /* Visual Pass II Section 4/5: the shared feedback-row treatment used by
    BOTH the Name field's own live availability region (checking/taken/
    failed text) and the Page address field's own live availability region
@@ -623,15 +584,21 @@ input[type="checkbox"] {
    against the label" are the same position, so one rule serves both
    cases; against a WRAPPED label, flex-start keeps the box beside line
    one only, rather than centering it against the full wrapped block.
-   Visual Pass II correction pass: the box itself is now explicitly
-   sized (12x12px, scoped to .form-checkbox-field so the visually-hidden
-   .admin-image-remove-checkbox elsewhere is never affected — that
-   checkbox never lives inside a .form-checkbox-field) — the previous
-   rule relied on the browser's native ~13px default, which rendered
-   visibly taller than the capital letters beside it. margin-top is
-   retuned from 3px to 2px to correctly center the smaller 12px box
-   against a 16px line's cap-height (measured live against the Held
-   item/Tradeable checkboxes). */
+   The box itself is explicitly sized (12x12px, scoped to
+   .form-checkbox-field so the visually-hidden .admin-image-remove-
+   checkbox elsewhere is never affected — that checkbox never lives
+   inside a .form-checkbox-field).
+   Global checkbox alignment correction: margin-top is 6px, not the
+   previous 2px. The label text's ACTUAL rendered line-height in every
+   checkbox context (Held item, Tradeable, and the verification opt-in,
+   measured live at multiple viewports) is 24px (16px font-size at this
+   codebase's ambient 1.5 line-height), not the 16px a prior pass
+   mistakenly assumed — centering a 12px box inside a 24px line needs
+   (24-12)/2 = 6px of top offset, not 2px. The previous 2px value put
+   the box 4px above the text's true optical center everywhere it
+   appears; 6px was confirmed via live measurement to close that gap to
+   0px exactly, for both single-line labels and the first line of a
+   wrapped one. */
 .form-checkbox-field {
   display: flex;
   align-items: flex-start;
@@ -644,7 +611,7 @@ input[type="checkbox"] {
   width: 12px;
   height: 12px;
   margin: 0;
-  margin-top: 2px;
+  margin-top: 6px;
   flex-shrink: 0;
 }
 
