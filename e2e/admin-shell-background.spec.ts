@@ -1,14 +1,17 @@
 // Browser coverage for the Admin Shell Background and Workspace
-// Proportions pass against the REAL application. This suite does NOT
-// re-prove ground already covered exhaustively elsewhere (record-row
-// visuals, editor-form visuals, context-panel contents, sticky record-list
-// mechanics under viewport-height pressure — see
-// admin-record-list-refinement.spec.ts and admin-visual-consistency.spec.ts).
-// It targets only what THIS pass changed: the scenic background scoped to
-// the admin shell, and the three-column workspace's responsive widths.
-// No screenshot or pixel-diff infrastructure, and no assertion on the
-// image's actual rendered pixels — every check is a computed style,
-// bounding box, or HTTP response against the real dev server.
+// Proportions pass, revised by the Wallpaper Correction pass, against the
+// REAL application. This suite does NOT re-prove ground already covered
+// exhaustively elsewhere (record-row visuals, editor-form visuals,
+// context-panel contents, sticky record-list mechanics under
+// viewport-height pressure — see admin-record-list-refinement.spec.ts and
+// admin-visual-consistency.spec.ts). It targets only what these passes
+// changed: the scenic background scoped to the admin shell as OUTER
+// framing only, the opaque central application shell
+// (.admin-content-inner) that keeps the artwork out of ordinary workspace
+// gaps, and the three-column workspace's responsive widths. No screenshot
+// or pixel-diff infrastructure, and no assertion on the image's actual
+// rendered pixels — every check is a computed style, bounding box, or
+// HTTP response against the real dev server.
 
 import { expect, test, type Page } from "@playwright/test";
 
@@ -31,6 +34,10 @@ function shell(page: Page) {
   return page.locator(".admin-shell");
 }
 
+function contentInner(page: Page) {
+  return page.locator(".admin-content-inner");
+}
+
 async function noHorizontalOverflow(page: Page): Promise<void> {
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -49,6 +56,18 @@ async function columnWidths(page: Page) {
       aside: rect(".admin-workspace-aside"),
     };
   });
+}
+
+// A plain "rgb(r, g, b)" (3 components) carries no alpha channel at all,
+// i.e. fully opaque. Only "rgba(r, g, b, a)" (4 components) has an alpha
+// to check — that 4th value must be exactly 1 (never partially see-through).
+function expectOpaqueColor(color: string): void {
+  const components = color.match(/[\d.]+/g) ?? [];
+  if (components.length === 4) {
+    expect(Number(components[3])).toBe(1);
+  } else {
+    expect(components.length).toBe(3);
+  }
 }
 
 test("the scenic background is applied to the admin shell and resolves as a real asset", async ({
@@ -189,25 +208,96 @@ test("the editor surface and context panels stay fully opaque over the scenic ba
   // Seeded fixture only — read, never modified.
   await page.goto("/admin/items/iron-ore/edit");
 
-  const surfaceAlpha = await page
+  const surfaceColor = await page
     .locator(".admin-editor-surface")
     .evaluate((el) => getComputedStyle(el).backgroundColor);
-  const panelAlpha = await page
+  const panelColor = await page
     .locator(".admin-panel")
     .first()
     .evaluate((el) => getComputedStyle(el).backgroundColor);
 
-  // A plain "rgb(r, g, b)" (3 components) carries no alpha channel at
-  // all, i.e. fully opaque. Only "rgba(r, g, b, a)" (4 components) has an
-  // alpha to check — that 4th value must be exactly 1.
-  for (const color of [surfaceAlpha, panelAlpha]) {
-    const components = color.match(/[\d.]+/g) ?? [];
-    if (components.length === 4) {
-      expect(Number(components[3])).toBe(1);
-    } else {
-      expect(components.length).toBe(3);
-    }
+  expectOpaqueColor(surfaceColor);
+  expectOpaqueColor(panelColor);
+});
+
+test("the central content-inner shell itself is opaque and does not render the scenic image — the artwork stays on the outer .admin-shell only", async ({
+  page,
+}) => {
+  await page.goto("/admin");
+
+  const inner = await contentInner(page).evaluate((el) => {
+    const style = getComputedStyle(el);
+    return {
+      backgroundColor: style.backgroundColor,
+      backgroundImage: style.backgroundImage,
+    };
+  });
+  expectOpaqueColor(inner.backgroundColor);
+  // The central shell paints a flat color only — the artwork itself
+  // belongs to .admin-shell behind it, never duplicated here.
+  expect(inner.backgroundImage).toBe("none");
+
+  const shellBackgroundImage = await shell(page).evaluate(
+    (el) => getComputedStyle(el).backgroundImage
+  );
+  expect(shellBackgroundImage).toContain(BACKGROUND_URL);
+});
+
+test("Dashboard: the gaps between summary cards and the empty space below Quick Actions sit inside the opaque central shell, not on exposed scenery", async ({
+  page,
+}) => {
+  await page.goto("/admin");
+
+  // Every piece of real Dashboard content must be physically contained
+  // within .admin-content-inner's own box — proving the gaps around and
+  // below it (page header, space between cards, everything below Quick
+  // Actions) are painted by that box's own opaque background, not by
+  // whatever sits behind it on .admin-shell.
+  const inner = await contentInner(page).boundingBox();
+  const quickActions = await page
+    .getByRole("heading", { name: "Quick Actions", exact: true })
+    .boundingBox();
+  const createItemLink = await page
+    .getByRole("link", { name: "Create Item", exact: true })
+    .boundingBox();
+  expect(inner).not.toBeNull();
+  expect(quickActions).not.toBeNull();
+  expect(createItemLink).not.toBeNull();
+
+  for (const box of [quickActions!, createItemLink!]) {
+    expect(box.x).toBeGreaterThanOrEqual(inner!.x);
+    expect(box.y).toBeGreaterThanOrEqual(inner!.y);
+    expect(box.x + box.width).toBeLessThanOrEqual(inner!.x + inner!.width + 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(inner!.y + inner!.height + 1);
   }
+
+  // The shell also reaches at least the full viewport height, so a short
+  // Dashboard never leaves exposed scenery below its own content.
+  const viewportHeight = page.viewportSize()!.height;
+  expect(inner!.height).toBeGreaterThanOrEqual(viewportHeight - 1);
+});
+
+test("the central shell is narrower than the full viewport at ultrawide sizes, and the visible outer gutter widens as the viewport widens", async ({
+  page,
+}) => {
+  await page.goto("/admin/items/iron-ore/edit");
+
+  const gutterWidth = async (viewportWidth: number) => {
+    await page.setViewportSize({ width: viewportWidth, height: 900 });
+    const inner = await contentInner(page).boundingBox();
+    expect(inner).not.toBeNull();
+    // Narrower than the full viewport — the artwork has real room to
+    // show either side of it.
+    expect(inner!.width).toBeLessThan(viewportWidth);
+    return viewportWidth - inner!.width;
+  };
+
+  const gutter1920 = await gutterWidth(1920);
+  const gutter2560 = await gutterWidth(2560);
+  const gutter3440 = await gutterWidth(3440);
+
+  expect(gutter2560).toBeGreaterThan(gutter1920);
+  expect(gutter3440).toBeGreaterThan(gutter2560);
 });
 
 test("sticky record list and sticky EditorActions both keep working over the new background", async ({

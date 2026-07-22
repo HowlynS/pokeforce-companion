@@ -437,87 +437,62 @@ input[type="checkbox"] {
    column shrinks (min-width: 0) and wide tables scroll inside their own
    wrappers. */
 
-/* Admin Shell Background pass: the scenic coastal artwork lives ONLY
-   here, on the one element the /admin layout renders exactly once — it
-   can never leak onto public pages or /login, which use the separate
-   AppShell. Stable, replaceable asset path per the brief: plain CSS
-   url() against /images/admin/admin-shell-background.webp (Next.js
-   serves everything under public/ unhashed at its literal path) — no JS
-   import, no base64 inline, so swapping the file later needs no code
-   change.
+/* Admin Shell Background pass (revised — Wallpaper Correction pass): the
+   scenic coastal artwork lives ONLY here, on the one element the /admin
+   layout renders exactly once — it can never leak onto public pages or
+   /login, which use the separate AppShell. Stable, replaceable asset path
+   per the brief: plain CSS url() against
+   /images/admin/admin-shell-background.webp (Next.js serves everything
+   under public/ unhashed at its literal path) — no JS import, no base64
+   inline, so swapping the file later needs no code change.
+
+   The artwork is scenic SIDE FRAMING, not a wallpaper behind the
+   application: .admin-content-inner (below) now owns its own fully
+   opaque dark navy background, so this element only needs to remain
+   visible in the GUTTERS either side of that box — the earlier heavy
+   central radial darkening was removed entirely (it existed only to
+   protect text that now sits inside an opaque box regardless, and its
+   darkening fell exactly where the gutters should read as attractive,
+   visible scenery instead). What remains is deliberately light: a single
+   uniform wash purely for tonal harmony with the app's dark palette, not
+   for readability.
 
    Layered front-to-back — CSS paints the FIRST item in a comma-separated
-   background-image list closest to the viewer, so this list is
-   deliberately written in that same top-to-bottom order (not the reverse):
-     1. (frontmost) a wide, short radial ellipse — extra darkening
-        concentrated behind the actual workspace (record list + editor +
-        aside), biased right by half the sidebar's own width (via the
-        shared --admin-sidebar-width custom property below, so this stays
-        correct even if the sidebar's width ever changes) so it centers on
-        .admin-content's midpoint rather than the whole shell's.
-     2. a flat, uniform semi-transparent wash across the entire shell —
-        deliberately moderate (not as strong as the central ellipse) so
-        the coastal scenery stays visible and atmospheric near the edges.
-     3. the artwork itself, covering the shell without distortion.
-     4. (backmost) background-color: dark navy fallback/base, and what
+   background-image list closest to the viewer:
+     1. (frontmost) a flat, light, uniform wash — just enough to keep the
+        sunset from feeling disconnected from the dark navy application
+        beside it, never strong enough to muddy the scenery.
+     2. the artwork itself, covering the shell without distortion.
+     3. (backmost) background-color: dark navy fallback/base, and what
         shows if the image ever fails to load.
-   Every panel that actually holds text/controls (.admin-editor-surface,
-   .admin-panel, .admin-record-rows, .admin-sidebar, every .form-input)
-   already has its own fully opaque background from earlier slices, so
-   these layers only need to protect the UNPROTECTED areas: the gaps
-   between columns and the EditorHeader/EditorTabs region, which render
-   directly on the shell with no card behind them.
 
    background-size: cover on the image layer never distorts (uniform
    scale, not independent width/height stretch) and is the smallest
    strategy that behaves correctly across every target viewport: the
    artwork's native 3440x1440 is itself a 21:9 ultrawide frame, so at
-   3440x1440 cover displays it essentially uncropped (matching the "reveal
-   substantially more artwork" requirement for that breakpoint) while at
-   narrower 16:9 sizes (1920x1080, 2560x1440) it crops symmetrically from
-   both sides — acceptable per the brief, which explicitly allows 1920 to
-   obscure more scenery in favor of workspace readability.
+   3440x1440 cover displays it essentially uncropped while at narrower
+   16:9 sizes (1920x1080, 2560x1440) it crops symmetrically from both
+   sides — acceptable per the brief.
 
    background-attachment: fixed keeps every layer pinned to the viewport
    (not the document), so a tall scrolled-through form never drags the
    artwork past its own edge and exposes a seam. */
 .admin-shell {
-  /* Single source of truth for the sidebar's own width, shared with
-     .admin-sidebar below and with the radial darkening's horizontal
-     offset here — so if the sidebar width ever changes, the gradient's
-     centering on .admin-content (rather than the whole shell) can never
-     silently drift out of sync with it. */
-  --admin-sidebar-width: 232px;
   display: flex;
   min-height: 100vh;
   background-color: var(--color-background);
   background-image:
-    radial-gradient(
-      ellipse 1100px 800px at calc(50% + var(--admin-sidebar-width) / 2) 42%,
-      rgba(8, 13, 26, 0.55) 0%,
-      rgba(8, 13, 26, 0.32) 45%,
-      rgba(8, 13, 26, 0) 75%
-    ),
-    linear-gradient(rgba(8, 13, 26, 0.45), rgba(8, 13, 26, 0.45)),
+    linear-gradient(rgba(8, 13, 26, 0.2), rgba(8, 13, 26, 0.2)),
     url("/images/admin/admin-shell-background.webp");
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-position:
-    center,
-    center,
-    center;
-  background-size:
-    cover,
-    cover,
-    cover;
-  background-attachment:
-    fixed,
-    fixed,
-    fixed;
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  background-size: cover, cover;
+  background-attachment: fixed, fixed;
   color: var(--color-text);
 }
 
 .admin-sidebar {
-  width: var(--admin-sidebar-width);
+  width: 232px;
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -584,18 +559,39 @@ input[type="checkbox"] {
   min-width: 0;
 }
 
-/* Admin Shell Background and Workspace Proportions pass: the content
-   column now grows with the viewport (clamp floor matches the previous
-   fixed 1200px exactly, so nothing changes at 1440px and narrower) rather
-   than stopping dead at 1200px on every desktop size. The ceiling is
-   deliberately well short of the full ultrawide width — at 3440px the
-   remaining space becomes the scenic background's own framing margin
-   instead of stretching the workspace itself edge to edge. */
+/* Admin Shell Background and Workspace Proportions pass, revised by the
+   Wallpaper Correction pass: the content column grows with the viewport
+   (clamp floor matches the original fixed 1200px exactly, so nothing
+   changes at 1440px and narrower) rather than stopping dead at 1200px on
+   every desktop size. The ceiling is deliberately well short of the full
+   ultrawide width — at 3440px the remaining space becomes the scenic
+   background's own framing margin instead of stretching the workspace
+   itself edge to edge.
+
+   THIS is the central admin application shell — the approved mock-up's
+   "[ scenic gutter ] [ dark application ] [ scenic gutter ]" composition,
+   with this box as the middle segment. It now owns a fully opaque dark
+   navy background and a matching min-height (so a short page, e.g. an
+   empty workspace state, still fills the viewport rather than exposing
+   scenery below its own content) — every page header, the gaps between
+   Dashboard cards, Quick Actions, and the space between workspace columns
+   all sit on THIS solid surface, never directly on .admin-shell's scenic
+   layers. The scenic artwork is now visible only in the gutters either
+   side of this box (which widen at wider viewports, exactly as the
+   responsive max-width already intended) — never behind the application
+   itself. A single left/right border (matching .admin-sidebar's own
+   single-side border-right convention, not a full box outline) marks
+   where the gutter ends and the application begins; no border-radius,
+   since this box is flush with the shell's own top and bottom edges. */
 .admin-content-inner {
   display: block;
   max-width: clamp(1200px, 72vw, 1650px);
+  min-height: 100vh;
   margin: 0 auto;
   padding: 32px 24px 48px;
+  background: var(--color-background);
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
 }
 
 /* ---- Admin workspace slots (Slice 9B.1, structural only) -------------
