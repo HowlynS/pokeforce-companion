@@ -198,6 +198,8 @@ export default async function EditItemPage({
         <input type="hidden" name="id" value={item.id} />
         <input type="hidden" name="originalSlug" value={item.slug} />
 
+        <p className="form-section-heading">Identity</p>
+
         {/* Client-enhanced Name field with live duplicate feedback. The
             saved name counts as "current" (never queried), and the record's
             own id is excluded server-side so it cannot conflict with
@@ -214,6 +216,8 @@ export default async function EditItemPage({
           />
         </label>
 
+        <p className="form-section-heading">Description</p>
+
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>
           <textarea
@@ -223,6 +227,8 @@ export default async function EditItemPage({
             className="form-input"
           />
         </label>
+
+        <p className="form-section-heading">Classification</p>
 
         <label className="form-field">
           <span className="form-field-label">Category</span>
@@ -239,6 +245,8 @@ export default async function EditItemPage({
             ))}
           </select>
         </label>
+
+        <p className="form-section-heading">Gameplay details</p>
 
         <div className="form-checkbox-group">
           <label className="form-checkbox-field">

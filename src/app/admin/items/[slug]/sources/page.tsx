@@ -190,6 +190,8 @@ export default async function AdminItemSourcesPage({
           <input type="hidden" name="itemId" value={item.id} />
           <input type="hidden" name="itemSlug" value={item.slug} />
 
+          <p className="form-section-heading">Source</p>
+
           <label className="form-field">
             <span className="form-field-label">Type</span>
             <select name="type" required defaultValue="" className="form-input">
@@ -203,6 +205,8 @@ export default async function AdminItemSourcesPage({
               ))}
             </select>
           </label>
+
+          <p className="form-section-heading">Linked context</p>
 
           <label className="form-field">
             <span className="form-field-label">Location (optional)</span>
@@ -227,6 +231,8 @@ export default async function AdminItemSourcesPage({
               ))}
             </select>
           </label>
+
+          <p className="form-section-heading">Details</p>
 
           <label className="form-field">
             <span className="form-field-label">

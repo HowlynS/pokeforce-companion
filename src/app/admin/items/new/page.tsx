@@ -135,6 +135,8 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
         action={createItemAction}
         className="form-grid"
       >
+        <p className="form-section-heading">Identity</p>
+
         {/* Client-enhanced Name field with live duplicate feedback; the
             submission-time duplicate check in createItemAction remains
             the authoritative protection. */}
@@ -147,10 +149,14 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
           <input type="text" name="slug" className="form-input" />
         </label>
 
+        <p className="form-section-heading">Description</p>
+
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>
           <textarea name="description" rows={4} className="form-input" />
         </label>
+
+        <p className="form-section-heading">Classification</p>
 
         <label className="form-field">
           <span className="form-field-label">Category</span>
@@ -163,6 +169,8 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
             ))}
           </select>
         </label>
+
+        <p className="form-section-heading">Gameplay details</p>
 
         <div className="form-checkbox-group">
           <label className="form-checkbox-field">

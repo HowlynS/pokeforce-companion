@@ -66,6 +66,7 @@ export default async function DeleteGameVersionPage({
       ) : null}
 
       <div className="confirm-card">
+        <p className="confirm-card-eyebrow">Destructive action</p>
         <p>
           You are about to permanently delete <strong>{version.name}</strong>.
           This action cannot be undone.

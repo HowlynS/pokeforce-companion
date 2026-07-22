@@ -75,6 +75,7 @@ export default async function DeleteAcquisitionSourcePage({
       }
     >
       <div className="confirm-card">
+        <p className="confirm-card-eyebrow">Destructive action</p>
         <p>
           You are about to permanently delete this{" "}
           <strong>{ACQUISITION_TYPE_LABELS[source.type]}</strong> source for{" "}

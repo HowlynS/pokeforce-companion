@@ -347,11 +347,22 @@ input[type="checkbox"] {
   accent-color: var(--color-accent);
 }
 
+/* align-items: flex-start (not center) plus the checkbox's own small
+   top margin below keeps the box aligned with the FIRST LINE of its
+   label — correct for both a short single-word label (Held item,
+   Tradeable) and a long wrapping sentence (the verification opt-in),
+   rather than centering the box against the label's full wrapped
+   height. */
 .form-checkbox-field {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   color: var(--color-text-muted);
+}
+
+.form-checkbox-field input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
 }
 
 /* Groups closely related boolean fields (e.g. Item's Held item/Tradeable)
@@ -363,6 +374,31 @@ input[type="checkbox"] {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 28px;
+}
+
+/* Form Section Hierarchy pass: a lightweight divider marking a new group
+   of related fields inside an existing single-column .form-grid — never
+   a nested bordered card (that visual weight is reserved for genuinely
+   separate content, e.g. .form-fieldset's Ingredients/Parent Location).
+   A plain <p>, not a heading element: the page's own h1/h2 outline
+   (EditorHeader's title, ContextPanel's titles) is not extended by
+   purely visual form groupings. Matches .admin-panel-title's existing
+   13px/700/uppercase/muted treatment, so "section label" reads as one
+   consistent tier across the whole admin surface. */
+.form-section-heading {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.form-section-heading:first-child {
+  padding-top: 0;
+  border-top: none;
 }
 
 .form-fieldset {
@@ -415,6 +451,21 @@ input[type="checkbox"] {
 
 .confirm-card p {
   margin: 0;
+}
+
+/* Destructive-confirmation status marker (Confirmation Page Polish
+   pass): every .confirm-card's first line, so the page reads as
+   unmistakably destructive at a glance, before the identity sentence
+   below it. Matches .admin-editor-eyebrow's own small-caps treatment,
+   recolored danger red instead of gold — the same eyebrow ROLE, the
+   one color that must never mean "primary/default" on this page. */
+.confirm-card-eyebrow {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .text-muted {
@@ -826,18 +877,24 @@ input[type="checkbox"] {
    surface language, just with more generous padding befitting the main
    content region rather than a compact side card.
 
-   width: fit-content (capped at 100%) makes the panel hug whatever width
-   its form-grid/form-grid-wide child actually needs, rather than a single
-   fixed pixel value: a short form does not inherit a huge mostly-empty
-   box, a wide Recipe form is not squeezed narrower than its own content,
-   and on the narrower three-column layout (record list + editor + aside)
-   the 100% cap still prevents any overflow. Applied only around genuine
-   primary-form content — never around delete confirmations (.confirm-card
-   already carries its own destructive treatment) and never doubled up
-   around content that already lives inside a ContextPanel. */
+   Ultrawide Editor Sizing pass: width: fit-content (capped at 100%) was
+   the original rule, but at ultrawide viewports .admin-workspace-main
+   can grow to ~1700px while the surface hugged only its form's own
+   ~560-680px content — leaving a large, arbitrary navy gap between the
+   surface's own right edge and the context rail, so the form read as a
+   small card stranded inside a huge column. width: 100% instead lets
+   the surface's own background/border fill the ENTIRE main-column width
+   at every viewport (closing that gap, and reading as one coherent
+   section rather than a floating card), while the readable INNER
+   content — .form-grid/.form-grid-wide, unchanged at their existing
+   560px/680px max-width — stays capped at a comfortable line length
+   regardless of how wide the surface itself grows. Applied only around
+   genuine primary-form content — never around delete confirmations
+   (.confirm-card already carries its own destructive treatment) and
+   never doubled up around content that already lives inside a
+   ContextPanel. */
 .admin-editor-surface {
-  width: fit-content;
-  max-width: 100%;
+  width: 100%;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -1050,7 +1107,12 @@ input[type="checkbox"] {
    button keeps normal HTML form submission. Background matches
    .admin-editor-surface (not the page background) — every current caller
    now renders inside that panel, so the sticky bar must blend with ITS
-   surface rather than punching a page-colored hole in it. */
+   surface rather than punching a page-colored hole in it. Slightly
+   roomier padding/margin (Sticky Actions Refinement pass) so the bar
+   reads as a deliberate footer region rather than a thin strip the
+   moment the surface's own bottom edge scrolls into view — sticky
+   behavior, submission, and every button's exact label/route are
+   unchanged. */
 .admin-editor-actions {
   position: sticky;
   bottom: 0;
@@ -1059,8 +1121,8 @@ input[type="checkbox"] {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  padding: 16px 0;
-  margin-top: 24px;
+  padding: 20px 0;
+  margin-top: 28px;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
 }

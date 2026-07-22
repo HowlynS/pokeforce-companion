@@ -151,6 +151,8 @@ export default async function NewLocationPage({
         action={createLocationAction}
         className="form-grid"
       >
+        <p className="form-section-heading">Identity</p>
+
         {/* Client-enhanced Name field with live duplicate feedback; the
             submission-time duplicate check in createLocationAction
             remains the authoritative protection. */}
@@ -192,6 +194,8 @@ export default async function NewLocationPage({
             ))}
           </select>
         </label>
+
+        <p className="form-section-heading">Content</p>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>

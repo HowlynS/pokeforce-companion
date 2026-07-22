@@ -92,6 +92,7 @@ export default async function DeleteRecipePage({
       }
     >
       <div className="confirm-card">
+        <p className="confirm-card-eyebrow">Destructive action</p>
         <p>
           You are about to permanently delete <strong>{recipe.name}</strong> (
           {recipe.slug}). This action cannot be undone.

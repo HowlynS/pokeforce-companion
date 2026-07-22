@@ -133,6 +133,8 @@ export default async function EditAcquisitionSourcePage({
         <input type="hidden" name="id" value={source.id} />
         <input type="hidden" name="itemSlug" value={item.slug} />
 
+        <p className="form-section-heading">Source</p>
+
         <label className="form-field">
           <span className="form-field-label">Type</span>
           <select
@@ -148,6 +150,8 @@ export default async function EditAcquisitionSourcePage({
             ))}
           </select>
         </label>
+
+        <p className="form-section-heading">Linked context</p>
 
         <label className="form-field">
           <span className="form-field-label">Location (optional)</span>
@@ -180,6 +184,8 @@ export default async function EditAcquisitionSourcePage({
             ))}
           </select>
         </label>
+
+        <p className="form-section-heading">Details</p>
 
         <label className="form-field">
           <span className="form-field-label">

@@ -84,6 +84,7 @@ export default async function DeleteProfessionPage({
       }
     >
       <div className="confirm-card">
+        <p className="confirm-card-eyebrow">Destructive action</p>
         <p>
           You are about to permanently delete{" "}
           <strong>{profession.name}</strong> ({profession.slug}). This action

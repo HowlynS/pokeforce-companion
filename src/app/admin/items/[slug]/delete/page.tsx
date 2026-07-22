@@ -108,6 +108,7 @@ export default async function DeleteItemPage({
       }
     >
       <div className="confirm-card">
+        <p className="confirm-card-eyebrow">Destructive action</p>
         <p>
           You are about to permanently delete <strong>{item.name}</strong> (
           {item.slug}). This action cannot be undone.

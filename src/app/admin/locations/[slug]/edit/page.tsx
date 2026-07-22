@@ -206,6 +206,8 @@ export default async function EditLocationPage({
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
 
+        <p className="form-section-heading">Identity</p>
+
         {/* Client-enhanced Name field with live duplicate feedback. The
             saved name counts as "current" (never queried), and the record's
             own id is excluded server-side so it cannot conflict with
@@ -244,6 +246,8 @@ export default async function EditLocationPage({
             ))}
           </select>
         </label>
+
+        <p className="form-section-heading">Content</p>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>

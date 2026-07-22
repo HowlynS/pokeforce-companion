@@ -88,6 +88,7 @@ export default async function DeleteLocationPage({
       }
     >
       <div className="confirm-card">
+        <p className="confirm-card-eyebrow">Destructive action</p>
         <p>
           You are about to permanently delete <strong>{location.name}</strong>{" "}
           ({location.slug}). This action cannot be undone.

@@ -167,6 +167,8 @@ export default async function NewRecipePage({
           action={createRecipeAction}
           className="form-grid form-grid-wide"
         >
+          <p className="form-section-heading">Identity</p>
+
           {/* Client-enhanced Name field with live duplicate feedback; the
               submission-time duplicate check in createRecipeAction remains
               the authoritative protection. */}
@@ -182,6 +184,8 @@ export default async function NewRecipePage({
             </span>
             <input type="text" name="slug" className="form-input" />
           </label>
+
+          <p className="form-section-heading">Output</p>
 
           <label className="form-field">
             <span className="form-field-label">Resulting item</span>

@@ -224,6 +224,8 @@ export default async function EditRecipePage({
         <input type="hidden" name="id" value={recipe.id} />
         <input type="hidden" name="originalSlug" value={recipe.slug} />
 
+        <p className="form-section-heading">Identity</p>
+
         {/* Client-enhanced Name field with live duplicate feedback. The
             saved name counts as "current" (never queried), and the
             record's own id is excluded server-side so it cannot conflict
@@ -246,6 +248,8 @@ export default async function EditRecipePage({
             className="form-input"
           />
         </label>
+
+        <p className="form-section-heading">Output</p>
 
         <label className="form-field">
           <span className="form-field-label">Resulting item</span>
