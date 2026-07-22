@@ -1,26 +1,79 @@
-// Shared searchable record-list column (Slice 9B.3): the quick-switching
-// list the future resource workspaces place in AdminWorkspace's
-// recordList slot. Resource-agnostic by construction — the CALLER owns
-// the database query, the filtering, the row data, and every href (row
-// links, create action, search target); this component only renders the
-// column: title, create action, search form, optional count, the rows,
-// a caller-supplied empty state, and an optional pagination node.
+"use client";
+
+// Shared searchable record-list column (Slice 9B.3; converted to instant
+// client-side filtering in Phase B1, System A). The caller (each resource's
+// thin *Workspace wrapper) still owns the database query and every row's
+// href/image — this component now also owns the interactive filtering
+// itself, since Phase B1 replaced submit-based server search with immediate
+// local filtering over the complete, already-fetched list (no pagination,
+// no per-keystroke request).
 //
-// Search is URL-driven, matching the public /search pattern: a plain GET
-// form submits the query as a URL parameter (Enter submits from the
-// keyboard, no JavaScript required, no request per keystroke), the
-// server re-renders with the filtered rows, and a Clear link — rendered
-// only while a query is active — returns to the unfiltered list. The
-// selected record is marked with aria-current="page", which is
-// simultaneously the accessible state and the CSS styling hook (the
-// same rule the admin sidebar and editor tabs use).
+// Filtering matches a row's name (primary) or Page address (slug) only,
+// case-insensitively, via the pure src/lib/admin/record-list-filter.ts
+// helpers — never descriptions or other heavyweight fields. Because the
+// full row set is already on the client, filtering itself is synchronous
+// and instant; only the address bar's own `q` parameter is synchronized,
+// with a short debounce so typing doesn't flood browser history.
+//
+// That sync deliberately uses the raw window.history.replaceState API
+// rather than next/navigation's router: a router.replace to the same
+// force-dynamic route re-runs the page's Server Component (a real
+// server round trip and, on the edit route, a re-render of the whole
+// workspace including the open editor) purely because the URL's search
+// string changed — exactly what this feature must NOT do while someone is
+// only filtering the sidebar list. There is no existing shallow-routing
+// precedent elsewhere in this codebase to defer to (the only other client
+// component reading routing state, AdminNav, only READS the pathname via
+// usePathname(), it never writes to the URL) — this is deliberately new,
+// narrowly-scoped surface area, not a deviation from an established
+// pattern. Writing the URL directly keeps the address bar, the existing
+// history entry's own state object (passed through unchanged, never
+// replaced with null), and any hash fragment all intact, and is read back
+// via the native `popstate` event on Back/Forward — with zero navigation/
+// refetch and never a new history entry per keystroke (replaceState, never
+// pushState). Every actual navigation this list participates in (a row
+// link, the create link, AdminNav's own next/link sidebar entries) is
+// either a full document load or a transition to a genuinely different
+// route, so this component always remounts fresh reading the already-
+// synced `q` back out of the (already-correct) address bar — popstate
+// itself is a defensive backstop for same-document history motion, not
+// the primary mechanism Back/Forward correctness relies on here. The
+// selected record is marked with aria-current="page", simultaneously the
+// accessible state and the CSS styling hook (the same rule the admin
+// sidebar and editor tabs use) — unaffected by filtering, since a selected
+// row that no longer matches the filter simply disappears from view
+// rather than losing its state, and the editor stays exactly as it was.
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  buildSyncedListUrl,
+  filterRecordRows,
+  formatRecordCount,
+  withUpdatedSearchParam,
+  type RecordListNoun,
+} from "@/lib/admin/record-list-filter";
+
+const URL_SYNC_DEBOUNCE_MS = 300;
 
 export type RecordListRow = {
   /** Full link target, constructed by the caller (nested editor routes
-      included) — this component never builds routes. Also the row key. */
+      included) — this component never builds routes, only rewrites the
+      href's own search-param value as the live filter changes. Also the
+      row key. */
   href: string;
-  /** Primary row label (the record's name). */
+  /** Primary row label (the record's name) — also matched against the
+      filter. */
   primary: string;
+  /** The record's Page address — matched against the filter, but not
+      necessarily displayed as its own row text. */
+  slug: string;
+  /** Optional additional values matched against the filter alongside name
+      and slug — e.g. Location's own type label. Never a description or
+      other heavyweight field; omitted entirely by resources with no such
+      existing, genuinely useful short metadata. Not itself displayed —
+      pair with `secondary` (below) when the same value should also be
+      shown. */
+  searchTerms?: readonly string[];
   /** Optional concise secondary context (e.g. a category or type). */
   secondary?: string;
   /** Marks the record currently open in the editor. */
@@ -36,26 +89,32 @@ export type RecordListRow = {
 type RecordListProps = {
   /** Visible column title, doubling as the accessible section label. */
   label: string;
-  /** GET target for the search form AND the Clear link (the list route
-      itself, query-free). */
-  searchAction: string;
-  /** URL parameter the query submits as. */
+  /** The list's own route (query-free) — the address bar is synchronized
+      against this pathname as the filter changes. */
+  listPath: string;
+  /** URL parameter the filter is synchronized to. */
   searchParamName?: string;
-  /** The currently applied query, preserved in the input. */
-  searchValue?: string;
-  /** Accessible label for the search input. */
+  /** The query already applied at first render (from the page's own
+      ?q=), seeding the client filter state — every row's href already
+      carries this same value, so the first client render matches the
+      server-rendered markup exactly (no hydration mismatch). */
+  initialQuery?: string;
+  /** Accessible label for the filter input. */
   searchLabel?: string;
+  /** Static create-page href; rewritten live to carry the current filter
+      the same way each row's own href is. */
   createHref: string;
   createLabel?: string;
+  /** The COMPLETE, unfiltered row set — filtering happens locally over
+      this array, never a server round trip. */
   rows: readonly RecordListRow[];
-  /** Rendered instead of rows when there are none — the caller decides
-      whether that means "no records yet", "no matches", an error, or a
-      loading message. */
+  /** Singular/plural noun for the total-vs-filtered count line, e.g.
+      { singular: "item", plural: "items" }. */
+  noun: RecordListNoun;
+  /** Rendered instead of rows only when the resource truly has none at
+      all (never for a filter that simply matched nothing — that gets its
+      own compact, distinct message). */
   empty: React.ReactNode;
-  /** Optional result-count line (the caller formats it). */
-  countLabel?: string;
-  /** Optional pagination node (see RecordListPagination). */
-  pagination?: React.ReactNode;
   /** List-level image-capable mode: every row reserves the same fixed
       64×64 media slot (populated or the missing-image fallback), rather
       than each row deciding its own layout from whether it happens to
@@ -68,62 +127,160 @@ type RecordListProps = {
 
 export function RecordList({
   label,
-  searchAction,
+  listPath,
   searchParamName = "q",
-  searchValue = "",
+  initialQuery = "",
   searchLabel = "Search records",
   createHref,
   createLabel = "+ New",
   rows,
+  noun,
   empty,
-  countLabel,
-  pagination,
   showImages = false,
 }: RecordListProps) {
+  const [query, setQuery] = useState(initialQuery);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const trimmedQuery = query.trim();
+  const hasQuery = trimmedQuery !== "";
+
+  // Back/Forward: the native popstate event fires when the user navigates
+  // history without this component itself having changed anything — read
+  // the filter parameter straight back out of the address bar and
+  // resynchronize the input and the filtered list.
+  useEffect(() => {
+    function handlePopState() {
+      const fromUrl =
+        new URLSearchParams(window.location.search).get(searchParamName) ??
+        "";
+      setQuery(fromUrl);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [searchParamName]);
+
+  // Debounced address-bar sync only — the visible filtering above is
+  // already instant on every keystroke via the `query` state itself;
+  // nothing here can be experienced as request latency. Writing the URL
+  // directly (see file header) never triggers a server round trip.
+  useEffect(() => {
+    if (syncTimer.current) {
+      clearTimeout(syncTimer.current);
+    }
+
+    syncTimer.current = setTimeout(() => {
+      const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const nextUrl = buildSyncedListUrl(
+        window.location.pathname || listPath,
+        new URLSearchParams(window.location.search),
+        searchParamName,
+        trimmedQuery,
+        window.location.hash
+      );
+
+      if (nextUrl !== currentUrl) {
+        // The second argument ("" here) is the now-unused `title` history
+        // API parameter, not this call's own state — the FIRST argument,
+        // window.history.state, is passed straight through unchanged, so
+        // any state a future feature stores there is never clobbered by
+        // this sync.
+        window.history.replaceState(window.history.state, "", nextUrl);
+      }
+    }, URL_SYNC_DEBOUNCE_MS);
+
+    return () => {
+      if (syncTimer.current) {
+        clearTimeout(syncTimer.current);
+      }
+    };
+  }, [trimmedQuery, searchParamName, listPath]);
+
+  const filteredRows = useMemo(
+    () => filterRecordRows(rows, trimmedQuery),
+    [rows, trimmedQuery]
+  );
+
+  // Each row's own href (and the create link) already carries the QUERY
+  // that was active when the server rendered it; rewriting that one
+  // parameter to the live-typed value keeps navigation targets correct
+  // while filtering, without waiting for the debounced address-bar sync.
+  const effectiveRows = useMemo(
+    () =>
+      filteredRows.map((row) => ({
+        ...row,
+        href: withUpdatedSearchParam(row.href, searchParamName, trimmedQuery),
+      })),
+    [filteredRows, searchParamName, trimmedQuery]
+  );
+
+  const effectiveCreateHref = useMemo(
+    () => withUpdatedSearchParam(createHref, searchParamName, trimmedQuery),
+    [createHref, searchParamName, trimmedQuery]
+  );
+
+  const countLabel = formatRecordCount(rows.length, filteredRows.length, hasQuery, noun);
+
+  function handleClear() {
+    setQuery("");
+    inputRef.current?.focus();
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape" && query !== "") {
+      event.preventDefault();
+      handleClear();
+    }
+    // No <form> wraps this input, so Enter has nothing to submit; no
+    // explicit handling is needed to keep it from navigating or reloading.
+  }
+
   return (
     <section aria-label={label} className="admin-record-list">
       <div className="admin-record-list-header">
         <h2 className="admin-record-list-title">{label}</h2>
-        <a href={createHref} className="btn btn-primary btn-compact">
+        <a href={effectiveCreateHref} className="btn btn-primary btn-compact">
           {createLabel}
         </a>
       </div>
 
-      <form
-        action={searchAction}
-        method="get"
-        role="search"
-        aria-label={searchLabel}
-        className="admin-record-search"
-      >
+      <div role="search" aria-label={searchLabel} className="admin-record-search">
         <input
+          ref={inputRef}
           type="search"
-          name={searchParamName}
-          defaultValue={searchValue}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={handleKeyDown}
           aria-label={searchLabel}
-          placeholder="Search…"
+          placeholder="Filter records…"
           className="form-input admin-record-search-input"
         />
-        <button type="submit" className="btn btn-secondary btn-compact">
-          Search
-        </button>
-      </form>
+        {hasQuery ? (
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label="Clear search"
+            className="admin-record-clear"
+          >
+            &times;
+          </button>
+        ) : null}
+      </div>
 
-      {/* Only while a query is applied — an idle list gets no dead
-          control. Links back to the query-free list route. */}
-      {searchValue ? (
-        <a href={searchAction} className="admin-record-clear">
-          Clear search
-        </a>
-      ) : null}
+      <p className="admin-record-count">{countLabel}</p>
 
-      {countLabel ? <p className="admin-record-count">{countLabel}</p> : null}
-
-      {rows.length > 0 ? (
+      {rows.length === 0 ? (
+        <div className="admin-record-empty">{empty}</div>
+      ) : effectiveRows.length === 0 ? (
+        <div className="admin-record-empty">
+          <p>No matching records.</p>
+        </div>
+      ) : (
         <nav aria-label={`${label} records`} className="admin-record-rows">
           <ul className="admin-record-row-list">
-            {rows.map((row) => (
-              <li key={row.href}>
+            {effectiveRows.map((row) => (
+              <li key={row.slug}>
                 <a
                   href={row.href}
                   className={
@@ -180,11 +337,7 @@ export function RecordList({
             ))}
           </ul>
         </nav>
-      ) : (
-        <div className="admin-record-empty">{empty}</div>
       )}
-
-      {pagination ?? null}
     </section>
   );
 }

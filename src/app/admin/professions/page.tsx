@@ -41,9 +41,9 @@ export default async function AdminProfessionsPage({
   const successMessage = success ? successMessages[success] ?? null : null;
 
   // Distinguishes "no professions exist at all" from "professions exist,
-  // none selected" for the landing state's own copy (skipped while a
-  // search is active — that is RecordList's own "no matches" state).
-  const totalProfessionCount = q ? null : await prisma.profession.count();
+  // none selected" for the landing state's own copy — independent of the
+  // list's own (client-side, Phase B1) filter.
+  const totalProfessionCount = await prisma.profession.count();
   const hasNoProfessions = totalProfessionCount === 0;
 
   // The workspace landing state: the searchable record list beside a

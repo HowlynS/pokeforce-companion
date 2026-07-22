@@ -231,7 +231,6 @@ test("switching professions while on the Recipes tab preserves the tab and q", a
   await page
     .getByRole("searchbox", { name: "Search professions" })
     .fill("test e2e profession recipes switch");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, PROFESSION_A.name)).toBeVisible();
   await expect(recordRow(page, PROFESSION_B.name)).toBeVisible();
 

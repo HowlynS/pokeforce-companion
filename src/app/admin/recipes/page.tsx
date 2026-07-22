@@ -39,9 +39,9 @@ export default async function AdminRecipesPage({
   const successMessage = success ? successMessages[success] ?? null : null;
 
   // Distinguishes "no recipes exist at all" from "recipes exist, none
-  // selected" for the landing state's own copy (skipped while a search
-  // is active — that is RecordList's own "no matches" state instead).
-  const totalRecipeCount = q ? null : await prisma.recipe.count();
+  // selected" for the landing state's own copy — independent of the
+  // list's own (client-side, Phase B1) filter.
+  const totalRecipeCount = await prisma.recipe.count();
   const hasNoRecipes = totalRecipeCount === 0;
 
   // The workspace landing state: the searchable record list beside a

@@ -69,6 +69,13 @@ type RecordNameFieldProps = {
   // conflict with itself).
   originalName?: string;
   excludeId?: string;
+  /** Phase B1, System B: lets a parent coordinator (RecordIdentityFields)
+      observe the live Name value for Page-address auto-generation,
+      without duplicating this field's own state/debounce logic. Called
+      with every keystroke, alongside this component's own internal
+      state update — optional so every other existing caller (plain
+      Name-only forms) is unaffected. */
+  onNameChange?: (name: string) => void;
 };
 
 export function RecordNameField({
@@ -77,6 +84,7 @@ export function RecordNameField({
   regionId,
   originalName,
   excludeId,
+  onNameChange,
 }: RecordNameFieldProps) {
   const [name, setName] = useState(originalName ?? "");
   const [result, setResult] = useState<CheckResult | null>(null);
@@ -161,7 +169,10 @@ export function RecordNameField({
           name="name"
           required
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => {
+            setName(event.target.value);
+            onNameChange?.(event.target.value);
+          }}
           aria-describedby={regionId}
           className="form-input"
         />

@@ -3,7 +3,7 @@ import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
-import { ItemNameField } from "@/components/admin/item-name-field";
+import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -13,6 +13,8 @@ import {
   withItemSearchQuery,
 } from "@/lib/admin/item-workspace";
 import { createItemAction } from "../actions";
+import { checkItemNameAvailability } from "../name-availability";
+import { checkItemSlugAvailability } from "../slug-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -122,20 +124,20 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
       >
         <p className="form-section-heading">Identity</p>
 
-        {/* Client-enhanced Name field with live duplicate feedback; the
-            submission-time duplicate check in createItemAction remains
-            the authoritative protection. */}
-        <ItemNameField />
-
-        <div className="form-field">
-          <label className="form-field">
-            <span className="form-field-label">
-              Page address (optional — generated from name if left blank)
-            </span>
-            <input type="text" name="slug" className="form-input" />
-          </label>
-          <p className="form-field-feedback" aria-hidden="true"></p>
-        </div>
+        {/* Client-enhanced Name + Page address fields (Phase B1): live
+            duplicate-name feedback, live slug auto-generation from Name,
+            and live slug-availability feedback. The submission-time
+            checks in createItemAction remain the authoritative
+            protection for both fields. */}
+        <RecordIdentityFields
+          mode="create"
+          checkNameAvailabilityAction={checkItemNameAvailability}
+          nameTakenText="An item with that name already exists."
+          nameRegionId="item-name-availability"
+          checkSlugAvailabilityAction={checkItemSlugAvailability}
+          slugTakenText="An item with that page address already exists."
+          slugRegionId="item-slug-availability"
+        />
 
         <p className="form-section-heading">Description</p>
 

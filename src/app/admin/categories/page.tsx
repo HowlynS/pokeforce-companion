@@ -37,9 +37,9 @@ export default async function AdminCategoriesPage({
   const successMessage = success ? successMessages[success] ?? null : null;
 
   // Distinguishes "no categories exist at all" from "categories exist,
-  // none selected" for the landing state's own copy (skipped while a
-  // search is active — that is RecordList's own "no matches" state).
-  const totalCategoryCount = q ? null : await prisma.category.count();
+  // none selected" for the landing state's own copy — independent of the
+  // list's own (client-side, Phase B1) filter.
+  const totalCategoryCount = await prisma.category.count();
   const hasNoCategories = totalCategoryCount === 0;
 
   // The workspace landing state: the searchable record list beside a

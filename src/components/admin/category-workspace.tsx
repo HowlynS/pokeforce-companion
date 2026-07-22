@@ -68,21 +68,13 @@ export async function CategoryWorkspace({
 }: CategoryWorkspaceProps) {
   const query = normalizeCategorySearchQuery(rawQuery);
 
-  // Server-side filtering on name OR slug, case-insensitive — the same
-  // trimmed-query posture the Item, Recipe, and Profession workspaces
-  // use. No query means the full list, alphabetical like the previous
-  // admin table. The item _count is loaded alongside (never the full
-  // relation) so the secondary row context below never triggers an N+1
-  // query.
+  // The COMPLETE list, always — filtering is now instant and client-side
+  // (Phase B1, System A), so there is no server-side `where`/`q` filter
+  // and no pagination `skip`/`take` here at all. Alphabetical, matching
+  // the previous admin table's own ordering. The item _count is loaded
+  // alongside (never the full relation) so the secondary row context
+  // below never triggers an N+1 query.
   const categories = await prisma.category.findMany({
-    where: query
-      ? {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { slug: { contains: query, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
     include: { _count: { select: { items: true } } },
     orderBy: { name: "asc" },
   });
@@ -97,18 +89,13 @@ export async function CategoryWorkspace({
   const rows = categories.map((category, index) => ({
     href: recordHref(category.slug, query),
     primary: category.name,
+    slug: category.slug,
     secondary: `${category._count.items} ${
       category._count.items === 1 ? "item" : "items"
     }`,
     selected: category.slug === selectedSlug,
     image: imageUrls[index],
   }));
-
-  const countLabel = query
-    ? `${categories.length} ${categories.length === 1 ? "match" : "matches"}`
-    : `${categories.length} ${
-        categories.length === 1 ? "category" : "categories"
-      }`;
 
   return (
     <AdminWorkspace
@@ -118,26 +105,19 @@ export async function CategoryWorkspace({
       recordList={
         <RecordList
           label="Categories"
-          searchAction={CATEGORY_LIST_PATH}
-          searchValue={query}
+          listPath={CATEGORY_LIST_PATH}
+          initialQuery={query}
           searchLabel="Search categories"
           createHref={withCategorySearchQuery(CATEGORY_CREATE_PATH, query)}
           createLabel="+ New category"
           rows={rows}
           showImages
-          countLabel={countLabel}
+          noun={{ singular: "category", plural: "categories" }}
           empty={
-            query ? (
-              // Distinct no-match state: the applied query is shown, and
-              // the list's own Clear link (rendered because a query is
-              // active) is the way out.
-              <p>No categories match &ldquo;{query}&rdquo;.</p>
-            ) : (
-              <p>
-                No categories yet. Use &ldquo;+ New category&rdquo; to
-                create the first one.
-              </p>
-            )
+            <p>
+              No categories yet. Use &ldquo;+ New category&rdquo; to
+              create the first one.
+            </p>
           }
         />
       }

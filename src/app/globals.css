@@ -475,19 +475,65 @@ select:focus-visible {
   letter-spacing: 0.01em;
 }
 
+/* Phase B1, System B: the Page address label and its compact "Use name"
+   reset control share one row, the label on the left (its own .form-field
+   wrapper keeps the same 14px inset every other label uses) and the
+   control on the right — small enough that it never distorts the field's
+   own layout or competes with the label for attention. */
+.form-field-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.form-field-label-row .form-field {
+  gap: 0;
+}
+
+/* A plain text-link-styled button, matching .admin-record-clear's own
+   quiet muted/gold-hover language rather than a second visually-loud
+   button beside Save/Cancel. */
+.form-field-inline-action {
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.form-field-inline-action:hover {
+  color: var(--color-accent-soft);
+}
+
+.form-field-inline-action:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* Visual Pass II Section 4/5: the shared feedback-row treatment used by
    BOTH the Name field's own live availability region (checking/taken/
-   failed text) and the empty reserved row beneath the Page address field
-   — one class, so the two paired fields always share the exact same
-   reserved height (never separately maintained inline styles that could
-   drift apart) and the exact same 14px horizontal inset as every label
-   and input value above them. Page address availability checking itself
-   is Phase B work; this is purely a layout/alignment reservation. */
+   failed text) and the Page address field's own live availability region
+   (Phase B1, System B — no longer a permanently-empty spacer). One class,
+   so both fields always share the exact same reserved height (never
+   separately maintained inline styles that could drift apart) and the
+   exact same 14px horizontal inset as every label and input value above
+   them. `line-height` is set explicitly (rather than inherited) to
+   exactly match `min-height`'s own 1.2em: without this, an inherited
+   line-height taller than 1.2em made a REAL line of text (checking/taken/
+   invalid) render taller than an empty paragraph's collapsed height,
+   reflowing Description and everything below it the moment either
+   field's feedback populated — invisible with only one such field on a
+   page, but real now that Name and Page address feedback coexist. */
 .form-field-feedback {
   margin: 0;
   min-height: 1.2em;
   padding-left: 14px;
   font-size: 14px;
+  line-height: 1.2;
 }
 
 /* Recipe output quantity range slice: the Output section's single
@@ -1694,10 +1740,8 @@ input[type="checkbox"] {
    column hits its viewport cap. */
 .admin-record-list-header,
 .admin-record-search,
-.admin-record-clear,
 .admin-record-count,
-.admin-record-empty,
-.admin-record-pagination {
+.admin-record-empty {
   flex-shrink: 0;
 }
 
@@ -1723,6 +1767,7 @@ input[type="checkbox"] {
 
 .admin-record-search {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -1732,14 +1777,37 @@ input[type="checkbox"] {
   padding: 8px 12px;
 }
 
+/* Compact inline clear control (Phase B1, System A): a <button>, not the
+   link it replaces — clearing no longer navigates, it only resets the
+   local filter state — shown only while a filter is active, inside the
+   search row itself rather than as a separate row beneath it. Native
+   button chrome is reset so it still reads as the same quiet muted/
+   gold-hover control every other admin text-link uses. */
 .admin-record-clear {
-  justify-self: start;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  padding: 0;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .admin-record-clear:hover {
   color: var(--color-accent-soft);
+  background: var(--color-surface-soft);
+}
+
+.admin-record-clear:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 /* Quieter than the row text it introduces (the rows are the content;
@@ -1984,28 +2052,6 @@ input[type="checkbox"] {
    replaces the identical inline style ten call sites repeated. */
 .admin-record-empty p {
   margin: 0;
-}
-
-.admin-record-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.admin-record-page-context {
-  color: var(--color-text-muted);
-  font-size: 13px;
-}
-
-/* Disabled direction: plainly inert — muted text, no pointer, never a
-   fake link. */
-.admin-record-page-disabled {
-  padding: 8px 12px;
-  color: var(--color-text-muted);
-  opacity: 0.5;
-  font-size: 16px;
-  line-height: 1.2;
 }
 
 /* ---- Admin dashboard resource module (Slice 9G.1; moved out of inline

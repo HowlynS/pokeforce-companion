@@ -240,7 +240,6 @@ test("switching items while on the Used in Recipes tab preserves the tab and q",
   await page
     .getByRole("searchbox", { name: "Search items" })
     .fill("test e2e item recipes switch");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, ITEM_A.name)).toBeVisible();
   await expect(recordRow(page, ITEM_B.name)).toBeVisible();
 

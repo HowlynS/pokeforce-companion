@@ -17,9 +17,10 @@ import {
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
-import { RecordNameField } from "@/components/admin/record-name-field";
+import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { updateRecipeGeneralAction } from "../../actions";
 import { checkRecipeNameAvailability } from "../../name-availability";
+import { checkRecipeSlugAvailability } from "../../slug-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -188,31 +189,25 @@ export default async function EditRecipePage({
 
         <p className="form-section-heading">Identity</p>
 
-        {/* Client-enhanced Name field with live duplicate feedback. The
-            saved name counts as "current" (never queried), and the
-            record's own id is excluded server-side so it cannot conflict
-            with itself; updateRecipeGeneralAction stays the authoritative
-            check. */}
-        <RecordNameField
-          checkAvailabilityAction={checkRecipeNameAvailability}
-          takenText="A recipe with that name already exists."
-          regionId="recipe-name-availability"
+        {/* Client-enhanced Name + Page address fields (Phase B1). Both
+            saved values count as "current" (never queried against
+            themselves), and the record's own id is excluded server-side
+            so it cannot conflict with itself; updateRecipeGeneralAction
+            stays the authoritative check for both. Page address starts
+            manually controlled (never auto-regenerated from Name edits)
+            to protect the existing persisted URL. */}
+        <RecordIdentityFields
+          mode="edit"
+          checkNameAvailabilityAction={checkRecipeNameAvailability}
+          nameTakenText="A recipe with that name already exists."
+          nameRegionId="recipe-name-availability"
           originalName={recipe.name}
+          checkSlugAvailabilityAction={checkRecipeSlugAvailability}
+          slugTakenText="A recipe with that page address already exists."
+          slugRegionId="recipe-slug-availability"
+          initialSlug={recipe.slug}
           excludeId={recipe.id}
         />
-
-        <div className="form-field">
-          <label className="form-field">
-            <span className="form-field-label">Page address</span>
-            <input
-              type="text"
-              name="slug"
-              defaultValue={recipe.slug}
-              className="form-input"
-            />
-          </label>
-          <p className="form-field-feedback" aria-hidden="true"></p>
-        </div>
 
         <p className="form-section-heading">Output</p>
 

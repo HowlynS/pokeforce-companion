@@ -62,18 +62,11 @@ export async function ItemWorkspace({
 }: ItemWorkspaceProps) {
   const query = normalizeItemSearchQuery(rawQuery);
 
-  // Server-side filtering on name OR slug, case-insensitive — the same
-  // trimmed-query posture the global search uses. No query means the
-  // full list, alphabetical like the previous admin table.
+  // The COMPLETE list, always — filtering is now instant and client-side
+  // (Phase B1, System A), so there is no server-side `where`/`q` filter
+  // and no pagination `skip`/`take` here at all. Alphabetical, matching
+  // the previous admin table's own ordering.
   const items = await prisma.item.findMany({
-    where: query
-      ? {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { slug: { contains: query, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
     include: { category: true },
     orderBy: { name: "asc" },
   });
@@ -88,14 +81,11 @@ export async function ItemWorkspace({
   const rows = items.map((item, index) => ({
     href: recordHref(item.slug, query),
     primary: item.name,
+    slug: item.slug,
     secondary: item.category?.name ?? undefined,
     selected: item.slug === selectedSlug,
     image: imageUrls[index],
   }));
-
-  const countLabel = query
-    ? `${items.length} ${items.length === 1 ? "match" : "matches"}`
-    : `${items.length} ${items.length === 1 ? "item" : "items"}`;
 
   return (
     <AdminWorkspace
@@ -105,26 +95,19 @@ export async function ItemWorkspace({
       recordList={
         <RecordList
           label="Items"
-          searchAction={ITEM_LIST_PATH}
-          searchValue={query}
+          listPath={ITEM_LIST_PATH}
+          initialQuery={query}
           searchLabel="Search items"
           createHref={withItemSearchQuery(ITEM_CREATE_PATH, query)}
           createLabel="+ New item"
           rows={rows}
           showImages
-          countLabel={countLabel}
+          noun={{ singular: "item", plural: "items" }}
           empty={
-            query ? (
-              // Distinct no-match state: the applied query is shown, and
-              // the list's own Clear link (rendered because a query is
-              // active) is the way out.
-              <p>No items match &ldquo;{query}&rdquo;.</p>
-            ) : (
-              <p>
-                No items yet. Use &ldquo;+ New item&rdquo; to create the
-                first one.
-              </p>
-            )
+            <p>
+              No items yet. Use &ldquo;+ New item&rdquo; to create the
+              first one.
+            </p>
           }
         />
       }

@@ -498,7 +498,7 @@ test("deletion is blocked while a recipe references the profession", async ({
   expect(deletedResponse?.status()).toBe(404);
 });
 
-test("record-list search filters, preserves the query across switching, and clears", async ({
+test("record-list search filters instantly while typing, preserves the query across switching, and clears — no Search button, no page reload", async ({
   page,
 }) => {
   // Two temporary professions sharing the test prefix, so one query
@@ -516,34 +516,34 @@ test("record-list search filters, preserves the query across switching, and clea
     description: "Second search fixture.",
   });
 
-  // --- Search by NAME (trimmed, case-insensitive) -----------------------
   await page.goto("/admin/professions");
+  await expect(
+    page.getByRole("button", { name: "Search", exact: true })
+  ).toHaveCount(0);
+
+  // --- Filter by NAME (trimmed, case-insensitive) — typing alone
+  // filters immediately, no click, no navigation ------------------------
   await page
     .getByRole("searchbox", { name: "Search professions" })
     .fill("  test e2e profession search  ");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(page).toHaveURL(/\/admin\/professions\?q=/);
   await expect(recordRow(page, "Test E2E Profession Search A")).toBeVisible();
   await expect(recordRow(page, "Test E2E Profession Search B")).toBeVisible();
-  // Seeded records are filtered out server-side.
   await expect(recordRow(page, "Smithing")).toHaveCount(0);
-  await expect(page.getByText("2 matches")).toBeVisible();
+  await expect(page.getByText("2 of ", { exact: false })).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/professions\?q=/);
 
   // --- Quick switching keeps the query applied --------------------------
-  // Row hrefs carry the TRIMMED query, %20-encoded by the server helper.
   await recordRow(page, "Test E2E Profession Search A").click();
   await expect(page).toHaveURL(
-    "/admin/professions/test-e2e-profession-search-a/edit?q=test%20e2e%20profession%20search"
+    /\/admin\/professions\/test-e2e-profession-search-a\/edit\?q=/
   );
   await expect(
     recordRow(page, "Test E2E Profession Search A")
   ).toHaveAttribute("aria-current", "page");
 
-  // Switch directly to the second match: the list stays filtered, the
-  // selection follows, and the first record is no longer marked.
   await recordRow(page, "Test E2E Profession Search B").click();
   await expect(page).toHaveURL(
-    "/admin/professions/test-e2e-profession-search-b/edit?q=test%20e2e%20profession%20search"
+    /\/admin\/professions\/test-e2e-profession-search-b\/edit\?q=/
   );
   await expect(
     recordRow(page, "Test E2E Profession Search B")
@@ -553,54 +553,60 @@ test("record-list search filters, preserves the query across switching, and clea
   ).not.toHaveAttribute("aria-current", "page");
 
   // The create action, and this edit page's own Cancel/Delete links, keep
-  // the search context too.
+  // the filter context too.
   await expect(
     page.getByRole("link", { name: "+ New profession", exact: true })
-  ).toHaveAttribute(
-    "href",
-    "/admin/professions/new?q=test%20e2e%20profession%20search"
-  );
+  ).toHaveAttribute("href", /\/admin\/professions\/new\?q=/);
   await expect(
     page.getByRole("link", { name: "Cancel", exact: true })
-  ).toHaveAttribute(
-    "href",
-    "/admin/professions?q=test%20e2e%20profession%20search"
-  );
+  ).toHaveAttribute("href", /\/admin\/professions\?q=/);
   await expect(
     page.getByRole("link", { name: "Delete Profession", exact: true })
   ).toHaveAttribute(
     "href",
-    "/admin/professions/test-e2e-profession-search-b/delete?q=test%20e2e%20profession%20search"
+    /\/admin\/professions\/test-e2e-profession-search-b\/delete\?q=/
   );
 
-  // --- Search by SLUG ---------------------------------------------------
+  // --- Filter by Page address (slug) -------------------------------------
   await page.goto("/admin/professions");
   await page
     .getByRole("searchbox", { name: "Search professions" })
     .fill("test-e2e-profession-search-b");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, "Test E2E Profession Search B")).toBeVisible();
   await expect(recordRow(page, "Test E2E Profession Search A")).toHaveCount(0);
-  await expect(page.getByText("1 match", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 of ", { exact: false })).toBeVisible();
 
   // --- No-match state (distinct from the no-professions-at-all state) ---
   await page
     .getByRole("searchbox", { name: "Search professions" })
     .fill("zzz-no-such-profession");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   const emptyRegion = page.locator(".admin-record-empty");
-  await expect(emptyRegion).toContainText("No professions match");
-  await expect(emptyRegion).toContainText("zzz-no-such-profession");
-  await expect(page.getByText("0 matches")).toBeVisible();
+  await expect(emptyRegion).toContainText("No matching records.");
+  await expect(page.getByText(/^0 of \d+ professions$/)).toBeVisible();
 
-  // --- Clear search returns the full list -------------------------------
-  await page.getByRole("link", { name: "Clear search", exact: true }).click();
-  await expect(page).toHaveURL("/admin/professions");
-  await expect(recordRow(page, "Smithing")).toBeVisible();
-  await expect(recordRow(page, "Test E2E Profession Search A")).toBeVisible();
+  // --- Escape clears the query, keeping focus in the field ---------------
+  await page
+    .getByRole("searchbox", { name: "Search professions" })
+    .press("Escape");
   await expect(
-    page.getByRole("link", { name: "Clear search", exact: true })
-  ).toHaveCount(0);
+    page.getByRole("searchbox", { name: "Search professions" })
+  ).toHaveValue("");
+  await expect(
+    page.getByRole("searchbox", { name: "Search professions" })
+  ).toBeFocused();
+  await expect(recordRow(page, "Smithing")).toBeVisible();
+
+  // --- The inline clear button restores the full list ---------------------
+  await page
+    .getByRole("searchbox", { name: "Search professions" })
+    .fill("test-e2e-profession-search-a");
+  await page.getByRole("button", { name: "Clear search" }).click();
+  await expect(
+    page.getByRole("searchbox", { name: "Search professions" })
+  ).toHaveValue("");
+  await expect(recordRow(page, "Smithing")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Clear search" })).toHaveCount(0);
+  await expect(page).toHaveURL("/admin/professions");
 });
 
 test("gameplay verification stamps the selected game version and survives normal edits", async ({

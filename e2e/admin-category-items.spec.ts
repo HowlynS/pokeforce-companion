@@ -219,7 +219,6 @@ test("switching categories while on the Items tab preserves the tab and q", asyn
   await page
     .getByRole("searchbox", { name: "Search categories" })
     .fill("test e2e category items switch");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, CATEGORY_A.name)).toBeVisible();
   await expect(recordRow(page, CATEGORY_B.name)).toBeVisible();
 

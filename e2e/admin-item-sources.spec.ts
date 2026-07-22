@@ -363,7 +363,6 @@ test("switching items while on the Acquisition Sources tab preserves the tab and
   await page
     .getByRole("searchbox", { name: "Search items" })
     .fill("test e2e acqsrc item switch");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, ITEM_A.name)).toBeVisible();
   await expect(recordRow(page, ITEM_B.name)).toBeVisible();
 

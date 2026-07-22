@@ -7,12 +7,12 @@
 // exactly: AdminWorkspace with the shared RecordList in its recordList
 // slot and the page's own content in the primary region. This is
 // deliberately the only Location-specific layer: it owns the Location
-// list query (name/slug/type-label search, server-side,
-// case-insensitive) and the Location URL construction (via the pure
-// helpers in src/lib/admin/location-workspace.ts); the shared components
-// underneath stay resource-agnostic. Not a generic resource-query
-// framework — this is a fifth, independent thin wrapper, not a shared
-// base class.
+// list query (loads the complete list; filtering by name, Page address,
+// and type label happens entirely client-side via the shared RecordList,
+// Phase B1) and the Location URL construction (via the pure helpers in
+// src/lib/admin/location-workspace.ts); the shared components underneath
+// stay resource-agnostic. Not a generic resource-query framework — this
+// is a fifth, independent thin wrapper, not a shared base class.
 //
 // Locations are the only converted resource with a self-referencing
 // hierarchy. This slice deliberately does NOT build a tree control,
@@ -32,7 +32,6 @@ import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { RecordList } from "@/components/admin/record-list";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import {
-  LOCATION_TYPES,
   LOCATION_TYPE_LABELS,
   type LocationType,
 } from "@/lib/validation/location";
@@ -97,32 +96,19 @@ export async function LocationWorkspace({
 }: LocationWorkspaceProps) {
   const query = normalizeLocationSearchQuery(rawQuery);
 
-  // Type-label matching only when it can stay clean and predictable: a
-  // fixed, seven-entry lookup against the same LOCATION_TYPE_LABELS the
-  // form and public pages already use — never a second query, and never
-  // guesswork about enum spelling.
-  const matchedTypes = query
-    ? LOCATION_TYPES.filter((type) =>
-        LOCATION_TYPE_LABELS[type].toLowerCase().includes(query.toLowerCase())
-      )
-    : [];
-
-  // Server-side filtering on name OR slug OR type label, case-insensitive
-  // — the same trimmed-query posture the Item/Recipe/Profession/Category
-  // workspaces use. No query means the full list, alphabetical like the
-  // previous admin table. The parent relation is loaded alongside (never
-  // a per-row follow-up query) so the secondary row context below never
-  // triggers an N+1 query.
+  // The COMPLETE list, always — filtering is now instant and client-side
+  // (Phase B1, System A), so there is no server-side `where`/`q` filter
+  // and no pagination `skip`/`take` here at all. Alphabetical, matching
+  // the previous admin table's own ordering. The parent relation is
+  // loaded alongside (never a per-row follow-up query) so the secondary
+  // row context below never triggers an N+1 query.
+  //
+  // The previous server-side search additionally matched a Location TYPE
+  // label (e.g. "Town") — restored below via RecordListRow's own optional
+  // `searchTerms`, the shared filter's resource-agnostic escape hatch for
+  // exactly this kind of already-displayed, already-loaded short metadata
+  // (never a Location-specific branch inside the shared matcher itself).
   const locations = await prisma.location.findMany({
-    where: query
-      ? {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { slug: { contains: query, mode: "insensitive" } },
-            ...(matchedTypes.length > 0 ? [{ type: { in: matchedTypes } }] : []),
-          ],
-        }
-      : undefined,
     include: { parent: true },
     orderBy: { name: "asc" },
   });
@@ -137,16 +123,15 @@ export async function LocationWorkspace({
   const rows = locations.map((location, index) => ({
     href: recordHref(location.slug, query),
     primary: location.name,
+    slug: location.slug,
+    // The type label alone (not the combined "Type · Parent" secondary
+    // string below) — matches exactly what the row already visibly shows
+    // via its own type, restoring the previous server-side behavior.
+    searchTerms: [LOCATION_TYPE_LABELS[location.type]],
     secondary: locationSecondaryContext(location),
     selected: location.slug === selectedSlug,
     image: imageUrls[index],
   }));
-
-  const countLabel = query
-    ? `${locations.length} ${locations.length === 1 ? "match" : "matches"}`
-    : `${locations.length} ${
-        locations.length === 1 ? "location" : "locations"
-      }`;
 
   return (
     <AdminWorkspace
@@ -156,26 +141,19 @@ export async function LocationWorkspace({
       recordList={
         <RecordList
           label="Locations"
-          searchAction={LOCATION_LIST_PATH}
-          searchValue={query}
+          listPath={LOCATION_LIST_PATH}
+          initialQuery={query}
           searchLabel="Search locations"
           createHref={withLocationSearchQuery(LOCATION_CREATE_PATH, query)}
           createLabel="+ New location"
           rows={rows}
           showImages
-          countLabel={countLabel}
+          noun={{ singular: "location", plural: "locations" }}
           empty={
-            query ? (
-              // Distinct no-match state: the applied query is shown, and
-              // the list's own Clear link (rendered because a query is
-              // active) is the way out.
-              <p>No locations match &ldquo;{query}&rdquo;.</p>
-            ) : (
-              <p>
-                No locations yet. Use &ldquo;+ New location&rdquo; to
-                create the first one.
-              </p>
-            )
+            <p>
+              No locations yet. Use &ldquo;+ New location&rdquo; to
+              create the first one.
+            </p>
           }
         />
       }

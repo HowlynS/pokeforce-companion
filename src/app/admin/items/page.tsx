@@ -42,10 +42,9 @@ export default async function AdminItemsPage({
 
   // Distinguishes "no items exist at all" from "items exist, none
   // selected" for the landing state's own copy — a cheap, read-only
-  // count, independent of ItemWorkspace's own (possibly filtered) list
-  // query. Skipped while a search is active: a filtered zero-result view
-  // is RecordList's own "no matches" state, not this one.
-  const totalItemCount = q ? null : await prisma.item.count();
+  // count, independent of the list's own (client-side, Phase B1) filter,
+  // which never changes whether any item exists at all.
+  const totalItemCount = await prisma.item.count();
   const hasNoItems = totalItemCount === 0;
 
   // The workspace landing state: the searchable record list beside a

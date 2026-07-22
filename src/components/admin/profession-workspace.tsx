@@ -69,20 +69,13 @@ export async function ProfessionWorkspace({
 }: ProfessionWorkspaceProps) {
   const query = normalizeProfessionSearchQuery(rawQuery);
 
-  // Server-side filtering on name OR slug, case-insensitive — the same
-  // trimmed-query posture the Item and Recipe workspaces use. No query
-  // means the full list, alphabetical like the previous admin table. The
-  // recipe _count is loaded alongside (never the full relation) so the
-  // secondary row context below never triggers an N+1 query.
+  // The COMPLETE list, always — filtering is now instant and client-side
+  // (Phase B1, System A), so there is no server-side `where`/`q` filter
+  // and no pagination `skip`/`take` here at all. Alphabetical, matching
+  // the previous admin table's own ordering. The recipe _count is loaded
+  // alongside (never the full relation) so the secondary row context
+  // below never triggers an N+1 query.
   const professions = await prisma.profession.findMany({
-    where: query
-      ? {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { slug: { contains: query, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
     include: { _count: { select: { recipes: true } } },
     orderBy: { name: "asc" },
   });
@@ -97,18 +90,13 @@ export async function ProfessionWorkspace({
   const rows = professions.map((profession, index) => ({
     href: recordHref(profession.slug, query),
     primary: profession.name,
+    slug: profession.slug,
     secondary: `${profession._count.recipes} ${
       profession._count.recipes === 1 ? "recipe" : "recipes"
     }`,
     selected: profession.slug === selectedSlug,
     image: imageUrls[index],
   }));
-
-  const countLabel = query
-    ? `${professions.length} ${professions.length === 1 ? "match" : "matches"}`
-    : `${professions.length} ${
-        professions.length === 1 ? "profession" : "professions"
-      }`;
 
   return (
     <AdminWorkspace
@@ -118,26 +106,19 @@ export async function ProfessionWorkspace({
       recordList={
         <RecordList
           label="Professions"
-          searchAction={PROFESSION_LIST_PATH}
-          searchValue={query}
+          listPath={PROFESSION_LIST_PATH}
+          initialQuery={query}
           searchLabel="Search professions"
           createHref={withProfessionSearchQuery(PROFESSION_CREATE_PATH, query)}
           createLabel="+ New profession"
           rows={rows}
           showImages
-          countLabel={countLabel}
+          noun={{ singular: "profession", plural: "professions" }}
           empty={
-            query ? (
-              // Distinct no-match state: the applied query is shown, and
-              // the list's own Clear link (rendered because a query is
-              // active) is the way out.
-              <p>No professions match &ldquo;{query}&rdquo;.</p>
-            ) : (
-              <p>
-                No professions yet. Use &ldquo;+ New profession&rdquo; to
-                create the first one.
-              </p>
-            )
+            <p>
+              No professions yet. Use &ldquo;+ New profession&rdquo; to
+              create the first one.
+            </p>
           }
         />
       }

@@ -311,7 +311,6 @@ test("switching locations while on the Acquisition Sources tab preserves the tab
   await page
     .getByRole("searchbox", { name: "Search locations" })
     .fill("test e2e acqsrc location sources switch");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, LOCATION_A.name)).toBeVisible();
   await expect(recordRow(page, LOCATION_B.name)).toBeVisible();
 

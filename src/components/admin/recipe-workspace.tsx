@@ -63,19 +63,11 @@ export async function RecipeWorkspace({
 }: RecipeWorkspaceProps) {
   const query = normalizeRecipeSearchQuery(rawQuery);
 
-  // Server-side filtering on name OR slug, case-insensitive — the same
-  // trimmed-query posture the Item workspace and the global search use.
-  // No query means the full list, alphabetical like the previous admin
-  // table.
+  // The COMPLETE list, always — filtering is now instant and client-side
+  // (Phase B1, System A), so there is no server-side `where`/`q` filter
+  // and no pagination `skip`/`take` here at all. Alphabetical, matching
+  // the previous admin table's own ordering.
   const recipes = await prisma.recipe.findMany({
-    where: query
-      ? {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { slug: { contains: query, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
     include: { resultingItem: true },
     orderBy: { name: "asc" },
   });
@@ -90,14 +82,11 @@ export async function RecipeWorkspace({
   const rows = recipes.map((recipe, index) => ({
     href: recordHref(recipe.slug, query),
     primary: recipe.name,
+    slug: recipe.slug,
     secondary: recipe.resultingItem.name,
     selected: recipe.slug === selectedSlug,
     image: imageUrls[index],
   }));
-
-  const countLabel = query
-    ? `${recipes.length} ${recipes.length === 1 ? "match" : "matches"}`
-    : `${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}`;
 
   return (
     <AdminWorkspace
@@ -107,26 +96,19 @@ export async function RecipeWorkspace({
       recordList={
         <RecordList
           label="Recipes"
-          searchAction={RECIPE_LIST_PATH}
-          searchValue={query}
+          listPath={RECIPE_LIST_PATH}
+          initialQuery={query}
           searchLabel="Search recipes"
           createHref={withRecipeSearchQuery(RECIPE_CREATE_PATH, query)}
           createLabel="+ New recipe"
           rows={rows}
           showImages
-          countLabel={countLabel}
+          noun={{ singular: "recipe", plural: "recipes" }}
           empty={
-            query ? (
-              // Distinct no-match state: the applied query is shown, and
-              // the list's own Clear link (rendered because a query is
-              // active) is the way out.
-              <p>No recipes match &ldquo;{query}&rdquo;.</p>
-            ) : (
-              <p>
-                No recipes yet. Use &ldquo;+ New recipe&rdquo; to create the
-                first one.
-              </p>
-            )
+            <p>
+              No recipes yet. Use &ldquo;+ New recipe&rdquo; to create the
+              first one.
+            </p>
           }
         />
       }

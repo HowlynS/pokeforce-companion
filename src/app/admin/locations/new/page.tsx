@@ -11,10 +11,11 @@ import {
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
 import { prisma } from "@/lib/db";
-import { RecordNameField } from "@/components/admin/record-name-field";
+import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 import { createLocationAction } from "../actions";
 import { checkLocationNameAvailability } from "../name-availability";
+import { checkLocationSlugAvailability } from "../slug-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -138,24 +139,18 @@ export default async function NewLocationPage({
       >
         <p className="form-section-heading">Identity</p>
 
-        {/* Client-enhanced Name field with live duplicate feedback; the
-            submission-time duplicate check in createLocationAction
-            remains the authoritative protection. */}
-        <RecordNameField
-          checkAvailabilityAction={checkLocationNameAvailability}
-          takenText="A location with that name already exists."
-          regionId="location-name-availability"
+        {/* Client-enhanced Name + Page address fields (Phase B1); the
+            submission-time checks in createLocationAction remain the
+            authoritative protection for both. */}
+        <RecordIdentityFields
+          mode="create"
+          checkNameAvailabilityAction={checkLocationNameAvailability}
+          nameTakenText="A location with that name already exists."
+          nameRegionId="location-name-availability"
+          checkSlugAvailabilityAction={checkLocationSlugAvailability}
+          slugTakenText="A location with that page address already exists."
+          slugRegionId="location-slug-availability"
         />
-
-        <div className="form-field">
-          <label className="form-field">
-            <span className="form-field-label">
-              Page address (optional — generated from name if left blank)
-            </span>
-            <input type="text" name="slug" className="form-input" />
-          </label>
-          <p className="form-field-feedback" aria-hidden="true"></p>
-        </div>
 
         <label className="form-field">
           <span className="form-field-label">Type</span>

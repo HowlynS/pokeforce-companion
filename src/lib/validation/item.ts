@@ -1,4 +1,10 @@
-const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+import { SLUG_PATTERN, normalizeSlug } from "@/lib/slug";
+
+// Re-exported so existing imports of normalizeSlug from this module keep
+// working unchanged — the canonical implementation now lives in
+// src/lib/slug.ts (Phase B1, System B), shared with the client-side slug
+// auto-generation preview.
+export { normalizeSlug };
 
 export type ItemInput = {
   name: string;
@@ -18,14 +24,6 @@ export type ItemValidationError =
 export type ItemParseResult =
   | { ok: true; value: ItemInput }
   | { ok: false; error: ItemValidationError };
-
-export function normalizeSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 export function parseItemInput(formData: FormData): ItemParseResult {
   const name = String(formData.get("name") ?? "").trim();

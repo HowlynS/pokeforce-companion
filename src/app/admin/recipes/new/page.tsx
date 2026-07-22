@@ -13,9 +13,10 @@ import {
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
-import { RecordNameField } from "@/components/admin/record-name-field";
+import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { createRecipeAction } from "../actions";
 import { checkRecipeNameAvailability } from "../name-availability";
+import { checkRecipeSlugAvailability } from "../slug-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -158,24 +159,18 @@ export default async function NewRecipePage({
         >
           <p className="form-section-heading">Identity</p>
 
-          {/* Client-enhanced Name field with live duplicate feedback; the
-              submission-time duplicate check in createRecipeAction remains
-              the authoritative protection. */}
-          <RecordNameField
-            checkAvailabilityAction={checkRecipeNameAvailability}
-            takenText="A recipe with that name already exists."
-            regionId="recipe-name-availability"
+          {/* Client-enhanced Name + Page address fields (Phase B1); the
+              submission-time checks in createRecipeAction remain the
+              authoritative protection for both. */}
+          <RecordIdentityFields
+            mode="create"
+            checkNameAvailabilityAction={checkRecipeNameAvailability}
+            nameTakenText="A recipe with that name already exists."
+            nameRegionId="recipe-name-availability"
+            checkSlugAvailabilityAction={checkRecipeSlugAvailability}
+            slugTakenText="A recipe with that page address already exists."
+            slugRegionId="recipe-slug-availability"
           />
-
-          <div className="form-field">
-            <label className="form-field">
-              <span className="form-field-label">
-                Page address (optional — generated from name if left blank)
-              </span>
-              <input type="text" name="slug" className="form-input" />
-            </label>
-            <p className="form-field-feedback" aria-hidden="true"></p>
-          </div>
 
           <p className="form-section-heading">Output</p>
 

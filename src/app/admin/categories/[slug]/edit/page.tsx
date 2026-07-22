@@ -15,10 +15,11 @@ import {
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
-import { RecordNameField } from "@/components/admin/record-name-field";
+import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { updateCategoryAction } from "../../actions";
 import { checkCategoryNameAvailability } from "../../name-availability";
+import { checkCategorySlugAvailability } from "../../slug-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -140,30 +141,25 @@ export default async function EditCategoryPage({
         <input type="hidden" name="id" value={category.id} />
         <input type="hidden" name="originalSlug" value={category.slug} />
 
-        {/* Client-enhanced Name field with live duplicate feedback. The
-            saved name counts as "current" (never queried), and the record's
-            own id is excluded server-side so it cannot conflict with
-            itself; updateCategoryAction stays the authoritative check. */}
-        <RecordNameField
-          checkAvailabilityAction={checkCategoryNameAvailability}
-          takenText="A category with that name already exists."
-          regionId="category-name-availability"
+        {/* Client-enhanced Name + Page address fields (Phase B1). Both
+            saved values count as "current" (never queried against
+            themselves), and the record's own id is excluded server-side
+            so it cannot conflict with itself; updateCategoryAction stays
+            the authoritative check for both. Page address starts
+            manually controlled (never auto-regenerated from Name edits)
+            to protect the existing persisted URL. */}
+        <RecordIdentityFields
+          mode="edit"
+          checkNameAvailabilityAction={checkCategoryNameAvailability}
+          nameTakenText="A category with that name already exists."
+          nameRegionId="category-name-availability"
           originalName={category.name}
+          checkSlugAvailabilityAction={checkCategorySlugAvailability}
+          slugTakenText="A category with that page address already exists."
+          slugRegionId="category-slug-availability"
+          initialSlug={category.slug}
           excludeId={category.id}
         />
-
-        <div className="form-field">
-          <label className="form-field">
-            <span className="form-field-label">Page address</span>
-            <input
-              type="text"
-              name="slug"
-              defaultValue={category.slug}
-              className="form-input"
-            />
-          </label>
-          <p className="form-field-feedback" aria-hidden="true"></p>
-        </div>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ItemNameField } from "@/components/admin/item-name-field";
+import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
@@ -18,6 +18,8 @@ import {
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { updateItemAction } from "../../actions";
+import { checkItemNameAvailability } from "../../name-availability";
+import { checkItemSlugAvailability } from "../../slug-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -178,24 +180,25 @@ export default async function EditItemPage({
 
         <p className="form-section-heading">Identity</p>
 
-        {/* Client-enhanced Name field with live duplicate feedback. The
-            saved name counts as "current" (never queried), and the record's
-            own id is excluded server-side so it cannot conflict with
-            itself; updateItemAction stays the authoritative check. */}
-        <ItemNameField originalName={item.name} excludeId={item.id} />
-
-        <div className="form-field">
-          <label className="form-field">
-            <span className="form-field-label">Page address</span>
-            <input
-              type="text"
-              name="slug"
-              defaultValue={item.slug}
-              className="form-input"
-            />
-          </label>
-          <p className="form-field-feedback" aria-hidden="true"></p>
-        </div>
+        {/* Client-enhanced Name + Page address fields (Phase B1). Both
+            saved values count as "current" (never queried against
+            themselves), and the record's own id is excluded server-side
+            so it cannot conflict with itself; updateItemAction stays the
+            authoritative check for both. Page address starts manually
+            controlled (never auto-regenerated from Name edits) to
+            protect the existing persisted URL. */}
+        <RecordIdentityFields
+          mode="edit"
+          checkNameAvailabilityAction={checkItemNameAvailability}
+          nameTakenText="An item with that name already exists."
+          nameRegionId="item-name-availability"
+          originalName={item.name}
+          checkSlugAvailabilityAction={checkItemSlugAvailability}
+          slugTakenText="An item with that page address already exists."
+          slugRegionId="item-slug-availability"
+          initialSlug={item.slug}
+          excludeId={item.id}
+        />
 
         <p className="form-section-heading">Description</p>
 

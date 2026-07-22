@@ -1,4 +1,10 @@
-const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+import { SLUG_PATTERN, normalizeSlug } from "@/lib/slug";
+
+// Re-exported so existing imports of normalizeSlug from this module keep
+// working unchanged — the canonical implementation now lives in
+// src/lib/slug.ts (Phase B1, System B), shared with the client-side slug
+// auto-generation preview.
+export { normalizeSlug };
 
 // Mirrors the Prisma LocationType enum exactly; kept here (not imported from
 // the generated client) so this module stays a plain, dependency-free
@@ -60,13 +66,6 @@ export type LocationGeneralParseResult =
   | { ok: true; value: LocationGeneralInput }
   | { ok: false; error: LocationValidationError };
 
-export function normalizeSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 function isLocationType(value: string): value is LocationType {
   return (LOCATION_TYPES as readonly string[]).includes(value);

@@ -1320,7 +1320,6 @@ test("switching recipes while on the Ingredients tab preserves the tab and q, an
   await page
     .getByRole("searchbox", { name: "Search recipes" })
     .fill("test e2e recipe ingredients switch");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, RECIPE_A.name)).toBeVisible();
   await expect(recordRow(page, RECIPE_B.name)).toBeVisible();
 
@@ -1371,7 +1370,7 @@ test("switching recipes while on the Ingredients tab preserves the tab and q, an
   ).toHaveAttribute("aria-current", "page");
 });
 
-test("record-list search filters, preserves the query across switching, and clears", async ({
+test("record-list search filters instantly while typing, preserves the query across switching, and clears — no Search button, no page reload", async ({
   page,
 }) => {
   // Two temporary recipes sharing the test prefix, so one query matches
@@ -1391,34 +1390,34 @@ test("record-list search filters, preserves the query across switching, and clea
     ingredients: [{ item: "Copper Ore", quantity: "1" }],
   });
 
-  // --- Search by NAME (trimmed, case-insensitive) -----------------------
   await page.goto("/admin/recipes");
+  await expect(
+    page.getByRole("button", { name: "Search", exact: true })
+  ).toHaveCount(0);
+
+  // --- Filter by NAME (trimmed, case-insensitive) — typing alone
+  // filters immediately, no click, no navigation ------------------------
   await page
     .getByRole("searchbox", { name: "Search recipes" })
     .fill("  test e2e recipe search  ");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(page).toHaveURL(/\/admin\/recipes\?q=/);
   await expect(recordRow(page, "Test E2E Recipe Search A")).toBeVisible();
   await expect(recordRow(page, "Test E2E Recipe Search B")).toBeVisible();
-  // Seeded records are filtered out server-side.
   await expect(recordRow(page, "Iron Sword")).toHaveCount(0);
-  await expect(page.getByText("2 matches")).toBeVisible();
+  await expect(page.getByText("2 of ", { exact: false })).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/recipes\?q=/);
 
   // --- Quick switching keeps the query applied --------------------------
-  // Row hrefs carry the TRIMMED query, %20-encoded by the server helper.
   await recordRow(page, "Test E2E Recipe Search A").click();
   await expect(page).toHaveURL(
-    "/admin/recipes/test-e2e-recipe-search-a/edit?q=test%20e2e%20recipe%20search"
+    /\/admin\/recipes\/test-e2e-recipe-search-a\/edit\?q=/
   );
   await expect(
     recordRow(page, "Test E2E Recipe Search A")
   ).toHaveAttribute("aria-current", "page");
 
-  // Switch directly to the second match: the list stays filtered, the
-  // selection follows, and the first record is no longer marked.
   await recordRow(page, "Test E2E Recipe Search B").click();
   await expect(page).toHaveURL(
-    "/admin/recipes/test-e2e-recipe-search-b/edit?q=test%20e2e%20recipe%20search"
+    /\/admin\/recipes\/test-e2e-recipe-search-b\/edit\?q=/
   );
   await expect(
     recordRow(page, "Test E2E Recipe Search B")
@@ -1428,52 +1427,58 @@ test("record-list search filters, preserves the query across switching, and clea
   ).not.toHaveAttribute("aria-current", "page");
 
   // The create action, and this edit page's own Cancel/Delete links, keep
-  // the search context too.
+  // the filter context too.
   await expect(
     page.getByRole("link", { name: "+ New recipe", exact: true })
-  ).toHaveAttribute(
-    "href",
-    "/admin/recipes/new?q=test%20e2e%20recipe%20search"
-  );
+  ).toHaveAttribute("href", /\/admin\/recipes\/new\?q=/);
   await expect(page.getByRole("link", { name: "Cancel", exact: true })).toHaveAttribute(
     "href",
-    "/admin/recipes?q=test%20e2e%20recipe%20search"
+    /\/admin\/recipes\?q=/
   );
   await expect(
     page.getByRole("link", { name: "Delete Recipe", exact: true })
-  ).toHaveAttribute(
-    "href",
-    "/admin/recipes/test-e2e-recipe-search-b/delete?q=test%20e2e%20recipe%20search"
-  );
+  ).toHaveAttribute("href", /\/admin\/recipes\/test-e2e-recipe-search-b\/delete\?q=/);
 
-  // --- Search by SLUG ---------------------------------------------------
+  // --- Filter by Page address (slug) -------------------------------------
   await page.goto("/admin/recipes");
   await page
     .getByRole("searchbox", { name: "Search recipes" })
     .fill("test-e2e-recipe-search-b");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, "Test E2E Recipe Search B")).toBeVisible();
   await expect(recordRow(page, "Test E2E Recipe Search A")).toHaveCount(0);
-  await expect(page.getByText("1 match", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 of ", { exact: false })).toBeVisible();
 
   // --- No-match state (distinct from the no-recipes-at-all state) -------
   await page
     .getByRole("searchbox", { name: "Search recipes" })
     .fill("zzz-no-such-recipe");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   const emptyRegion = page.locator(".admin-record-empty");
-  await expect(emptyRegion).toContainText("No recipes match");
-  await expect(emptyRegion).toContainText("zzz-no-such-recipe");
-  await expect(page.getByText("0 matches")).toBeVisible();
+  await expect(emptyRegion).toContainText("No matching records.");
+  await expect(page.getByText(/^0 of \d+ recipes$/)).toBeVisible();
 
-  // --- Clear search returns the full list -------------------------------
-  await page.getByRole("link", { name: "Clear search", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes");
-  await expect(recordRow(page, "Iron Sword")).toBeVisible();
-  await expect(recordRow(page, "Test E2E Recipe Search A")).toBeVisible();
+  // --- Escape clears the query, keeping focus in the field ---------------
+  await page
+    .getByRole("searchbox", { name: "Search recipes" })
+    .press("Escape");
   await expect(
-    page.getByRole("link", { name: "Clear search", exact: true })
-  ).toHaveCount(0);
+    page.getByRole("searchbox", { name: "Search recipes" })
+  ).toHaveValue("");
+  await expect(
+    page.getByRole("searchbox", { name: "Search recipes" })
+  ).toBeFocused();
+  await expect(recordRow(page, "Iron Sword")).toBeVisible();
+
+  // --- The inline clear button restores the full list ---------------------
+  await page
+    .getByRole("searchbox", { name: "Search recipes" })
+    .fill("test-e2e-recipe-search-a");
+  await page.getByRole("button", { name: "Clear search" }).click();
+  await expect(
+    page.getByRole("searchbox", { name: "Search recipes" })
+  ).toHaveValue("");
+  await expect(recordRow(page, "Iron Sword")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Clear search" })).toHaveCount(0);
+  await expect(page).toHaveURL("/admin/recipes");
 });
 
 test("seeded fixtures are preserved and no test recipe remains", async () => {

@@ -1,4 +1,11 @@
-const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+import { SLUG_PATTERN, normalizeSlug } from "@/lib/slug";
+
+// Re-exported so existing imports of normalizeSlug from this module keep
+// working unchanged — the canonical implementation now lives in
+// src/lib/slug.ts (Phase B1, System B), shared with the client-side slug
+// auto-generation preview.
+export { normalizeSlug };
+
 const INGREDIENT_ROW_COUNT = 5;
 
 export type RecipeIngredientInput = {
@@ -51,14 +58,6 @@ export type RecipeGeneralParseResult =
 export type RecipeIngredientsParseResult =
   | { ok: true; value: RecipeIngredientsInput }
   | { ok: false; error: RecipeValidationError };
-
-export function normalizeSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 function isPositiveInteger(value: number): boolean {
   return Number.isInteger(value) && Number.isFinite(value) && value >= 1;

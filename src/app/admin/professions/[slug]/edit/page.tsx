@@ -17,9 +17,10 @@ import {
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
-import { RecordNameField } from "@/components/admin/record-name-field";
+import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { updateProfessionAction } from "../../actions";
 import { checkProfessionNameAvailability } from "../../name-availability";
+import { checkProfessionSlugAvailability } from "../../slug-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -161,30 +162,25 @@ export default async function EditProfessionPage({
         <input type="hidden" name="id" value={profession.id} />
         <input type="hidden" name="originalSlug" value={profession.slug} />
 
-        {/* Client-enhanced Name field with live duplicate feedback. The
-            saved name counts as "current" (never queried), and the record's
-            own id is excluded server-side so it cannot conflict with
-            itself; updateProfessionAction stays the authoritative check. */}
-        <RecordNameField
-          checkAvailabilityAction={checkProfessionNameAvailability}
-          takenText="A profession with that name already exists."
-          regionId="profession-name-availability"
+        {/* Client-enhanced Name + Page address fields (Phase B1). Both
+            saved values count as "current" (never queried against
+            themselves), and the record's own id is excluded server-side
+            so it cannot conflict with itself; updateProfessionAction
+            stays the authoritative check for both. Page address starts
+            manually controlled (never auto-regenerated from Name edits)
+            to protect the existing persisted URL. */}
+        <RecordIdentityFields
+          mode="edit"
+          checkNameAvailabilityAction={checkProfessionNameAvailability}
+          nameTakenText="A profession with that name already exists."
+          nameRegionId="profession-name-availability"
           originalName={profession.name}
+          checkSlugAvailabilityAction={checkProfessionSlugAvailability}
+          slugTakenText="A profession with that page address already exists."
+          slugRegionId="profession-slug-availability"
+          initialSlug={profession.slug}
           excludeId={profession.id}
         />
-
-        <div className="form-field">
-          <label className="form-field">
-            <span className="form-field-label">Page address</span>
-            <input
-              type="text"
-              name="slug"
-              defaultValue={profession.slug}
-              className="form-input"
-            />
-          </label>
-          <p className="form-field-feedback" aria-hidden="true"></p>
-        </div>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>

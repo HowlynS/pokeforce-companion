@@ -902,7 +902,6 @@ test("switching locations while on the Hierarchy tab preserves the tab and q, an
   await page
     .getByRole("searchbox", { name: "Search locations" })
     .fill("test e2e location hierarchy switch");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, LOCATION_A.name)).toBeVisible();
   await expect(recordRow(page, LOCATION_B.name)).toBeVisible();
 
@@ -1042,12 +1041,13 @@ test("an unknown location slug fails safely on the hierarchy route", async ({
   expect(response?.status()).toBe(404);
 });
 
-test("record-list search filters by name, slug, and type, preserves the query across switching, and clears", async ({
+test("record-list search filters instantly while typing by name, slug, and type label, preserves the query across switching, and clears — no Search button, no page reload", async ({
   page,
 }) => {
   // Two temporary locations sharing the test prefix, so one query matches
-  // both; a third, differently-named location carries a distinct type so
-  // it can be found purely by its type label.
+  // both; a third carries a distinct type (Dungeon, unique among these
+  // three) and a parent, so both the type-label filter and the secondary
+  // row context (type plus parent) can be confirmed.
   await page.goto("/admin/locations/new");
   await createLocationThroughForm(page, {
     name: "Test E2E Location Search A",
@@ -1082,32 +1082,33 @@ test("record-list search filters by name, slug, and type, preserves the query ac
     )
   ).toBeVisible();
 
-  // --- Search by NAME (trimmed, case-insensitive) -----------------------
+  await expect(
+    page.getByRole("button", { name: "Search", exact: true })
+  ).toHaveCount(0);
+
+  // --- Filter by NAME (trimmed, case-insensitive) — typing alone
+  // filters immediately, no click, no navigation ------------------------
   await page
     .getByRole("searchbox", { name: "Search locations" })
     .fill("  test e2e location search  ");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(page).toHaveURL(/\/admin\/locations\?q=/);
   await expect(recordRow(page, "Test E2E Location Search A")).toBeVisible();
   await expect(recordRow(page, "Test E2E Location Search B")).toBeVisible();
   await expect(recordRow(page, "Test E2E Location Search C")).toBeVisible();
-  await expect(page.getByText("3 matches")).toBeVisible();
+  await expect(page.getByText("3 of ", { exact: false })).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/locations\?q=/);
 
   // --- Quick switching keeps the query applied --------------------------
-  // Row hrefs carry the TRIMMED query, %20-encoded by the server helper.
   await recordRow(page, "Test E2E Location Search A").click();
   await expect(page).toHaveURL(
-    "/admin/locations/test-e2e-location-search-a/edit?q=test%20e2e%20location%20search"
+    /\/admin\/locations\/test-e2e-location-search-a\/edit\?q=/
   );
   await expect(
     recordRow(page, "Test E2E Location Search A")
   ).toHaveAttribute("aria-current", "page");
 
-  // Switch directly to another match: the list stays filtered, the
-  // selection follows, and the first record is no longer marked.
   await recordRow(page, "Test E2E Location Search B").click();
   await expect(page).toHaveURL(
-    "/admin/locations/test-e2e-location-search-b/edit?q=test%20e2e%20location%20search"
+    /\/admin\/locations\/test-e2e-location-search-b\/edit\?q=/
   );
   await expect(
     recordRow(page, "Test E2E Location Search B")
@@ -1117,24 +1118,18 @@ test("record-list search filters by name, slug, and type, preserves the query ac
   ).not.toHaveAttribute("aria-current", "page");
 
   // The create action, and this edit page's own Cancel/Delete links, keep
-  // the search context too.
+  // the filter context too.
   await expect(
     page.getByRole("link", { name: "+ New location", exact: true })
-  ).toHaveAttribute(
-    "href",
-    "/admin/locations/new?q=test%20e2e%20location%20search"
-  );
+  ).toHaveAttribute("href", /\/admin\/locations\/new\?q=/);
   await expect(
     page.getByRole("link", { name: "Cancel", exact: true })
-  ).toHaveAttribute(
-    "href",
-    "/admin/locations?q=test%20e2e%20location%20search"
-  );
+  ).toHaveAttribute("href", /\/admin\/locations\?q=/);
   await expect(
     page.getByRole("link", { name: "Delete Location", exact: true })
   ).toHaveAttribute(
     "href",
-    "/admin/locations/test-e2e-location-search-b/delete?q=test%20e2e%20location%20search"
+    /\/admin\/locations\/test-e2e-location-search-b\/delete\?q=/
   );
 
   // The delete confirmation page's own Cancel link keeps the query too.
@@ -1142,52 +1137,62 @@ test("record-list search filters by name, slug, and type, preserves the query ac
     .getByRole("link", { name: "Delete Location", exact: true })
     .click();
   await expect(page).toHaveURL(
-    "/admin/locations/test-e2e-location-search-b/delete?q=test%20e2e%20location%20search"
+    /\/admin\/locations\/test-e2e-location-search-b\/delete\?q=/
   );
   await expect(
     page.getByRole("link", { name: "Cancel", exact: true })
-  ).toHaveAttribute(
-    "href",
-    "/admin/locations?q=test%20e2e%20location%20search"
-  );
+  ).toHaveAttribute("href", /\/admin\/locations\?q=/);
 
-  // --- Search by SLUG ---------------------------------------------------
+  // --- Filter by Page address (slug) -------------------------------------
   await page.goto("/admin/locations");
   await page
     .getByRole("searchbox", { name: "Search locations" })
     .fill("test-e2e-location-search-b");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, "Test E2E Location Search B")).toBeVisible();
   await expect(recordRow(page, "Test E2E Location Search A")).toHaveCount(0);
-  await expect(page.getByText("1 match", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 of ", { exact: false })).toBeVisible();
 
-  // --- Search by TYPE LABEL ----------------------------------------------
+  // --- Filter by TYPE LABEL (restored via RecordListRow's own optional
+  // searchTerms — the shared filter's resource-agnostic escape hatch,
+  // never a Location-specific branch inside RecordList itself) -----------
   await page.goto("/admin/locations");
-  await page
-    .getByRole("searchbox", { name: "Search locations" })
-    .fill("Dungeon");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByRole("searchbox", { name: "Search locations" }).fill("Dungeon");
   await expect(recordRow(page, "Test E2E Location Search C")).toBeVisible();
   await expect(recordRow(page, "Test E2E Location Search A")).toHaveCount(0);
   await expect(recordRow(page, "Test E2E Location Search B")).toHaveCount(0);
+  await expect(page.getByText("1 of ", { exact: false })).toBeVisible();
 
   // --- No-match state (distinct from the no-locations-at-all state) -----
   await page
     .getByRole("searchbox", { name: "Search locations" })
     .fill("zzz-no-such-location");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   const emptyRegion = page.locator(".admin-record-empty");
-  await expect(emptyRegion).toContainText("No locations match");
-  await expect(emptyRegion).toContainText("zzz-no-such-location");
-  await expect(page.getByText("0 matches")).toBeVisible();
+  await expect(emptyRegion).toContainText("No matching records.");
+  await expect(page.getByText(/^0 of \d+ locations$/)).toBeVisible();
 
-  // --- Clear search returns the full list -------------------------------
-  await page.getByRole("link", { name: "Clear search", exact: true }).click();
-  await expect(page).toHaveURL("/admin/locations");
-  await expect(recordRow(page, "Test E2E Location Search A")).toBeVisible();
+  // --- Escape clears the query, keeping focus in the field ---------------
+  await page
+    .getByRole("searchbox", { name: "Search locations" })
+    .press("Escape");
   await expect(
-    page.getByRole("link", { name: "Clear search", exact: true })
-  ).toHaveCount(0);
+    page.getByRole("searchbox", { name: "Search locations" })
+  ).toHaveValue("");
+  await expect(
+    page.getByRole("searchbox", { name: "Search locations" })
+  ).toBeFocused();
+  await expect(recordRow(page, "Test E2E Location Search A")).toBeVisible();
+
+  // --- The inline clear button restores the full list ---------------------
+  await page
+    .getByRole("searchbox", { name: "Search locations" })
+    .fill("test-e2e-location-search-c");
+  await page.getByRole("button", { name: "Clear search" }).click();
+  await expect(
+    page.getByRole("searchbox", { name: "Search locations" })
+  ).toHaveValue("");
+  await expect(recordRow(page, "Test E2E Location Search A")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Clear search" })).toHaveCount(0);
+  await expect(page).toHaveURL("/admin/locations");
 });
 
 test("seeded fixtures are unaffected and no test location remains", async () => {

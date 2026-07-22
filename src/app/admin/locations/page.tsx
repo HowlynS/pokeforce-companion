@@ -41,9 +41,9 @@ export default async function AdminLocationsPage({
   const successMessage = success ? successMessages[success] ?? null : null;
 
   // Distinguishes "no locations exist at all" from "locations exist,
-  // none selected" for the landing state's own copy (skipped while a
-  // search is active — that is RecordList's own "no matches" state).
-  const totalLocationCount = q ? null : await prisma.location.count();
+  // none selected" for the landing state's own copy — independent of the
+  // list's own (client-side, Phase B1) filter.
+  const totalLocationCount = await prisma.location.count();
   const hasNoLocations = totalLocationCount === 0;
 
   // The workspace landing state: the searchable record list beside a

@@ -1,4 +1,10 @@
-const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+import { SLUG_PATTERN, normalizeSlug } from "@/lib/slug";
+
+// Re-exported so existing imports of normalizeSlug from this module keep
+// working unchanged — the canonical implementation now lives in
+// src/lib/slug.ts (Phase B1, System B), shared with the client-side slug
+// auto-generation preview.
+export { normalizeSlug };
 
 export type ProfessionInput = {
   name: string;
@@ -11,14 +17,6 @@ export type ProfessionValidationError = "missing_name" | "invalid_slug";
 export type ProfessionParseResult =
   | { ok: true; value: ProfessionInput }
   | { ok: false; error: ProfessionValidationError };
-
-export function normalizeSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 export function parseProfessionInput(formData: FormData): ProfessionParseResult {
   const name = String(formData.get("name") ?? "").trim();

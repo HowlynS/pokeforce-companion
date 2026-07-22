@@ -680,7 +680,7 @@ test("deletion is blocked while the item is a recipe ingredient", async ({
   expect(deletedResponse?.status()).toBe(404);
 });
 
-test("record-list search filters, preserves the query across switching, and clears", async ({
+test("record-list search filters instantly while typing, preserves the query across switching, and clears — no Search button, no page reload", async ({
   page,
 }) => {
   // Two temporary items sharing the test prefix, so one query matches
@@ -688,24 +688,32 @@ test("record-list search filters, preserves the query across switching, and clea
   await createMinimalItemThroughForm(page, INITIAL);
   await createMinimalItemThroughForm(page, VERIFY_ITEM);
 
-  // --- Search by NAME (trimmed, case-insensitive) -----------------------
   await page.goto("/admin/items");
-  await page
-    .getByRole("searchbox", { name: "Search items" })
-    .fill("  test e2e item  ");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(page).toHaveURL(/\/admin\/items\?q=/);
+  await expect(
+    page.getByRole("button", { name: "Search", exact: true })
+  ).toHaveCount(0);
+
+  const totalMatch = (await page.getByText(/^\d+ items$/).textContent()) ?? "";
+  const totalCount = Number(totalMatch.match(/\d+/)?.[0] ?? "0");
+  expect(totalCount).toBeGreaterThan(0);
+
+  // --- Filter by NAME (trimmed, case-insensitive) — typing alone
+  // filters immediately, no click, no navigation ------------------------
+  const searchbox = page.getByRole("searchbox", { name: "Search items" });
+  await searchbox.fill("  test e2e item  ");
   await expect(recordRow(page, INITIAL.name)).toBeVisible();
   await expect(recordRow(page, VERIFY_ITEM.name)).toBeVisible();
-  // Seeded records are filtered out server-side.
   await expect(recordRow(page, "Iron Ore")).toHaveCount(0);
-  await expect(page.getByText("2 matches")).toBeVisible();
+  await expect(page.getByText("2 of ", { exact: false })).toBeVisible();
+
+  // The address bar picks up the trimmed filter shortly after typing
+  // stops, with no page reload (still the same document/session).
+  await expect(page).toHaveURL(/\/admin\/items\?q=/);
 
   // --- Quick switching keeps the query applied --------------------------
-  // Row hrefs carry the TRIMMED query, %20-encoded by the server helper.
   await recordRow(page, INITIAL.name).click();
   await expect(page).toHaveURL(
-    `/admin/items/${INITIAL.slug}/edit?q=test%20e2e%20item`
+    new RegExp(`/admin/items/${INITIAL.slug}/edit\\?q=`)
   );
   await expect(recordRow(page, INITIAL.name)).toHaveAttribute(
     "aria-current",
@@ -716,7 +724,7 @@ test("record-list search filters, preserves the query across switching, and clea
   // selection follows, and the first record is no longer marked.
   await recordRow(page, VERIFY_ITEM.name).click();
   await expect(page).toHaveURL(
-    `/admin/items/${VERIFY_ITEM.slug}/edit?q=test%20e2e%20item`
+    new RegExp(`/admin/items/${VERIFY_ITEM.slug}/edit\\?q=`)
   );
   await expect(recordRow(page, VERIFY_ITEM.name)).toHaveAttribute(
     "aria-current",
@@ -727,39 +735,92 @@ test("record-list search filters, preserves the query across switching, and clea
     "page"
   );
 
-  // The create action keeps the search context too.
+  // The create action keeps the filter context too.
   await expect(
     page.getByRole("link", { name: "+ New item", exact: true })
-  ).toHaveAttribute("href", "/admin/items/new?q=test%20e2e%20item");
+  ).toHaveAttribute("href", /\/admin\/items\/new\?q=/);
 
-  // --- Search by SLUG ---------------------------------------------------
+  // --- Filter by Page address (slug) ------------------------------------
   await page.goto("/admin/items");
-  await page
-    .getByRole("searchbox", { name: "Search items" })
-    .fill(VERIFY_ITEM.slug);
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByRole("searchbox", { name: "Search items" }).fill(VERIFY_ITEM.slug);
   await expect(recordRow(page, VERIFY_ITEM.name)).toBeVisible();
   await expect(recordRow(page, INITIAL.name)).toHaveCount(0);
-  await expect(page.getByText("1 match", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 of ", { exact: false })).toBeVisible();
 
   // --- No-match state (distinct from the no-items-at-all state) ---------
   await page
     .getByRole("searchbox", { name: "Search items" })
     .fill("zzz-no-such-item");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   const emptyRegion = page.locator(".admin-record-empty");
-  await expect(emptyRegion).toContainText("No items match");
-  await expect(emptyRegion).toContainText("zzz-no-such-item");
-  await expect(page.getByText("0 matches")).toBeVisible();
+  await expect(emptyRegion).toContainText("No matching records.");
+  await expect(page.getByText(/^0 of \d+ items$/)).toBeVisible();
 
-  // --- Clear search returns the full list -------------------------------
-  await page.getByRole("link", { name: "Clear search", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items");
+  // --- Escape clears the query and keeps focus in the field --------------
+  await page
+    .getByRole("searchbox", { name: "Search items" })
+    .press("Escape");
+  await expect(page.getByRole("searchbox", { name: "Search items" })).toHaveValue("");
+  await expect(page.getByRole("searchbox", { name: "Search items" })).toBeFocused();
   await expect(recordRow(page, "Iron Ore")).toBeVisible();
   await expect(recordRow(page, INITIAL.name)).toBeVisible();
+  await expect(page.getByText(new RegExp(`^${totalCount} items$`))).toBeVisible();
+
+  // --- The inline clear button restores the full list, and only appears
+  // while a filter is active ---------------------------------------------
+  await searchbox.fill(VERIFY_ITEM.slug);
+  await expect(recordRow(page, INITIAL.name)).toHaveCount(0);
+  const clearButton = page.getByRole("button", { name: "Clear search" });
+  await expect(clearButton).toBeVisible();
+  await clearButton.click();
+  await expect(searchbox).toHaveValue("");
+  await expect(recordRow(page, "Iron Ore")).toBeVisible();
+  await expect(recordRow(page, INITIAL.name)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Clear search" })).toHaveCount(0);
+
+  // Blanking the filter removes `q` from the address bar entirely.
+  await expect(page).toHaveURL("/admin/items");
+});
+
+test("Back and Forward restore the record-list filter, and switching records while filtered leaves the open editor in place if it no longer matches", async ({
+  page,
+}) => {
+  await createMinimalItemThroughForm(page, INITIAL);
+
+  await page.goto("/admin/items");
+  await page
+    .getByRole("searchbox", { name: "Search items" })
+    .fill(INITIAL.slug);
+  await expect(recordRow(page, INITIAL.name)).toBeVisible();
+  await expect(recordRow(page, "Iron Ore")).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/admin/items\\?q=${INITIAL.slug}`));
+
+  // Open the filtered record, then go Back: the filter text is restored
+  // from the address bar without a full page reload breaking anything.
+  await recordRow(page, INITIAL.name).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/items/${INITIAL.slug}/edit\\?q=`)
+  );
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/admin/items\\?q=${INITIAL.slug}`));
   await expect(
-    page.getByRole("link", { name: "Clear search", exact: true })
-  ).toHaveCount(0);
+    page.getByRole("searchbox", { name: "Search items" })
+  ).toHaveValue(INITIAL.slug);
+  await expect(recordRow(page, INITIAL.name)).toBeVisible();
+
+  await page.goForward();
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/items/${INITIAL.slug}/edit\\?q=`)
+  );
+
+  // With the INITIAL item's own editor still open, typing a filter that
+  // no longer matches it must not close or reset the open editor.
+  await page
+    .getByRole("searchbox", { name: "Search items" })
+    .fill("zzz-no-such-item");
+  await expect(recordRow(page, INITIAL.name)).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
+  ).toBeVisible();
 });
 
 test("seeded fixtures are preserved and no test item remains", async () => {

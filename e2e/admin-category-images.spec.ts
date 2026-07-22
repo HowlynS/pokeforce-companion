@@ -472,11 +472,10 @@ test("the record list keeps search, quick switching, selected state, tabs, and t
   await expect(recordRow(page, CATEGORY_A.name).getByText("0 items")).toBeVisible();
   await expect(recordRow(page, CATEGORY_B.name).getByText("0 items")).toBeVisible();
 
-  // Search still filters by name, preserving both temporary categories.
+  // The filter still matches by name, preserving both temporary categories.
   await page
     .getByRole("searchbox", { name: "Search categories" })
     .fill("test e2e category image switch");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(recordRow(page, CATEGORY_A.name)).toBeVisible();
   await expect(recordRow(page, CATEGORY_B.name)).toBeVisible();
 

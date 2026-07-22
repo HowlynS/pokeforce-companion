@@ -11,9 +11,10 @@ import {
   withProfessionSearchQuery,
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
-import { RecordNameField } from "@/components/admin/record-name-field";
+import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { createProfessionAction } from "../actions";
 import { checkProfessionNameAvailability } from "../name-availability";
+import { checkProfessionSlugAvailability } from "../slug-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -121,24 +122,18 @@ export default async function NewProfessionPage({
         action={createProfessionAction}
         className="form-grid form-grid-responsive"
       >
-        {/* Client-enhanced Name field with live duplicate feedback; the
-            submission-time duplicate check in createProfessionAction
-            remains the authoritative protection. */}
-        <RecordNameField
-          checkAvailabilityAction={checkProfessionNameAvailability}
-          takenText="A profession with that name already exists."
-          regionId="profession-name-availability"
+        {/* Client-enhanced Name + Page address fields (Phase B1); the
+            submission-time checks in createProfessionAction remain the
+            authoritative protection for both. */}
+        <RecordIdentityFields
+          mode="create"
+          checkNameAvailabilityAction={checkProfessionNameAvailability}
+          nameTakenText="A profession with that name already exists."
+          nameRegionId="profession-name-availability"
+          checkSlugAvailabilityAction={checkProfessionSlugAvailability}
+          slugTakenText="A profession with that page address already exists."
+          slugRegionId="profession-slug-availability"
         />
-
-        <div className="form-field">
-          <label className="form-field">
-            <span className="form-field-label">
-              Page address (optional — generated from name if left blank)
-            </span>
-            <input type="text" name="slug" className="form-input" />
-          </label>
-          <p className="form-field-feedback" aria-hidden="true"></p>
-        </div>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>
