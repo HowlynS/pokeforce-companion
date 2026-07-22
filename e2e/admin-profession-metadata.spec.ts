@@ -50,7 +50,7 @@ async function createTemporaryProfession(
 ) {
   await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();

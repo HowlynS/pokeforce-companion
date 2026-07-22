@@ -136,7 +136,7 @@ export default async function LocationSourcesPage({
       rawQuery={q}
       selectedSlug={location.slug}
       recordHref={locationSourcesHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Location"

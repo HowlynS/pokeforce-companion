@@ -83,8 +83,8 @@ export function RecordList({
   return (
     <section aria-label={label} className="admin-record-list">
       <div className="admin-record-list-header">
-        <h2 className="admin-panel-title">{label}</h2>
-        <a href={createHref} className="btn btn-secondary btn-compact">
+        <h2 className="admin-record-list-title">{label}</h2>
+        <a href={createHref} className="btn btn-primary btn-compact">
           {createLabel}
         </a>
       </div>

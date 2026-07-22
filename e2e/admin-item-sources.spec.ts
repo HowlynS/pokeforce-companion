@@ -65,7 +65,7 @@ function recordRow(page: Page, name: string) {
 async function createTemporaryItem(page: Page, data: { name: string; slug: string }) {
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
 }
@@ -104,7 +104,7 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
-  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page.getByLabel(/^Page address/).fill(LOCATION.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: LOCATION.type });
@@ -115,7 +115,7 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
 
   await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
-  await page.getByLabel(/^Slug/).fill(PROFESSION.slug);
+  await page.getByLabel(/^Page address/).fill(PROFESSION.slug);
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();

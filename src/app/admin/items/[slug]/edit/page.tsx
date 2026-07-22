@@ -106,7 +106,7 @@ export default async function EditItemPage({
     <ItemWorkspace
       rawQuery={q}
       selectedSlug={item.slug}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Item"
@@ -168,15 +168,18 @@ export default async function EditItemPage({
             itself; updateItemAction stays the authoritative check. */}
         <ItemNameField originalName={item.name} excludeId={item.id} />
 
-        <label className="form-field">
-          <span className="form-field-label">Slug</span>
-          <input
-            type="text"
-            name="slug"
-            defaultValue={item.slug}
-            className="form-input"
-          />
-        </label>
+        <div className="form-field">
+          <label className="form-field">
+            <span className="form-field-label">Page address</span>
+            <input
+              type="text"
+              name="slug"
+              defaultValue={item.slug}
+              className="form-input"
+            />
+          </label>
+          <p className="form-field-feedback" aria-hidden="true"></p>
+        </div>
 
         <p className="form-section-heading">Description</p>
 
@@ -243,7 +246,7 @@ export default async function EditItemPage({
         </label>
 
         <EditorActions
-          submitLabel="Save item"
+          submitLabel="Save Changes"
           cancelHref={withItemSearchQuery("/admin/items", query)}
         />
       </form>

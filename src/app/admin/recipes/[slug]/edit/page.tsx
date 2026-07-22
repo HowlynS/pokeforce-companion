@@ -120,7 +120,7 @@ export default async function EditRecipePage({
     <RecipeWorkspace
       rawQuery={q}
       selectedSlug={recipe.slug}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Recipe"
@@ -189,15 +189,18 @@ export default async function EditRecipePage({
           excludeId={recipe.id}
         />
 
-        <label className="form-field">
-          <span className="form-field-label">Slug</span>
-          <input
-            type="text"
-            name="slug"
-            defaultValue={recipe.slug}
-            className="form-input"
-          />
-        </label>
+        <div className="form-field">
+          <label className="form-field">
+            <span className="form-field-label">Page address</span>
+            <input
+              type="text"
+              name="slug"
+              defaultValue={recipe.slug}
+              className="form-input"
+            />
+          </label>
+          <p className="form-field-feedback" aria-hidden="true"></p>
+        </div>
 
         <p className="form-section-heading">Output</p>
 

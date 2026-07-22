@@ -1,8 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
-import { ContextPanel } from "@/components/admin/context-panel";
 import { DashboardSummaryCard } from "@/components/admin/dashboard-summary-card";
-import { designTokens } from "@/lib/design-tokens";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { getCurrentGameVersion } from "@/lib/game-versions";
@@ -11,12 +9,16 @@ import {
   describeCurrentGameVersion,
   pluralize,
 } from "@/lib/admin/dashboard";
-import { signOutAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const user = await requireAdminUser();
+  // Repeated here deliberately: this page stays protected through the
+  // admin layout, but also re-runs the check itself rather than assuming
+  // it. The signed-in account card itself moved into AdminShell's sidebar
+  // (Visual Pass II Section 8) — this page's own main content no longer
+  // renders any account/sign-out UI.
+  await requireAdminUser();
 
   // Every count below is a restrained COUNT query — never a full
   // collection load — and every one is independent of the others, so
@@ -50,124 +52,83 @@ export default async function AdminPage() {
     getCurrentGameVersion(prisma),
   ]);
 
-  // The admin dashboard (Slice 9G.1): a restrained workspace summary, not
-  // an analytics dashboard — administrative counts and direct navigation
-  // only. No charts, no graphs, no trend indicators, no fake percentages,
-  // and no "recent activity" feed (there is no real audit history to
-  // report). Every count is a real database count; zero is itself
-  // meaningful and always renders as 0, never hidden.
+  const countsByKey: Record<string, { count: number; unit: string; context?: string }> = {
+    items: {
+      count: itemCount,
+      unit: pluralize(itemCount, "item"),
+      context: `${acquisitionSourceCount} ${pluralize(
+        acquisitionSourceCount,
+        "acquisition source"
+      )}`,
+    },
+    recipes: {
+      count: recipeCount,
+      unit: pluralize(recipeCount, "recipe"),
+      context: `${recipeIngredientCount} ${pluralize(
+        recipeIngredientCount,
+        "ingredient"
+      )}`,
+    },
+    professions: {
+      count: professionCount,
+      unit: pluralize(professionCount, "profession"),
+    },
+    categories: {
+      count: categoryCount,
+      unit: pluralize(categoryCount, "category", "categories"),
+    },
+    locations: {
+      count: locationCount,
+      unit: pluralize(locationCount, "location"),
+      context: `${rootLocationCount} root ${pluralize(
+        rootLocationCount,
+        "location"
+      )}`,
+    },
+  };
+
+  // The admin dashboard (Slice 9G.1; restructured in Visual Pass II
+  // Section 8): a restrained workspace summary, not an analytics
+  // dashboard — administrative counts and direct navigation only. No
+  // charts, no graphs, no trend indicators, no fake percentages, and no
+  // "recent activity" feed. Every count is a real database count; zero is
+  // itself meaningful and always renders as 0, never hidden. The former
+  // separate Game Version panel and the Quick Actions section are both
+  // gone — Game Versions is now a sixth module in the same grid, and every
+  // module's own create action replaces Quick Actions' row of links.
   return (
     <AdminWorkspace
       header={
-        <>
-          <PageHeader
-            eyebrow="Admin"
-            title="Dashboard"
-            description="A restrained summary of the wiki's current reference data, with direct navigation into each completed workspace."
-          />
-
-          {/* Account context, deliberately the quietest element on the
-              page (Dashboard Hierarchy pass) — present but visually
-              subordinate to the summary cards and Quick Actions below
-              it, never competing with them for attention. */}
-          <section className="admin-dashboard-account">
-            <p>
-              Signed in as <strong className="text-accent">{user.email}</strong>
-            </p>
-
-            <form action={signOutAction}>
-              <button type="submit" className="btn btn-secondary btn-compact">
-                Sign out
-              </button>
-            </form>
-          </section>
-        </>
+        <PageHeader
+          eyebrow="Admin"
+          title="Dashboard"
+          description="A restrained summary of the wiki's current reference data, with direct navigation into each completed workspace."
+        />
       }
     >
       <section className="admin-dashboard-grid">
-        <DashboardSummaryCard
-          title="Items"
-          href="/admin/items"
-          count={itemCount}
-          unitLabel={pluralize(itemCount, "item")}
-          context={`${acquisitionSourceCount} ${pluralize(
-            acquisitionSourceCount,
-            "acquisition source"
-          )}`}
-        />
-        <DashboardSummaryCard
-          title="Recipes"
-          href="/admin/recipes"
-          count={recipeCount}
-          unitLabel={pluralize(recipeCount, "recipe")}
-          context={`${recipeIngredientCount} ${pluralize(
-            recipeIngredientCount,
-            "ingredient"
-          )}`}
-        />
-        <DashboardSummaryCard
-          title="Professions"
-          href="/admin/professions"
-          count={professionCount}
-          unitLabel={pluralize(professionCount, "profession")}
-        />
-        <DashboardSummaryCard
-          title="Categories"
-          href="/admin/categories"
-          count={categoryCount}
-          unitLabel={pluralize(categoryCount, "category", "categories")}
-        />
-        <DashboardSummaryCard
-          title="Locations"
-          href="/admin/locations"
-          count={locationCount}
-          unitLabel={pluralize(locationCount, "location")}
-          context={`${rootLocationCount} root ${pluralize(
-            rootLocationCount,
-            "location"
-          )}`}
-        />
-      </section>
+        {DASHBOARD_RESOURCE_ROUTES.map((route) => (
+          <DashboardSummaryCard
+            key={route.key}
+            title={route.label}
+            href={route.listHref}
+            count={countsByKey[route.key].count}
+            unitLabel={countsByKey[route.key].unit}
+            context={countsByKey[route.key].context}
+            createHref={route.createHref}
+            createLabel={route.createLabel}
+          />
+        ))}
 
-      {/* Read-only administrative status, never fabricated: the current
-          version's own name, or a plain "no current version" status —
-          the exact same getCurrentGameVersion() semantics every
-          verification stamp on the site already relies on. */}
-      <ContextPanel
-        title="Game Version"
-        footer={
-          <a href="/admin/settings/game-versions" className="link-accent">
-            Game Versions
-          </a>
-        }
-      >
-        <dl className="admin-panel-dl">
-          <div className="admin-panel-row">
-            <dt>Current version</dt>
-            <dd>{describeCurrentGameVersion(currentGameVersion)}</dd>
-          </div>
-
-          <div className="admin-panel-row">
-            <dt>Total versions</dt>
-            <dd>{gameVersionCount}</dd>
-          </div>
-        </dl>
-      </ContextPanel>
-
-      <section style={{ marginTop: designTokens.layout.sectionGap }}>
-        <h2 className="section-title">Quick Actions</h2>
-
-        <nav aria-label="Quick create actions" className="form-actions">
-          {DASHBOARD_RESOURCE_ROUTES.map((route) => (
-            <a
-              key={route.key}
-              href={route.createHref}
-              className="btn btn-secondary btn-compact"
-            >
-              {route.createLabel}
-            </a>
-          ))}
-        </nav>
+        <DashboardSummaryCard
+          title="Game Versions"
+          href="/admin/settings/game-versions"
+          count={gameVersionCount}
+          unitLabel={pluralize(gameVersionCount, "version")}
+          context={describeCurrentGameVersion(currentGameVersion)}
+          createHref="/admin/settings/game-versions#create-game-version"
+          createLabel="Create game version"
+        />
       </section>
     </AdminWorkspace>
   );

@@ -94,16 +94,17 @@ async function createVersionThroughForm(
 test("game version lifecycle: reachable from the dashboard settings link, create, edit, mark current, delete", async ({
   page,
 }) => {
-  // --- Reachable from both the dashboard's own Game Version panel and
-  // the primary sidebar (Visual Pass sub-slice 8 promoted it there,
-  // without removing the dashboard's own link) ----------------------------
+  // --- Reachable from both the dashboard's own Game Versions module (the
+  // standalone "Game Version" panel was folded into the six-module grid
+  // by the Visual Pass II dashboard restructuring — this now checks the
+  // module's own h3 and its summary link, matching every other resource
+  // module's shape) and the primary sidebar ------------------------------
   await page.goto("/admin");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Game Version" })
+    page.getByRole("heading", { level: 3, name: "Game Versions", exact: true })
   ).toBeVisible();
   await page
-    .locator(".admin-workspace-main")
-    .getByRole("link", { name: "Game Versions", exact: true })
+    .locator('a.admin-dashboard-card-summary[href="/admin/settings/game-versions"]')
     .click();
   await expect(page).toHaveURL("/admin/settings/game-versions");
   await expect(

@@ -139,7 +139,7 @@ async function createMinimalItemThroughForm(
 ) {
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=created");
@@ -202,7 +202,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   ).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(INITIAL.name);
-  await page.getByLabel(/^Slug/).fill(INITIAL.slug);
+  await page.getByLabel(/^Page address/).fill(INITIAL.slug);
   await page.getByLabel(/^Description/).fill(INITIAL.description);
   // getByLabel cannot target the select exactly (a wrapping label's text
   // includes the option texts), so the accessible role/name is used.
@@ -300,7 +300,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(tabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
-  await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);
+  await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
   await page.getByLabel(/^Description/).fill(EDITED.description);
   await page
     .getByRole("combobox", { name: "Category", exact: true })
@@ -311,7 +311,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   // Unchecked by default on the edit form too, and left untouched: this
   // normal edit must not stamp verification metadata.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
-  await page.getByRole("button", { name: "Save item", exact: true }).click();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=updated");
   await expect(page.getByRole("status")).toHaveText("Item updated.");
@@ -419,7 +419,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
-  await page.getByRole("button", { name: "Save item", exact: true }).click();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=updated");
 
   // The admin edit page shows the stamp carrying the preselected current
@@ -455,7 +455,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await page
     .getByLabel(/^Description/)
     .fill("Edited without touching verification.");
-  await page.getByRole("button", { name: "Save item", exact: true }).click();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=updated");
 
   await page.goto(`/items/${VERIFY_ITEM.slug}`);
@@ -479,7 +479,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
-  await page.getByRole("button", { name: "Save item", exact: true }).click();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=updated");
 
   await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
@@ -508,7 +508,7 @@ test("creating an item with a seeded name is rejected server-side", async ({
   // case-insensitive, so this must be rejected. The slug carries the test
   // prefix so cleanup would catch the row if creation ever slipped through.
   await page.getByLabel("Name", { exact: true }).fill("  iron ore  ");
-  await page.getByLabel(/^Slug/).fill("test-e2e-item-duplicate");
+  await page.getByLabel(/^Page address/).fill("test-e2e-item-duplicate");
   await page.getByRole("button", { name: "Create item", exact: true }).click();
 
   // Rejections land back on the creation page, where the form lives.

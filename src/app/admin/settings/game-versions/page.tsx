@@ -130,13 +130,13 @@ export default async function GameVersionSettingsPage({
                         ) : null}
                         <a
                           href={`/admin/settings/game-versions/${version.id}/edit`}
-                          className="link-accent"
+                          className="btn btn-secondary btn-compact"
                         >
                           Edit
                         </a>
                         <a
                           href={`/admin/settings/game-versions/${version.id}/delete`}
-                          className="link-danger"
+                          className="btn btn-danger-outline btn-compact"
                         >
                           Delete
                         </a>

@@ -93,7 +93,7 @@ export default async function ProfessionRecipesPage({
       rawQuery={q}
       selectedSlug={profession.slug}
       recordHref={professionRecipesHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Profession"

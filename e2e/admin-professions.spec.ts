@@ -138,7 +138,7 @@ async function createProfessionThroughForm(
   data: { name: string; slug: string; description: string }
 ) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByLabel(/^Description/).fill(data.description);
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
@@ -325,7 +325,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   await expect(page.getByText(INITIAL.slug, { exact: true })).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
-  await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);
+  await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
   await page.getByLabel(/^Description/).fill(EDITED.description);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
@@ -395,7 +395,7 @@ test("creating a profession with a seeded name is rejected server-side", async (
   // case-insensitive, so this must be rejected. The slug carries the test
   // prefix so cleanup would catch the row if creation ever slipped through.
   await page.getByLabel("Name", { exact: true }).fill("  sMiThInG  ");
-  await page.getByLabel(/^Slug/).fill("test-e2e-profession-duplicate");
+  await page.getByLabel(/^Page address/).fill("test-e2e-profession-duplicate");
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();

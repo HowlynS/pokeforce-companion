@@ -53,7 +53,7 @@ async function createTemporaryItem(
 ) {
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
 }
@@ -64,7 +64,7 @@ async function createTemporaryLocation(
 ) {
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: data.type });
@@ -248,7 +248,7 @@ test("optional source label, profession, quantity, and notes render only when po
 
   await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
-  await page.getByLabel(/^Slug/).fill(PROFESSION.slug);
+  await page.getByLabel(/^Page address/).fill(PROFESSION.slug);
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
@@ -330,7 +330,7 @@ test("existing description, hierarchy, and notFound behavior remain intact", asy
   // General fields expose — reuse the existing creation + edit flow.
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(CHILD.name);
-  await page.getByLabel(/^Slug/).fill(CHILD.slug);
+  await page.getByLabel(/^Page address/).fill(CHILD.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: CHILD.type });

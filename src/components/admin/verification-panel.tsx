@@ -85,16 +85,13 @@ export function VerificationPanel({
         <div className="admin-panel-row">
           <dt>Current version</dt>
           <dd>
-            {currentVersion ? (
-              <>
-                {currentVersion.name}{" "}
-                <span className="admin-status-badge admin-status-badge-current">
-                  Current
-                </span>
-              </>
-            ) : (
-              "None"
-            )}
+            {/* Visual Pass II correction pass: the redundant green
+                "Current" pill beside the version's own name was removed —
+                this row's LABEL ("Current version") already says exactly
+                that, so the badge repeated the same fact a second time.
+                The status badge above (Unverified/Verified — current
+                version/Verified — older version) is untouched. */}
+            {currentVersion ? currentVersion.name : "None"}
           </dd>
         </div>
 

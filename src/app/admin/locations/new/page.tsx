@@ -96,7 +96,7 @@ export default async function NewLocationPage({
   return (
     <LocationWorkspace
       rawQuery={q}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Location"
@@ -147,12 +147,15 @@ export default async function NewLocationPage({
           regionId="location-name-availability"
         />
 
-        <label className="form-field">
-          <span className="form-field-label">
-            Slug (optional — generated from name if left blank)
-          </span>
-          <input type="text" name="slug" className="form-input" />
-        </label>
+        <div className="form-field">
+          <label className="form-field">
+            <span className="form-field-label">
+              Page address (optional — generated from name if left blank)
+            </span>
+            <input type="text" name="slug" className="form-input" />
+          </label>
+          <p className="form-field-feedback" aria-hidden="true"></p>
+        </div>
 
         <label className="form-field">
           <span className="form-field-label">Type</span>
@@ -189,7 +192,7 @@ export default async function NewLocationPage({
 
         <label className="form-field">
           <span className="form-field-label">
-            Access or unlock note (optional)
+            Extra information (optional)
           </span>
           <textarea name="accessNote" rows={4} className="form-input" />
         </label>

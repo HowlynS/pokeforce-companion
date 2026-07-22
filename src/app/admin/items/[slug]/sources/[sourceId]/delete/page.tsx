@@ -60,7 +60,7 @@ export default async function DeleteAcquisitionSourcePage({
       rawQuery={q}
       selectedSlug={item.slug}
       recordHref={itemSourcesHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Acquisition Source"

@@ -72,7 +72,7 @@ test("a very long item name wraps inside the header instead of causing horizonta
 
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(LONG_NAME);
-  await page.getByLabel(/^Slug/).fill(SLUG);
+  await page.getByLabel(/^Page address/).fill(SLUG);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
 
@@ -158,9 +158,13 @@ test("the Dashboard's summary-card grid stays capped at a sensible width instead
   await expect(grid).toBeVisible();
   const box = await grid.boundingBox();
   expect(box).not.toBeNull();
-  // Comfortably under the .admin-frame's own ~2700px ceiling — proves the
-  // grid is genuinely capped, not merely narrower by coincidence.
-  expect(box!.width).toBeLessThanOrEqual(1250);
+  // Comfortably under the .admin-frame's own ~3150px ceiling. Visual Pass
+  // II Section 1 raised this grid's own cap from 1200px to 1500px (the
+  // Visual Pass II correction pass raised it again in spirit only — same
+  // 1500px number — to fit all six modules, including Game Versions, on
+  // one row) — proves the grid is genuinely capped, not merely narrower
+  // by coincidence.
+  expect(box!.width).toBeLessThanOrEqual(1500);
 });
 
 test("context panels in the aside column never overlap the sticky EditorActions bar", async ({
@@ -173,6 +177,16 @@ test("context panels in the aside column never overlap the sticky EditorActions 
   const actions = page.locator(".admin-editor-actions");
   await expect(aside).toBeVisible();
   await expect(actions).toBeVisible();
+
+  // Polled rather than a one-shot read: a freshly resized dev-mode page
+  // can briefly report a stale/transitional aside box (still settling
+  // from the previous viewport's flex layout) before it stabilizes.
+  await expect
+    .poll(async () => {
+      const asideBox = await aside.boundingBox();
+      return asideBox?.width;
+    })
+    .toBeLessThanOrEqual(320);
 
   const [asideBox, actionsBox] = await Promise.all([
     aside.boundingBox(),

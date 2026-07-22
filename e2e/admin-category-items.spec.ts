@@ -66,7 +66,7 @@ async function createTemporaryCategory(
 ) {
   await page.goto("/admin/categories/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();

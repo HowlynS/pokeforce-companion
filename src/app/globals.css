@@ -163,7 +163,8 @@ select:focus-visible {
   color: var(--color-text);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
@@ -177,6 +178,54 @@ select:focus-visible {
 
 .btn-danger:hover {
   background: #dc2626;
+}
+
+/* Restrained destructive variant (Visual Pass II Section 7): an outlined
+   ghost instead of a solid fill, for the Danger zone panel's own link —
+   still unmistakably destructive (danger-red border/text), just less
+   visually dominant than the full-strength .btn-danger reserved for the
+   actual delete-confirmation page's final action. Also used for the Game
+   Version row's own Delete action (Visual Pass II correction pass), which
+   shares the exact same "restrained until you engage it" intent. */
+.btn-danger-outline {
+  border: 1px solid var(--color-danger);
+  background: transparent;
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+/* Stronger than the outline's resting state — a deeper red-tinted fill —
+   for both hover and keyboard focus, so the "this is destructive" signal
+   intensifies on engagement rather than only on click. */
+.btn-danger-outline:hover,
+.btn-danger-outline:focus-visible {
+  background: color-mix(in srgb, var(--color-danger) 25%, transparent);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.btn-danger-outline:focus-visible {
+  outline-color: var(--color-danger);
+}
+
+/* Cancel action (Visual Pass II Section 6): a neutral dark button at
+   rest — distinct from .btn-secondary's gold hover, since Cancel must
+   never suggest "primary/recommended" the way a gold hover would. Hover
+   and keyboard focus both turn red instead, so the destructive-adjacent
+   meaning ("leaving without saving") reads consistently either way. */
+.btn-cancel {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
+  color: var(--color-text-muted);
+}
+
+.btn-cancel:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.btn-cancel:focus-visible {
+  outline-color: var(--color-danger);
 }
 
 /* Smaller padding for buttons that sit inside the header row. */
@@ -410,12 +459,47 @@ select:focus-visible {
 /* Compact but clearly a label: heavier weight and a touch smaller than
    body text, distinct from both the entered value (full-strength
    .form-input text) and helper/feedback text below it. Never gold — gold
-   stays reserved for focus and active/primary state elsewhere. */
+   stays reserved for focus and active/primary state elsewhere.
+   Visual Pass II correction pass (Section 5): padding-left matches
+   .form-input's own 14px horizontal inset exactly — without this, the
+   label text (starting flush at the field's own left edge) sat visibly
+   left of the value text inside the input below it (which starts 14px
+   in, at the input's own padding). The same 14px inset is shared by
+   .form-field-feedback below, so label/input/helper/error text all align
+   to one consistent vertical text line down the whole form. */
 .form-field-label {
+  padding-left: 14px;
   color: var(--color-text-muted);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+/* Visual Pass II Section 4/5: the shared feedback-row treatment used by
+   BOTH the Name field's own live availability region (checking/taken/
+   failed text) and the empty reserved row beneath the Page address field
+   — one class, so the two paired fields always share the exact same
+   reserved height (never separately maintained inline styles that could
+   drift apart) and the exact same 14px horizontal inset as every label
+   and input value above them. Page address availability checking itself
+   is Phase B work; this is purely a layout/alignment reservation. */
+.form-field-feedback {
+  margin: 0;
+  min-height: 1.2em;
+  padding-left: 14px;
+  font-size: 14px;
+}
+
+/* Visual Pass II correction pass: at the same narrow-desktop tier the
+   record-list/aside/editor-surface rules above shrink at, this 14px
+   inset — otherwise purely cosmetic alignment — is dropped to reclaim a
+   little more width for the editor column; placed AFTER both base rules
+   above so it actually wins the cascade. */
+@media (max-width: 1699px) {
+  .form-field-label,
+  .form-field-feedback {
+    padding-left: 0;
+  }
 }
 
 .form-input {
@@ -448,18 +532,33 @@ input[type="checkbox"] {
 /* align-items: flex-start (not center) plus the checkbox's own small
    top margin below keeps the box aligned with the FIRST LINE of its
    label — correct for both a short single-word label (Held item,
-   Tradeable) and a long wrapping sentence (the verification opt-in),
-   rather than centering the box against the label's full wrapped
-   height. */
+   Tradeable) and a long wrapping sentence (the verification opt-in):
+   with only one line, aligning to "the first line" and "centering
+   against the label" are the same position, so one rule serves both
+   cases; against a WRAPPED label, flex-start keeps the box beside line
+   one only, rather than centering it against the full wrapped block.
+   Visual Pass II correction pass: the box itself is now explicitly
+   sized (12x12px, scoped to .form-checkbox-field so the visually-hidden
+   .admin-image-remove-checkbox elsewhere is never affected — that
+   checkbox never lives inside a .form-checkbox-field) — the previous
+   rule relied on the browser's native ~13px default, which rendered
+   visibly taller than the capital letters beside it. margin-top is
+   retuned from 3px to 2px to correctly center the smaller 12px box
+   against a 16px line's cap-height (measured live against the Held
+   item/Tradeable checkboxes). */
 .form-checkbox-field {
   display: flex;
   align-items: flex-start;
   gap: 8px;
   color: var(--color-text-muted);
+  cursor: pointer;
 }
 
 .form-checkbox-field input[type="checkbox"] {
-  margin-top: 3px;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  margin-top: 2px;
   flex-shrink: 0;
 }
 
@@ -679,7 +778,16 @@ input[type="checkbox"] {
    gutter ends and the whole application — sidebar included — begins);
    .admin-content-inner no longer carries its own border, which would
    have doubled up against .admin-sidebar's existing border-right at
-   the point where they now sit flush together. */
+   the point where they now sit flush together.
+
+   Visual Pass II Section 1: the ceiling was raised from 2700px to
+   3150px — measured live to keep a clearly visible scenic gutter at
+   3440px (roughly 145px per side) while meaningfully widening the
+   editor/record/context columns instead of the frame looking
+   miniaturized against the full ultrawide viewport. 96vw still governs
+   growth below the ceiling, so 1440/1920/2560 are completely unaffected
+   (each already sits below both the old and new ceiling) — only
+   viewports wide enough to have hit the old 2700px cap grow further. */
 .admin-frame {
   display: flex;
   align-items: stretch;
@@ -691,7 +799,7 @@ input[type="checkbox"] {
      content-based size instead of growing to it. An explicit width (with
      clamp() supplying its own floor/ceiling) is what actually makes the
      frame occupy its full intended width at every viewport. */
-  width: clamp(1432px, 96vw, 2700px);
+  width: clamp(1432px, 96vw, 3150px);
   margin: 0 auto;
   border-left: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);
@@ -802,15 +910,66 @@ input[type="checkbox"] {
   display: flex;
   align-items: flex-start;
   gap: 24px;
+  /* .admin-workspace-body is itself a GRID ITEM of .admin-workspace
+     (display: grid), and a grid item's default min-width: auto refuses
+     to shrink below its own content's min-content size — exactly the
+     same hazard .admin-workspace-main/-aside/-record-list/-editor/
+     -editor-row already guard against one level down. Without this, wide
+     main-column content (e.g. the Dashboard's six-module auto-fit grid)
+     forced THIS row wider than .admin-workspace's own resolved track
+     width, overflowing the page rather than letting that content wrap or
+     shrink correctly. */
+  min-width: 0;
 }
 
-/* Both side columns scale gently with the viewport (clamp floors match
-   the previous fixed 260px/280px exactly, so behavior at 1440px and
-   narrower is unchanged) instead of staying pinned at their old fixed
-   widths while the editor absorbs 100% of any extra desktop space. The
-   editor still gets the majority of any growth via flex: 1. */
+/* The record-list column scales gently with the viewport (clamp floor
+   matches the previous fixed 260px exactly, so behavior at 1440px and
+   narrower is unchanged) instead of staying pinned at its old fixed
+   width while the editor absorbs 100% of any extra desktop space. */
 .admin-workspace-record-list {
   flex: 0 0 clamp(260px, 16vw, 340px);
+  min-width: 0;
+}
+
+/* Visual Pass II correction pass (Section 3): the editor column groups
+   the selected-record header/tabs and the main-card/aside row into ONE
+   flex column, sitting beside the record-list column — this is what
+   makes the aside's own top edge line up with the main editor card's top
+   edge (both are now children of the SAME inner row, below the header)
+   instead of lining up with the record-list's top edge (which the old,
+   flatter three-column layout produced, since aside/record-list/main
+   were all direct siblings of one one row). */
+.admin-workspace-editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+/* A flex item of .admin-workspace-editor (flex-direction: column) whose
+   own content — the record's name, tabs — can be wide (a long record
+   name, several tab labels). Without min-width: 0, this header's default
+   min-width: auto refused to shrink its CROSS-AXIS (width) below that
+   content's own min-content size, pushing the whole editor column (and
+   everything inside .admin-workspace-editor-row below it, including
+   .admin-editor-surface) wider than the space actually available —
+   measured live as a 93px self-overflow under 150% zoom at 1280px. */
+.admin-workspace-editor-header {
+  min-width: 0;
+}
+
+.admin-workspace-editor-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  /* Without this, a flex item's default min-width: auto refuses to
+     shrink below its OWN content's min-content size — since this row's
+     only reliable child (.admin-workspace-main) can contain arbitrarily
+     wide content (e.g. the Dashboard's auto-fit grid wanting all six
+     modules on one row), that content-driven minimum bubbled up and
+     forced this row — and everything above it — wider than the actual
+     available space, overflowing the page rather than letting the grid
+     (or any other main-column content) wrap/shrink correctly. */
   min-width: 0;
 }
 
@@ -825,6 +984,39 @@ input[type="checkbox"] {
   display: grid;
   gap: 16px;
   align-content: start;
+}
+
+/* Visual Pass II Section 1: at narrow desktop (1440-1699px, below the
+   two-column form threshold) both side columns were consuming more width
+   than the editor needed them to — narrower floors here give the editor
+   meaningfully more room specifically in this range, while 1920px and up
+   (already governed by the vw term above, not these floors) are
+   completely unaffected, preserving that breakpoint's existing balance.
+   Visual Pass II correction pass: floors reduced a further 20px each
+   (240->220, 220->200) — media queries are evaluated against the REAL
+   viewport width, unaffected by non-standard CSS zoom, so this same
+   1280px-real-viewport rule is what governs BOTH a genuinely narrow
+   1280px browser window AND a wider window zoomed until its EFFECTIVE
+   width shrinks to around 1280px or less; the zoomed case has strictly
+   LESS real pixel budget to spend on the same fixed-width side columns,
+   so freeing a little more of it for the editor was necessary once this
+   pass's own legitimate width additions elsewhere (12px checkboxes' 14px
+   label inset, the Page address feedback row, "Save Changes" replacing
+   the shorter "Save item") pushed an already-tight zoomed scenario (1280
+   real / ~853 effective at 150%) into genuinely overflowing the surface
+   itself — measured live before this fix. See the matching
+   .admin-editor-surface and .form-field-label/.form-field-feedback
+   narrow-tier overrides further down this file (placed after their own
+   base rules, since a same-specificity override placed BEFORE its base
+   rule loses the cascade tie regardless of the media query). */
+@media (max-width: 1699px) {
+  .admin-workspace-record-list {
+    flex-basis: 185px;
+  }
+
+  .admin-workspace-aside {
+    flex-basis: 205px;
+  }
 }
 
 /* ---- Admin editor primitives (Slice 9B.2; accent unified to gold in
@@ -1003,6 +1195,21 @@ input[type="checkbox"] {
      regression and why a plain viewport media query replaced it). */
 }
 
+/* Visual Pass II correction pass: narrower horizontal padding at the same
+   narrow-desktop tier .admin-workspace-record-list/-aside shrink at
+   (Section 1) — placed AFTER the base rule above so this override
+   actually wins the cascade (a same-specificity override placed BEFORE
+   its own base rule loses the tie, regardless of the media query, since
+   ties resolve by source order). Frees additional width the surface's
+   own form content needs once the editor column is this constrained —
+   see the record-list/aside floor-reduction comment above for the full
+   explanation of why this narrow tier needed more room in this pass. */
+@media (max-width: 1699px) {
+  .admin-editor-surface {
+    padding: 16px 4px;
+  }
+}
+
 /* Contextual panel/card: the shared supporting-information surface
    (image, verification, timestamps, and every read-only relationship
    panel). Deliberately the softer --color-surface-soft rather than
@@ -1044,13 +1251,34 @@ input[type="checkbox"] {
   padding-top: 12px;
 }
 
+/* Visual Pass II Section 7: denser context-rail panels at compact desktop
+   widths (under 1920px) — the same panels keep their current, more
+   generous spacing at 1920px and up, where there is width to spare. */
+@media (max-width: 1919px) {
+  .admin-panel {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .admin-panel-body {
+    gap: 8px;
+  }
+}
+
 /* ---- Danger zone (Visual Pass sub-slice 9) ----------------------------
    The right-rail panel Delete now lives in, below Timestamps, instead of
    the sticky Save/Cancel bar — a restrained danger-tinted border and
    heading are enough to mark it destructive without the heavier
    .confirm-card treatment reserved for the actual confirmation page. */
+/* Visual Pass II Section 7: the border tint was softened from 45% to
+   30% danger — still clearly a distinct, marked-off panel, just less
+   visually loud than every other panel on the page; the delete link
+   itself switched from the solid .btn-danger fill to the outlined
+   .btn-danger-outline (see the button-system rules above) for the same
+   reason. The heavier, unambiguous .confirm-card/.btn-danger treatment
+   is unchanged on the actual delete-confirmation page. */
 .admin-danger-zone {
-  border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+  border-color: color-mix(in srgb, var(--color-danger) 30%, var(--color-border));
 }
 
 .admin-danger-zone .admin-panel-title {
@@ -1164,6 +1392,24 @@ input[type="checkbox"] {
   margin: 0;
   color: var(--color-text-muted);
   font-size: 13px;
+}
+
+/* Visual Pass II Section 7: a denser preview specifically at compact
+   desktop widths, where the full 220px max-height left excessive empty
+   space around a typical square icon/sprite image; 1920px and up keep
+   the larger, more generous preview unchanged. */
+@media (max-width: 1919px) {
+  .admin-image-preview-lg {
+    max-height: 140px;
+  }
+
+  .admin-image-empty-lg {
+    min-height: 100px;
+  }
+
+  .admin-image-panel-body {
+    gap: 8px;
+  }
 }
 
 .admin-image-actions {
@@ -1292,6 +1538,25 @@ input[type="checkbox"] {
   border-top: 1px solid var(--color-border);
 }
 
+/* Visual Pass II Section 6; corrected in the Visual Pass II correction
+   pass (Section 7): Save Changes carries its own small save/floppy-disk
+   icon, but no longer grows its OWN padding/font-size beyond the plain
+   .btn-primary base — the earlier 14px/17px override made this button
+   visibly taller than Cancel beside it (12px padding, 16px font, via the
+   shared .btn base only), breaking the "same height, same padding, same
+   baseline" pairing every Save/Cancel row needs. The icon adds width
+   (via gap), never height — .btn's own fixed line-height/padding still
+   governs both buttons' height identically. */
+.admin-editor-submit {
+  gap: 8px;
+}
+
+.admin-editor-submit-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
 /* ---- Admin record list (Slice 9B.3; accent unified to gold in Slice
    9H; viewport/thumbnail refinement below; row visual polish pass) ------
    The shared quick-switching column for AdminWorkspace's recordList
@@ -1320,6 +1585,11 @@ input[type="checkbox"] {
    deliberately untouched — those belong to the later shell/proportions
    work. */
 
+/* Visual Pass II Section 2: the whole column — heading, create action,
+   search, count, AND the scrollable rows below — now reads as ONE framed
+   panel (border/radius/background matching .admin-panel's own supporting-
+   surface treatment) instead of only the rows region being boxed while
+   the header/search/count floated directly on the page background. */
 .admin-record-list {
   display: flex;
   flex-direction: column;
@@ -1328,6 +1598,22 @@ input[type="checkbox"] {
   top: 24px;
   max-height: calc(100vh - 72px);
   max-height: calc(100dvh - 72px);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-soft);
+  padding: 16px;
+}
+
+/* The panel's own heading: ~20% larger than .admin-panel-title's 15px
+   (18px), full-strength text color, and normal title casing — never the
+   small uppercase utility-label treatment .admin-panel-title uses, so
+   "Items"/"Recipes"/etc. reads as a real section heading, not a caption. */
+.admin-record-list-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 /* Every child of the list column may shrink below its intrinsic width
@@ -1394,12 +1680,29 @@ input[type="checkbox"] {
    (min-height: 0 lets it shrink below its content size instead of
    pushing the column past the cap); short lists simply size to their
    own content, well under the cap, with no forced blank space. */
+/* Visual Pass II Section 2: since the outer .admin-record-list is now
+   itself a framed panel, this inner region no longer needs its own full
+   border/background (that read as a box nested inside a box) — a top
+   divider is enough to separate the scrollable rows from the
+   header/search/count above them within the one panel.
+
+   Visual Pass II correction pass: at very tall viewports (e.g. 1440px
+   height at 3440x1440) the old flex:1 1 auto alone let this region grow
+   to fill nearly the entire remaining viewport height, showing far more
+   than a screenful of rows and making the whole page read as
+   unnecessarily tall. 880px is a row-count-based ceiling — measured
+   live, each image-capable row (including its thumbnail slot and
+   padding) renders at exactly 80px, so 880px is exactly 11 rows — added
+   ALONGSIDE (never replacing) .admin-record-list's own existing
+   viewport-based max-height above, which still shrinks this region
+   further on shorter viewports (fewer than 11 rows visible there,
+   exactly as before this correction). Whichever limit is smaller wins,
+   so short viewports are never forced to the full 880px. */
 .admin-record-rows {
   flex: 1 1 auto;
   min-height: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
+  max-height: 880px;
+  border-top: 1px solid var(--color-border);
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -1627,19 +1930,43 @@ input[type="checkbox"] {
   line-height: 1.2;
 }
 
-/* ---- Admin dashboard summary card (Slice 9G.1; moved out of inline
-   styles in Slice 9H) ---------------------------------------------------
-   The whole card is one anchor (paired with the existing .interactive-card
-   hover treatment); count uses the gold accent, matching every other
-   active/emphasis use of it across the admin shell. */
+/* ---- Admin dashboard resource module (Slice 9G.1; moved out of inline
+   styles in Slice 9H; restructured in Visual Pass II Section 8) ---------
+   Each module is now TWO attached anchors, not one: an upper summary
+   region (title, count, unit, optional context) linking to the
+   resource's own list/workspace, and a lower, full-width create action
+   separated by a divider — a real attached section of the same module,
+   never a small button floating inside the card. Count uses the gold
+   accent, matching every other active/emphasis use of it across the
+   admin shell. */
 .admin-dashboard-card {
-  display: block;
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
+  overflow: hidden;
+}
+
+/* Visual Pass II correction pass: flex: 1 lets the summary area expand to
+   fill whatever height the equal-height grid row gives this card (CSS
+   Grid's own default align-items: stretch already makes every card in a
+   row match the tallest one) — without this, a card with a shorter
+   summary (e.g. Professions/Categories, which have no extra context
+   line) left its own attached action sitting directly under its own
+   shorter content instead of flush with the card's bottom edge, so
+   actions never shared one baseline across the row. */
+.admin-dashboard-card-summary {
+  display: block;
+  flex: 1;
+  padding: 24px;
   color: var(--color-text);
   text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.admin-dashboard-card-summary:hover {
+  background: color-mix(in srgb, var(--color-surface) 90%, var(--color-accent));
 }
 
 .admin-dashboard-card-title {
@@ -1670,41 +1997,94 @@ input[type="checkbox"] {
   font-size: 14px;
 }
 
+/* The attached create action: a distinct, full-width clickable footer
+   region — gold text at rest, solid gold fill on hover/focus, matching
+   the primary-action identity used everywhere else on the admin shell. */
+.admin-dashboard-card-action {
+  display: block;
+  padding: 14px 24px;
+  border-top: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface-soft) 60%, transparent);
+  color: var(--color-accent);
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.admin-dashboard-card-action:hover {
+  background: var(--color-accent);
+  color: var(--color-background);
+}
+
 /* Dashboard Hierarchy pass: an admin-only grid (never the shared public
    ContentGrid, so no public page is affected) capped to a sensible
-   maximum width — five count cards stretching to fill the widened
+   maximum width — count cards stretching to fill the widened
    .admin-frame at 2560/3440px would each become an oversized, mostly
    empty box. The cap is well under the frame's own ceiling, so cards
-   keep a comfortable, uniform size on ultrawide instead of sprawling. */
+   keep a comfortable, uniform size on ultrawide instead of sprawling.
+   Visual Pass II correction pass: raised from 1200px to 1500px — the
+   sixth module (Game Versions) made the previous cap too narrow for six
+   220px-floor columns plus their gaps to ever fit on one row, so it wrapped
+   onto a second row at every width instead of only when genuinely narrow.
+   auto-fit/minmax is still what drives the actual responsive wrapping —
+   this is only the ceiling on how wide a fully-fitting row may grow, never
+   a fixed column count, so narrower viewports keep wrapping exactly as
+   before. Grid's own default align-items: stretch (unchanged) is what
+   makes every card in a row share equal height.
+
+   width: 100% (added in the same correction pass) fixes a real CSS Grid
+   gotcha: repeat(auto-fit, minmax(...)) needs the grid container's OWN
+   inline size to be DEFINITE to correctly compute how many tracks fit —
+   without an explicit width, this block-level div sized itself to
+   shrink-to-fit its own content instead of the space actually available
+   from its parent, so auto-fit forced all six 220px columns onto one row
+   regardless of viewport and overflowed the page at narrower widths
+   (measured live: 1400px of forced columns inside a 1198px-wide parent
+   at a 1280px viewport). width: 100% (still capped by max-width above)
+   gives auto-fit a real, definite available width to wrap against. */
 .admin-dashboard-grid {
   display: grid;
+  width: 100%;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
-  max-width: 1200px;
+  max-width: 1500px;
   margin-bottom: 32px;
 }
 
-/* Signed-in account line: present but deliberately the quietest text on
-   the Dashboard — smaller than every other admin-toolbar use of this
-   class, muted rather than the page's text color, right-aligned against
-   the Sign out control it belongs with. Stays inside the header region
-   (never moved into .admin-workspace-main), preserving the existing
-   "Dashboard's main content area contains no form" invariant. */
-.admin-dashboard-account {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px 16px;
-  margin: 0 0 24px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  font-size: 13px;
+/* Sidebar account card (Visual Pass II Section 8): the signed-in email
+   and Sign out control, moved from the Dashboard's own main content into
+   the sidebar itself — a compact, quiet card between the brand lockup
+   and primary navigation, so it reads as shell chrome (present on every
+   admin route) rather than a piece of Dashboard-specific content. */
+.admin-sidebar-account {
+  display: grid;
+  gap: 8px;
+  margin: 0 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-soft);
 }
 
-.admin-dashboard-account p {
+.admin-sidebar-account-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--color-text-muted);
+}
+
+.admin-sidebar-account-email {
   margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.admin-sidebar-account-signout {
+  width: 100%;
+  justify-content: center;
 }
 
 /* The landing/no-selection empty state's own primary create action

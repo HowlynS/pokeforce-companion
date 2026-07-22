@@ -29,7 +29,7 @@ export function DangerZonePanel({
         that block it are cleared.
       </p>
 
-      <a href={deleteHref} className="btn btn-danger">
+      <a href={deleteHref} className="btn btn-danger-outline">
         {deleteLabel}
       </a>
     </ContextPanel>

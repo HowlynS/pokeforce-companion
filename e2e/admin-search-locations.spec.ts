@@ -54,7 +54,7 @@ test("a location matching by name appears in search results and links to its pub
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
-  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page.getByLabel(/^Page address/).fill(LOCATION.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: LOCATION.type });

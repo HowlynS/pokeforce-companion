@@ -99,7 +99,7 @@ async function createLocationWithImage(
 ) {
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: "Region" });
@@ -244,7 +244,7 @@ test("an unsupported file type is rejected and nothing is written", async ({
   await page
     .getByLabel("Name", { exact: true })
     .fill("Test E2E Location Image Invalid");
-  await page.getByLabel(/^Slug/).fill("test-e2e-location-image-invalid");
+  await page.getByLabel(/^Page address/).fill("test-e2e-location-image-invalid");
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: "Region" });
@@ -288,7 +288,7 @@ test("an oversized image is rejected and nothing is written", async ({
     await page
       .getByLabel("Name", { exact: true })
       .fill("Test E2E Location Image Oversized");
-    await page.getByLabel(/^Slug/).fill("test-e2e-location-image-oversized");
+    await page.getByLabel(/^Page address/).fill("test-e2e-location-image-oversized");
     await page
       .getByRole("combobox", { name: "Type", exact: true })
       .selectOption({ label: "Region" });

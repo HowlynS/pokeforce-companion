@@ -110,7 +110,7 @@ export default async function EditLocationPage({
     <LocationWorkspace
       rawQuery={q}
       selectedSlug={location.slug}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Location"
@@ -155,6 +155,7 @@ export default async function EditLocationPage({
         </>
       }
     >
+
       <div className="admin-editor-surface">
       <form
         id={LOCATION_EDIT_FORM_ID}
@@ -179,15 +180,18 @@ export default async function EditLocationPage({
           excludeId={location.id}
         />
 
-        <label className="form-field">
-          <span className="form-field-label">Slug</span>
-          <input
-            type="text"
-            name="slug"
-            defaultValue={location.slug}
-            className="form-input"
-          />
-        </label>
+        <div className="form-field">
+          <label className="form-field">
+            <span className="form-field-label">Page address</span>
+            <input
+              type="text"
+              name="slug"
+              defaultValue={location.slug}
+              className="form-input"
+            />
+          </label>
+          <p className="form-field-feedback" aria-hidden="true"></p>
+        </div>
 
         <label className="form-field">
           <span className="form-field-label">Type</span>
@@ -219,7 +223,7 @@ export default async function EditLocationPage({
 
         <label className="form-field">
           <span className="form-field-label">
-            Access or unlock note (optional)
+            Extra information (optional)
           </span>
           <textarea
             name="accessNote"

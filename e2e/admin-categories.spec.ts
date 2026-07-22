@@ -112,7 +112,7 @@ async function createCategoryThroughForm(
   data: { name: string; slug: string; description: string }
 ) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByLabel(/^Description/).fill(data.description);
   await page
     .getByRole("button", { name: "Create Category", exact: true })
@@ -303,7 +303,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText(INITIAL.slug, { exact: true })).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
-  await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);
+  await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
   await page.getByLabel(/^Description/).fill(EDITED.description);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
@@ -373,7 +373,7 @@ test("creating a category with a seeded name is rejected server-side", async ({
   // test prefix so cleanup would catch the row if creation ever slipped
   // through.
   await page.getByLabel("Name", { exact: true }).fill("materials");
-  await page.getByLabel(/^Slug/).fill("test-e2e-category-duplicate");
+  await page.getByLabel(/^Page address/).fill("test-e2e-category-duplicate");
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();

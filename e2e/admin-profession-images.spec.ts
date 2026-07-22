@@ -100,7 +100,7 @@ async function createProfessionWithImage(
 ) {
   await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page.locator('input[name="image"]').setInputFiles(imageFile);
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
@@ -248,7 +248,7 @@ test("an unsupported file type is rejected and nothing is written", async ({
   await page
     .getByLabel("Name", { exact: true })
     .fill("Test E2E Profession Image Invalid");
-  await page.getByLabel(/^Slug/).fill("test-e2e-profession-image-invalid");
+  await page.getByLabel(/^Page address/).fill("test-e2e-profession-image-invalid");
   // setInputFiles bypasses the accept picker hint (which is not
   // validation), so the submission reaches the server-side type check.
   await page.locator('input[name="image"]').setInputFiles(TEXT_FIXTURE);
@@ -290,7 +290,7 @@ test("an oversized image is rejected and nothing is written", async ({
       .getByLabel("Name", { exact: true })
       .fill("Test E2E Profession Image Oversized");
     await page
-      .getByLabel(/^Slug/)
+      .getByLabel(/^Page address/)
       .fill("test-e2e-profession-image-oversized");
     await page.locator('input[name="image"]').setInputFiles(oversizedPath);
     await page

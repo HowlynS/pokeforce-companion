@@ -52,7 +52,7 @@ function cardLink(page: Page, name: string) {
 async function createTemporaryItem(page: Page, data: { name: string; slug: string }) {
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
 }
@@ -192,7 +192,7 @@ test("a source's location links to its public location page", async ({
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
-  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page.getByLabel(/^Page address/).fill(LOCATION.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: LOCATION.type });
@@ -236,7 +236,7 @@ test("optional profession, source label, quantity, and notes render only when po
 
   await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
-  await page.getByLabel(/^Slug/).fill(PROFESSION.slug);
+  await page.getByLabel(/^Page address/).fill(PROFESSION.slug);
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
@@ -312,7 +312,7 @@ test("a CRAFTING acquisition source coexists with the structured Produced by rec
   // /admin/recipes/new (Slice 9C.1).
   await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill(RECIPE.name);
-  await page.getByLabel(/^Slug/).fill(RECIPE.slug);
+  await page.getByLabel(/^Page address/).fill(RECIPE.slug);
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: ITEM.name });
@@ -373,7 +373,7 @@ test("a source with a location AND a source label still exposes a working locati
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
-  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page.getByLabel(/^Page address/).fill(LOCATION.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: LOCATION.type });
@@ -421,7 +421,7 @@ test("a source with a location, profession, quantity, and notes all set still ex
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
-  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page.getByLabel(/^Page address/).fill(LOCATION.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: LOCATION.type });
@@ -432,7 +432,7 @@ test("a source with a location, profession, quantity, and notes all set still ex
 
   await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
-  await page.getByLabel(/^Slug/).fill(PROFESSION.slug);
+  await page.getByLabel(/^Page address/).fill(PROFESSION.slug);
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
@@ -481,7 +481,7 @@ test("multiple distinct sources at the same location remain understandable and b
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
-  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page.getByLabel(/^Page address/).fill(LOCATION.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: LOCATION.type });

@@ -126,7 +126,7 @@ test("Item edit's form section headings render in the documented order, and ever
   // accessible label — proves no field disappeared and no name/id
   // changed.
   await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
-  await expect(page.getByLabel(/^Slug/)).toBeVisible();
+  await expect(page.getByLabel(/^Page address/)).toBeVisible();
   await expect(page.getByLabel(/^Description/)).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Category", exact: true })).toBeVisible();
   await expect(page.getByLabel("Held item", { exact: true })).toBeVisible();
@@ -199,7 +199,7 @@ test("sticky EditorActions stays sticky, keeps Save as a real submit control, an
   const position = await actions.evaluate((el) => getComputedStyle(el).position);
   expect(position).toBe("sticky");
 
-  const saveButton = page.getByRole("button", { name: "Save item", exact: true });
+  const saveButton = page.getByRole("button", { name: "Save Changes", exact: true });
   await expect(saveButton).toHaveAttribute("type", "submit");
 
   const deleteLink = page.getByRole("link", { name: "Delete item", exact: true });
@@ -219,6 +219,16 @@ test("at 1440x650, the sticky actions bar never overlaps the context rail, and t
   const aside = page.locator(".admin-workspace-aside");
   await expect(actions).toBeVisible();
   await expect(aside).toBeVisible();
+
+  // Polled rather than a one-shot read: a freshly resized dev-mode page
+  // can briefly report a stale/transitional aside box (still settling
+  // from the previous viewport's flex layout) before it stabilizes.
+  await expect
+    .poll(async () => {
+      const asideBox = await aside.boundingBox();
+      return asideBox?.width;
+    })
+    .toBeLessThanOrEqual(320);
 
   const [actionsBox, asideBox] = await Promise.all([
     actions.boundingBox(),

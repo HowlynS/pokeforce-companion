@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { EditorActions } from "@/components/admin/editor-actions";
 import { updateGameVersionAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -94,15 +95,10 @@ export default async function EditGameVersionPage({
             : "This is a historical game version. Use “Mark as current” on the Game Versions page to make it current."}
         </p>
 
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Save Changes
-          </button>
-
-          <a href="/admin/settings/game-versions" className="btn btn-secondary">
-            Cancel
-          </a>
-        </div>
+        <EditorActions
+          submitLabel="Save Changes"
+          cancelHref="/admin/settings/game-versions"
+        />
       </form>
       </div>
     </>

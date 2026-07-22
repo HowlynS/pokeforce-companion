@@ -13,10 +13,11 @@ import { readFixtureCounts } from "./helpers/database-cleanup";
 const UNIQUE_NAME = "Test E2E Unique Feedback Name";
 
 // The live region's exact texts (the duplicate one matches the server
-// action's own error message, by design).
-const AVAILABLE_TEXT = "This name is available.";
+// action's own error message, by design). Visual Pass II Section 4: a
+// valid name (available OR unchanged/current) now shows a deliberately
+// blank feedback row — only checking/taken/failed states speak up.
 const TAKEN_TEXT = "An item with that name already exists.";
-const CURRENT_TEXT = "This is the current name.";
+const VALID_TEXT = "";
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -41,14 +42,14 @@ function feedback(page: Page) {
   return page.locator("#item-name-availability");
 }
 
-test("the create form reports a unique name as available", async ({
+test("the create form leaves a unique (available) name's feedback blank", async ({
   page,
 }) => {
   await page.goto("/admin/items/new");
 
   await nameInput(page).fill(UNIQUE_NAME);
 
-  await expect(feedback(page)).toHaveText(AVAILABLE_TEXT);
+  await expect(feedback(page)).toHaveText(VALID_TEXT);
 });
 
 test("the create form reports a seeded name with different casing and whitespace as taken", async ({
@@ -85,12 +86,12 @@ test("the edit form treats its unchanged current name as non-conflicting", async
 
   // The prefilled saved name needs no request at all.
   await expect(nameInput(page)).toHaveValue("Iron Ore");
-  await expect(feedback(page)).toHaveText(CURRENT_TEXT);
+  await expect(feedback(page)).toHaveText(VALID_TEXT);
 
   // A casing/whitespace variant of the OWN name is still "current" under
   // the trimmed, case-insensitive duplicate rule.
   await nameInput(page).fill("  IRON ORE ");
-  await expect(feedback(page)).toHaveText(CURRENT_TEXT);
+  await expect(feedback(page)).toHaveText(VALID_TEXT);
 });
 
 test("the edit form detects the name of another existing item", async ({
@@ -103,7 +104,7 @@ test("the edit form detects the name of another existing item", async ({
 
   // Restoring the own name recovers the non-conflicting state.
   await nameInput(page).fill("Iron Ore");
-  await expect(feedback(page)).toHaveText(CURRENT_TEXT);
+  await expect(feedback(page)).toHaveText(VALID_TEXT);
 });
 
 test("rapid typing resolves to the latest entered value", async ({ page }) => {
@@ -113,9 +114,9 @@ test("rapid typing resolves to the latest entered value", async ({ page }) => {
   // reflect the LATEST value and stay stable (stale responses are dropped).
   await nameInput(page).fill("Iron Ore");
   await nameInput(page).fill(UNIQUE_NAME);
-  await expect(feedback(page)).toHaveText(AVAILABLE_TEXT);
+  await expect(feedback(page)).toHaveText(VALID_TEXT);
   await page.waitForTimeout(700);
-  await expect(feedback(page)).toHaveText(AVAILABLE_TEXT);
+  await expect(feedback(page)).toHaveText(VALID_TEXT);
 
   // And the reverse order must settle on the duplicate warning.
   await nameInput(page).fill(UNIQUE_NAME);

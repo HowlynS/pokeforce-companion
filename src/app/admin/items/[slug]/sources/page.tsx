@@ -96,7 +96,7 @@ export default async function AdminItemSourcesPage({
       rawQuery={q}
       selectedSlug={item.slug}
       recordHref={itemSourcesHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader eyebrow="Item" title={item.name} subtitle={item.slug} />
 

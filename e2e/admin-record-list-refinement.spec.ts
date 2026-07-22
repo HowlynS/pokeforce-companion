@@ -202,7 +202,7 @@ test("a real uploaded image renders a decoded, decorative thumbnail; a seeded it
 
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
-  await page.getByLabel(/^Slug/).fill(ITEM.slug);
+  await page.getByLabel(/^Page address/).fill(ITEM.slug);
   await page
     .getByRole("combobox", { name: "Category", exact: true })
     .selectOption({ label: "Materials" });
@@ -385,7 +385,7 @@ async function createTestLocation(
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(location.name);
-  await page.getByLabel(/^Slug/).fill(location.slug);
+  await page.getByLabel(/^Page address/).fill(location.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: "Town" });

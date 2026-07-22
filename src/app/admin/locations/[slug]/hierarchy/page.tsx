@@ -5,12 +5,10 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { ContextPanel } from "@/components/admin/context-panel";
-import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
-  locationDeleteHref,
   locationEditorTabs,
   locationHierarchyHref,
   normalizeLocationSearchQuery,
@@ -110,15 +108,16 @@ export default async function LocationHierarchyPage({
   // type, description, access note, image, and verification metadata are
   // never read from this form and never written by this action. No
   // ImagePanel/VerificationPanel/TimestampsPanel — this tab has nothing
-  // to do with any of them. Delete lives in an unconditional
-  // DangerZonePanel below the main content (this route has no aside
-  // column of its own) rather than the sticky Save/Cancel bar.
+  // to do with any of them. Danger Zone was removed from this
+  // relationship tab (Visual Pass II Section 7: General tab only) —
+  // Delete stays reachable via the General tab's own unconditional
+  // DangerZonePanel.
   return (
     <LocationWorkspace
       rawQuery={q}
       selectedSlug={location.slug}
       recordHref={locationHierarchyHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Location"
@@ -144,25 +143,30 @@ export default async function LocationHierarchyPage({
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
 
-        <fieldset className="form-fieldset">
-          <legend>Parent Location</legend>
-
-          <label className="form-field">
-            <span className="form-field-label">Parent location</span>
-            <select
-              name="parentId"
-              defaultValue={location.parentId ?? ""}
-              className="form-input"
-            >
-              <option value="">No parent</option>
-              {parentOptions.map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </fieldset>
+        {/* Visual Pass II correction pass (Section 9): the old
+            <fieldset><legend>Parent Location</legend> wrapper duplicated
+            this same fact twice — the uppercase legend and the smaller
+            "Parent location" field label right beneath it said the same
+            thing. A single ordinary field (matching every ungrouped field
+            elsewhere in this form) is the one clear heading now; removing
+            the fieldset's own border also removes the extra divider it
+            created immediately above the sticky Save Hierarchy/Cancel
+            row, leaving only that row's own standard top border. */}
+        <label className="form-field">
+          <span className="form-field-label">Parent location</span>
+          <select
+            name="parentId"
+            defaultValue={location.parentId ?? ""}
+            className="form-input"
+          >
+            <option value="">No parent</option>
+            {parentOptions.map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {candidate.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <EditorActions
           submitLabel="Save Hierarchy"
@@ -206,12 +210,6 @@ export default async function LocationHierarchyPage({
           </div>
         </ContextPanel>
       )}
-
-      <DangerZonePanel
-        resourceLabel="location"
-        deleteHref={locationDeleteHref(location.slug, query)}
-        deleteLabel="Delete Location"
-      />
     </LocationWorkspace>
   );
 }

@@ -81,7 +81,7 @@ export default async function NewProfessionPage({
   return (
     <ProfessionWorkspace
       rawQuery={q}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Profession"
@@ -130,12 +130,15 @@ export default async function NewProfessionPage({
           regionId="profession-name-availability"
         />
 
-        <label className="form-field">
-          <span className="form-field-label">
-            Slug (optional — generated from name if left blank)
-          </span>
-          <input type="text" name="slug" className="form-input" />
-        </label>
+        <div className="form-field">
+          <label className="form-field">
+            <span className="form-field-label">
+              Page address (optional — generated from name if left blank)
+            </span>
+            <input type="text" name="slug" className="form-input" />
+          </label>
+          <p className="form-field-feedback" aria-hidden="true"></p>
+        </div>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>

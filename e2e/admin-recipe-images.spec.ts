@@ -122,7 +122,7 @@ async function fillMinimalRecipeForm(
 ) {
   await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: "Iron Ingot" });

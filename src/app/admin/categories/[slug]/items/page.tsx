@@ -89,7 +89,7 @@ export default async function CategoryItemsPage({
       rawQuery={q}
       selectedSlug={category.slug}
       recordHref={categoryItemsHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Category"

@@ -108,7 +108,7 @@ export default async function ItemRecipesPage({
       rawQuery={q}
       selectedSlug={item.slug}
       recordHref={itemUsedInRecipesHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader eyebrow="Item" title={item.name} subtitle={item.slug} />
 

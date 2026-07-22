@@ -98,7 +98,7 @@ export default async function EditAcquisitionSourcePage({
       rawQuery={q}
       selectedSlug={item.slug}
       recordHref={itemSourcesHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Acquisition Source"

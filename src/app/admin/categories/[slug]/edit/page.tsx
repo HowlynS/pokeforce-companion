@@ -85,7 +85,7 @@ export default async function EditCategoryPage({
     <CategoryWorkspace
       rawQuery={q}
       selectedSlug={category.slug}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Category"
@@ -123,6 +123,7 @@ export default async function EditCategoryPage({
         </>
       }
     >
+
       <div className="admin-editor-surface">
       <form
         id={CATEGORY_EDIT_FORM_ID}
@@ -144,15 +145,18 @@ export default async function EditCategoryPage({
           excludeId={category.id}
         />
 
-        <label className="form-field">
-          <span className="form-field-label">Slug</span>
-          <input
-            type="text"
-            name="slug"
-            defaultValue={category.slug}
-            className="form-input"
-          />
-        </label>
+        <div className="form-field">
+          <label className="form-field">
+            <span className="form-field-label">Page address</span>
+            <input
+              type="text"
+              name="slug"
+              defaultValue={category.slug}
+              className="form-input"
+            />
+          </label>
+          <p className="form-field-feedback" aria-hidden="true"></p>
+        </div>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>

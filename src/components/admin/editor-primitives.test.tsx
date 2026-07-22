@@ -236,8 +236,13 @@ describe("VerificationPanel", () => {
     expect(html).not.toContain("Verified on");
     expect(html).toContain("Current version");
     expect(html).toContain("Summer Update");
-    // The current Game Version carries its own compact Current badge.
-    expect(html).toContain("admin-status-badge-current");
+    // Visual Pass II correction pass: the redundant green "Current" pill
+    // beside the version's own name is gone — the row's own label already
+    // says "Current version", so no badge repeats that fact a second
+    // time. The unverified record's own top status badge is plain, not
+    // the "current" variant, so no admin-status-badge-current class
+    // should appear anywhere in this render at all.
+    expect(html).not.toContain("admin-status-badge-current");
   });
 
   it("shows the current-version status for a record verified against the current version", () => {
@@ -412,6 +417,18 @@ describe("EditorActions", () => {
     expect(html).not.toContain("btn-danger");
     expect(html).not.toContain("Delete");
     expect(html.match(/type="submit"/g)).toHaveLength(1);
+  });
+
+  it("always renders Cancel before the primary action, with no ordering toggle — the same order for every caller, create or edit", () => {
+    const html = renderToStaticMarkup(
+      <EditorActions submitLabel="Create item" cancelHref="/admin/items" />
+    );
+
+    const cancelIndex = html.indexOf('href="/admin/items"');
+    const submitIndex = html.indexOf('type="submit"');
+    expect(cancelIndex).toBeGreaterThan(-1);
+    expect(submitIndex).toBeGreaterThan(-1);
+    expect(cancelIndex).toBeLessThan(submitIndex);
   });
 });
 

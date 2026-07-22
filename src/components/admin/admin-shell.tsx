@@ -11,14 +11,21 @@
 // it renders, and every mutation still re-checks authorization itself.
 
 import Link from "next/link";
+import { UserRound } from "lucide-react";
 import { designTokens } from "@/lib/design-tokens";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { requireAdminUser } from "@/lib/auth/require-admin";
+import { signOutAction } from "@/app/admin/actions";
 
 type AdminShellProps = {
   children: React.ReactNode;
 };
 
-export function AdminShell({ children }: AdminShellProps) {
+export async function AdminShell({ children }: AdminShellProps) {
+  // Cached (React cache()) so this repeats no Supabase lookup beyond the
+  // one the /admin layout's own gate already performs for this request.
+  const user = await requireAdminUser();
+
   return (
     <div className="admin-shell">
       {/* The combined application frame (Shell Composition Correction
@@ -59,6 +66,20 @@ export function AdminShell({ children }: AdminShellProps) {
               Admin · View public site
             </span>
           </Link>
+
+          {/* Visual Pass II Section 8: the signed-in account context, moved
+              here from the Dashboard's own main content — a compact card
+              between the brand lockup and primary navigation, so it reads
+              as shell chrome rather than a piece of Dashboard content. */}
+          <div className="admin-sidebar-account">
+            <UserRound aria-hidden="true" className="admin-sidebar-account-icon" />
+            <p className="admin-sidebar-account-email">{user.email}</p>
+            <form action={signOutAction}>
+              <button type="submit" className="btn btn-secondary btn-compact admin-sidebar-account-signout">
+                Sign out
+              </button>
+            </form>
+          </div>
 
           <AdminNav />
         </aside>

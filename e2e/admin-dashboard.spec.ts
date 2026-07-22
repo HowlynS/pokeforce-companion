@@ -1,13 +1,19 @@
-// Browser coverage for the Slice 9G.1 admin dashboard against the REAL
-// application: /admin now renders a restrained resource-summary workspace
-// (not an analytics dashboard) — five resource summary cards, a Game
-// Version status panel, and a quick-actions section — instead of the old
-// "Manage X" card grid. Sidebar wiring, active-state marking, and the
-// secondary-settings-only reachability of Game Versions are already
-// exhaustively covered by admin-shell.spec.ts and admin-game-versions.spec.ts;
-// this suite only proves the dashboard's OWN content — counts, hide-empty
-// behavior, canonical navigation targets, and the absence of any
-// chart/trend/analytics UI.
+// Browser coverage for the admin dashboard against the REAL application:
+// /admin renders a restrained resource-summary workspace (not an
+// analytics dashboard) — six resource modules (Items, Recipes,
+// Professions, Categories, Locations, Game Versions), each a linked
+// summary plus an attached create action (Visual Pass II Section 8) —
+// instead of the old "Manage X" card grid. The former separate Game
+// Version ContextPanel and the Quick Actions section are both gone: Game
+// Versions is now a sixth module in the same grid, and each module's own
+// attached action replaces Quick Actions' row of links. The signed-in
+// account card and Sign out control moved into the sidebar (proven in
+// admin-shell.spec.ts, not here). Sidebar wiring, active-state marking,
+// and the secondary-settings-only reachability of Game Versions are
+// already exhaustively covered by admin-shell.spec.ts and
+// admin-game-versions.spec.ts; this suite only proves the dashboard's OWN
+// content — counts, hide-empty behavior, canonical navigation targets,
+// and the absence of any chart/trend/analytics UI.
 //
 // Runs in the chromium-admin project with the storage state saved by
 // auth.setup.ts. The one temporary Item this suite creates uses the
@@ -64,7 +70,7 @@ async function readItemCount(page: Page): Promise<number> {
   return Number(match[1]);
 }
 
-test("the dashboard renders exactly one h1 and a resource summary card per completed workspace", async ({
+test("the dashboard renders exactly one h1 and a resource module per completed workspace, including Game Versions", async ({
   page,
 }) => {
   await page.goto("/admin");
@@ -80,6 +86,7 @@ test("the dashboard renders exactly one h1 and a resource summary card per compl
     { name: "Professions", href: "/admin/professions" },
     { name: "Categories", href: "/admin/categories" },
     { name: "Locations", href: "/admin/locations" },
+    { name: "Game Versions", href: "/admin/settings/game-versions" },
   ];
 
   for (const resource of resources) {
@@ -93,7 +100,9 @@ test("the dashboard renders exactly one h1 and a resource summary card per compl
     await expect(card).not.toContainText("—");
   }
 
-  // Exactly one card per resource — no duplicate-link ambiguity.
+  // Exactly one summary link per resource — no duplicate-link ambiguity
+  // (each module's attached create action carries a DIFFERENT href, so it
+  // never collides with this count).
   for (const resource of resources) {
     await expect(
       dashboardMain(page).locator(`a[href="${resource.href}"]`)
@@ -101,26 +110,32 @@ test("the dashboard renders exactly one h1 and a resource summary card per compl
   }
 });
 
-test("quick actions link directly to each resource's canonical create route", async ({
+test("each module's attached create action links directly to its resource's canonical create route", async ({
   page,
 }) => {
   await page.goto("/admin");
 
-  const quickActions = page.getByRole("navigation", {
-    name: "Quick create actions",
-  });
-  await expect(quickActions).toBeVisible();
+  // The former separate "Quick create actions" nav is gone — each
+  // resource module now carries its OWN attached create action instead
+  // (Visual Pass II Section 8).
+  await expect(
+    page.getByRole("navigation", { name: "Quick create actions" })
+  ).toHaveCount(0);
 
   const createLinks: Array<{ label: string; href: string }> = [
-    { label: "Create Item", href: "/admin/items/new" },
-    { label: "Create Recipe", href: "/admin/recipes/new" },
-    { label: "Create Profession", href: "/admin/professions/new" },
-    { label: "Create Category", href: "/admin/categories/new" },
-    { label: "Create Location", href: "/admin/locations/new" },
+    { label: "Create item", href: "/admin/items/new" },
+    { label: "Create recipe", href: "/admin/recipes/new" },
+    { label: "Create profession", href: "/admin/professions/new" },
+    { label: "Create category", href: "/admin/categories/new" },
+    { label: "Create location", href: "/admin/locations/new" },
+    {
+      label: "Create game version",
+      href: "/admin/settings/game-versions#create-game-version",
+    },
   ];
 
   for (const link of createLinks) {
-    const anchor = quickActions.getByRole("link", {
+    const anchor = dashboardMain(page).getByRole("link", {
       name: link.label,
       exact: true,
     });
@@ -129,33 +144,30 @@ test("quick actions link directly to each resource's canonical create route", as
 
   // Acquisition Sources are Item-owned and explicitly excluded from
   // quick-create — there is no source-creation shortcut on the dashboard.
+  // Scoped to the attached create-action links specifically: the Items
+  // module's own SUMMARY text legitimately mentions "acquisition
+  // sources" as supporting context, which is not a create shortcut.
   await expect(
-    quickActions.getByRole("link", { name: /source/i })
+    dashboardMain(page)
+      .locator(".admin-dashboard-card-action")
+      .filter({ hasText: /source/i })
   ).toHaveCount(0);
 });
 
-test("the Game Version panel shows the current version by name, a total count, and links to management, with no internal id exposed", async ({
+test("the Game Versions module shows the current version by name and a total count, with no internal id exposed", async ({
   page,
 }) => {
   await page.goto("/admin");
 
-  const panel = page
-    .locator(".admin-panel")
-    .filter({
-      has: page.getByRole("heading", { level: 2, name: "Game Version", exact: true }),
-    });
-  await expect(panel).toBeVisible();
+  const card = summaryCard(page, "/admin/settings/game-versions");
+  await expect(card).toBeVisible();
 
   // The persistent fixture is the current version for the whole suite.
-  await expect(panel).toContainText(E2E_CURRENT_GAME_VERSION_NAME);
-  await expect(panel).toContainText(/\d+/);
+  await expect(card).toContainText(E2E_CURRENT_GAME_VERSION_NAME);
+  await expect(card).toContainText(/\d+/);
 
-  await expect(
-    panel.getByRole("link", { name: "Game Versions", exact: true })
-  ).toHaveAttribute("href", "/admin/settings/game-versions");
-
-  // No raw database id anywhere in the panel.
-  await expect(panel.locator('input[type="hidden"]')).toHaveCount(0);
+  // No raw database id anywhere on the dashboard.
+  await expect(dashboardMain(page).locator('input[type="hidden"]')).toHaveCount(0);
 });
 
 test("the dashboard contains no chart, graph, or fabricated analytics", async ({
@@ -182,7 +194,7 @@ test("the Items summary count reflects a real record created and removed through
 
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Item Dashboard Count");
-  await page.getByLabel(/^Slug/).fill("test-e2e-item-dashboard-count");
+  await page.getByLabel(/^Page address/).fill("test-e2e-item-dashboard-count");
   await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
 

@@ -98,13 +98,17 @@ export function RecordNameField({
           : "checking";
 
   // Every message doubles as the non-color cue: the words alone say what
-  // the state means.
+  // the state means. Visual Pass II Section 4: a VALID name (available or
+  // unchanged/current) is now deliberately silent — the redundant "this is
+  // fine" text was removed, so the feedback row only ever speaks up when
+  // there is something the admin actually needs to know (checking,
+  // taken, or a failed check).
   const feedbackText: Record<FeedbackState, string> = {
     idle: "",
     checking: "Checking name availability...",
-    available: "This name is available.",
+    available: "",
     taken: takenText,
-    current: "This is the current name.",
+    current: "",
     failed: "Could not check the name right now. You can still submit.",
   };
 
@@ -166,16 +170,16 @@ export function RecordNameField({
           input's accessible name stays exactly "Name" — the feedback is a
           description (aria-describedby), not part of the label. Deliberately
           not role="status": that role belongs to the pages' success
-          messages. */}
+          messages. The shared .form-field-feedback class (Visual Pass II
+          Section 5) is what keeps this row's reserved height and
+          horizontal inset identical to the Page address field's own
+          reserved spacer row beneath it — only the dynamic color stays
+          inline. */}
       <p
         id={regionId}
         aria-live="polite"
-        style={{
-          margin: 0,
-          minHeight: "1.2em",
-          fontSize: "14px",
-          color: FEEDBACK_COLOR[state],
-        }}
+        className="form-field-feedback"
+        style={{ color: FEEDBACK_COLOR[state] }}
       >
         {feedbackText[state]}
       </p>

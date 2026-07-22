@@ -73,15 +73,23 @@ test("the sidebar carries exactly the seven primary destinations with their appr
   ).toHaveCount(0);
 
   // Game Versions is reachable from both the sidebar and the dashboard's
-  // own Game Version panel link (Visual Pass sub-slice 8 preserved that
-  // link — it did not replace it).
+  // own Game Versions module. Visual Pass II Section 8 restructured that
+  // module into a linked summary carrying count/context text alongside
+  // the heading, so its accessible name is no longer exactly "Game
+  // Versions" — the link itself (and its href) is otherwise unchanged.
   await expect(
     sidebar(page).getByRole("link", { name: "Game Versions", exact: true })
   ).toBeVisible();
+  const dashboardGameVersionsLink = page
+    .locator(".admin-workspace-main")
+    .locator('a[href="/admin/settings/game-versions"]');
+  await expect(dashboardGameVersionsLink).toBeVisible();
   await expect(
-    page
-      .locator(".admin-workspace-main")
-      .getByRole("link", { name: "Game Versions", exact: true })
+    dashboardGameVersionsLink.getByRole("heading", {
+      level: 3,
+      name: "Game Versions",
+      exact: true,
+    })
   ).toBeVisible();
 });
 
@@ -180,4 +188,34 @@ test("public pages never receive the admin shell, even for a signed-in admin", a
     await page.goto(publicPath);
     await expect(sidebar(page)).toHaveCount(0);
   }
+});
+
+test("the sidebar carries a signed-in account card with a working Sign out control, positioned above primary navigation", async ({
+  page,
+}) => {
+  // Visual Pass II Section 8: moved here from the Dashboard's own main
+  // content — present on every admin route, not just /admin.
+  await page.goto("/admin/items");
+
+  const account = page.locator(".admin-sidebar-account");
+  await expect(account).toBeVisible();
+  // A real email address, never a placeholder or the record's database id.
+  await expect(account).toContainText(/@/);
+
+  const signOut = account.getByRole("button", { name: "Sign out", exact: true });
+  await expect(signOut).toBeVisible();
+
+  // Structurally between the brand lockup and the primary nav — never
+  // inside the main content area.
+  const accountBox = await account.boundingBox();
+  const brandBox = await page.locator(".admin-sidebar-brand").boundingBox();
+  const navBox = await sidebar(page).boundingBox();
+  expect(accountBox).not.toBeNull();
+  expect(brandBox).not.toBeNull();
+  expect(navBox).not.toBeNull();
+  expect(accountBox!.y).toBeGreaterThanOrEqual(brandBox!.y + brandBox!.height);
+  expect(accountBox!.y).toBeLessThanOrEqual(navBox!.y);
+  await expect(page.locator(".admin-workspace-main")).not.toContainText(
+    "Sign out"
+  );
 });

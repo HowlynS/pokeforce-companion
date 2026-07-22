@@ -27,9 +27,16 @@ type ItemWorkspaceProps = {
   /** Slug of the item open in the editor (edit/delete routes) — marks
       the selected row. Landing and create pages pass nothing. */
   selectedSlug?: string;
-  /** The page's header region: EditorHeader/PageHeader plus tabs and
-      toolbar/banners. */
-  header: React.ReactNode;
+  /** The page's header region: PageHeader plus any toolbar/banners for
+      list/landing pages. Editor pages (create/edit/tab routes) no longer
+      pass this — their own EditorHeader/EditorTabs/error content now
+      renders as the first children instead (Visual Pass II Section 3). */
+  header?: React.ReactNode;
+  /** The selected item's own EditorHeader/EditorTabs/error banner
+      (Visual Pass II correction pass, Section 3) — passed straight
+      through to AdminWorkspace's editorHeader slot, so it renders above
+      the main-card/aside row instead of at the top of `children`. */
+  editorHeader?: React.ReactNode;
   /** The page's main content (guidance state, create form, edit form,
       or delete confirmation). */
   children: React.ReactNode;
@@ -48,6 +55,7 @@ export async function ItemWorkspace({
   rawQuery,
   selectedSlug,
   header,
+  editorHeader,
   children,
   aside,
   recordHref = itemEditHref,
@@ -92,6 +100,7 @@ export async function ItemWorkspace({
   return (
     <AdminWorkspace
       header={header}
+      editorHeader={editorHeader}
       aside={aside}
       recordList={
         <RecordList

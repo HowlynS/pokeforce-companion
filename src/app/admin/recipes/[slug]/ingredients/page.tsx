@@ -3,12 +3,10 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorActions } from "@/components/admin/editor-actions";
-import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
   normalizeRecipeSearchQuery,
-  recipeDeleteHref,
   recipeEditorTabs,
   recipeIngredientsHref,
   withRecipeSearchQuery,
@@ -88,18 +86,17 @@ export default async function RecipeIngredientsPage({
   // (touches only the RecipeIngredient table — name, slug, resulting
   // item, profession, required level, image, and verification are never
   // read or written here). No ImagePanel/VerificationPanel/
-  // TimestampsPanel — this tab has nothing to do with any of them. Delete
-  // lives in the header's action slot, unconditional exactly like the
-  // General tab, so it stays reachable even when the ingredient-count
-  // guard below hides this page's own form — the same guarantee Slice
-  // 9C.1/9C.2 already established, now isolated to Ingredients only
-  // (General itself no longer carries any such guard).
+  // TimestampsPanel — this tab has nothing to do with any of them. Danger
+  // Zone was removed from this relationship tab (Visual Pass II Section
+  // 7: General tab only) — Delete stays reachable via the General tab's
+  // own unconditional DangerZonePanel, which the ingredient-count guard
+  // below never affects (that guard only hides THIS tab's own form).
   return (
     <RecipeWorkspace
       rawQuery={q}
       selectedSlug={recipe.slug}
       recordHref={recipeIngredientsHref}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Recipe"
@@ -176,18 +173,6 @@ export default async function RecipeIngredientsPage({
         </form>
         </div>
       )}
-
-      {/* Rendered unconditionally, as a sibling of the guard above rather
-          than nested inside it — this tab has no aside column of its own
-          (Danger zone belongs "below the main editor content" per the
-          no-right-rail rule), and Delete must stay reachable even for an
-          over-capacity recipe whose form the guard replaces with a
-          banner. */}
-      <DangerZonePanel
-        resourceLabel="recipe"
-        deleteHref={recipeDeleteHref(recipe.slug, query)}
-        deleteLabel="Delete Recipe"
-      />
     </RecipeWorkspace>
   );
 }

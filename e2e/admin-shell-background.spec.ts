@@ -127,7 +127,7 @@ test("the shell fills the viewport with no horizontal document overflow, at ever
   }
 });
 
-test("the combined frame grows substantially between 1920 and 2560, and reaches its ceiling by 3440 within the approved ~2600-2800px target", async ({
+test("the combined frame grows substantially between 1920 and 2560, and reaches its ceiling by 3440 within the approved ~3100-3200px target", async ({
   page,
 }) => {
   await page.goto("/admin/items/iron-ore/edit");
@@ -146,11 +146,14 @@ test("the combined frame grows substantially between 1920 and 2560, and reaches 
   // toward its ceiling here, not already capped.
   expect(at2560.frame!.width).toBeGreaterThan(at1920.frame!.width + 300);
   // The frame still grows a bit further from 2560 to 3440 (it only meets
-  // its ceiling at the widest target), but the ceiling keeps it well short
-  // of an unbounded, edge-to-edge sprawl.
+  // its ceiling at the widest target). Visual Pass II Section 1 raised the
+  // ceiling from ~2700px to ~3150px so the interface reads meaningfully
+  // wider at ultrawide instead of miniaturized, while still keeping a
+  // clearly visible scenic gutter (never an unbounded, edge-to-edge
+  // sprawl).
   expect(at3440.frame!.width).toBeGreaterThan(at2560.frame!.width);
-  expect(at3440.frame!.width).toBeGreaterThanOrEqual(2600);
-  expect(at3440.frame!.width).toBeLessThanOrEqual(2800);
+  expect(at3440.frame!.width).toBeGreaterThanOrEqual(3100);
+  expect(at3440.frame!.width).toBeLessThanOrEqual(3200);
 
   // The frame is substantially wider than the pre-frame-correction
   // content-only shell (1650px) ever reached, at both wider breakpoints.
@@ -165,6 +168,14 @@ test("record-list and context-rail widths stay within their intended ranges, and
 
   for (const width of [1920, 2560, 3440]) {
     await page.setViewportSize({ width, height: 900 });
+    // Polled rather than a one-shot read: a freshly resized dev-mode page
+    // can briefly report a stale/transitional aside width (still settling
+    // from the previous viewport's flex layout) before it stabilizes —
+    // the same class of timing gap already documented and handled this
+    // way elsewhere in this suite (see admin-editor-surface.spec.ts).
+    await expect
+      .poll(async () => (await columnWidths(page)).aside?.width)
+      .toBeLessThanOrEqual(320);
     const widths = await columnWidths(page);
     expect(widths.recordList).not.toBeNull();
     expect(widths.aside).not.toBeNull();
@@ -322,28 +333,28 @@ test("the central content-inner shell itself is opaque and does not render the s
   expect(shellBackgroundImage).toContain(BACKGROUND_URL);
 });
 
-test("Dashboard: the gaps between summary cards and the empty space below Quick Actions sit inside the opaque central shell, not on exposed scenery", async ({
+test("Dashboard: the gaps between resource modules and the empty space below the grid sit inside the opaque central shell, not on exposed scenery", async ({
   page,
 }) => {
   await page.goto("/admin");
 
   // Every piece of real Dashboard content must be physically contained
   // within .admin-content-inner's own box — proving the gaps around and
-  // below it (page header, space between cards, everything below Quick
-  // Actions) are painted by that box's own opaque background, not by
-  // whatever sits behind it on .admin-shell.
+  // below it (page header, space between modules, everything below the
+  // grid) are painted by that box's own opaque background, not by
+  // whatever sits behind it on .admin-shell. The former separate "Quick
+  // Actions" section is gone (Visual Pass II Section 8) — each module's
+  // own attached create action is checked here instead.
   const inner = await contentInner(page).boundingBox();
-  const quickActions = await page
-    .getByRole("heading", { name: "Quick Actions", exact: true })
-    .boundingBox();
+  const grid = await page.locator(".admin-dashboard-grid").boundingBox();
   const createItemLink = await page
-    .getByRole("link", { name: "Create Item", exact: true })
+    .getByRole("link", { name: "Create item", exact: true })
     .boundingBox();
   expect(inner).not.toBeNull();
-  expect(quickActions).not.toBeNull();
+  expect(grid).not.toBeNull();
   expect(createItemLink).not.toBeNull();
 
-  for (const box of [quickActions!, createItemLink!]) {
+  for (const box of [grid!, createItemLink!]) {
     expect(box.x).toBeGreaterThanOrEqual(inner!.x);
     expect(box.y).toBeGreaterThanOrEqual(inner!.y);
     expect(box.x + box.width).toBeLessThanOrEqual(inner!.x + inner!.width + 1);
@@ -405,7 +416,7 @@ test("sticky record list and sticky EditorActions both keep working over the new
     )
     .toBeLessThanOrEqual(25);
 
-  const saveButton = page.getByRole("button", { name: "Save item", exact: true });
+  const saveButton = page.getByRole("button", { name: "Save Changes", exact: true });
   await expect(saveButton).toBeVisible();
   await expect(saveButton).toBeEnabled();
 });

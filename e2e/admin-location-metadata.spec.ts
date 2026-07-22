@@ -51,7 +51,7 @@ async function createTemporaryLocation(
 ) {
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: data.type });

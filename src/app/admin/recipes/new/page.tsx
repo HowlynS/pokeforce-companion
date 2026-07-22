@@ -107,7 +107,7 @@ export default async function NewRecipePage({
   return (
     <RecipeWorkspace
       rawQuery={q}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Recipe"
@@ -163,12 +163,15 @@ export default async function NewRecipePage({
             regionId="recipe-name-availability"
           />
 
-          <label className="form-field">
-            <span className="form-field-label">
-              Slug (optional — generated from name if left blank)
-            </span>
-            <input type="text" name="slug" className="form-input" />
-          </label>
+          <div className="form-field">
+            <label className="form-field">
+              <span className="form-field-label">
+                Page address (optional — generated from name if left blank)
+              </span>
+              <input type="text" name="slug" className="form-input" />
+            </label>
+            <p className="form-field-feedback" aria-hidden="true"></p>
+          </div>
 
           <p className="form-section-heading">Output</p>
 

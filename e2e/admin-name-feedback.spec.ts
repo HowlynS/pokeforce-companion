@@ -11,9 +11,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFixtureCounts } from "./helpers/database-cleanup";
 
-// Shared live-region texts (the taken text is per-resource below).
-const AVAILABLE_TEXT = "This name is available.";
-const CURRENT_TEXT = "This is the current name.";
+// Visual Pass II Section 4: a valid name (available OR unchanged/current)
+// now shows a deliberately blank feedback row — the redundant "this is
+// fine" text was removed, so only checking/taken/failed states speak up.
+// One shared constant since both valid states render identically now.
+const VALID_TEXT = "";
 
 type ResourceCase = {
   label: string;
@@ -126,9 +128,9 @@ for (const resource of RESOURCES) {
     await expect(feedback).toHaveAttribute("aria-live", "polite");
     await expect(feedback).toHaveText("");
 
-    // A unique name reports available; the words carry the meaning.
+    // A unique name is valid, so the feedback row stays blank.
     await nameInput(page).fill(resource.uniqueName);
-    await expect(feedback).toHaveText(AVAILABLE_TEXT);
+    await expect(feedback).toHaveText(VALID_TEXT);
 
     // The seeded name with scrambled casing and whitespace is a duplicate,
     // using the resource's exact server wording.
@@ -147,11 +149,12 @@ for (const resource of RESOURCES) {
     const feedback = page.locator(resource.regionId);
 
     // The prefilled saved name needs no request at all, and casing or
-    // whitespace variants of the OWN name stay "current".
+    // whitespace variants of the OWN name stay "current" — both render
+    // as the same blank feedback row a valid name always gets.
     await expect(nameInput(page)).toHaveValue(resource.seededName);
-    await expect(feedback).toHaveText(CURRENT_TEXT);
+    await expect(feedback).toHaveText(VALID_TEXT);
     await nameInput(page).fill(`  ${resource.seededName.toUpperCase()} `);
-    await expect(feedback).toHaveText(CURRENT_TEXT);
+    await expect(feedback).toHaveText(VALID_TEXT);
 
     // Another existing record's name is detected as a duplicate.
     await nameInput(page).fill(resource.otherSeededName);
@@ -161,9 +164,9 @@ for (const resource of RESOURCES) {
     // settle on the LATEST value and stay stable (stale answers dropped).
     await nameInput(page).fill(resource.otherSeededName);
     await nameInput(page).fill(resource.uniqueName);
-    await expect(feedback).toHaveText(AVAILABLE_TEXT);
+    await expect(feedback).toHaveText(VALID_TEXT);
     await page.waitForTimeout(700);
-    await expect(feedback).toHaveText(AVAILABLE_TEXT);
+    await expect(feedback).toHaveText(VALID_TEXT);
   });
 
   test(`${resource.label} duplicate submission remains rejected server-side`, async ({

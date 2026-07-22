@@ -101,7 +101,7 @@ export default async function EditProfessionPage({
     <ProfessionWorkspace
       rawQuery={q}
       selectedSlug={profession.slug}
-      header={
+      editorHeader={
         <>
           <EditorHeader
             eyebrow="Profession"
@@ -167,15 +167,18 @@ export default async function EditProfessionPage({
           excludeId={profession.id}
         />
 
-        <label className="form-field">
-          <span className="form-field-label">Slug</span>
-          <input
-            type="text"
-            name="slug"
-            defaultValue={profession.slug}
-            className="form-input"
-          />
-        </label>
+        <div className="form-field">
+          <label className="form-field">
+            <span className="form-field-label">Page address</span>
+            <input
+              type="text"
+              name="slug"
+              defaultValue={profession.slug}
+              className="form-input"
+            />
+          </label>
+          <p className="form-field-feedback" aria-hidden="true"></p>
+        </div>
 
         <label className="form-field">
           <span className="form-field-label">Description (optional)</span>

@@ -95,7 +95,7 @@ async function createItemWithImage(
 ) {
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("combobox", { name: "Category", exact: true })
     .selectOption({ label: "Materials" });
@@ -162,7 +162,7 @@ test("replacing the image stores a new object and removes the old one", async ({
   await page
     .locator('input[name="image"]')
     .setInputFiles(WEBP_FIXTURE);
-  await page.getByRole("button", { name: "Save item", exact: true }).click();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=updated");
   await expect(page.getByRole("status")).toHaveText("Item updated.");
@@ -211,7 +211,7 @@ test("removing the image clears the row, deletes the object, and restores the fa
   await expect(
     page.getByText("Image will be removed when saved.")
   ).toBeVisible();
-  await page.getByRole("button", { name: "Save item", exact: true }).click();
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/items?success=updated");
   await expect(page.getByRole("status")).toHaveText("Item updated.");
@@ -235,7 +235,7 @@ test("an unsupported file type is rejected and nothing is written", async ({
   await page
     .getByLabel("Name", { exact: true })
     .fill("Test E2E Item Image Invalid");
-  await page.getByLabel(/^Slug/).fill("test-e2e-item-image-invalid");
+  await page.getByLabel(/^Page address/).fill("test-e2e-item-image-invalid");
   // setInputFiles bypasses the accept picker hint (which is not
   // validation), so the submission reaches the server-side type check.
   await page.locator('input[name="image"]').setInputFiles(TEXT_FIXTURE);
@@ -272,7 +272,7 @@ test("an oversized image is rejected and nothing is written", async ({
     await page
       .getByLabel("Name", { exact: true })
       .fill("Test E2E Item Image Oversized");
-    await page.getByLabel(/^Slug/).fill("test-e2e-item-image-oversized");
+    await page.getByLabel(/^Page address/).fill("test-e2e-item-image-oversized");
     await page.locator('input[name="image"]').setInputFiles(oversizedPath);
     await page
       .getByRole("button", { name: "Create item", exact: true })

@@ -116,7 +116,7 @@ async function createCategoryWithImage(
 ) {
   await page.goto("/admin/categories/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page.locator('input[name="image"]').setInputFiles(imageFile);
   await page
     .getByRole("button", { name: "Create Category", exact: true })
@@ -320,7 +320,7 @@ test("an unsupported file type is rejected and nothing is written", async ({
   await page
     .getByLabel("Name", { exact: true })
     .fill("Test E2E Category Image Invalid");
-  await page.getByLabel(/^Slug/).fill("test-e2e-category-image-invalid");
+  await page.getByLabel(/^Page address/).fill("test-e2e-category-image-invalid");
   // setInputFiles bypasses the accept picker hint (which is not
   // validation), so the submission reaches the server-side type check.
   await page.locator('input[name="image"]').setInputFiles(TEXT_FIXTURE);
@@ -361,7 +361,7 @@ test("an oversized image is rejected and nothing is written", async ({
       .getByLabel("Name", { exact: true })
       .fill("Test E2E Category Image Oversized");
     await page
-      .getByLabel(/^Slug/)
+      .getByLabel(/^Page address/)
       .fill("test-e2e-category-image-oversized");
     await page.locator('input[name="image"]').setInputFiles(oversizedPath);
     await page
@@ -461,7 +461,7 @@ test("the record list keeps search, quick switching, selected state, tabs, and t
   await createCategoryWithImage(page, CATEGORY_A, PNG_FIXTURE);
   await page.goto("/admin/categories/new");
   await page.getByLabel("Name", { exact: true }).fill(CATEGORY_B.name);
-  await page.getByLabel(/^Slug/).fill(CATEGORY_B.slug);
+  await page.getByLabel(/^Page address/).fill(CATEGORY_B.slug);
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();

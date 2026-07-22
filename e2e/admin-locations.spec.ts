@@ -186,7 +186,7 @@ async function createLocationThroughForm(
   }
 ) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: data.type });
@@ -199,7 +199,7 @@ async function createLocationThroughForm(
     await page.getByLabel(/^Description/).fill(data.description);
   }
   if (data.accessNote) {
-    await page.getByLabel(/^Access or unlock note/).fill(data.accessNote);
+    await page.getByLabel(/^Extra information/).fill(data.accessNote);
   }
   await page.getByRole("button", { name: "Create Location", exact: true }).click();
 
@@ -358,7 +358,7 @@ test("Location editor: create shows only General with its own parent selector; e
     page.getByRole("combobox", { name: "Parent location", exact: true })
   ).toBeVisible();
   await expect(page.getByLabel("Name", { exact: true })).toHaveCount(0);
-  await expect(page.getByLabel("Slug", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Page address", { exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("combobox", { name: "Type", exact: true })
   ).toHaveCount(0);
@@ -433,12 +433,12 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText(INITIAL.slug, { exact: true })).toBeVisible();
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
-  await page.getByLabel("Slug", { exact: true }).fill(EDITED.slug);
+  await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: EDITED.type });
   await page.getByLabel(/^Description/).fill(EDITED.description);
-  await page.getByLabel(/^Access or unlock note/).fill(EDITED.accessNote);
+  await page.getByLabel(/^Extra information/).fill(EDITED.accessNote);
   // The verification checkbox must render unchecked by default and stays
   // untouched here: a normal edit must not stamp verification metadata.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
@@ -631,7 +631,7 @@ test("creating a location with a duplicate name is rejected server-side", async 
   // trims the name and its duplicate check is case-insensitive, so this
   // must be rejected.
   await page.getByLabel("Name", { exact: true }).fill("  test e2e location duplicate source  ");
-  await page.getByLabel(/^Slug/).fill("test-e2e-location-duplicate-attempt");
+  await page.getByLabel(/^Page address/).fill("test-e2e-location-duplicate-attempt");
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: "Route" });
@@ -796,7 +796,7 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await expect(page.getByLabel(/^Description/)).toHaveValue(
     SUBJECT.description
   );
-  await expect(page.getByLabel(/^Access or unlock note/)).toHaveValue(
+  await expect(page.getByLabel(/^Extra information/)).toHaveValue(
     SUBJECT.accessNote
   );
   await expect(
@@ -814,8 +814,10 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await expect(page.getByText(SUBJECT.description)).toBeVisible();
   await expect(page.getByText(SUBJECT.accessNote)).toBeVisible();
 
-  // --- Removing the parent (No parent) works, and Delete Location stays
-  // reachable directly from the Hierarchy tab --------------------------
+  // --- Removing the parent (No parent) works. Danger Zone was removed
+  // from the Hierarchy tab (Visual Pass II Section 7: General tab only),
+  // so Delete Location is no longer offered there — reachability is
+  // proven from General instead, where it always unconditionally lives. --
   await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
   await page
     .getByRole("combobox", { name: "Parent location", exact: true })
@@ -832,6 +834,11 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await expect(page.getByText(/^Part of/)).toHaveCount(0);
 
   await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
+  await expect(
+    page.getByRole("link", { name: "Delete Location", exact: true })
+  ).toHaveCount(0);
+
+  await page.goto(`/admin/locations/${SUBJECT.slug}/edit`);
   await page
     .getByRole("link", { name: "Delete Location", exact: true })
     .click();

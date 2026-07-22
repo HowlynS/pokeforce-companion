@@ -140,7 +140,7 @@ test("field labels read visually stronger (heavier weight) than helper/feedback 
   await page.goto("/admin/items/iron-ore/edit");
 
   const slugLabel = page
-    .locator(".form-field", { has: page.getByText("Slug", { exact: true }) })
+    .locator(".form-field", { has: page.getByText("Page address", { exact: true }) })
     .locator(".form-field-label");
   const feedbackText = page.locator("#item-name-availability");
 
@@ -293,12 +293,12 @@ test("Location's long description and access-note textareas render with the tall
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
-  await page.getByLabel(/^Slug/).fill(LOCATION.slug);
+  await page.getByLabel(/^Page address/).fill(LOCATION.slug);
   await page
     .getByRole("combobox", { name: "Type", exact: true })
     .selectOption({ label: LOCATION.type });
   await page.getByLabel(/^Description/).fill(LOCATION.description);
-  await page.getByLabel(/^Access or unlock note/).fill(LOCATION.accessNote);
+  await page.getByLabel(/^Extra information/).fill(LOCATION.accessNote);
   await expect(page.locator("#location-name-availability")).not.toHaveText(
     "Checking name availability..."
   );
@@ -310,7 +310,7 @@ test("Location's long description and access-note textareas render with the tall
   await page.goto(`/admin/locations/${LOCATION.slug}/edit`);
 
   const description = page.getByLabel(/^Description/);
-  const accessNote = page.getByLabel(/^Access or unlock note/);
+  const accessNote = page.getByLabel(/^Extra information/);
   const nameInput = page.getByLabel("Name", { exact: true });
 
   await expect(description).toHaveValue(LOCATION.description);
@@ -337,7 +337,7 @@ test("an Acquisition Source edit form renders inside the same editor surface tre
 
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
-  await page.getByLabel(/^Slug/).fill(ITEM.slug);
+  await page.getByLabel(/^Page address/).fill(ITEM.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
 
@@ -407,7 +407,7 @@ test("zooming the page keeps the editor surface's own content from overflowing i
     )
     .toBeLessThanOrEqual(1);
   await expect(
-    page.getByRole("button", { name: "Save item", exact: true })
+    page.getByRole("button", { name: "Save Changes", exact: true })
   ).toBeVisible();
 
   await page.evaluate(() => {

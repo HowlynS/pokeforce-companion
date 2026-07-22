@@ -149,7 +149,7 @@ type RecipeFormData = {
 // succeed with no image.
 async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
-  await page.getByLabel(/^Slug/).fill(data.slug);
+  await page.getByLabel(/^Page address/).fill(data.slug);
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: data.resultingItem });
@@ -341,9 +341,18 @@ test("Recipe editor tabs: create shows only General; edit and ingredients mark t
     page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
   ).toHaveCount(0);
 
-  // The Danger zone reaches Delete even here, where there is no right
-  // rail (Visual Pass sub-slice 9) — rendered below the main content,
-  // outside the ingredient-capacity guard.
+  // Danger zone was removed from this relationship tab entirely (Visual
+  // Pass II Section 7: General tab only) — Delete stays reachable via
+  // General's own unconditional DangerZonePanel instead.
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Danger zone", exact: true })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Delete Recipe", exact: true })
+  ).toHaveCount(0);
+
+  await editTabNav.getByRole("link", { name: "General", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-tabs/edit");
   await expect(
     page.getByRole("heading", { level: 2, name: "Danger zone", exact: true })
   ).toBeVisible();
@@ -455,7 +464,7 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
     "Test E2E Recipe"
   );
-  await expect(page.getByLabel("Slug", { exact: true })).toHaveValue(
+  await expect(page.getByLabel("Page address", { exact: true })).toHaveValue(
     "test-e2e-recipe"
   );
   expect(
@@ -481,7 +490,7 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
   // --- Change name, slug, result, profession (to none), and level;
   // --- ingredients and image untouched -----------------------------------
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Updated");
-  await page.getByLabel("Slug", { exact: true }).fill("test-e2e-recipe-updated");
+  await page.getByLabel("Page address", { exact: true }).fill("test-e2e-recipe-updated");
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: "Copper Ingot" });
@@ -638,7 +647,7 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
 
   // Item selected but quantity left empty.
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Incomplete");
-  await page.getByLabel(/^Slug/).fill("test-e2e-recipe-incomplete");
+  await page.getByLabel(/^Page address/).fill("test-e2e-recipe-incomplete");
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: "Iron Ingot" });
@@ -657,7 +666,7 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
   // Quantity entered but no item selected (the redirect re-rendered a
   // fresh form, so every field is filled again).
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Incomplete");
-  await page.getByLabel(/^Slug/).fill("test-e2e-recipe-incomplete");
+  await page.getByLabel(/^Page address/).fill("test-e2e-recipe-incomplete");
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: "Iron Ingot" });
@@ -685,7 +694,7 @@ test("ingredient quantities are guarded by browser-native validation with no upp
   // A complete form except for the quantity under test, so the quantity
   // input is the only invalid control.
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Max Quantity");
-  await page.getByLabel(/^Slug/).fill("test-e2e-recipe-max-quantity");
+  await page.getByLabel(/^Page address/).fill("test-e2e-recipe-max-quantity");
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: "Iron Ingot" });
@@ -743,7 +752,7 @@ test("selecting the same ingredient twice is rejected server-side", async ({
   await page.goto("/admin/recipes/new");
 
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Duplicate");
-  await page.getByLabel(/^Slug/).fill("test-e2e-recipe-duplicate-ingredient");
+  await page.getByLabel(/^Page address/).fill("test-e2e-recipe-duplicate-ingredient");
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: "Iron Ingot" });
@@ -879,14 +888,19 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
   await expect(
     page.getByRole("group", { name: "Ingredients (fill at least one row)" })
   ).toHaveCount(0);
-  // Deletion must never depend on the Ingredients form being renderable —
-  // the unconditional Danger zone panel (rendered as a sibling of the
-  // guard's own banner, not nested inside it — this tab has no aside of
-  // its own) stays reachable even when the ingredient-count guard blocks
-  // the form.
+  // Deletion must never depend on the Ingredients form being renderable.
+  // Danger Zone was removed from the Ingredients tab entirely (Visual
+  // Pass II Section 7: General tab only), so Delete Recipe never appears
+  // here at all — reachability is proven via General instead, a
+  // completely separate route the ingredient-count guard never touches.
+  await expect(
+    page.getByRole("link", { name: "Delete Recipe", exact: true })
+  ).toHaveCount(0);
+  await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/edit");
   await expect(
     page.getByRole("link", { name: "Delete Recipe", exact: true })
   ).toBeVisible();
+  await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/ingredients");
   // The Ingredients tab never renders Image/Verification/Timestamps in
   // the first place — nothing there to withhold.
   await expect(
