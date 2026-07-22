@@ -491,6 +491,47 @@ input[type="checkbox"] {
   color: var(--color-text);
 }
 
+/* Shell Composition Correction pass: the combined application frame —
+   sidebar and content together — is now the ONE thing that owns
+   centering, the outer max-width, and the outer scenic gutters.
+   .admin-shell stays a plain flex row (unchanged); with .admin-frame as
+   its only child, `margin: 0 auto` centers the frame the same way
+   .admin-content-inner used to center itself, just one level up, so the
+   sidebar is now INSIDE the centered box instead of pinned outside it.
+
+   Width formula: clamp(1432px, 96vw, 2700px). The 1432px floor is
+   deliberately exact — 232px sidebar + the original 1200px content
+   floor — so at 1440px and narrower the combined frame reproduces the
+   same near-full-viewport slack (a few px) the pre-scenic-workspace
+   layout always had. The 96vw preferred value is what actually drives
+   ultrawide growth; the 2700px ceiling is the new dominant-but-bounded
+   application width — measured live to land the outer gutters at
+   3440px within the approved ~320-420px per side target, while 2560px
+   still grows against the vw term rather than already sitting at the
+   ceiling.
+
+   border-left/border-right mark the frame's own outer edges (where the
+   gutter ends and the whole application — sidebar included — begins);
+   .admin-content-inner no longer carries its own border, which would
+   have doubled up against .admin-sidebar's existing border-right at
+   the point where they now sit flush together. */
+.admin-frame {
+  display: flex;
+  align-items: stretch;
+  min-height: 100vh;
+  /* width, not max-width: .admin-frame is a FLEX ITEM (child of
+     .admin-shell), not a plain block like .admin-content-inner used to
+     be — a flex item's auto size is driven by its children's content, not
+     by "fill the container," so max-width alone only caps that
+     content-based size instead of growing to it. An explicit width (with
+     clamp() supplying its own floor/ceiling) is what actually makes the
+     frame occupy its full intended width at every viewport. */
+  width: clamp(1432px, 96vw, 2700px);
+  margin: 0 auto;
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+}
+
 .admin-sidebar {
   width: 232px;
   flex-shrink: 0;
@@ -559,39 +600,26 @@ input[type="checkbox"] {
   min-width: 0;
 }
 
-/* Admin Shell Background and Workspace Proportions pass, revised by the
-   Wallpaper Correction pass: the content column grows with the viewport
-   (clamp floor matches the original fixed 1200px exactly, so nothing
-   changes at 1440px and narrower) rather than stopping dead at 1200px on
-   every desktop size. The ceiling is deliberately well short of the full
-   ultrawide width — at 3440px the remaining space becomes the scenic
-   background's own framing margin instead of stretching the workspace
-   itself edge to edge.
-
-   THIS is the central admin application shell — the approved mock-up's
-   "[ scenic gutter ] [ dark application ] [ scenic gutter ]" composition,
-   with this box as the middle segment. It now owns a fully opaque dark
-   navy background and a matching min-height (so a short page, e.g. an
-   empty workspace state, still fills the viewport rather than exposing
-   scenery below its own content) — every page header, the gaps between
-   Dashboard cards, Quick Actions, and the space between workspace columns
-   all sit on THIS solid surface, never directly on .admin-shell's scenic
-   layers. The scenic artwork is now visible only in the gutters either
-   side of this box (which widen at wider viewports, exactly as the
-   responsive max-width already intended) — never behind the application
-   itself. A single left/right border (matching .admin-sidebar's own
-   single-side border-right convention, not a full box outline) marks
-   where the gutter ends and the application begins; no border-radius,
-   since this box is flush with the shell's own top and bottom edges. */
+/* THIS is the central admin application surface — the opaque box every
+   page header, the gaps between Dashboard cards, Quick Actions, and the
+   space between workspace columns all sit on, never directly on
+   .admin-shell's scenic layers. Revised by the Shell Composition
+   Correction pass: width/centering/outer-border moved UP to .admin-frame
+   (which now owns the whole sidebar+content combination), so this box no
+   longer has an outer max-width or margin of its own — it simply fills
+   whatever .admin-content (its flex:1 parent) leaves after the sidebar,
+   which is exactly .admin-frame's own width minus 232px. Centering here
+   too would have recreated an inner gap between the sidebar and this
+   surface, the same bug this pass fixes at the frame level. min-height
+   is unchanged — a short page, e.g. an empty workspace state, still
+   fills the viewport rather than exposing scenery below its own
+   content. */
 .admin-content-inner {
   display: block;
-  max-width: clamp(1200px, 72vw, 1650px);
+  width: 100%;
   min-height: 100vh;
-  margin: 0 auto;
   padding: 32px 24px 48px;
   background: var(--color-background);
-  border-left: 1px solid var(--color-border);
-  border-right: 1px solid var(--color-border);
 }
 
 /* ---- Admin workspace slots (Slice 9B.1, structural only) -------------

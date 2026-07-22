@@ -1,17 +1,19 @@
 // Browser coverage for the Admin Shell Background and Workspace
-// Proportions pass, revised by the Wallpaper Correction pass, against the
-// REAL application. This suite does NOT re-prove ground already covered
-// exhaustively elsewhere (record-row visuals, editor-form visuals,
-// context-panel contents, sticky record-list mechanics under
-// viewport-height pressure — see admin-record-list-refinement.spec.ts and
-// admin-visual-consistency.spec.ts). It targets only what these passes
-// changed: the scenic background scoped to the admin shell as OUTER
-// framing only, the opaque central application shell
-// (.admin-content-inner) that keeps the artwork out of ordinary workspace
-// gaps, and the three-column workspace's responsive widths. No screenshot
-// or pixel-diff infrastructure, and no assertion on the image's actual
-// rendered pixels — every check is a computed style, bounding box, or
-// HTTP response against the real dev server.
+// Proportions pass, revised by the Wallpaper Correction pass and the Shell
+// Composition Correction pass, against the REAL application. This suite
+// does NOT re-prove ground already covered exhaustively elsewhere
+// (record-row visuals, editor-form visuals, context-panel contents,
+// sticky record-list mechanics under viewport-height pressure — see
+// admin-record-list-refinement.spec.ts and admin-visual-consistency.spec.ts).
+// It targets only what these passes changed: the scenic background scoped
+// to the admin shell as OUTER framing only, the combined application frame
+// (.admin-frame) that keeps sidebar and content directly adjacent with no
+// scenic gap between them and owns the outer gutters, the opaque central
+// application surface (.admin-content-inner) that keeps the artwork out of
+// ordinary workspace gaps, and the three-column workspace's responsive
+// widths. No screenshot or pixel-diff infrastructure, and no assertion on
+// the image's actual rendered pixels — every check is a computed style,
+// bounding box, or HTTP response against the real dev server.
 
 import { expect, test, type Page } from "@playwright/test";
 
@@ -34,6 +36,10 @@ function shell(page: Page) {
   return page.locator(".admin-shell");
 }
 
+function frame(page: Page) {
+  return page.locator(".admin-frame");
+}
+
 function contentInner(page: Page) {
   return page.locator(".admin-content-inner");
 }
@@ -50,6 +56,9 @@ async function columnWidths(page: Page) {
     const rect = (selector: string) =>
       document.querySelector(selector)?.getBoundingClientRect();
     return {
+      frame: rect(".admin-frame"),
+      sidebar: rect(".admin-sidebar"),
+      content: rect(".admin-content"),
       contentInner: rect(".admin-content-inner"),
       recordList: rect(".admin-workspace-record-list"),
       main: rect(".admin-workspace-main"),
@@ -118,7 +127,7 @@ test("the shell fills the viewport with no horizontal document overflow, at ever
   }
 });
 
-test("the workspace grows between 1920 and 2560/3440 without exceeding a deliberate maximum", async ({
+test("the combined frame grows substantially between 1920 and 2560, and reaches its ceiling by 3440 within the approved ~2600-2800px target", async ({
   page,
 }) => {
   await page.goto("/admin/items/iron-ore/edit");
@@ -132,16 +141,21 @@ test("the workspace grows between 1920 and 2560/3440 without exceeding a deliber
   await page.setViewportSize({ width: 3440, height: 900 });
   const at3440 = await columnWidths(page);
 
-  expect(at1920.contentInner).not.toBeNull();
-  expect(at2560.contentInner!.width).toBeGreaterThan(at1920.contentInner!.width);
-  // The workspace has a deliberate ceiling — it does not keep growing
-  // forever on an ultrawide display; 3440 uses (at most) the same content
-  // width as 2560, not more.
-  expect(at3440.contentInner!.width).toBeLessThanOrEqual(at2560.contentInner!.width + 1);
-  // But the workspace is still visibly wider than the pre-pass baseline
-  // (1200px) at both wider breakpoints.
-  expect(at2560.contentInner!.width).toBeGreaterThan(1200);
-  expect(at3440.contentInner!.width).toBeGreaterThan(1200);
+  expect(at1920.frame).not.toBeNull();
+  // Substantial growth from 1920 to 2560 — the frame is still climbing
+  // toward its ceiling here, not already capped.
+  expect(at2560.frame!.width).toBeGreaterThan(at1920.frame!.width + 300);
+  // The frame still grows a bit further from 2560 to 3440 (it only meets
+  // its ceiling at the widest target), but the ceiling keeps it well short
+  // of an unbounded, edge-to-edge sprawl.
+  expect(at3440.frame!.width).toBeGreaterThan(at2560.frame!.width);
+  expect(at3440.frame!.width).toBeGreaterThanOrEqual(2600);
+  expect(at3440.frame!.width).toBeLessThanOrEqual(2800);
+
+  // The frame is substantially wider than the pre-frame-correction
+  // content-only shell (1650px) ever reached, at both wider breakpoints.
+  expect(at2560.frame!.width).toBeGreaterThan(1650);
+  expect(at3440.frame!.width).toBeGreaterThan(1650);
 });
 
 test("record-list and context-rail widths stay within their intended ranges, and the editor remains the largest column, across every target width", async ({
@@ -184,19 +198,19 @@ test("all three columns fit at 1920 with no horizontal overflow", async ({
   await noHorizontalOverflow(page);
 });
 
-test("more edge area outside the workspace is available for scenery at 3440 than at 1920", async ({
+test("more edge area outside the combined frame is available for scenery at 3440 than at 1920", async ({
   page,
 }) => {
   await page.goto("/admin/items/iron-ore/edit");
 
   await page.setViewportSize({ width: 1920, height: 900 });
   const edge1920 = await page.evaluate(
-    () => window.innerWidth - (document.querySelector(".admin-content-inner")?.getBoundingClientRect().width ?? 0)
+    () => window.innerWidth - (document.querySelector(".admin-frame")?.getBoundingClientRect().width ?? 0)
   );
 
   await page.setViewportSize({ width: 3440, height: 900 });
   const edge3440 = await page.evaluate(
-    () => window.innerWidth - (document.querySelector(".admin-content-inner")?.getBoundingClientRect().width ?? 0)
+    () => window.innerWidth - (document.querySelector(".admin-frame")?.getBoundingClientRect().width ?? 0)
   );
 
   expect(edge3440).toBeGreaterThan(edge1920);
@@ -218,6 +232,71 @@ test("the editor surface and context panels stay fully opaque over the scenic ba
 
   expectOpaqueColor(surfaceColor);
   expectOpaqueColor(panelColor);
+});
+
+test("the sidebar and admin content sit directly adjacent with zero gap between them, and both live inside one shared .admin-frame", async ({
+  page,
+}) => {
+  // Root-cause regression guard for the detached-sidebar bug: the sidebar
+  // used to be a direct .admin-shell child, so it sat flush at the true
+  // viewport edge while .admin-content-inner centered ITSELF independently
+  // in the narrower remainder beside it, opening a scenic gap between the
+  // two. Checked at every target width, not just one, since the old bug
+  // only appeared once the viewport was wide enough for that independent
+  // centering to drift.
+  for (const width of [1440, 1920, 2560, 3440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/admin");
+
+    const widths = await columnWidths(page);
+    expect(widths.sidebar).not.toBeNull();
+    expect(widths.content).not.toBeNull();
+    expect(widths.content!.x - widths.sidebar!.right).toBe(0);
+
+    // Both are DOM descendants of the same .admin-frame — not simply
+    // adjacent by coincidence, but structurally grouped as one unit.
+    const bothInsideOneFrame = await page.evaluate(() => {
+      const frameEl = document.querySelector(".admin-frame");
+      const sidebarEl = document.querySelector(".admin-sidebar");
+      const contentEl = document.querySelector(".admin-content");
+      return Boolean(
+        frameEl && sidebarEl && contentEl &&
+        frameEl.contains(sidebarEl) && frameEl.contains(contentEl)
+      );
+    });
+    expect(bothInsideOneFrame).toBe(true);
+  }
+});
+
+test("the combined frame is horizontally centered with approximately balanced left and right scenic gutters, at every target width", async ({
+  page,
+}) => {
+  await page.goto("/admin/items/iron-ore/edit");
+
+  for (const width of [1440, 1920, 2560, 3440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const box = await frame(page).boundingBox();
+    expect(box).not.toBeNull();
+
+    const leftGutter = box!.x;
+    const rightGutter = width - (box!.x + box!.width);
+    // A tiny tolerance for the sub-pixel rounding a centered, fractional
+    // clamp() value can produce — never a meaningfully lopsided frame.
+    expect(Math.abs(leftGutter - rightGutter)).toBeLessThanOrEqual(1);
+  }
+});
+
+test("Game Versions (no AdminWorkspace at all) still renders inside the same combined frame, with sidebar and content adjacent", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 3440, height: 900 });
+  await page.goto("/admin/settings/game-versions");
+
+  const widths = await columnWidths(page);
+  expect(widths.sidebar).not.toBeNull();
+  expect(widths.content).not.toBeNull();
+  expect(widths.content!.x - widths.sidebar!.right).toBe(0);
+  await noHorizontalOverflow(page);
 });
 
 test("the central content-inner shell itself is opaque and does not render the scenic image — the artwork stays on the outer .admin-shell only", async ({
@@ -277,19 +356,19 @@ test("Dashboard: the gaps between summary cards and the empty space below Quick 
   expect(inner!.height).toBeGreaterThanOrEqual(viewportHeight - 1);
 });
 
-test("the central shell is narrower than the full viewport at ultrawide sizes, and the visible outer gutter widens as the viewport widens", async ({
+test("the combined frame is narrower than the full viewport at ultrawide sizes, and the visible outer gutter widens as the viewport widens", async ({
   page,
 }) => {
   await page.goto("/admin/items/iron-ore/edit");
 
   const gutterWidth = async (viewportWidth: number) => {
     await page.setViewportSize({ width: viewportWidth, height: 900 });
-    const inner = await contentInner(page).boundingBox();
-    expect(inner).not.toBeNull();
+    const box = await frame(page).boundingBox();
+    expect(box).not.toBeNull();
     // Narrower than the full viewport — the artwork has real room to
-    // show either side of it.
-    expect(inner!.width).toBeLessThan(viewportWidth);
-    return viewportWidth - inner!.width;
+    // show either side of the WHOLE application (sidebar included).
+    expect(box!.width).toBeLessThan(viewportWidth);
+    return viewportWidth - box!.width;
   };
 
   const gutter1920 = await gutterWidth(1920);
