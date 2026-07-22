@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,14 @@ export default async function AdminItemsPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const successMessage = success ? successMessages[success] ?? null : null;
 
+  // Distinguishes "no items exist at all" from "items exist, none
+  // selected" for the landing state's own copy — a cheap, read-only
+  // count, independent of ItemWorkspace's own (possibly filtered) list
+  // query. Skipped while a search is active: a filtered zero-result view
+  // is RecordList's own "no matches" state, not this one.
+  const totalItemCount = q ? null : await prisma.item.count();
+  const hasNoItems = totalItemCount === 0;
+
   // The workspace landing state: the searchable record list beside a
   // restrained guidance region — the create form lives on
   // /admin/items/new since Slice 9B.4.
@@ -67,10 +76,27 @@ export default async function AdminItemsPage({
         </>
       }
     >
-      <EmptyState
-        title="Select an item"
-        description="Choose an item from the list to edit its details, images, sources, and verification — or use “+ New item” to create one."
-      />
+      {hasNoItems ? (
+        <EmptyState
+          title="No items yet"
+          description="Create the first item to start building out the wiki's item reference data."
+          action={
+            <a href="/admin/items/new" className="btn btn-primary">
+              Create Item
+            </a>
+          }
+        />
+      ) : (
+        <EmptyState
+          title="Select an item"
+          description="Choose an item from the list to edit its details, images, sources, and verification — or create a new one."
+          action={
+            <a href="/admin/items/new" className="btn btn-primary">
+              Create Item
+            </a>
+          }
+        />
+      )}
     </ItemWorkspace>
   );
 }

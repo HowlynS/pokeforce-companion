@@ -141,6 +141,7 @@ export default async function LocationSourcesPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Location"
             title={location.name}
             subtitle={location.slug}
             backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}

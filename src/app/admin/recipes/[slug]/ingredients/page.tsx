@@ -101,6 +101,7 @@ export default async function RecipeIngredientsPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Recipe"
             title={recipe.name}
             subtitle={recipe.slug}
             backHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
@@ -108,7 +109,7 @@ export default async function RecipeIngredientsPage({
             actions={
               <a
                 href={recipeDeleteHref(recipe.slug, query)}
-                className="link-danger"
+                className="btn btn-compact btn-danger-ghost"
               >
                 Delete Recipe
               </a>

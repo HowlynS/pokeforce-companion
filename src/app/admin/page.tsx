@@ -1,6 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
-import { ContentGrid } from "@/components/ui/content-grid";
 import { ContextPanel } from "@/components/admin/context-panel";
 import { DashboardSummaryCard } from "@/components/admin/dashboard-summary-card";
 import { designTokens } from "@/lib/design-tokens";
@@ -67,10 +66,13 @@ export default async function AdminPage() {
             description="A restrained summary of the wiki's current reference data, with direct navigation into each completed workspace."
           />
 
-          <section className="admin-toolbar">
+          {/* Account context, deliberately the quietest element on the
+              page (Dashboard Hierarchy pass) — present but visually
+              subordinate to the summary cards and Quick Actions below
+              it, never competing with them for attention. */}
+          <section className="admin-dashboard-account">
             <p>
-              Signed in as{" "}
-              <strong className="text-accent">{user.email}</strong>
+              Signed in as <strong className="text-accent">{user.email}</strong>
             </p>
 
             <form action={signOutAction}>
@@ -82,7 +84,7 @@ export default async function AdminPage() {
         </>
       }
     >
-      <ContentGrid>
+      <section className="admin-dashboard-grid">
         <DashboardSummaryCard
           title="Items"
           href="/admin/items"
@@ -125,7 +127,7 @@ export default async function AdminPage() {
             "location"
           )}`}
         />
-      </ContentGrid>
+      </section>
 
       {/* Read-only administrative status, never fabricated: the current
           version's own name, or a plain "no current version" status —

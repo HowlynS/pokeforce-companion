@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,12 @@ export default async function AdminCategoriesPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const successMessage = success ? successMessages[success] ?? null : null;
 
+  // Distinguishes "no categories exist at all" from "categories exist,
+  // none selected" for the landing state's own copy (skipped while a
+  // search is active — that is RecordList's own "no matches" state).
+  const totalCategoryCount = q ? null : await prisma.category.count();
+  const hasNoCategories = totalCategoryCount === 0;
+
   // The workspace landing state: the searchable record list beside a
   // restrained guidance region — the create form lives on
   // /admin/categories/new, following the Item/Recipe/Profession
@@ -64,10 +71,27 @@ export default async function AdminCategoriesPage({
         </>
       }
     >
-      <EmptyState
-        title="Select a category"
-        description="Choose a category from the list to edit its details — or use “+ New category” to create one."
-      />
+      {hasNoCategories ? (
+        <EmptyState
+          title="No categories yet"
+          description="Create the first category to start organizing the wiki's items."
+          action={
+            <a href="/admin/categories/new" className="btn btn-primary">
+              Create Category
+            </a>
+          }
+        />
+      ) : (
+        <EmptyState
+          title="Select a category"
+          description="Choose a category from the list to edit its details — or create a new one."
+          action={
+            <a href="/admin/categories/new" className="btn btn-primary">
+              Create Category
+            </a>
+          }
+        />
+      )}
     </CategoryWorkspace>
   );
 }

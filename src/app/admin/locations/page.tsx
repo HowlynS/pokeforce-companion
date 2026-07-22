@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,12 @@ export default async function AdminLocationsPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const successMessage = success ? successMessages[success] ?? null : null;
 
+  // Distinguishes "no locations exist at all" from "locations exist,
+  // none selected" for the landing state's own copy (skipped while a
+  // search is active — that is RecordList's own "no matches" state).
+  const totalLocationCount = q ? null : await prisma.location.count();
+  const hasNoLocations = totalLocationCount === 0;
+
   // The workspace landing state: the searchable record list beside a
   // restrained guidance region — the create form lives on
   // /admin/locations/new, following the Item/Recipe/Profession/Category
@@ -68,10 +75,27 @@ export default async function AdminLocationsPage({
         </>
       }
     >
-      <EmptyState
-        title="Select a location"
-        description="Choose a location from the list to edit its details — or use “+ New location” to create one."
-      />
+      {hasNoLocations ? (
+        <EmptyState
+          title="No locations yet"
+          description="Create the first location to start building out the wiki's route hubs."
+          action={
+            <a href="/admin/locations/new" className="btn btn-primary">
+              Create Location
+            </a>
+          }
+        />
+      ) : (
+        <EmptyState
+          title="Select a location"
+          description="Choose a location from the list to edit its details — or create a new one."
+          action={
+            <a href="/admin/locations/new" className="btn btn-primary">
+              Create Location
+            </a>
+          }
+        />
+      )}
     </LocationWorkspace>
   );
 }

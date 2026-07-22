@@ -73,6 +73,7 @@ export default async function NewCategoryPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Category"
             title="Create Category"
             subtitle="Add a new category to the wiki."
             backHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}

@@ -110,6 +110,7 @@ export default async function NewRecipePage({
       header={
         <>
           <EditorHeader
+            eyebrow="Recipe"
             title="Create Recipe"
             subtitle="Add a new recipe to the wiki."
             backHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}

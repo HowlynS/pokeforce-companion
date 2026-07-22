@@ -94,6 +94,7 @@ export default async function CategoryItemsPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Category"
             title={category.name}
             subtitle={category.slug}
             backHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}

@@ -122,6 +122,7 @@ export default async function EditRecipePage({
       header={
         <>
           <EditorHeader
+            eyebrow="Recipe"
             title={recipe.name}
             subtitle={recipe.slug}
             backHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
@@ -129,7 +130,7 @@ export default async function EditRecipePage({
             actions={
               <a
                 href={recipeDeleteHref(recipe.slug, query)}
-                className="link-danger"
+                className="btn btn-compact btn-danger-ghost"
               >
                 Delete Recipe
               </a>
@@ -180,7 +181,7 @@ export default async function EditRecipePage({
                 </p>
               </div>
             ) : (
-              <span className="form-field-label">No image uploaded.</span>
+              <span className="admin-image-empty">No image uploaded.</span>
             )}
 
             <label className="form-field">

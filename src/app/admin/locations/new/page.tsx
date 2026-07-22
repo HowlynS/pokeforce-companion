@@ -99,6 +99,7 @@ export default async function NewLocationPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Location"
             title="Create Location"
             subtitle="Add a new location to the wiki."
             backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}

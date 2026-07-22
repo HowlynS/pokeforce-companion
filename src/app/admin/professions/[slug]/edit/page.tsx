@@ -103,6 +103,7 @@ export default async function EditProfessionPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Profession"
             title={profession.name}
             subtitle={profession.slug}
             backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
@@ -153,7 +154,7 @@ export default async function EditProfessionPage({
                 </p>
               </div>
             ) : (
-              <span className="form-field-label">No image uploaded.</span>
+              <span className="admin-image-empty">No image uploaded.</span>
             )}
 
             <label className="form-field">

@@ -85,6 +85,7 @@ export default async function RecipeMetadataPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Recipe"
             title={recipe.name}
             subtitle={recipe.slug}
             backHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}

@@ -83,6 +83,7 @@ export default async function ProfessionMetadataPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Profession"
             title={profession.name}
             subtitle={profession.slug}
             backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}

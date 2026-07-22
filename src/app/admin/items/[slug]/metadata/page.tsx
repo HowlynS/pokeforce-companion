@@ -70,6 +70,7 @@ export default async function ItemMetadataPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Item"
             title={item.name}
             subtitle={item.slug}
             backHref={withItemSearchQuery(ITEM_LIST_PATH, query)}

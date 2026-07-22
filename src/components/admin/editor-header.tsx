@@ -9,6 +9,11 @@
 type EditorHeaderProps = {
   /** The record/workspace title — rendered as the page's one h1. */
   title: string;
+  /** Small label above the title identifying the resource type (e.g.
+      "Item", "Recipe") — the first rung of the header hierarchy, kept
+      outside the h1 so the page's accessible heading stays exactly the
+      title, matching PageHeader's own eyebrow/h1 split. */
+  eyebrow?: string;
   /** Optional supporting context under the title (e.g. slug or type). */
   subtitle?: string;
   /** Optional back/context navigation above the title. */
@@ -22,6 +27,7 @@ type EditorHeaderProps = {
 
 export function EditorHeader({
   title,
+  eyebrow,
   subtitle,
   backHref,
   backLabel,
@@ -35,6 +41,8 @@ export function EditorHeader({
           &larr; {backLabel ?? "Back"}
         </a>
       ) : null}
+
+      {eyebrow ? <p className="admin-editor-eyebrow">{eyebrow}</p> : null}
 
       <div className="admin-editor-header-row">
         <div className="admin-editor-header-heading">

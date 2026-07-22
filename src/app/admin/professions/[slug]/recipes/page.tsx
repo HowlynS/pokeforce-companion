@@ -98,6 +98,7 @@ export default async function ProfessionRecipesPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Profession"
             title={profession.name}
             subtitle={profession.slug}
             backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}

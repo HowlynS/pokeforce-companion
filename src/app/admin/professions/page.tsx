@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,12 @@ export default async function AdminProfessionsPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const successMessage = success ? successMessages[success] ?? null : null;
 
+  // Distinguishes "no professions exist at all" from "professions exist,
+  // none selected" for the landing state's own copy (skipped while a
+  // search is active — that is RecordList's own "no matches" state).
+  const totalProfessionCount = q ? null : await prisma.profession.count();
+  const hasNoProfessions = totalProfessionCount === 0;
+
   // The workspace landing state: the searchable record list beside a
   // restrained guidance region — the create form lives on
   // /admin/professions/new (Slice 9D.1, following the Item workspace's
@@ -68,10 +75,27 @@ export default async function AdminProfessionsPage({
         </>
       }
     >
-      <EmptyState
-        title="Select a profession"
-        description="Choose a profession from the list to edit its details — or use “+ New profession” to create one."
-      />
+      {hasNoProfessions ? (
+        <EmptyState
+          title="No professions yet"
+          description="Create the first profession to start building out the wiki's crafting data."
+          action={
+            <a href="/admin/professions/new" className="btn btn-primary">
+              Create Profession
+            </a>
+          }
+        />
+      ) : (
+        <EmptyState
+          title="Select a profession"
+          description="Choose a profession from the list to edit its details — or create a new one."
+          action={
+            <a href="/admin/professions/new" className="btn btn-primary">
+              Create Profession
+            </a>
+          }
+        />
+      )}
     </ProfessionWorkspace>
   );
 }

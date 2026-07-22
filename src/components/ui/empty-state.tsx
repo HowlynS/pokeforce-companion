@@ -3,9 +3,14 @@
 type EmptyStateProps = {
   title: string;
   description: string;
+  /** Optional primary action (e.g. a create link) rendered beneath the
+      description. Omitted by every pre-existing caller — fully
+      backward-compatible, matching the same optional-prop pattern
+      VerificationPanel's own `readOnly` addition already established. */
+  action?: React.ReactNode;
 };
 
-export function EmptyState({ title, description }: EmptyStateProps) {
+export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
     <section
       style={{
@@ -37,6 +42,8 @@ export function EmptyState({ title, description }: EmptyStateProps) {
       >
         {description}
       </p>
+
+      {action ? <div className="empty-state-action">{action}</div> : null}
     </section>
   );
 }

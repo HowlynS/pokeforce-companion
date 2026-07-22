@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,12 @@ export default async function AdminRecipesPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const successMessage = success ? successMessages[success] ?? null : null;
 
+  // Distinguishes "no recipes exist at all" from "recipes exist, none
+  // selected" for the landing state's own copy (skipped while a search
+  // is active — that is RecordList's own "no matches" state instead).
+  const totalRecipeCount = q ? null : await prisma.recipe.count();
+  const hasNoRecipes = totalRecipeCount === 0;
+
   // The workspace landing state: the searchable record list beside a
   // restrained guidance region — the create form lives on
   // /admin/recipes/new (Slice 9C.1, following the Item workspace's
@@ -66,10 +73,27 @@ export default async function AdminRecipesPage({
         </>
       }
     >
-      <EmptyState
-        title="Select a recipe"
-        description="Choose a recipe from the list to edit its details and ingredients — or use “+ New recipe” to create one."
-      />
+      {hasNoRecipes ? (
+        <EmptyState
+          title="No recipes yet"
+          description="Create the first recipe to start building out the wiki's crafting data."
+          action={
+            <a href="/admin/recipes/new" className="btn btn-primary">
+              Create Recipe
+            </a>
+          }
+        />
+      ) : (
+        <EmptyState
+          title="Select a recipe"
+          description="Choose a recipe from the list to edit its details and ingredients — or create a new one."
+          action={
+            <a href="/admin/recipes/new" className="btn btn-primary">
+              Create Recipe
+            </a>
+          }
+        />
+      )}
     </RecipeWorkspace>
   );
 }

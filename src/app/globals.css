@@ -674,8 +674,8 @@ input[type="checkbox"] {
 
 .admin-editor-header {
   display: grid;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 
 .admin-editor-header-back {
@@ -683,10 +683,24 @@ input[type="checkbox"] {
   color: var(--color-text-muted);
   font-size: 14px;
   text-decoration: none;
+  margin-bottom: 4px;
 }
 
 .admin-editor-header-back:hover {
   color: var(--color-accent-soft);
+}
+
+/* Editor Interior Polish pass: the resource-type eyebrow is the first
+   rung of the header hierarchy — quiet gold caps above the h1, the same
+   role PageHeader's own eyebrow plays on list/public pages, so both
+   header styles read as one family. */
+.admin-editor-eyebrow {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .admin-editor-header-row {
@@ -695,6 +709,7 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: space-between;
   gap: 12px 16px;
+  margin-top: 4px;
 }
 
 .admin-editor-header-heading {
@@ -706,17 +721,29 @@ input[type="checkbox"] {
 }
 
 /* Compact editor title tier: denser than the 36px page title, still
-   clearly the page's one h1. */
+   clearly the page's one h1. Long titles wrap onto a second line (the
+   heading row already wraps via flex-wrap) rather than overflowing. */
 .admin-editor-title {
   margin: 0;
   font-size: 28px;
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
+/* The record's stable identifier (slug): styled as a quiet monospace tag
+   rather than ordinary prose, so it reads as data/identity — distinct
+   from the title above it and any descriptive copy — at a glance. */
 .admin-editor-subtitle {
+  display: inline-block;
+  justify-self: start;
   margin: 0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--color-surface-soft);
   color: var(--color-text-muted);
-  font-size: 15px;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .admin-editor-header-actions {
@@ -726,15 +753,36 @@ input[type="checkbox"] {
   gap: 12px;
 }
 
+/* Restrained destructive action placed directly in the header (Recipe's
+   General/Ingredients tabs, whose own ingredient-capacity guard can hide
+   the sticky EditorActions bar — see recipes/[slug]/edit and
+   recipes/[slug]/ingredients): an outlined danger treatment reads as
+   clearly destructive without the visual weight of the solid
+   .btn-danger used in the sticky bar, so it never competes with Save. */
+.btn-danger-ghost {
+  border: 1px solid var(--color-danger);
+  background: transparent;
+  color: var(--color-danger);
+}
+
+.btn-danger-ghost:hover {
+  background: var(--color-danger);
+  color: var(--color-text);
+}
+
 /* Editor tab navigation: link-based tabs under the header, active tab
    marked with the gold accent AND aria-current (one hook for both the
-   visual and the accessible state). */
+   visual and the accessible state). Sits flush under the header's own
+   bottom edge (tightened top margin) so the two read as one attached
+   unit rather than separate floating rows. Width stays content-driven
+   (no stretch/justify-between at wide viewports), so the tab strip never
+   sprawls across a widened editor column on ultrawide displays. */
 .admin-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 24px;
+  margin: 12px 0 24px;
 }
 
 .admin-tab {
@@ -762,7 +810,7 @@ input[type="checkbox"] {
 /* A tab whose destination doesn't exist yet (Slice 9B.5): inert text,
    never a link, so it can never be clicked or focused into a dead page. */
 .admin-tab-disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -797,12 +845,17 @@ input[type="checkbox"] {
   margin-bottom: 24px;
 }
 
-/* Contextual panel/card: the right-column building block for image,
-   verification, and timestamp content. */
+/* Contextual panel/card: the shared supporting-information surface
+   (image, verification, timestamps, and every read-only relationship
+   panel). Deliberately the softer --color-surface-soft rather than
+   .admin-editor-surface's own --color-surface, so the whole "supporting
+   information" tier reads as visually quieter/recessed relative to the
+   primary editable form — one consistent depth cue everywhere
+   ContextPanel is used, not just in the aside rail. */
 .admin-panel {
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: var(--color-surface);
+  background: var(--color-surface-soft);
   padding: 16px;
   display: grid;
   gap: 12px;
@@ -904,12 +957,27 @@ input[type="checkbox"] {
 
 .admin-image-preview {
   display: block;
-  max-width: 128px;
+  max-width: 160px;
   height: auto;
   padding: 8px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
+}
+
+/* "No image uploaded" — an intentional quiet placeholder (dashed border,
+   barely-there fill) rather than plain unstyled text, echoing the same
+   missing-thumbnail language .admin-record-thumb-empty already
+   established for record-list rows. Edit pages only; create pages have
+   nothing to report yet, so they render no empty-image note at all. */
+.admin-image-empty {
+  display: block;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-surface-soft) 60%, transparent);
+  color: var(--color-text-muted);
+  font-size: 14px;
 }
 
 /* Remove-current-image toggle (Slice 9B.5, migrated from the Item edit
@@ -1379,4 +1447,49 @@ input[type="checkbox"] {
   border-top: 1px solid var(--color-border);
   color: var(--color-text-muted);
   font-size: 14px;
+}
+
+/* Dashboard Hierarchy pass: an admin-only grid (never the shared public
+   ContentGrid, so no public page is affected) capped to a sensible
+   maximum width — five count cards stretching to fill the widened
+   .admin-frame at 2560/3440px would each become an oversized, mostly
+   empty box. The cap is well under the frame's own ceiling, so cards
+   keep a comfortable, uniform size on ultrawide instead of sprawling. */
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  max-width: 1200px;
+  margin-bottom: 32px;
+}
+
+/* Signed-in account line: present but deliberately the quietest text on
+   the Dashboard — smaller than every other admin-toolbar use of this
+   class, muted rather than the page's text color, right-aligned against
+   the Sign out control it belongs with. Stays inside the header region
+   (never moved into .admin-workspace-main), preserving the existing
+   "Dashboard's main content area contains no form" invariant. */
+.admin-dashboard-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 16px;
+  margin: 0 0 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.admin-dashboard-account p {
+  margin: 0;
+}
+
+/* The landing/no-selection empty state's own primary create action
+   (Empty Workspace States pass): centered beneath the description,
+   using the existing button system — never a second, differently
+   styled action. */
+.empty-state-action {
+  margin-top: 20px;
 }

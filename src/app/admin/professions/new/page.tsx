@@ -84,6 +84,7 @@ export default async function NewProfessionPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Profession"
             title="Create Profession"
             subtitle="Add a new profession to the wiki."
             backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}

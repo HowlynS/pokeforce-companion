@@ -108,6 +108,7 @@ export default async function EditItemPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Item"
             title={item.name}
             subtitle={item.slug}
             backHref={withItemSearchQuery("/admin/items", query)}
@@ -158,7 +159,7 @@ export default async function EditItemPage({
                 </p>
               </div>
             ) : (
-              <span className="form-field-label">No image uploaded.</span>
+              <span className="admin-image-empty">No image uploaded.</span>
             )}
 
             <label className="form-field">

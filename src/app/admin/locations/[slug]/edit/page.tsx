@@ -112,6 +112,7 @@ export default async function EditLocationPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Location"
             title={location.name}
             subtitle={location.slug}
             backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
@@ -162,7 +163,7 @@ export default async function EditLocationPage({
                 </p>
               </div>
             ) : (
-              <span className="form-field-label">No image uploaded.</span>
+              <span className="admin-image-empty">No image uploaded.</span>
             )}
 
             <label className="form-field">

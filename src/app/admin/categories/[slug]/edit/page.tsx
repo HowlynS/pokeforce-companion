@@ -87,6 +87,7 @@ export default async function EditCategoryPage({
       header={
         <>
           <EditorHeader
+            eyebrow="Category"
             title={category.name}
             subtitle={category.slug}
             backHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
@@ -137,7 +138,7 @@ export default async function EditCategoryPage({
                 </p>
               </div>
             ) : (
-              <span className="form-field-label">No image uploaded.</span>
+              <span className="admin-image-empty">No image uploaded.</span>
             )}
 
             <label className="form-field">

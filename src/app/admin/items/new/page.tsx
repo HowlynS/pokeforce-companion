@@ -84,6 +84,7 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
       header={
         <>
           <EditorHeader
+            eyebrow="Item"
             title="Create item"
             subtitle="Add a new item to the wiki."
             backHref={withItemSearchQuery(ITEM_LIST_PATH, query)}

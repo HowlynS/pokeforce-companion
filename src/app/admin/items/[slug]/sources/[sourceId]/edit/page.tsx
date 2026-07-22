@@ -99,6 +99,7 @@ export default async function EditAcquisitionSourcePage({
       header={
         <>
           <EditorHeader
+            eyebrow="Acquisition Source"
             title="Edit Acquisition Source"
             subtitle={item.name}
             backHref={itemSourcesHref(item.slug, query)}
