@@ -82,7 +82,9 @@ export default async function ProfessionRecipesPage({
     notFound();
   }
 
-  const tabs = professionEditorTabs(profession.slug, query, "recipes");
+  const tabs = professionEditorTabs(profession.slug, query, "recipes", {
+    recipes: profession.recipes.length,
+  });
   const hasRecipes = profession.recipes.length > 0;
 
   // The Recipes tab (Slice 9D.3): read-only, navigational content inside

@@ -106,6 +106,29 @@ test("opening the Used in Recipes tab directly shows both relationship direction
     tabNav(page).getByRole("link", { name: "Used in Recipes", exact: true })
   ).toHaveAttribute("aria-current", "page");
 
+  // Relationship-count badge (Phase B sub-slice): the active Used in
+  // Recipes tab still shows its own count — 2 produced (the plain
+  // producing recipe plus the one with metadata) + 1 ingredient
+  // reference = 3, the total across BOTH relationship directions, never
+  // one direction alone. Acquisition Sources has no sources on this
+  // fixture, so its badge renders the visible digit 0, not omitted. The
+  // badge is a purely visual, aria-hidden pill: it must never alter the
+  // tab's own accessible name, so the exact-name role query above still
+  // finds the tab by its plain label alone. General never carries a
+  // badge at all.
+  await expect(
+    tabNav(page).getByRole("link", { name: "Used in Recipes", exact: true })
+  ).toContainText("3");
+  await expect(
+    tabNav(page).getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toContainText("0");
+  await expect(
+    tabNav(page).getByRole("link", { name: "General", exact: true })
+  ).not.toContainText(/[0-9]/);
+  await expect(
+    page.locator(".admin-tab-badge").first()
+  ).toHaveAttribute("aria-hidden", "true");
+
   // Used as an ingredient in: recipe name (linking to the Recipe admin
   // edit route), quantity, and the resulting item name. Profession and
   // required level are both absent on this fixture, so the Recipe cell
@@ -304,6 +327,31 @@ test("General and Acquisition Sources remain real links from the Used in Recipes
   // is a real link; none is a disabled placeholder.
   await expect(tabNav(page).getByRole("link")).toHaveCount(3);
   await expect(tabNav(page).locator('[aria-disabled="true"]')).toHaveCount(0);
+
+  // This item has neither an Acquisition Source nor a Recipe relationship:
+  // both relationship-tab badges still render the visible digit 0 (never
+  // omitted), while General carries no badge at all.
+  await expect(
+    tabNav(page).getByRole("link", { name: "Used in Recipes", exact: true })
+  ).toContainText("0");
+  await expect(
+    tabNav(page).getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toContainText("0");
+  await expect(
+    tabNav(page).getByRole("link", { name: "General", exact: true })
+  ).not.toContainText(/[0-9]/);
+
+  // The badge is never an independent focus target: focusing the General
+  // link and pressing Tab moves directly to the next TAB link, never to
+  // the badge span in between — exactly 3 focusable elements in this nav,
+  // matching the plain link count with no badges at all.
+  await tabNav(page)
+    .getByRole("link", { name: "General", exact: true })
+    .focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    tabNav(page).getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toBeFocused();
 
   await tabNav(page)
     .getByRole("link", { name: "General", exact: true })

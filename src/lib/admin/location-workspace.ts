@@ -131,7 +131,34 @@ export type LocationEditorTab = {
   href: string;
   active: boolean;
   disabled?: boolean;
+  count?: number;
 };
+
+/** Relationship-count badges for the Location tab strip (Phase B
+    sub-slice). `hierarchy` follows the rule
+    `hierarchyRelationshipCount` below: direct children plus (if present)
+    the location's own parent, since the Hierarchy tab's own view manages
+    both relationships together. `acquisitionSources` is the number of
+    linked Acquisition Sources, exactly what that tab itself lists. */
+export type LocationEditorTabCounts = {
+  hierarchy?: number;
+  acquisitionSources?: number;
+};
+
+/**
+ * The Hierarchy tab's own relationship count (Phase B sub-slice):
+ * direct children (never a recursive descendant count, matching the
+ * tab's own "direct children only" rule) PLUS one more if the location
+ * has a parent — the Hierarchy tab is the ONE place that manages both
+ * relationships (the parent picker AND the read-only children list), so
+ * its badge reflects the total of both rather than either alone.
+ */
+export function hierarchyRelationshipCount(location: {
+  parentId: string | null;
+  childrenCount: number;
+}): number {
+  return location.childrenCount + (location.parentId ? 1 : 0);
+}
 
 /**
  * The Location editor's tab strip, shared by every route inside the
@@ -145,7 +172,8 @@ export type LocationEditorTab = {
 export function locationEditorTabs(
   slug: string,
   query: string,
-  active: LocationEditorTabKey
+  active: LocationEditorTabKey,
+  counts?: LocationEditorTabCounts
 ): LocationEditorTab[] {
   return [
     {
@@ -157,11 +185,13 @@ export function locationEditorTabs(
       label: "Hierarchy",
       href: locationHierarchyHref(slug, query),
       active: active === "hierarchy",
+      count: counts?.hierarchy,
     },
     {
       label: "Acquisition Sources",
       href: locationSourcesHref(slug, query),
       active: active === "sources",
+      count: counts?.acquisitionSources,
     },
   ];
 }

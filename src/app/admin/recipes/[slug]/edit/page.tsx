@@ -85,11 +85,17 @@ export default async function EditRecipePage({
   const [recipe, items, professions] = await Promise.all([
     prisma.recipe.findUnique({
       where: { slug },
-      // Admin-only visibility of the verification stamp: the related Game
-      // Version's name is shown in the aside's VerificationPanel below.
-      // No ingredients include — General never touches or displays them
-      // (Slice 9C.3 moved that to its own Ingredients tab/route).
-      include: { verifiedGameVersion: true },
+      include: {
+        // Admin-only visibility of the verification stamp: the related
+        // Game Version's name is shown in the aside's VerificationPanel
+        // below.
+        verifiedGameVersion: true,
+        // Count only — feeds the Ingredients tab's own badge. No
+        // ingredients include — General never touches or displays the
+        // rows themselves (Slice 9C.3 moved that to its own Ingredients
+        // tab/route).
+        _count: { select: { ingredients: true } },
+      },
     }),
     prisma.item.findMany({ orderBy: { name: "asc" } }),
     prisma.profession.findMany({ orderBy: { name: "asc" } }),
@@ -108,7 +114,9 @@ export default async function EditRecipePage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  const tabs = recipeEditorTabs(recipe.slug, query, "general");
+  const tabs = recipeEditorTabs(recipe.slug, query, "general", {
+    ingredients: recipe._count.ingredients,
+  });
 
   // The General edit route inside the Recipe workspace (Slice 9C.3): the
   // record list marks this recipe selected and keeps the active search

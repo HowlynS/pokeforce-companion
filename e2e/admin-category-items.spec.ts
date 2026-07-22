@@ -116,6 +116,17 @@ test("opening the Items tab directly shows the linked items inside the Category 
     tabNav(page).getByRole("link", { name: "Items", exact: true })
   ).toHaveAttribute("aria-current", "page");
 
+  // Relationship-count badge (Phase B sub-slice): the active Items tab
+  // shows its own count (2 linked items), while General carries no badge
+  // at all. The badge is aria-hidden, so the exact-name role query above
+  // keeps matching the tab by its plain label alone.
+  await expect(
+    tabNav(page).getByRole("link", { name: "Items", exact: true })
+  ).toContainText("2");
+  await expect(
+    tabNav(page).getByRole("link", { name: "General", exact: true })
+  ).not.toContainText(/[0-9]/);
+
   const table = page.getByRole("table");
   await expect(table).toBeVisible();
   const rows = table.getByRole("row");
@@ -276,6 +287,12 @@ test("a category with no linked item shows a valid empty state", async ({
     page.getByText("No items use this category yet")
   ).toBeVisible();
   await expect(page.getByRole("table")).toHaveCount(0);
+
+  // Relationship-count badge: zero linked items still renders the
+  // visible digit 0 on the Items tab, never omitted.
+  await expect(
+    tabNav(page).getByRole("link", { name: "Items", exact: true })
+  ).toContainText("0");
 });
 
 test("General remains a real link from the Items tab, and no Category tab is disabled", async ({

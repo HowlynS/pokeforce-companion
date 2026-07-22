@@ -66,11 +66,15 @@ export default async function EditProfessionPage({
 
   const profession = await prisma.profession.findUnique({
     where: { slug },
-    // Admin-only visibility of the verification stamp: the related Game
-    // Version's name is shown in the aside's VerificationPanel below. No
-    // recipes include — General never touches or displays that relation
-    // (a Recipes relationship tab is a later slice).
-    include: { verifiedGameVersion: true },
+    include: {
+      // Admin-only visibility of the verification stamp: the related
+      // Game Version's name is shown in the aside's VerificationPanel
+      // below.
+      verifiedGameVersion: true,
+      // Count only — feeds the Recipes tab's own badge. No recipes
+      // include — General never touches or displays the rows themselves.
+      _count: { select: { recipes: true } },
+    },
   });
 
   if (!profession) {
@@ -86,7 +90,9 @@ export default async function EditProfessionPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  const tabs = professionEditorTabs(profession.slug, query, "general");
+  const tabs = professionEditorTabs(profession.slug, query, "general", {
+    recipes: profession._count.recipes,
+  });
 
   // The General edit route inside the Profession workspace (Slice 9D.1),
   // now composed from the shared editor primitives (Slice 9D.2): the

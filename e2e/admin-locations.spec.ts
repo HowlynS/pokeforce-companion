@@ -313,7 +313,7 @@ test("Location editor: create shows only General with its own parent selector; e
     editTabNav.getByRole("link", { name: "Hierarchy", exact: true })
   ).not.toHaveAttribute("aria-current", "page");
   await expect(
-    editTabNav.getByText("Hierarchy", { exact: true })
+    editTabNav.getByRole("link", { name: "Hierarchy", exact: true })
   ).not.toHaveAttribute("aria-disabled", "true");
   await expect(
     editTabNav.getByRole("link", {
@@ -322,7 +322,10 @@ test("Location editor: create shows only General with its own parent selector; e
     })
   ).not.toHaveAttribute("aria-current", "page");
   await expect(
-    editTabNav.getByText("Acquisition Sources", { exact: true })
+    editTabNav.getByRole("link", {
+      name: "Acquisition Sources",
+      exact: true,
+    })
   ).not.toHaveAttribute("aria-disabled", "true");
   await expect(editTabNav.getByRole("link")).toHaveCount(3);
   await expect(editTabNav.getByText("Metadata")).toHaveCount(0);
@@ -759,6 +762,14 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await expect(
     parentSelect.locator("option", { hasText: SUBJECT.name })
   ).toHaveCount(0);
+  // Relationship-count badge (Phase B sub-slice): direct children + 1 if a
+  // parent exists. The subject has a parent and no children of its own:
+  // 0 children + 1 = 1.
+  await expect(
+    page
+      .getByRole("navigation", { name: "Location editor sections" })
+      .getByRole("link", { name: "Hierarchy", exact: true })
+  ).toContainText("1");
 
   await page.goto(`/admin/locations/${PARENT_A.slug}/hierarchy`);
   await expect(
@@ -768,6 +779,13 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
     page.getByRole("cell", { name: SUBJECT.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText("Dungeon", { exact: true })).toBeVisible();
+  // Parent A has one direct child (the subject) and no parent of its own:
+  // 1 child + 0 = 1.
+  await expect(
+    page
+      .getByRole("navigation", { name: "Location editor sections" })
+      .getByRole("link", { name: "Hierarchy", exact: true })
+  ).toContainText("1");
 
   // --- Reassign to Parent B: only parentId changes ------------------------
   await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
@@ -782,10 +800,24 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   // Parent A no longer lists the subject as a sub-location; Parent B does.
   await page.goto(`/admin/locations/${PARENT_A.slug}/hierarchy`);
   await expect(page.getByText("No sub-locations yet")).toBeVisible();
+  // Parent A now has zero children and no parent of its own: 0 + 0 = 0,
+  // rendered as the visible digit 0, never omitted.
+  await expect(
+    page
+      .getByRole("navigation", { name: "Location editor sections" })
+      .getByRole("link", { name: "Hierarchy", exact: true })
+  ).toContainText("0");
   await page.goto(`/admin/locations/${PARENT_B.slug}/hierarchy`);
   await expect(
     page.getByRole("cell", { name: SUBJECT.name, exact: true })
   ).toBeVisible();
+  // Parent B now has one direct child (the subject) and no parent of its
+  // own: 1 child + 0 = 1.
+  await expect(
+    page
+      .getByRole("navigation", { name: "Location editor sections" })
+      .getByRole("link", { name: "Hierarchy", exact: true })
+  ).toContainText("1");
 
   // General fields, image state, and the verification stamp are all
   // exactly as they were — a Hierarchy save touches nothing else.

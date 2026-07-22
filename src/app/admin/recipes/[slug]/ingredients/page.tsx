@@ -79,7 +79,9 @@ export default async function RecipeIngredientsPage({
     (_, index) => index + 1
   );
 
-  const tabs = recipeEditorTabs(recipe.slug, query, "ingredients");
+  const tabs = recipeEditorTabs(recipe.slug, query, "ingredients", {
+    ingredients: recipe.ingredients.length,
+  });
 
   // The Ingredients tab (Slice 9C.3): the recipe's ingredient rows,
   // edited independently of its other fields via updateRecipeIngredientsAction

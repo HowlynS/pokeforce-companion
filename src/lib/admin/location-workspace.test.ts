@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   LOCATION_CREATE_PATH,
   LOCATION_LIST_PATH,
+  hierarchyRelationshipCount,
   locationDeleteHref,
   locationEditHref,
   locationEditorTabs,
@@ -158,6 +159,60 @@ describe("locationEditorTabs", () => {
       expect(tabs.every((tab) => !tab.disabled)).toBe(true);
       expect(tabs.every((tab) => tab.href !== "")).toBe(true);
     }
+  });
+
+  describe("relationship-count badges", () => {
+    it("omits count entirely when no counts are supplied", () => {
+      const tabs = locationEditorTabs("sunken-cave", "", "general");
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBeUndefined();
+      expect(tabs[2].count).toBeUndefined();
+    });
+
+    it("threads Hierarchy and Acquisition Sources counts onto their own tabs only, never General", () => {
+      const tabs = locationEditorTabs("sunken-cave", "", "general", {
+        hierarchy: 2,
+        acquisitionSources: 5,
+      });
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBe(2);
+      expect(tabs[2].count).toBe(5);
+    });
+
+    it("preserves an explicit zero count rather than treating it as absent", () => {
+      const tabs = locationEditorTabs("sunken-cave", "", "hierarchy", {
+        hierarchy: 0,
+        acquisitionSources: 0,
+      });
+
+      expect(tabs[1].count).toBe(0);
+      expect(tabs[2].count).toBe(0);
+    });
+  });
+});
+
+describe("hierarchyRelationshipCount", () => {
+  it("counts direct children only when there is no parent", () => {
+    expect(
+      hierarchyRelationshipCount({ parentId: null, childrenCount: 3 })
+    ).toBe(3);
+  });
+
+  it("adds exactly one for an existing parent, regardless of child count", () => {
+    expect(
+      hierarchyRelationshipCount({ parentId: "loc_1", childrenCount: 0 })
+    ).toBe(1);
+    expect(
+      hierarchyRelationshipCount({ parentId: "loc_1", childrenCount: 4 })
+    ).toBe(5);
+  });
+
+  it("is zero for a root location with no children", () => {
+    expect(
+      hierarchyRelationshipCount({ parentId: null, childrenCount: 0 })
+    ).toBe(0);
   });
 });
 

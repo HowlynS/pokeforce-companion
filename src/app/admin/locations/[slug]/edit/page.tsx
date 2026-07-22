@@ -12,6 +12,7 @@ import { getImagePublicUrl } from "@/lib/storage/images";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
+  hierarchyRelationshipCount,
   locationDeleteHref,
   locationEditorTabs,
   normalizeLocationSearchQuery,
@@ -72,12 +73,18 @@ export default async function EditLocationPage({
 
   // Admin-only visibility of the verification stamp: the related Game
   // Version's name is shown in the aside's VerificationPanel below. No
-  // parent, children, or acquisitionSources include — General never
-  // touches or displays those relations (parent assignment moved to the
-  // Hierarchy tab in Slice 9F.3; Acquisition Sources is a later slice).
+  // parent or children include — General never touches or displays
+  // those relations (parent assignment moved to the Hierarchy tab in
+  // Slice 9F.3). Counts only for children/acquisitionSources — they feed
+  // the tab strip's own relationship-count badges without loading either
+  // relation's actual rows; parentId is already a plain column on the
+  // base result, needing no include of its own.
   const location = await prisma.location.findUnique({
     where: { slug },
-    include: { verifiedGameVersion: true },
+    include: {
+      verifiedGameVersion: true,
+      _count: { select: { children: true, acquisitionSources: true } },
+    },
   });
 
   if (!location) {
@@ -93,7 +100,13 @@ export default async function EditLocationPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  const tabs = locationEditorTabs(location.slug, query, "general");
+  const tabs = locationEditorTabs(location.slug, query, "general", {
+    hierarchy: hierarchyRelationshipCount({
+      parentId: location.parentId,
+      childrenCount: location._count.children,
+    }),
+    acquisitionSources: location._count.acquisitionSources,
+  });
 
   // The General edit route inside the Location workspace (Slice 9F.1),
   // composed from the shared editor primitives (Slice 9F.2). Slice 9F.3

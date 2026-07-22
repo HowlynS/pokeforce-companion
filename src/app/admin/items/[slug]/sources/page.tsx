@@ -68,6 +68,11 @@ export default async function AdminItemSourcesPage({
           include: { location: true, profession: true },
           orderBy: { createdAt: "asc" },
         },
+        // Count only — feeds the Used in Recipes tab's own badge; this
+        // page never needs the actual Recipe rows themselves.
+        _count: {
+          select: { recipesProduced: true, recipeIngredients: true },
+        },
       },
     }),
     prisma.location.findMany({ orderBy: { name: "asc" } }),
@@ -84,7 +89,11 @@ export default async function AdminItemSourcesPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  const tabs = itemEditorTabs(item.slug, query, "sources");
+  const tabs = itemEditorTabs(item.slug, query, "sources", {
+    acquisitionSources: item.acquisitionSources.length,
+    usedInRecipes:
+      item._count.recipesProduced + item._count.recipeIngredients,
+  });
 
   // The Acquisition Sources tab landing page (Slice 9B.6): the tab's own
   // list + quick-add page, integrated into the Item workspace exactly

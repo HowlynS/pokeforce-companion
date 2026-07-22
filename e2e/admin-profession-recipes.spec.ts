@@ -116,6 +116,17 @@ test("opening the Recipes tab directly shows the linked recipes inside the Profe
     tabNav(page).getByRole("link", { name: "Recipes", exact: true })
   ).toHaveAttribute("aria-current", "page");
 
+  // Relationship-count badge (Phase B sub-slice): the active Recipes tab
+  // shows its own count (2 linked recipes), while General carries no
+  // badge at all. The badge is aria-hidden, so the exact-name role query
+  // above keeps matching the tab by its plain label alone.
+  await expect(
+    tabNav(page).getByRole("link", { name: "Recipes", exact: true })
+  ).toContainText("2");
+  await expect(
+    tabNav(page).getByRole("link", { name: "General", exact: true })
+  ).not.toContainText(/[0-9]/);
+
   const table = page.getByRole("table");
   await expect(table).toBeVisible();
   const rows = table.getByRole("row");
@@ -292,6 +303,12 @@ test("a profession with no linked recipe shows a valid empty state", async ({
     page.getByText("No recipes use this profession yet")
   ).toBeVisible();
   await expect(page.getByRole("table")).toHaveCount(0);
+
+  // Relationship-count badge: zero linked recipes still renders the
+  // visible digit 0 on the Recipes tab, never omitted.
+  await expect(
+    tabNav(page).getByRole("link", { name: "Recipes", exact: true })
+  ).toContainText("0");
 });
 
 test("General remains a real link from the Recipes tab, and no Profession tab is disabled", async ({

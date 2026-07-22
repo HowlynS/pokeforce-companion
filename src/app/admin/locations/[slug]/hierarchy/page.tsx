@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
+  hierarchyRelationshipCount,
   locationEditorTabs,
   locationHierarchyHref,
   normalizeLocationSearchQuery,
@@ -82,6 +83,9 @@ export default async function LocationHierarchyPage({
       where: { slug },
       include: {
         children: { orderBy: { name: "asc" } },
+        // Count only — feeds the Acquisition Sources tab's own badge;
+        // this page never needs the actual source rows themselves.
+        _count: { select: { acquisitionSources: true } },
       },
     }),
     prisma.location.findMany({ orderBy: { name: "asc" } }),
@@ -100,7 +104,13 @@ export default async function LocationHierarchyPage({
   );
 
   const hasChildren = location.children.length > 0;
-  const tabs = locationEditorTabs(location.slug, query, "hierarchy");
+  const tabs = locationEditorTabs(location.slug, query, "hierarchy", {
+    hierarchy: hierarchyRelationshipCount({
+      parentId: location.parentId,
+      childrenCount: location.children.length,
+    }),
+    acquisitionSources: location._count.acquisitionSources,
+  });
 
   // The Hierarchy tab (Slice 9F.3): parent assignment, moved out of
   // General, plus a read-only view of this location's direct children.

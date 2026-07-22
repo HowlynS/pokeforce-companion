@@ -129,4 +129,30 @@ describe("professionEditorTabs", () => {
       expect(tabs.every((tab) => tab.href !== "")).toBe(true);
     }
   });
+
+  describe("relationship-count badges", () => {
+    it("omits count entirely when no counts are supplied", () => {
+      const tabs = professionEditorTabs("smithing", "", "general");
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBeUndefined();
+    });
+
+    it("threads the recipe count onto the Recipes tab only, never General", () => {
+      const tabs = professionEditorTabs("smithing", "", "general", {
+        recipes: 4,
+      });
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBe(4);
+    });
+
+    it("preserves an explicit zero count rather than treating it as absent", () => {
+      const tabs = professionEditorTabs("smithing", "", "recipes", {
+        recipes: 0,
+      });
+
+      expect(tabs[1].count).toBe(0);
+    });
+  });
 });

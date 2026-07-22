@@ -115,6 +115,161 @@ describe("EditorTabs", () => {
     expect(html.match(/<a /g)).toHaveLength(1);
     expect(html).toMatch(/<span[^>]*aria-disabled="true"[^>]*>Acquisition Sources<\/span>/);
   });
+
+  describe("relationship-count badges", () => {
+    it("renders no badge at all when count is undefined", () => {
+      const html = renderToStaticMarkup(
+        <EditorTabs
+          label="Item editor sections"
+          tabs={[{ label: "General", href: "/admin/items/iron-ore/edit", active: true }]}
+        />
+      );
+
+      expect(html).not.toContain("admin-tab-badge");
+    });
+
+    it("renders a zero count as the visible digit 0, never omitted", () => {
+      const html = renderToStaticMarkup(
+        <EditorTabs
+          label="Item editor sections"
+          tabs={[
+            {
+              label: "Acquisition Sources",
+              href: "/admin/items/iron-ore/sources",
+              active: false,
+              count: 0,
+            },
+          ]}
+        />
+      );
+
+      expect(html).toMatch(/admin-tab-badge[^>]*>0</);
+    });
+
+    it("renders a positive count", () => {
+      const html = renderToStaticMarkup(
+        <EditorTabs
+          label="Item editor sections"
+          tabs={[
+            {
+              label: "Used in Recipes",
+              href: "/admin/items/iron-ore/recipes",
+              active: false,
+              count: 7,
+            },
+          ]}
+        />
+      );
+
+      expect(html).toMatch(/admin-tab-badge[^>]*>7</);
+    });
+
+    it("keeps the active tab's aria-current correct alongside a badge", () => {
+      const html = renderToStaticMarkup(
+        <EditorTabs
+          label="Recipe editor sections"
+          tabs={[
+            { label: "General", href: "/admin/recipes/iron-sword/edit", active: false },
+            {
+              label: "Ingredients",
+              href: "/admin/recipes/iron-sword/ingredients",
+              active: true,
+              count: 2,
+            },
+          ]}
+        />
+      );
+
+      expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+      expect(html).toMatch(
+        /<a [^>]*href="\/admin\/recipes\/iron-sword\/ingredients"[^>]*aria-current="page"[^>]*>/
+      );
+    });
+
+    it("shows a badge on a disabled tab without making it interactive", () => {
+      const html = renderToStaticMarkup(
+        <EditorTabs
+          label="Location editor sections"
+          tabs={[
+            { label: "General", href: "/admin/locations/x/edit", active: true },
+            {
+              label: "Acquisition Sources",
+              href: "",
+              active: false,
+              disabled: true,
+              count: 3,
+            },
+          ]}
+        />
+      );
+
+      expect(html).toMatch(/admin-tab-badge[^>]*>3</);
+      // Still exactly one real <a> (General) — the disabled tab's badge
+      // never becomes or introduces a link/button of its own.
+      expect(html.match(/<a /g)).toHaveLength(1);
+      expect(html.match(/<button/g)).toBeNull();
+    });
+
+    it("never gives the badge its own focus target — no extra anchor, button, or tabindex is introduced", () => {
+      const withoutBadge = renderToStaticMarkup(
+        <EditorTabs
+          label="Item editor sections"
+          tabs={[{ label: "General", href: "/admin/items/iron-ore/edit", active: true }]}
+        />
+      );
+      const withBadge = renderToStaticMarkup(
+        <EditorTabs
+          label="Item editor sections"
+          tabs={[
+            {
+              label: "General",
+              href: "/admin/items/iron-ore/edit",
+              active: true,
+              count: 5,
+            },
+          ]}
+        />
+      );
+
+      // Adding a count changes nothing about the number of focusable
+      // elements — same one <a>, and the badge itself carries no href,
+      // tabindex, button, or interactive role.
+      expect(withoutBadge.match(/<a /g)?.length).toBe(
+        withBadge.match(/<a /g)?.length
+      );
+      expect(withBadge).not.toContain("tabindex");
+      expect(withBadge).not.toMatch(/admin-tab-badge[^>]*href=/);
+    });
+
+    it("hides the badge from assistive tech entirely, leaving the tab's own accessible name exactly the plain label", () => {
+      const html = renderToStaticMarkup(
+        <EditorTabs
+          label="Profession editor sections"
+          tabs={[
+            {
+              label: "Recipes",
+              href: "/admin/professions/smithing/recipes",
+              active: false,
+              count: 4,
+            },
+          ]}
+        />
+      );
+
+      // The visible pill is aria-hidden — a purely visual preview, never
+      // folded into the tab's accessible name (that would silently change
+      // every tab's computed name the instant a count is present, which
+      // broke exact-name role queries across the wider admin E2E suite).
+      expect(html).toMatch(/admin-tab-badge" aria-hidden="true">4</);
+      expect(html).not.toContain("sr-only");
+      expect(html).not.toContain("linked record");
+      // The anchor's own text content is still exactly "Recipes" plus the
+      // aria-hidden badge — no other text node exists to alter its name.
+      expect(html).toMatch(
+        /<a [^>]*>Recipes<span class="admin-tab-badge" aria-hidden="true">4<\/span><\/a>/
+      );
+    });
+  });
 });
 
 describe("ContextPanel", () => {

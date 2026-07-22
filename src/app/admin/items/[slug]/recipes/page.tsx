@@ -87,6 +87,9 @@ export default async function ItemRecipesPage({
         },
         orderBy: { recipe: { name: "asc" } },
       },
+      // Count only — feeds the Acquisition Sources tab's own badge; this
+      // page never needs the actual Acquisition Source rows themselves.
+      _count: { select: { acquisitionSources: true } },
     },
   });
 
@@ -94,7 +97,10 @@ export default async function ItemRecipesPage({
     notFound();
   }
 
-  const tabs = itemEditorTabs(item.slug, query, "recipes");
+  const tabs = itemEditorTabs(item.slug, query, "recipes", {
+    acquisitionSources: item._count.acquisitionSources,
+    usedInRecipes: item.recipesProduced.length + item.recipeIngredients.length,
+  });
   const hasIngredientUsage = item.recipeIngredients.length > 0;
   const hasProducedBy = item.recipesProduced.length > 0;
 

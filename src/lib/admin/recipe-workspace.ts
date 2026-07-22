@@ -77,6 +77,14 @@ export type RecipeEditorTab = {
   href: string;
   active: boolean;
   disabled?: boolean;
+  count?: number;
+};
+
+/** Relationship-count badge for the Recipe tab strip (Phase B
+    sub-slice): the number of RecipeIngredient rows, exactly what the
+    Ingredients tab itself lists. */
+export type RecipeEditorTabCounts = {
+  ingredients?: number;
 };
 
 /** Which Recipe editor tab is active — General (Slice 9C.2) or
@@ -98,7 +106,8 @@ export type RecipeEditorTabKey = "general" | "ingredients";
 export function recipeEditorTabs(
   slug: string,
   query: string,
-  active: RecipeEditorTabKey
+  active: RecipeEditorTabKey,
+  counts?: RecipeEditorTabCounts
 ): RecipeEditorTab[] {
   return [
     {
@@ -110,6 +119,7 @@ export function recipeEditorTabs(
       label: "Ingredients",
       href: recipeIngredientsHref(slug, query),
       active: active === "ingredients",
+      count: counts?.ingredients,
     },
   ];
 }

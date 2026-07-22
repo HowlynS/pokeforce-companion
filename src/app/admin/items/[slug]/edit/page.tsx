@@ -68,9 +68,21 @@ export default async function EditItemPage({
   const [item, categories] = await Promise.all([
     prisma.item.findUnique({
       where: { slug },
-      // Admin-only visibility of the verification stamp: the related Game
-      // Version's name is shown next to the opt-in checkbox below.
-      include: { verifiedGameVersion: true },
+      include: {
+        // Admin-only visibility of the verification stamp: the related
+        // Game Version's name is shown next to the opt-in checkbox below.
+        verifiedGameVersion: true,
+        // Counts only (never the full relation rows) — feeds the tab
+        // strip's own relationship-count badges below; General never
+        // needs the actual Acquisition Source/Recipe rows themselves.
+        _count: {
+          select: {
+            acquisitionSources: true,
+            recipesProduced: true,
+            recipeIngredients: true,
+          },
+        },
+      },
     }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
   ]);
@@ -93,7 +105,11 @@ export default async function EditItemPage({
   // Used in Recipes and Metadata still describe content that doesn't
   // exist yet and render as inert placeholders rather than links to
   // empty pages.
-  const tabs = itemEditorTabs(item.slug, query, "general");
+  const tabs = itemEditorTabs(item.slug, query, "general", {
+    acquisitionSources: item._count.acquisitionSources,
+    usedInRecipes:
+      item._count.recipesProduced + item._count.recipeIngredients,
+  });
 
   // The edit route inside the Item workspace (Slice 9B.4), now composed
   // from the shared editor primitives (Slice 9B.5): the record list marks

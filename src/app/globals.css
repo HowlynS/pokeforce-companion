@@ -1166,7 +1166,8 @@ input[type="checkbox"] {
 }
 
 .admin-tab {
-  display: block;
+  display: flex;
+  align-items: center;
   padding: 10px 14px;
   margin-bottom: -1px;
   color: var(--color-text-muted);
@@ -1190,12 +1191,36 @@ input[type="checkbox"] {
 /* A tab whose destination doesn't exist yet (Slice 9B.5): inert text,
    never a link, so it can never be clicked or focused into a dead page. */
 .admin-tab-disabled {
+  display: flex;
+  align-items: center;
   opacity: 0.4;
   cursor: not-allowed;
 }
 
 .admin-tab-disabled:hover {
   color: var(--color-text-muted);
+}
+
+/* Relationship-count badge (Phase B sub-slice): a small muted pill next
+   to the tab's own label — deliberately NOT the gold/border
+   .admin-status-badge language (that communicates verification state,
+   a different kind of fact), and deliberately no green/red semantic
+   color, since a record count is neutral information, never a
+   pass/fail signal. Fully rounded, compact, and unaffected by the
+   parent tab's own active/disabled color so it reads consistently
+   whether the tab beside it is active, inactive, or disabled. */
+.admin-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  background: var(--color-surface-soft);
+  color: var(--color-accent-soft);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 /* The main editor surface (Admin Editor Surface pass): one cohesive dark

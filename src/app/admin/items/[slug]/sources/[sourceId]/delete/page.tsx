@@ -31,7 +31,20 @@ export default async function DeleteAcquisitionSourcePage({
   const { q } = await searchParams;
   const query = normalizeItemSearchQuery(q);
 
-  const item = await prisma.item.findUnique({ where: { slug } });
+  const item = await prisma.item.findUnique({
+    where: { slug },
+    // Counts only — feed the tab strip's own relationship-count badges;
+    // this page never needs the actual relation rows.
+    include: {
+      _count: {
+        select: {
+          acquisitionSources: true,
+          recipesProduced: true,
+          recipeIngredients: true,
+        },
+      },
+    },
+  });
 
   if (!item) {
     notFound();
@@ -48,7 +61,11 @@ export default async function DeleteAcquisitionSourcePage({
     notFound();
   }
 
-  const tabs = itemEditorTabs(item.slug, query, "sources");
+  const tabs = itemEditorTabs(item.slug, query, "sources", {
+    acquisitionSources: item._count.acquisitionSources,
+    usedInRecipes:
+      item._count.recipesProduced + item._count.recipeIngredients,
+  });
 
   // Inside the Item workspace (Slice 9B.6): the record list marks this
   // item selected and keeps quick switching on the Acquisition Sources

@@ -59,7 +59,12 @@ export default async function EditCategoryPage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const query = normalizeCategorySearchQuery(q);
 
-  const category = await prisma.category.findUnique({ where: { slug } });
+  const category = await prisma.category.findUnique({
+    where: { slug },
+    // Count only — feeds the Items tab's own badge; General never needs
+    // the actual Item rows themselves.
+    include: { _count: { select: { items: true } } },
+  });
 
   if (!category) {
     notFound();
@@ -68,7 +73,9 @@ export default async function EditCategoryPage({
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(category.image);
 
-  const tabs = categoryEditorTabs(category.slug, query, "general");
+  const tabs = categoryEditorTabs(category.slug, query, "general", {
+    items: category._count.items,
+  });
 
   // The General edit route inside the Category workspace, now composed
   // from the shared editor primitives (Slice 9E.2): the record list

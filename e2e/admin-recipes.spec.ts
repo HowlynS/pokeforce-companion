@@ -770,6 +770,15 @@ test("Ingredients editing updates the ingredient rows and leaves General fields 
     })
   ).toBeVisible();
 
+  // Relationship-count badge (Phase B sub-slice): the active Ingredients
+  // tab shows its own count (2 populated rows), and is still findable by
+  // its plain accessible name since the badge is aria-hidden.
+  await expect(
+    page
+      .getByRole("navigation", { name: "Recipe editor sections" })
+      .getByRole("link", { name: "Ingredients", exact: true })
+  ).toContainText("2");
+
   // Ingredient rows prefill in item-name order: Charcoal, then Iron Ore,
   // then three untouched empty rows.
   expect(await selectedOptionLabel(ingredientSelect(page, 0))).toBe("Charcoal");

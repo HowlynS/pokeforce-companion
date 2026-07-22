@@ -97,6 +97,14 @@ export type ProfessionEditorTab = {
   href: string;
   active: boolean;
   disabled?: boolean;
+  count?: number;
+};
+
+/** Relationship-count badge for the Profession tab strip (Phase B
+    sub-slice): the number of linked Recipes, exactly what the Recipes
+    tab itself lists. */
+export type ProfessionEditorTabCounts = {
+  recipes?: number;
 };
 
 /**
@@ -110,7 +118,8 @@ export type ProfessionEditorTab = {
 export function professionEditorTabs(
   slug: string,
   query: string,
-  active: ProfessionEditorTabKey
+  active: ProfessionEditorTabKey,
+  counts?: ProfessionEditorTabCounts
 ): ProfessionEditorTab[] {
   return [
     {
@@ -122,6 +131,7 @@ export function professionEditorTabs(
       label: "Recipes",
       href: professionRecipesHref(slug, query),
       active: active === "recipes",
+      count: counts?.recipes,
     },
   ];
 }

@@ -194,6 +194,20 @@ test("opening the Acquisition Sources tab directly shows the linked sources, gro
     })
   ).toHaveAttribute("aria-current", "page");
 
+  // Relationship-count badge (Phase B sub-slice): the active Acquisition
+  // Sources tab shows its own count (3 linked sources), while General
+  // carries no badge at all. The badge is aria-hidden, so the exact-name
+  // role query above keeps matching the tab by its plain label alone.
+  await expect(
+    tabNav(page).getByRole("link", {
+      name: "Acquisition Sources",
+      exact: true,
+    })
+  ).toContainText("3");
+  await expect(
+    tabNav(page).getByRole("link", { name: "General", exact: true })
+  ).not.toContainText(/[0-9]/);
+
   const table = page.getByRole("table");
   await expect(table).toBeVisible();
   const rows = table.getByRole("row");
@@ -369,6 +383,15 @@ test("a location with no acquisition sources shows a valid empty state", async (
     page.getByText("No acquisition sources reference this location yet")
   ).toBeVisible();
   await expect(page.getByRole("table")).toHaveCount(0);
+
+  // Relationship-count badge: zero linked sources still renders the
+  // visible digit 0 on the Acquisition Sources tab, never omitted.
+  await expect(
+    tabNav(page).getByRole("link", {
+      name: "Acquisition Sources",
+      exact: true,
+    })
+  ).toContainText("0");
 });
 
 test("General and Hierarchy remain real links from the Acquisition Sources tab, and no Location tab is disabled", async ({

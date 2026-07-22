@@ -89,6 +89,14 @@ export type CategoryEditorTab = {
   href: string;
   active: boolean;
   disabled?: boolean;
+  count?: number;
+};
+
+/** Relationship-count badge for the Category tab strip (Phase B
+    sub-slice): the number of linked Items, exactly what the Items tab
+    itself lists. */
+export type CategoryEditorTabCounts = {
+  items?: number;
 };
 
 /**
@@ -102,7 +110,8 @@ export type CategoryEditorTab = {
 export function categoryEditorTabs(
   slug: string,
   query: string,
-  active: CategoryEditorTabKey
+  active: CategoryEditorTabKey,
+  counts?: CategoryEditorTabCounts
 ): CategoryEditorTab[] {
   return [
     {
@@ -114,6 +123,7 @@ export function categoryEditorTabs(
       label: "Items",
       href: categoryItemsHref(slug, query),
       active: active === "items",
+      count: counts?.items,
     },
   ];
 }

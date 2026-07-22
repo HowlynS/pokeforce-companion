@@ -77,7 +77,9 @@ export default async function CategoryItemsPage({
     notFound();
   }
 
-  const tabs = categoryEditorTabs(category.slug, query, "items");
+  const tabs = categoryEditorTabs(category.slug, query, "items", {
+    items: category.items.length,
+  });
   const hasItems = category.items.length > 0;
 
   // The Items tab (Slice 9E.3): read-only, navigational content inside

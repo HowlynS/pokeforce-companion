@@ -129,4 +129,28 @@ describe("categoryEditorTabs", () => {
       expect(tabs.every((tab) => tab.href !== "")).toBe(true);
     }
   });
+
+  describe("relationship-count badges", () => {
+    it("omits count entirely when no counts are supplied", () => {
+      const tabs = categoryEditorTabs("materials", "", "general");
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBeUndefined();
+    });
+
+    it("threads the item count onto the Items tab only, never General", () => {
+      const tabs = categoryEditorTabs("materials", "", "general", {
+        items: 12,
+      });
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBe(12);
+    });
+
+    it("preserves an explicit zero count rather than treating it as absent", () => {
+      const tabs = categoryEditorTabs("materials", "", "items", { items: 0 });
+
+      expect(tabs[1].count).toBe(0);
+    });
+  });
 });

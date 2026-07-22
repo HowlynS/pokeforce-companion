@@ -124,4 +124,30 @@ describe("recipeEditorTabs", () => {
       expect(tabs.every((tab) => tab.href !== "")).toBe(true);
     }
   });
+
+  describe("relationship-count badges", () => {
+    it("omits count entirely when no counts are supplied", () => {
+      const tabs = recipeEditorTabs("iron-sword", "", "general");
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBeUndefined();
+    });
+
+    it("threads the ingredient count onto the Ingredients tab only, never General", () => {
+      const tabs = recipeEditorTabs("iron-sword", "", "general", {
+        ingredients: 5,
+      });
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBe(5);
+    });
+
+    it("preserves an explicit zero count rather than treating it as absent", () => {
+      const tabs = recipeEditorTabs("iron-sword", "", "ingredients", {
+        ingredients: 0,
+      });
+
+      expect(tabs[1].count).toBe(0);
+    });
+  });
 });

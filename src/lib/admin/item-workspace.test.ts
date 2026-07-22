@@ -154,4 +154,35 @@ describe("itemEditorTabs", () => {
       expect(tabs.every((tab) => tab.href !== "")).toBe(true);
     }
   });
+
+  describe("relationship-count badges", () => {
+    it("omits count entirely when no counts are supplied", () => {
+      const tabs = itemEditorTabs("iron-ore", "", "general");
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBeUndefined();
+      expect(tabs[2].count).toBeUndefined();
+    });
+
+    it("threads Acquisition Sources and Used in Recipes counts onto their own tabs only, never General", () => {
+      const tabs = itemEditorTabs("iron-ore", "", "general", {
+        acquisitionSources: 3,
+        usedInRecipes: 7,
+      });
+
+      expect(tabs[0].count).toBeUndefined();
+      expect(tabs[1].count).toBe(3);
+      expect(tabs[2].count).toBe(7);
+    });
+
+    it("preserves an explicit zero count rather than treating it as absent", () => {
+      const tabs = itemEditorTabs("iron-ore", "", "general", {
+        acquisitionSources: 0,
+        usedInRecipes: 0,
+      });
+
+      expect(tabs[1].count).toBe(0);
+      expect(tabs[2].count).toBe(0);
+    });
+  });
 });

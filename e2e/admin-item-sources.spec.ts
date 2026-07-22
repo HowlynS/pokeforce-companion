@@ -176,6 +176,16 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
     sourceRow.getByRole("cell", { name: "No", exact: true })
   ).toBeVisible();
 
+  // Relationship-count badge (Phase B sub-slice): the Acquisition Sources
+  // tab's own badge now reflects the one linked source. The badge is
+  // purely visual (aria-hidden), so the exact-name role query used
+  // throughout this file to locate the tab keeps working unchanged.
+  await expect(
+    page
+      .getByRole("navigation", { name: "Item editor sections" })
+      .getByRole("link", { name: "Acquisition Sources", exact: true })
+  ).toContainText("1");
+
   // --- Edit: change type, link the temporary Location and Profession, ---
   // --- and verify via the opt-in checkbox --------------------------------
   await sourceRow.getByRole("link", { name: "Edit" }).click();

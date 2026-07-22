@@ -100,6 +100,20 @@ export type ItemEditorTab = {
   href: string;
   active: boolean;
   disabled?: boolean;
+  count?: number;
+};
+
+/** Relationship-count badges for the Item tab strip (Phase B sub-slice).
+    `usedInRecipes` is deliberately the TOTAL across both relationship
+    directions the Used in Recipes tab itself shows combined — recipes
+    this item produces PLUS recipes that use it as an ingredient — since
+    that tab's own content is exactly that union, never one direction
+    alone. Both counts are optional so a caller without the data yet
+    (there is none today, but a future thin page could omit it) simply
+    shows no badge rather than a wrong one. */
+export type ItemEditorTabCounts = {
+  acquisitionSources?: number;
+  usedInRecipes?: number;
 };
 
 /**
@@ -113,7 +127,8 @@ export type ItemEditorTab = {
 export function itemEditorTabs(
   slug: string,
   query: string,
-  active: ItemEditorTabKey
+  active: ItemEditorTabKey,
+  counts?: ItemEditorTabCounts
 ): ItemEditorTab[] {
   return [
     {
@@ -125,11 +140,13 @@ export function itemEditorTabs(
       label: "Acquisition Sources",
       href: itemSourcesHref(slug, query),
       active: active === "sources",
+      count: counts?.acquisitionSources,
     },
     {
       label: "Used in Recipes",
       href: itemUsedInRecipesHref(slug, query),
       active: active === "recipes",
+      count: counts?.usedInRecipes,
     },
   ];
 }

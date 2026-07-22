@@ -7,6 +7,7 @@ import { ContextPanel } from "@/components/admin/context-panel";
 import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
+  hierarchyRelationshipCount,
   locationEditorTabs,
   locationSourcesHref,
   normalizeLocationSearchQuery,
@@ -112,6 +113,9 @@ export default async function LocationSourcesPage({
         include: { item: true, profession: true },
         orderBy: { item: { name: "asc" } },
       },
+      // Count only — feeds the Hierarchy tab's own badge; this page
+      // never needs the actual children rows themselves.
+      _count: { select: { children: true } },
     },
   });
 
@@ -123,7 +127,13 @@ export default async function LocationSourcesPage({
     location.acquisitionSources
   );
   const hasSources = sources.length > 0;
-  const tabs = locationEditorTabs(location.slug, query, "sources");
+  const tabs = locationEditorTabs(location.slug, query, "sources", {
+    hierarchy: hierarchyRelationshipCount({
+      parentId: location.parentId,
+      childrenCount: location._count.children,
+    }),
+    acquisitionSources: location.acquisitionSources.length,
+  });
 
   // The Acquisition Sources tab (Slice 9F.4): strictly read-only,
   // navigational content inside the Location workspace — no create-source
