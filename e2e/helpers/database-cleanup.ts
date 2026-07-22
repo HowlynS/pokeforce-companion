@@ -437,8 +437,8 @@ export async function createTemporaryRecipeForProfession(
 
     await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultingQuantity", "professionId", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, $4, now())`,
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "professionId", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, now())`,
       [
         `${E2E_PROFESSION_RELATION_SLUG_PREFIX}recipe`,
         "Test E2E Profession Relation Recipe",
@@ -466,7 +466,8 @@ export async function createTemporaryRecipeForProfessionsTab(
   options: {
     suffix: string;
     recipeName: string;
-    resultingQuantity?: number;
+    resultQuantityMin?: number;
+    resultQuantityMax?: number;
     requiredLevel?: number;
   }
 ): Promise<void> {
@@ -502,14 +503,15 @@ export async function createTemporaryRecipeForProfessionsTab(
 
     await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultingQuantity",
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax",
           "professionId", "requiredLevel", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, now())`,
+       values (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, now())`,
       [
         `${E2E_PROFESSION_RELATION_SLUG_PREFIX}recipe-${options.suffix}`,
         options.recipeName,
         item.rows[0].id as string,
-        options.resultingQuantity ?? 1,
+        options.resultQuantityMin ?? 1,
+        options.resultQuantityMax ?? 1,
         profession.rows[0].id as string,
         options.requiredLevel ?? null,
       ]
@@ -795,8 +797,8 @@ export async function createTemporaryRecipeProducingItem(
     // so both are supplied explicitly.
     await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultingQuantity", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, now())`,
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, now())`,
       [
         `${E2E_ITEM_RELATION_SLUG_PREFIX}produces`,
         "Test E2E Item Relation Producing Recipe",
@@ -852,9 +854,9 @@ export async function createTemporaryRecipeProducingItemWithMetadata(
 
     await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultingQuantity",
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax",
           "professionId", "requiredLevel", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, $4, $5, now())`,
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, $5, now())`,
       [
         `${E2E_ITEM_RELATION_SLUG_PREFIX}produces-meta`,
         "Test E2E Item Relation Producing Recipe With Metadata",
@@ -908,8 +910,8 @@ export async function createTemporaryIngredientReferenceToItem(
 
     const recipe = await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultingQuantity", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, now())
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, now())
        returning id`,
       [
         `${E2E_ITEM_RELATION_SLUG_PREFIX}consumes`,
@@ -1066,8 +1068,8 @@ export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
     // so both are supplied explicitly.
     const recipe = await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultingQuantity", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, now())
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, now())
        returning id`,
       [
         `${E2E_RECIPE_SLUG_PREFIX}-six-ingredients`,

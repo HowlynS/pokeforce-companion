@@ -27,7 +27,8 @@ type RecipeSeed = {
   slug: string;
   name: string;
   resultSlug: string;
-  resultingQuantity?: number;
+  resultQuantityMin?: number;
+  resultQuantityMax?: number;
   professionSlug?: string;
   ingredients: { itemSlug: string; quantity: number }[];
 };
@@ -150,6 +151,13 @@ const recipes: RecipeSeed[] = [
     slug: "stamina-brew",
     name: "Stamina Brew",
     resultSlug: "stamina-brew",
+    // The one deliberately variable-output seeded recipe: a batch of Stamina
+    // Brew yields anywhere from 1 to 4 bottles, proving the range end to
+    // end (migration, admin editor, and public "Produces 1-4" display)
+    // against real deterministic fixture data rather than a temporary
+    // e2e-only row.
+    resultQuantityMin: 1,
+    resultQuantityMax: 4,
     professionSlug: "alchemy",
     ingredients: [
       { itemSlug: "herb-leaf", quantity: 1 },
@@ -218,21 +226,24 @@ async function seedRecipes(
     }
     const professionId = resolvedProfessionId ?? null;
 
-    const resultingQuantity = recipe.resultingQuantity ?? 1;
+    const resultQuantityMin = recipe.resultQuantityMin ?? 1;
+    const resultQuantityMax = recipe.resultQuantityMax ?? 1;
 
     const record = await prisma.recipe.upsert({
       where: { slug: recipe.slug },
       update: {
         name: recipe.name,
         resultingItemId,
-        resultingQuantity,
+        resultQuantityMin,
+        resultQuantityMax,
         professionId,
       },
       create: {
         slug: recipe.slug,
         name: recipe.name,
         resultingItemId,
-        resultingQuantity,
+        resultQuantityMin,
+        resultQuantityMax,
         professionId,
       },
     });

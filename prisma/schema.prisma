@@ -51,19 +51,19 @@ model Category {
 }
 
 model Item {
-  id                 String              @id @default(cuid())
-  slug               String              @unique
-  name               String
-  description        String?
-  image              String?
-  heldItem           Boolean             @default(false)
-  tradeable          Boolean             @default(false)
-  baseValue          Int?
-  categoryId         String?
-  category           Category?           @relation(fields: [categoryId], references: [id])
-  recipesProduced    Recipe[]            @relation("RecipeResultItem")
-  recipeIngredients  RecipeIngredient[]
-  acquisitionSources AcquisitionSource[]
+  id                    String              @id @default(cuid())
+  slug                  String              @unique
+  name                  String
+  description           String?
+  image                 String?
+  heldItem              Boolean             @default(false)
+  tradeable             Boolean             @default(false)
+  baseValue             Int?
+  categoryId            String?
+  category              Category?           @relation(fields: [categoryId], references: [id])
+  recipesProduced       Recipe[]            @relation("RecipeResultItem")
+  recipeIngredients     RecipeIngredient[]
+  acquisitionSources    AcquisitionSource[]
   // Gameplay-verification metadata: stamped only by the explicit opt-in
   // "Mark gameplay data as verified for the current game version." action;
   // normal edits never touch these fields. The version reference is
@@ -71,54 +71,55 @@ model Item {
   // deleted out from under a stamp.
   verifiedAt            DateTime?
   verifiedGameVersionId String?
-  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  verifiedGameVersion   GameVersion?        @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
   @@index([categoryId])
   @@index([verifiedGameVersionId])
 }
 
 model Profession {
-  id                 String              @id @default(cuid())
-  slug               String              @unique
-  name               String
-  description        String?
-  image              String?
-  recipes            Recipe[]
-  acquisitionSources AcquisitionSource[]
+  id                    String              @id @default(cuid())
+  slug                  String              @unique
+  name                  String
+  description           String?
+  image                 String?
+  recipes               Recipe[]
+  acquisitionSources    AcquisitionSource[]
   // Gameplay-verification metadata (added in Slice 9A): stamped only by the
   // explicit opt-in "Mark gameplay data as verified for the current game
   // version." action; normal edits never touch these fields.
   verifiedAt            DateTime?
   verifiedGameVersionId String?
-  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  verifiedGameVersion   GameVersion?        @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
   @@index([verifiedGameVersionId])
 }
 
 model Recipe {
-  id                String             @id @default(cuid())
-  slug              String             @unique
-  name              String
-  image             String?
-  resultingItemId   String
-  resultingItem     Item               @relation("RecipeResultItem", fields: [resultingItemId], references: [id])
-  resultingQuantity Int                @default(1)
-  professionId      String?
-  profession        Profession?        @relation(fields: [professionId], references: [id])
-  requiredLevel     Int?
-  ingredients       RecipeIngredient[]
+  id                    String             @id @default(cuid())
+  slug                  String             @unique
+  name                  String
+  image                 String?
+  resultingItemId       String
+  resultingItem         Item               @relation("RecipeResultItem", fields: [resultingItemId], references: [id])
+  resultQuantityMin     Int                @default(1)
+  resultQuantityMax     Int                @default(1)
+  professionId          String?
+  profession            Profession?        @relation(fields: [professionId], references: [id])
+  requiredLevel         Int?
+  ingredients           RecipeIngredient[]
   // Gameplay-verification metadata (added in Slice 9A): stamped only by the
   // explicit opt-in "Mark gameplay data as verified for the current game
   // version." action; normal edits never touch these fields.
   verifiedAt            DateTime?
   verifiedGameVersionId String?
-  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  verifiedGameVersion   GameVersion?       @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   @@index([professionId])
   @@index([resultingItemId])
@@ -149,22 +150,22 @@ enum LocationType {
 }
 
 model Location {
-  id                 String              @id @default(cuid())
-  slug               String              @unique
-  name               String
-  type               LocationType
-  parentId           String?
+  id                    String              @id @default(cuid())
+  slug                  String              @unique
+  name                  String
+  type                  LocationType
+  parentId              String?
   // Named self-relation for the location hierarchy. onDelete: Restrict means
   // the database itself refuses to delete a location while any row still
   // references it as parentId — children are never silently detached, and
   // the admin action's own _count pre-check exists only to give a friendly
   // message before that database constraint would ever fire.
-  parent             Location?           @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
-  children           Location[]          @relation("LocationHierarchy")
-  description        String?
-  image              String?
-  accessNote         String?
-  acquisitionSources AcquisitionSource[]
+  parent                Location?           @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children              Location[]          @relation("LocationHierarchy")
+  description           String?
+  image                 String?
+  accessNote            String?
+  acquisitionSources    AcquisitionSource[]
   // Gameplay-verification metadata: stamped only by the explicit opt-in
   // "Mark gameplay data as verified for the current game version." action;
   // normal edits never touch these fields. The version reference is
@@ -172,9 +173,9 @@ model Location {
   // deleted out from under a stamp.
   verifiedAt            DateTime?
   verifiedGameVersionId String?
-  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  verifiedGameVersion   GameVersion?        @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
   @@index([parentId])
   @@index([verifiedGameVersionId])
@@ -204,21 +205,21 @@ enum AcquisitionType {
 // `sourceLabel` is free text so a value like "Seed Merchant" or "Vendor on
 // Route 4" is valid without any named-NPC model existing.
 model AcquisitionSource {
-  id              String          @id @default(cuid())
-  itemId          String
+  id                    String          @id @default(cuid())
+  itemId                String
   // The source is meaningless without its item, so it is deleted along with
   // it — mirroring RecipeIngredient's ON DELETE CASCADE on its own Recipe.
-  item            Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  type            AcquisitionType
-  locationId      String?
+  item                  Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type                  AcquisitionType
+  locationId            String?
   // Optional relations: the acquisition fact survives losing its location
   // or profession, matching Item.categoryId / Recipe.professionId.
-  location        Location?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  professionId    String?
-  profession      Profession?     @relation(fields: [professionId], references: [id], onDelete: SetNull)
-  sourceLabel     String?
-  notes           String?
-  quantity        String?
+  location              Location?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  professionId          String?
+  profession            Profession?     @relation(fields: [professionId], references: [id], onDelete: SetNull)
+  sourceLabel           String?
+  notes                 String?
+  quantity              String?
   // Gameplay-verification metadata: stamped only by the explicit opt-in
   // "Mark gameplay data as verified for the current game version." action;
   // normal edits never touch these fields. The version reference is
@@ -226,9 +227,9 @@ model AcquisitionSource {
   // deleted out from under a stamp.
   verifiedAt            DateTime?
   verifiedGameVersionId String?
-  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  verifiedGameVersion   GameVersion?    @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
   @@index([itemId])
   @@index([locationId])

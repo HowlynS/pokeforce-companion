@@ -25,6 +25,7 @@ import {
   isMissingRecordError,
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
+import { parseRecipeInput } from "@/lib/validation/recipe";
 import {
   GAME_VERSION_TEST_NAME_PREFIX,
   INTEGRATION_TEST_SLUG_PREFIX,
@@ -721,7 +722,8 @@ describe("database relations (integration)", () => {
           name: "Zeta Relations Test Profession Recipes Tab Recipe",
           slug: `${P}profession-recipes-tab-recipe-z`,
           resultingItemId: resultItemB.id,
-          resultingQuantity: 2,
+          resultQuantityMin: 2,
+          resultQuantityMax: 2,
           professionId: profession.id,
           requiredLevel: 12,
         },
@@ -731,7 +733,8 @@ describe("database relations (integration)", () => {
           name: "Alpha Relations Test Profession Recipes Tab Recipe",
           slug: `${P}profession-recipes-tab-recipe-a`,
           resultingItemId: resultItemA.id,
-          resultingQuantity: 1,
+          resultQuantityMin: 1,
+          resultQuantityMax: 1,
           professionId: profession.id,
         },
       });
@@ -757,14 +760,16 @@ describe("database relations (integration)", () => {
       expect(first!.resultingItem.name).toBe(
         "Relations Test Profession Recipes Tab Result A"
       );
-      expect(first!.resultingQuantity).toBe(1);
+      expect(first!.resultQuantityMin).toBe(1);
+      expect(first!.resultQuantityMax).toBe(1);
       expect(first!.requiredLevel).toBeNull();
 
       expect(second!.name).toBe("Zeta Relations Test Profession Recipes Tab Recipe");
       expect(second!.resultingItem.name).toBe(
         "Relations Test Profession Recipes Tab Result B"
       );
-      expect(second!.resultingQuantity).toBe(2);
+      expect(second!.resultQuantityMin).toBe(2);
+      expect(second!.resultQuantityMax).toBe(2);
       expect(second!.requiredLevel).toBe(12);
     });
 
@@ -784,6 +789,142 @@ describe("database relations (integration)", () => {
       });
 
       expect(loaded?.recipes).toEqual([]);
+    });
+  });
+
+  describe("Recipe result quantity range", () => {
+    it("persists and reads back a fixed-output recipe (equal min/max)", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const resultItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Quantity Fixed Result",
+          slug: `${P}quantity-fixed-result`,
+        },
+      });
+      const recipe = await prisma.recipe.create({
+        data: {
+          name: "Relations Test Quantity Fixed Recipe",
+          slug: `${P}quantity-fixed-recipe`,
+          resultingItemId: resultItem.id,
+          resultQuantityMin: 3,
+          resultQuantityMax: 3,
+        },
+      });
+
+      const loaded = await prisma.recipe.findUnique({ where: { id: recipe.id } });
+      expect(loaded?.resultQuantityMin).toBe(3);
+      expect(loaded?.resultQuantityMax).toBe(3);
+    });
+
+    it("persists and reads back a variable-output recipe (min 1, max 4)", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const resultItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Quantity Variable Result",
+          slug: `${P}quantity-variable-result`,
+        },
+      });
+      const recipe = await prisma.recipe.create({
+        data: {
+          name: "Relations Test Quantity Variable Recipe",
+          slug: `${P}quantity-variable-recipe`,
+          resultingItemId: resultItem.id,
+          resultQuantityMin: 1,
+          resultQuantityMax: 4,
+        },
+      });
+
+      const loaded = await prisma.recipe.findUnique({ where: { id: recipe.id } });
+      expect(loaded?.resultQuantityMin).toBe(1);
+      expect(loaded?.resultQuantityMax).toBe(4);
+    });
+
+    it("both fields default to 1 when not supplied", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const resultItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Quantity Default Result",
+          slug: `${P}quantity-default-result`,
+        },
+      });
+      const recipe = await prisma.recipe.create({
+        data: {
+          name: "Relations Test Quantity Default Recipe",
+          slug: `${P}quantity-default-recipe`,
+          resultingItemId: resultItem.id,
+        },
+      });
+
+      expect(recipe.resultQuantityMin).toBe(1);
+      expect(recipe.resultQuantityMax).toBe(1);
+    });
+
+    it("rejects a maximum lower than the minimum through the normal application validation path before any database write", () => {
+      // The shared parser is the ONLY path createRecipeAction/
+      // updateRecipeGeneralAction ever use to turn submitted form fields
+      // into a database write — this proves invalid max-below-min data is
+      // rejected there, so it can never reach prisma.recipe.create/update
+      // in the first place (this schema deliberately has no database-level
+      // CHECK constraint, matching every other numeric field's existing
+      // convention of relying on application-layer validation only).
+      const formData = new FormData();
+      formData.set("name", "Relations Test Quantity Invalid Range Recipe");
+      formData.set("resultingItemId", "does-not-matter-validation-runs-first");
+      formData.set("resultQuantityMin", "4");
+      formData.set("resultQuantityMax", "1");
+      formData.set("ingredientItemId1", "item-a");
+      formData.set("ingredientQuantity1", "1");
+
+      const result = parseRecipeInput(formData);
+
+      expect(result).toEqual({
+        ok: false,
+        error: "invalid_result_quantity_range",
+      });
+    });
+
+    it("preserves existing Recipe ingredient relationships alongside the new quantity fields", async () => {
+      const prisma = await getVerifiedTestPrisma();
+
+      const resultItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Quantity Relations Result",
+          slug: `${P}quantity-relations-result`,
+        },
+      });
+      const ingredientItem = await prisma.item.create({
+        data: {
+          name: "Relations Test Quantity Relations Ingredient",
+          slug: `${P}quantity-relations-ingredient`,
+        },
+      });
+      const recipe = await prisma.recipe.create({
+        data: {
+          name: "Relations Test Quantity Relations Recipe",
+          slug: `${P}quantity-relations-recipe`,
+          resultingItemId: resultItem.id,
+          resultQuantityMin: 2,
+          resultQuantityMax: 6,
+          ingredients: {
+            create: [{ itemId: ingredientItem.id, quantity: 3 }],
+          },
+        },
+      });
+
+      const loaded = await prisma.recipe.findUnique({
+        where: { id: recipe.id },
+        include: { ingredients: true, resultingItem: true },
+      });
+
+      expect(loaded?.resultQuantityMin).toBe(2);
+      expect(loaded?.resultQuantityMax).toBe(6);
+      expect(loaded?.resultingItem.id).toBe(resultItem.id);
+      expect(loaded?.ingredients).toHaveLength(1);
+      expect(loaded?.ingredients[0]?.itemId).toBe(ingredientItem.id);
+      expect(loaded?.ingredients[0]?.quantity).toBe(3);
     });
   });
 

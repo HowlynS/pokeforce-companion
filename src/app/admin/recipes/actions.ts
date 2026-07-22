@@ -149,7 +149,8 @@ export async function createRecipeAction(formData: FormData) {
         slug: parsed.value.slug,
         image: imagePath,
         resultingItemId: parsed.value.resultingItemId,
-        resultingQuantity: parsed.value.resultingQuantity,
+        resultQuantityMin: parsed.value.resultQuantityMin,
+        resultQuantityMax: parsed.value.resultQuantityMax,
         professionId: parsed.value.professionId,
         requiredLevel: parsed.value.requiredLevel,
         ingredients: {
@@ -319,7 +320,8 @@ export async function updateRecipeGeneralAction(formData: FormData) {
         slug: parsed.value.slug,
         image: imageValue,
         resultingItemId: parsed.value.resultingItemId,
-        resultingQuantity: parsed.value.resultingQuantity,
+        resultQuantityMin: parsed.value.resultQuantityMin,
+        resultQuantityMax: parsed.value.resultQuantityMax,
         professionId: parsed.value.professionId,
         requiredLevel: parsed.value.requiredLevel,
         // Verification fields are included ONLY when the opt-in checkbox

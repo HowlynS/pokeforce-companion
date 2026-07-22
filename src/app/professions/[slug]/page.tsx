@@ -5,6 +5,7 @@ import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { prisma } from "@/lib/db";
+import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,7 @@ export default async function ProfessionDetailPage({ params }: ProfessionDetailP
               <Card
                 key={recipe.id}
                 title={recipe.name}
-                description={`Yields ${recipe.resultingQuantity}x ${recipe.resultingItem.name}.`}
+                description={`${formatRecipeProduces(recipe.resultQuantityMin, recipe.resultQuantityMax)} ${recipe.resultingItem.name}.`}
                 href={`/recipes/${recipe.slug}`}
               />
             ))}

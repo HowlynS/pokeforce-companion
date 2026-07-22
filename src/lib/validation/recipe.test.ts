@@ -15,11 +15,14 @@ function formDataFrom(entries: Record<string, string>): FormData {
   return formData;
 }
 
-// A minimal valid submission: name, a resulting item, and one ingredient row.
+// A minimal valid submission: name, a resulting item, a fixed 1/1 result
+// quantity (matching the form's own default), and one ingredient row.
 function validRecipeEntries(): Record<string, string> {
   return {
     name: "Iron Ingot",
     resultingItemId: "item-result",
+    resultQuantityMin: "1",
+    resultQuantityMax: "1",
     ingredientItemId1: "item-a",
     ingredientQuantity1: "2",
   };
@@ -82,34 +85,115 @@ describe("parseRecipeInput", () => {
     expect(supplied.ok && supplied.value.professionId).toBe("prof-1");
   });
 
-  describe("resulting quantity", () => {
-    it("defaults to 1 when blank", () => {
-      const result = parseRecipeInput(formDataFrom(validRecipeEntries()));
-
-      expect(result.ok && result.value.resultingQuantity).toBe(1);
-    });
-
-    it("accepts a positive whole number", () => {
+  describe("result quantity range", () => {
+    // Blank is explicitly REJECTED rather than silently defaulted (unlike
+    // the old single quantity field) — the form itself pre-fills 1 on
+    // create, so a blank value only reaches the parser if a contributor
+    // deliberately clears the field.
+    it("rejects a blank minimum", () => {
       const result = parseRecipeInput(
-        formDataFrom({ ...validRecipeEntries(), resultingQuantity: "3" })
+        formDataFrom({ ...validRecipeEntries(), resultQuantityMin: "" })
       );
 
-      expect(result.ok && result.value.resultingQuantity).toBe(3);
+      expect(result).toEqual({
+        ok: false,
+        error: "invalid_result_quantity_min",
+      });
+    });
+
+    it("rejects a blank maximum", () => {
+      const result = parseRecipeInput(
+        formDataFrom({ ...validRecipeEntries(), resultQuantityMax: "" })
+      );
+
+      expect(result).toEqual({
+        ok: false,
+        error: "invalid_result_quantity_max",
+      });
+    });
+
+    it("accepts equal min/max (fixed output)", () => {
+      const result = parseRecipeInput(
+        formDataFrom({
+          ...validRecipeEntries(),
+          resultQuantityMin: "3",
+          resultQuantityMax: "3",
+        })
+      );
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.resultQuantityMin).toBe(3);
+        expect(result.value.resultQuantityMax).toBe(3);
+      }
+    });
+
+    it("accepts a valid range (variable output)", () => {
+      const result = parseRecipeInput(
+        formDataFrom({
+          ...validRecipeEntries(),
+          resultQuantityMin: "1",
+          resultQuantityMax: "4",
+        })
+      );
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.resultQuantityMin).toBe(1);
+        expect(result.value.resultQuantityMax).toBe(4);
+      }
     });
 
     it.each(["0", "-2", "1.5", "many"])(
-      "rejects %j",
+      "rejects %j as the minimum",
       (value) => {
         const result = parseRecipeInput(
-          formDataFrom({ ...validRecipeEntries(), resultingQuantity: value })
+          formDataFrom({
+            ...validRecipeEntries(),
+            resultQuantityMin: value,
+            resultQuantityMax: "4",
+          })
         );
 
         expect(result).toEqual({
           ok: false,
-          error: "invalid_resulting_quantity",
+          error: "invalid_result_quantity_min",
         });
       }
     );
+
+    it.each(["0", "-2", "1.5", "many"])(
+      "rejects %j as the maximum",
+      (value) => {
+        const result = parseRecipeInput(
+          formDataFrom({
+            ...validRecipeEntries(),
+            resultQuantityMin: "1",
+            resultQuantityMax: value,
+          })
+        );
+
+        expect(result).toEqual({
+          ok: false,
+          error: "invalid_result_quantity_max",
+        });
+      }
+    );
+
+    it("rejects a maximum lower than the minimum", () => {
+      const result = parseRecipeInput(
+        formDataFrom({
+          ...validRecipeEntries(),
+          resultQuantityMin: "4",
+          resultQuantityMax: "1",
+        })
+      );
+
+      expect(result).toEqual({
+        ok: false,
+        error: "invalid_result_quantity_range",
+      });
+    });
   });
 
   describe("required level", () => {
@@ -153,7 +237,12 @@ describe("parseRecipeInput", () => {
   describe("ingredient rows", () => {
     it("rejects a submission with no filled ingredient rows", () => {
       const result = parseRecipeInput(
-        formDataFrom({ name: "Iron Ingot", resultingItemId: "item-result" })
+        formDataFrom({
+          name: "Iron Ingot",
+          resultingItemId: "item-result",
+          resultQuantityMin: "1",
+          resultQuantityMax: "1",
+        })
       );
 
       expect(result).toEqual({ ok: false, error: "no_ingredients" });
@@ -164,6 +253,8 @@ describe("parseRecipeInput", () => {
         formDataFrom({
           name: "Iron Ingot",
           resultingItemId: "item-result",
+          resultQuantityMin: "1",
+          resultQuantityMax: "1",
           ingredientItemId1: "item-a",
         })
       );
@@ -176,6 +267,8 @@ describe("parseRecipeInput", () => {
         formDataFrom({
           name: "Iron Ingot",
           resultingItemId: "item-result",
+          resultQuantityMin: "1",
+          resultQuantityMax: "1",
           ingredientQuantity1: "2",
         })
       );
@@ -232,6 +325,8 @@ describe("parseRecipeInput", () => {
         formDataFrom({
           name: "Iron Ingot",
           resultingItemId: "item-result",
+          resultQuantityMin: "1",
+          resultQuantityMax: "1",
           ingredientItemId1: "item-a",
           ingredientQuantity1: "1",
           // Row 2 left completely blank on purpose.
@@ -279,7 +374,8 @@ describe("parseRecipeGeneralInput", () => {
     const result = parseRecipeGeneralInput(
       formDataFrom({
         ...validRecipeEntries(),
-        resultingQuantity: "3",
+        resultQuantityMin: "1",
+        resultQuantityMax: "3",
         professionId: "prof-1",
         requiredLevel: "5",
       })
@@ -291,7 +387,8 @@ describe("parseRecipeGeneralInput", () => {
         name: "Iron Ingot",
         slug: "iron-ingot",
         resultingItemId: "item-result",
-        resultingQuantity: 3,
+        resultQuantityMin: 1,
+        resultQuantityMax: 3,
         professionId: "prof-1",
         requiredLevel: 5,
       },
@@ -308,7 +405,12 @@ describe("parseRecipeGeneralInput", () => {
 
   it("succeeds with no ingredient rows at all — ingredients are not its concern", () => {
     const result = parseRecipeGeneralInput(
-      formDataFrom({ name: "Iron Ingot", resultingItemId: "item-result" })
+      formDataFrom({
+        name: "Iron Ingot",
+        resultingItemId: "item-result",
+        resultQuantityMin: "1",
+        resultQuantityMax: "1",
+      })
     );
 
     expect(result.ok).toBe(true);

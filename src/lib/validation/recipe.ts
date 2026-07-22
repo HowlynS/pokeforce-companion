@@ -10,7 +10,8 @@ export type RecipeInput = {
   name: string;
   slug: string;
   resultingItemId: string;
-  resultingQuantity: number;
+  resultQuantityMin: number;
+  resultQuantityMax: number;
   professionId: string | null;
   requiredLevel: number | null;
   ingredients: RecipeIngredientInput[];
@@ -30,7 +31,9 @@ export type RecipeValidationError =
   | "missing_name"
   | "invalid_slug"
   | "missing_resulting_item"
-  | "invalid_resulting_quantity"
+  | "invalid_result_quantity_min"
+  | "invalid_result_quantity_max"
+  | "invalid_result_quantity_range"
   | "invalid_required_level"
   | "no_ingredients"
   | "incomplete_ingredient"
@@ -115,8 +118,11 @@ function parseRecipeGeneralFields(formData: FormData): RecipeGeneralParseResult 
   const name = String(formData.get("name") ?? "").trim();
   const rawSlug = String(formData.get("slug") ?? "").trim();
   const resultingItemId = String(formData.get("resultingItemId") ?? "").trim();
-  const rawResultingQuantity = String(
-    formData.get("resultingQuantity") ?? ""
+  const rawResultQuantityMin = String(
+    formData.get("resultQuantityMin") ?? ""
+  ).trim();
+  const rawResultQuantityMax = String(
+    formData.get("resultQuantityMax") ?? ""
   ).trim();
   const professionId = String(formData.get("professionId") ?? "").trim();
   const rawRequiredLevel = String(formData.get("requiredLevel") ?? "").trim();
@@ -136,16 +142,32 @@ function parseRecipeGeneralFields(formData: FormData): RecipeGeneralParseResult 
     return { ok: false, error: "missing_resulting_item" };
   }
 
-  let resultingQuantity = 1;
+  // Both quantity fields are required — unlike the old single quantity
+  // field, a blank submission is never silently defaulted to 1 here (the
+  // form itself pre-fills 1 on create, so a blank value only reaches this
+  // parser if a contributor deliberately clears the field).
+  if (!rawResultQuantityMin) {
+    return { ok: false, error: "invalid_result_quantity_min" };
+  }
 
-  if (rawResultingQuantity) {
-    const parsedResultingQuantity = Number(rawResultingQuantity);
+  const resultQuantityMin = Number(rawResultQuantityMin);
 
-    if (!isPositiveInteger(parsedResultingQuantity)) {
-      return { ok: false, error: "invalid_resulting_quantity" };
-    }
+  if (!isPositiveInteger(resultQuantityMin)) {
+    return { ok: false, error: "invalid_result_quantity_min" };
+  }
 
-    resultingQuantity = parsedResultingQuantity;
+  if (!rawResultQuantityMax) {
+    return { ok: false, error: "invalid_result_quantity_max" };
+  }
+
+  const resultQuantityMax = Number(rawResultQuantityMax);
+
+  if (!isPositiveInteger(resultQuantityMax)) {
+    return { ok: false, error: "invalid_result_quantity_max" };
+  }
+
+  if (resultQuantityMax < resultQuantityMin) {
+    return { ok: false, error: "invalid_result_quantity_range" };
   }
 
   let requiredLevel: number | null = null;
@@ -170,7 +192,8 @@ function parseRecipeGeneralFields(formData: FormData): RecipeGeneralParseResult 
       name,
       slug,
       resultingItemId,
-      resultingQuantity,
+      resultQuantityMin,
+      resultQuantityMax,
       professionId: professionId || null,
       requiredLevel,
     },

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
+import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,7 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
         <div className="detail-hero-facts">
           <Card
             title={`Result: ${recipe.resultingItem.name}`}
-            description={`Yields ${recipe.resultingQuantity}x ${recipe.resultingItem.name}${resultCategory}.`}
+            description={`${formatRecipeProduces(recipe.resultQuantityMin, recipe.resultQuantityMax)} ${recipe.resultingItem.name}${resultCategory}.`}
             href={`/items/${recipe.resultingItem.slug}`}
           />
           <Card title="Recipe Details" description={recipeDetails.join(" · ")} />

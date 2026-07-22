@@ -34,8 +34,12 @@ const errorMessages: Record<string, string> = {
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
   missing_resulting_item: "Select the item this recipe produces.",
-  invalid_resulting_quantity:
-    "Resulting quantity must be a whole number of at least 1.",
+  invalid_result_quantity_min:
+    "Minimum quantity must be a whole number of at least 1.",
+  invalid_result_quantity_max:
+    "Maximum quantity must be a whole number of at least 1.",
+  invalid_result_quantity_range:
+    "Maximum quantity must be equal to or greater than minimum quantity.",
   invalid_required_level:
     "Required level must be a whole number of zero or more.",
   no_ingredients: "Add at least one ingredient.",
@@ -194,17 +198,44 @@ export default async function NewRecipePage({
             </select>
           </label>
 
-          <label className="form-field">
-            <span className="form-field-label">Resulting quantity</span>
-            <input
-              type="number"
-              name="resultingQuantity"
-              min={1}
-              step={1}
-              defaultValue={1}
-              className="form-input"
-            />
-          </label>
+          <div className="form-field">
+            <div className="recipe-quantity-range">
+              <div className="recipe-quantity-field">
+                <label className="form-field">
+                  <span className="form-field-label">Minimum quantity</span>
+                  <input
+                    type="number"
+                    name="resultQuantityMin"
+                    min={1}
+                    step={1}
+                    defaultValue={1}
+                    className="form-input"
+                  />
+                </label>
+                <p className="form-field-helper">
+                  The smallest number of items this recipe can produce.
+                </p>
+              </div>
+
+              <div className="recipe-quantity-field">
+                <label className="form-field">
+                  <span className="form-field-label">Maximum quantity</span>
+                  <input
+                    type="number"
+                    name="resultQuantityMax"
+                    min={1}
+                    step={1}
+                    defaultValue={1}
+                    className="form-input"
+                  />
+                </label>
+                <p className="form-field-helper">
+                  The largest number of items this recipe can produce. Use
+                  the same value as minimum when the output is fixed.
+                </p>
+              </div>
+            </div>
+          </div>
 
           <label className="form-field">
             <span className="form-field-label">Profession</span>

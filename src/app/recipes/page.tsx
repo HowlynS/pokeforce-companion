@@ -5,12 +5,14 @@ import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { prisma } from "@/lib/db";
+import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
 
 export const dynamic = "force-dynamic";
 
 function buildRecipeDescription(recipe: {
   resultingItem: { name: string; category: { name: string } | null };
-  resultingQuantity: number;
+  resultQuantityMin: number;
+  resultQuantityMax: number;
   profession: { name: string } | null;
   requiredLevel: number | null;
   ingredients: { quantity: number; item: { name: string } }[];
@@ -22,7 +24,7 @@ function buildRecipeDescription(recipe: {
     : "";
 
   const details = [
-    `Crafts ${recipe.resultingQuantity}x ${recipe.resultingItem.name}${resultCategory}`,
+    `${formatRecipeProduces(recipe.resultQuantityMin, recipe.resultQuantityMax)} ${recipe.resultingItem.name}${resultCategory}`,
   ];
 
   if (recipe.profession) {

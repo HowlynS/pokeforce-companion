@@ -11,6 +11,7 @@ import {
   normalizeItemSearchQuery,
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
+import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
 
 export const dynamic = "force-dynamic";
 
@@ -185,7 +186,12 @@ export default async function ItemRecipesPage({
                           professionName={recipe.profession?.name}
                           requiredLevel={recipe.requiredLevel}
                         />
-                        <td>{recipe.resultingQuantity}</td>
+                        <td>
+                          {formatRecipeQuantityRange(
+                            recipe.resultQuantityMin,
+                            recipe.resultQuantityMax
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

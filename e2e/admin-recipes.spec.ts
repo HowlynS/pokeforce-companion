@@ -137,7 +137,8 @@ type RecipeFormData = {
   name: string;
   slug: string;
   resultingItem: string;
-  resultingQuantity?: string;
+  resultQuantityMin?: string;
+  resultQuantityMax?: string;
   profession?: string;
   requiredLevel?: string;
   ingredients: { item: string; quantity: string }[];
@@ -153,10 +154,15 @@ async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: data.resultingItem });
-  if (data.resultingQuantity) {
+  if (data.resultQuantityMin) {
     await page
-      .getByLabel("Resulting quantity", { exact: true })
-      .fill(data.resultingQuantity);
+      .getByLabel("Minimum quantity", { exact: true })
+      .fill(data.resultQuantityMin);
+  }
+  if (data.resultQuantityMax) {
+    await page
+      .getByLabel("Maximum quantity", { exact: true })
+      .fill(data.resultQuantityMax);
   }
   if (data.profession) {
     await page
@@ -376,7 +382,8 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     name: "Test E2E Recipe",
     slug: "test-e2e-recipe",
     resultingItem: "Iron Ingot",
-    resultingQuantity: "2",
+    resultQuantityMin: "2",
+    resultQuantityMax: "2",
     profession: "Smithing",
     requiredLevel: "3",
     ingredients: [
@@ -401,7 +408,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   await expect(createdCard).toHaveAttribute("href", "/recipes/test-e2e-recipe");
   await expect(
     createdCard.getByText(
-      "Crafts 2x Iron Ingot (Components) · Profession: Smithing · Required level: 3 · Requires: 1x Charcoal, 2x Iron Ore"
+      "Produces 2 Iron Ingot (Components) · Profession: Smithing · Required level: 3 · Requires: 1x Charcoal, 2x Iron Ore"
     )
   ).toBeVisible();
 
@@ -413,7 +420,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   ).toBeVisible();
   await expect(
     cardLink(page, "Result: Iron Ingot").getByText(
-      "Yields 2x Iron Ingot (Components)."
+      "Produces 2 Iron Ingot (Components)."
     )
   ).toBeVisible();
   await expect(
@@ -426,6 +433,186 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     cardLink(page, "Iron Ore").getByText("2x required.")
   ).toBeVisible();
   await expect(page.getByText("No image available")).toBeVisible();
+});
+
+test("creating a variable-output recipe (min 1, max 4) displays the range publicly, never a redundant 1-1", async ({
+  page,
+}) => {
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Variable Output",
+    slug: "test-e2e-recipe-variable-output",
+    resultingItem: "Iron Ingot",
+    resultQuantityMin: "1",
+    resultQuantityMax: "4",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+
+  await page.goto("/recipes/test-e2e-recipe-variable-output");
+  await expect(
+    cardLink(page, "Result: Iron Ingot").getByText(
+      "Produces 1–4 Iron Ingot (Components)."
+    )
+  ).toBeVisible();
+  // The en-dash range renders — never a hyphen, and never a redundant
+  // "1-1" (this recipe's own min/max genuinely differ).
+  await expect(page.getByText("Produces 1-1", { exact: false })).toHaveCount(
+    0
+  );
+
+  // The edit form loads the persisted range back correctly.
+  await page.goto("/admin/recipes");
+  await recordRow(page, "Test E2E Recipe Variable Output").click();
+  await expect(page.getByLabel("Minimum quantity", { exact: true })).toHaveValue(
+    "1"
+  );
+  await expect(page.getByLabel("Maximum quantity", { exact: true })).toHaveValue(
+    "4"
+  );
+});
+
+test("editing a fixed-output recipe into a variable range, and a variable range back into a fixed output, both save and display correctly", async ({
+  page,
+}) => {
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Range Toggle",
+    slug: "test-e2e-recipe-range-toggle",
+    resultingItem: "Iron Ingot",
+    resultQuantityMin: "2",
+    resultQuantityMax: "2",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+
+  // --- Fixed -> variable --------------------------------------------------
+  await recordRow(page, "Test E2E Recipe Range Toggle").click();
+  await expect(page.getByLabel("Minimum quantity", { exact: true })).toHaveValue(
+    "2"
+  );
+  await expect(page.getByLabel("Maximum quantity", { exact: true })).toHaveValue(
+    "2"
+  );
+  await page.getByLabel("Minimum quantity", { exact: true }).fill("1");
+  await page.getByLabel("Maximum quantity", { exact: true }).fill("5");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes?success=updated");
+
+  await page.goto("/recipes/test-e2e-recipe-range-toggle");
+  await expect(
+    cardLink(page, "Result: Iron Ingot").getByText(
+      "Produces 1–5 Iron Ingot (Components)."
+    )
+  ).toBeVisible();
+
+  // --- Variable -> fixed ---------------------------------------------------
+  await page.goto("/admin/recipes");
+  await recordRow(page, "Test E2E Recipe Range Toggle").click();
+  await expect(page.getByLabel("Minimum quantity", { exact: true })).toHaveValue(
+    "1"
+  );
+  await expect(page.getByLabel("Maximum quantity", { exact: true })).toHaveValue(
+    "5"
+  );
+  await page.getByLabel("Minimum quantity", { exact: true }).fill("3");
+  await page.getByLabel("Maximum quantity", { exact: true }).fill("3");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes?success=updated");
+
+  await page.goto("/recipes/test-e2e-recipe-range-toggle");
+  await expect(
+    cardLink(page, "Result: Iron Ingot").getByText(
+      "Produces 3 Iron Ingot (Components)."
+    )
+  ).toBeVisible();
+});
+
+test("a maximum quantity below the minimum is rejected with a useful error, both on create and on edit", async ({
+  page,
+}) => {
+  await page.goto("/admin/recipes/new");
+  await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Invalid Range");
+  await page.getByLabel(/^Page address/).fill("test-e2e-recipe-invalid-range");
+  await page
+    .getByRole("combobox", { name: "Resulting item", exact: true })
+    .selectOption({ label: "Iron Ingot" });
+  await page.getByLabel("Minimum quantity", { exact: true }).fill("4");
+  await page.getByLabel("Maximum quantity", { exact: true }).fill("1");
+  await ingredientSelect(page, 0).selectOption({ label: "Iron Ore" });
+  await ingredientQuantity(page, 0).fill("1");
+  await page
+    .getByRole("button", { name: "Create Recipe", exact: true })
+    .click();
+
+  // The submission is rejected server-side; the create route reloads with
+  // a field-specific, readable error — no recipe is created.
+  await expect(page).toHaveURL(
+    "/admin/recipes/new?error=invalid_result_quantity_range"
+  );
+  await expect(
+    page.getByText(
+      "Maximum quantity must be equal to or greater than minimum quantity."
+    )
+  ).toBeVisible();
+  await expect(recordRow(page, "Test E2E Recipe Invalid Range")).toHaveCount(
+    0
+  );
+
+  // --- The same rule is enforced identically on an existing recipe's edit
+  // --- form ----------------------------------------------------------------
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Invalid Range Edit",
+    slug: "test-e2e-recipe-invalid-range-edit",
+    resultingItem: "Iron Ingot",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+  await recordRow(page, "Test E2E Recipe Invalid Range Edit").click();
+  await page.getByLabel("Minimum quantity", { exact: true }).fill("5");
+  await page.getByLabel("Maximum quantity", { exact: true }).fill("2");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-invalid-range-edit/edit?error=invalid_result_quantity_range"
+  );
+  await expect(
+    page.getByText(
+      "Maximum quantity must be equal to or greater than minimum quantity."
+    )
+  ).toBeVisible();
+  // The invalid submission never overwrote the persisted (still fixed 1/1)
+  // values.
+  await page.reload();
+  await expect(page.getByLabel("Minimum quantity", { exact: true })).toHaveValue(
+    "1"
+  );
+  await expect(page.getByLabel("Maximum quantity", { exact: true })).toHaveValue(
+    "1"
+  );
+});
+
+test("the seeded Stamina Brew recipe's migrated variable range loads correctly in the editor", async ({
+  page,
+}) => {
+  // Seeded fixture only — read, never modified. Proves the migration's
+  // backfill (and the seed's own deliberate min 1/max 4 range) is exactly
+  // what the editor loads, end to end against real persisted data rather
+  // than a freshly created row.
+  await page.goto("/admin/recipes/stamina-brew/edit");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Stamina Brew", exact: true })
+  ).toBeVisible();
+  await expect(page.getByLabel("Minimum quantity", { exact: true })).toHaveValue(
+    "1"
+  );
+  await expect(page.getByLabel("Maximum quantity", { exact: true })).toHaveValue(
+    "4"
+  );
+
+  await page.goto("/recipes/stamina-brew");
+  await expect(
+    cardLink(page, "Result: Stamina Brew").getByText(
+      "Produces 1–4 Stamina Brew (Consumables)."
+    )
+  ).toBeVisible();
 });
 
 test("General editing updates its own fields and leaves ingredients byte-for-byte untouched", async ({
@@ -472,7 +659,10 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
       page.getByRole("combobox", { name: "Resulting item", exact: true })
     )
   ).toBe("Iron Ingot");
-  await expect(page.getByLabel("Resulting quantity", { exact: true })).toHaveValue(
+  await expect(page.getByLabel("Minimum quantity", { exact: true })).toHaveValue(
+    "1"
+  );
+  await expect(page.getByLabel("Maximum quantity", { exact: true })).toHaveValue(
     "1"
   );
   expect(
@@ -494,7 +684,8 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
   await page
     .getByRole("combobox", { name: "Resulting item", exact: true })
     .selectOption({ label: "Copper Ingot" });
-  await page.getByLabel("Resulting quantity", { exact: true }).fill("3");
+  await page.getByLabel("Minimum quantity", { exact: true }).fill("3");
+  await page.getByLabel("Maximum quantity", { exact: true }).fill("3");
   // Clearing the Profession exercises the optional relation: the empty
   // "No profession" option stores null.
   await page
@@ -532,7 +723,7 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
   ).toBeVisible();
   await expect(
     cardLink(page, "Result: Copper Ingot").getByText(
-      "Yields 3x Copper Ingot (Components)."
+      "Produces 3 Copper Ingot (Components)."
     )
   ).toBeVisible();
   // No profession and no required level: the details card shows only the
@@ -625,7 +816,7 @@ test("Ingredients editing updates the ingredient rows and leaves General fields 
   // byte-for-byte the same as before...
   await expect(
     cardLink(page, "Result: Iron Ingot").getByText(
-      "Yields 1x Iron Ingot (Components)."
+      "Produces 1 Iron Ingot (Components)."
     )
   ).toBeVisible();
   await expect(
@@ -964,7 +1155,7 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
   ).toBeVisible();
   // The confirmation identifies exactly this recipe and its relations.
   await expect(page.getByText("(test-e2e-recipe-delete)")).toBeVisible();
-  await expect(page.getByText("Result: 1x Iron Ingot")).toBeVisible();
+  await expect(page.getByText("Result: 1 Iron Ingot")).toBeVisible();
   await expect(page.getByText("Profession: No profession")).toBeVisible();
   await expect(page.getByText("Ingredients (1): 1x Iron Ore")).toBeVisible();
 
@@ -1055,7 +1246,8 @@ test("gameplay verification stamps the selected game version and survives normal
   await page
     .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
-  await page.getByLabel("Resulting quantity", { exact: true }).fill("2");
+  await page.getByLabel("Minimum quantity", { exact: true }).fill("2");
+  await page.getByLabel("Maximum quantity", { exact: true }).fill("2");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/recipes?success=updated");
 

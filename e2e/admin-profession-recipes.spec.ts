@@ -87,12 +87,14 @@ test("opening the Recipes tab directly shows the linked recipes inside the Profe
   await createTemporaryRecipeForProfessionsTab(PROFESSION.slug, {
     suffix: "zeta",
     recipeName: "Zeta Test E2E Profession Recipes Tab Recipe",
-    resultingQuantity: 3,
+    resultQuantityMin: 3,
+    resultQuantityMax: 3,
   });
   await createTemporaryRecipeForProfessionsTab(PROFESSION.slug, {
     suffix: "alpha",
     recipeName: "Alpha Test E2E Profession Recipes Tab Recipe",
-    resultingQuantity: 1,
+    resultQuantityMin: 1,
+    resultQuantityMax: 1,
     requiredLevel: 9,
   });
 

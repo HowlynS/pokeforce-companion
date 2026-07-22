@@ -11,6 +11,7 @@ import {
   professionRecipesHref,
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
+import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
 
 export const dynamic = "force-dynamic";
 
@@ -135,7 +136,12 @@ export default async function ProfessionRecipesPage({
                       requiredLevel={recipe.requiredLevel}
                     />
                     <td>{recipe.resultingItem.name}</td>
-                    <td>{recipe.resultingQuantity}</td>
+                    <td>
+                      {formatRecipeQuantityRange(
+                        recipe.resultQuantityMin,
+                        recipe.resultQuantityMax
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

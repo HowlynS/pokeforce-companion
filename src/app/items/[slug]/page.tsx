@@ -10,6 +10,7 @@ import {
   buildAcquisitionSourceCard,
   groupAcquisitionSourcesByType,
 } from "@/lib/validation/acquisition-source";
+import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
 
 export const dynamic = "force-dynamic";
 
@@ -164,7 +165,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               <Card
                 key={recipe.id}
                 title={recipe.name}
-                description={`Yields ${recipe.resultingQuantity}x per craft.`}
+                description={`${formatRecipeProduces(recipe.resultQuantityMin, recipe.resultQuantityMax)} per craft.`}
                 href={`/recipes/${recipe.slug}`}
               />
             ))}

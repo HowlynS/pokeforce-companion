@@ -490,6 +490,46 @@ select:focus-visible {
   font-size: 14px;
 }
 
+/* Recipe output quantity range slice: the Output section's single
+   "Resulting quantity" cell became a nested Minimum/Maximum pair without
+   changing the outer Output grid's own 2x2 shape — this whole group
+   still occupies exactly the ONE grid cell the old single field did.
+   Side by side at comfortable widths; wraps to stack only when the
+   cell's own available width is genuinely too narrow for both
+   (flex-wrap, not a media query, since the right threshold depends on
+   the outer grid's own current column count/width, not the viewport
+   alone). */
+.recipe-quantity-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.recipe-quantity-field {
+  display: grid;
+  gap: 8px;
+  flex: 1 1 120px;
+  min-width: 120px;
+}
+
+/* Static guidance beneath a field's label (distinct from
+   .form-field-feedback, which is reserved for LIVE availability-check
+   text) — smaller and more muted than body text, with a compact line
+   height so a two-line helper never reads as loose as a paragraph. */
+.form-field-helper {
+  margin: 0;
+  padding-left: 14px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 1699px) {
+  .form-field-helper {
+    padding-left: 0;
+  }
+}
+
 /* Visual Pass II correction pass: at the same narrow-desktop tier the
    record-list/aside/editor-surface rules above shrink at, this 14px
    inset — otherwise purely cosmetic alignment — is dropped to reclaim a
@@ -1636,8 +1676,21 @@ input[type="checkbox"] {
   flex-shrink: 0;
 }
 
+/* flex-wrap: wrap is the fix for a genuine, resource-independent overflow:
+   the title (<h2>) and the "+ New X" button are flex items with the
+   default min-width: auto, so neither ever shrinks below its own
+   unwrapped text width — at the narrow-tier record-list floor (~151-185px
+   of available width), a long enough title+button pair (e.g. Locations:
+   "Locations" + "+ New location") together need more room than that and
+   force the row to overflow instead of shrinking. Rather than truncating
+   either the title or the button's own label (both need to stay fully
+   readable — a clipped "+ New locat…" action is a usability regression),
+   the pair drops to two lines when genuinely out of room; each item's own
+   text still never wraps mid-label. Applies identically to every
+   resource's record list — this is not Location-specific. */
 .admin-record-list-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;

@@ -8,6 +8,7 @@ import {
   withRecipeSearchQuery,
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
+import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
 import { deleteRecipeAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -99,7 +100,12 @@ export default async function DeleteRecipePage({
         </p>
 
         <p className="text-muted">
-          Result: {recipe.resultingQuantity}x {recipe.resultingItem.name}
+          Result:{" "}
+          {formatRecipeQuantityRange(
+            recipe.resultQuantityMin,
+            recipe.resultQuantityMax
+          )}{" "}
+          {recipe.resultingItem.name}
         </p>
 
         <p className="text-muted">
