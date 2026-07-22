@@ -28,6 +28,7 @@ const APPROVED_LABELS = [
   "Professions",
   "Categories",
   "Locations",
+  "Game Versions",
 ];
 
 const APPROVED_HREFS = [
@@ -37,6 +38,7 @@ const APPROVED_HREFS = [
   "/admin/professions",
   "/admin/categories",
   "/admin/locations",
+  "/admin/settings/game-versions",
 ];
 
 function renderNav(pathname: string): string {
@@ -58,7 +60,7 @@ function svgTags(html: string): string[] {
 }
 
 describe("AdminNav structure and labels", () => {
-  it("renders exactly the six approved labels", () => {
+  it("renders exactly the seven approved labels", () => {
     const html = renderNav("/admin/some-unmatched-route");
 
     for (const label of APPROVED_LABELS) {
@@ -83,11 +85,11 @@ describe("AdminNav structure and labels", () => {
 });
 
 describe("AdminNav decorative icons", () => {
-  it("renders exactly six decorative, aria-hidden icons, each inside a link", () => {
+  it("renders exactly seven decorative, aria-hidden icons, each inside a link", () => {
     const html = renderNav("/admin/some-unmatched-route");
 
     const svgs = svgTags(html);
-    expect(svgs).toHaveLength(6);
+    expect(svgs).toHaveLength(7);
     for (const svg of svgs) {
       expect(svg).toContain('class="lucide');
       expect(svg).toContain("admin-nav-icon");
@@ -128,9 +130,23 @@ describe("AdminNav active-state wiring", () => {
     expect(active[0]).toContain('href="/admin/locations"');
   });
 
-  it("marks nothing active on a secondary settings route", () => {
+  it("marks exactly the Game Versions link active on its own primary route", () => {
     const html = renderNav("/admin/settings/game-versions");
 
-    expect(html).not.toContain("aria-current");
+    const active = linkTags(html).filter((tag) =>
+      tag.includes('aria-current="page"')
+    );
+    expect(active).toHaveLength(1);
+    expect(active[0]).toContain('href="/admin/settings/game-versions"');
+  });
+
+  it("marks exactly the Game Versions link active on a nested settings route", () => {
+    const html = renderNav("/admin/settings/game-versions/abc123/edit");
+
+    const active = linkTags(html).filter((tag) =>
+      tag.includes('aria-current="page"')
+    );
+    expect(active).toHaveLength(1);
+    expect(active[0]).toContain('href="/admin/settings/game-versions"');
   });
 });

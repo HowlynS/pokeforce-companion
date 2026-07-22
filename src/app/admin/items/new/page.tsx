@@ -87,8 +87,6 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
             eyebrow="Item"
             title="Create item"
             subtitle="Add a new item to the wiki."
-            backHref={withItemSearchQuery(ITEM_LIST_PATH, query)}
-            backLabel="Back to Item Management"
           />
 
           <EditorTabs label="Item editor sections" tabs={tabs} />
@@ -102,20 +100,7 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
       }
       aside={
         <>
-          <ImagePanel>
-            <label className="form-field">
-              <span className="form-field-label">
-                Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-              </span>
-              <input
-                type="file"
-                name="image"
-                accept="image/png,image/jpeg,image/webp"
-                form={ITEM_CREATE_FORM_ID}
-                className="form-input"
-              />
-            </label>
-          </ImagePanel>
+          <ImagePanel imageUrl={null} formId={ITEM_CREATE_FORM_ID} />
 
           {/* No fake existing verification state on create: both fields
               are null, so the panel renders Unverified with no stamp
@@ -133,7 +118,7 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
       <form
         id={ITEM_CREATE_FORM_ID}
         action={createItemAction}
-        className="form-grid"
+        className="form-grid form-grid-responsive"
       >
         <p className="form-section-heading">Identity</p>
 

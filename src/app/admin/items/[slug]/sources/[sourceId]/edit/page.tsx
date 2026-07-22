@@ -4,9 +4,11 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
+import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   itemEditorTabs,
+  itemSourceDeleteHref,
   itemSourcesHref,
   normalizeItemSearchQuery,
 } from "@/lib/admin/item-workspace";
@@ -102,8 +104,6 @@ export default async function EditAcquisitionSourcePage({
             eyebrow="Acquisition Source"
             title="Edit Acquisition Source"
             subtitle={item.name}
-            backHref={itemSourcesHref(item.slug, query)}
-            backLabel="Back to Acquisition Sources"
           />
 
           <EditorTabs label="Item editor sections" tabs={tabs} />
@@ -116,19 +116,27 @@ export default async function EditAcquisitionSourcePage({
         </>
       }
       aside={
-        <VerificationPanel
-          gameVersions={gameVersions}
-          verifiedAt={source.verifiedAt}
-          verifiedGameVersion={source.verifiedGameVersion}
-          formId={SOURCE_EDIT_FORM_ID}
-        />
+        <>
+          <VerificationPanel
+            gameVersions={gameVersions}
+            verifiedAt={source.verifiedAt}
+            verifiedGameVersion={source.verifiedGameVersion}
+            formId={SOURCE_EDIT_FORM_ID}
+          />
+
+          <DangerZonePanel
+            resourceLabel="acquisition source"
+            deleteHref={itemSourceDeleteHref(item.slug, source.id, query)}
+            deleteLabel="Delete Source"
+          />
+        </>
       }
     >
       <div className="admin-editor-surface">
       <form
         id={SOURCE_EDIT_FORM_ID}
         action={updateAcquisitionSourceAction}
-        className="form-grid"
+        className="form-grid form-grid-responsive"
       >
         <input type="hidden" name="id" value={source.id} />
         <input type="hidden" name="itemSlug" value={item.slug} />

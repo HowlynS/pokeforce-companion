@@ -60,8 +60,10 @@ const VERIFY_ITEM = {
 // always catches it.
 const HISTORICAL_VERSION_NAME = "test-e2e-gv-items-historical";
 
-const VERIFICATION_CHECKBOX_LABEL =
-  "Mark gameplay data as verified for the selected game version.";
+// The checkbox's own label text is now dynamic ("Mark as verified for
+// {selected version's name}"), so every call site matches this pattern
+// rather than one fixed string.
+const VERIFICATION_CHECKBOX_LABEL = /^Mark as verified for/;
 
 // Separate temporary Items for the two relation-blocked deletion tests, so
 // neither depends on the lifecycle test's data or on each other.
@@ -147,7 +149,7 @@ async function createMinimalItemThroughForm(
 
 // One of the shared VerificationPanel's rows inside the Item edit page's
 // aside column, located by its label (dt) text — scoped to the panel so
-// "Current version" and "Verified against" can never collide when both
+// "Current version" and "Verified for" can never collide when both
 // happen to show the same Game Version name.
 function verificationRow(page: Page, label: string) {
   return page
@@ -280,9 +282,10 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
     "aria-current",
     "page"
   );
-  // General is active; Acquisition Sources, Used in Recipes, and Metadata
-  // are all real tab links (Slices 9B.6/9B.7/9B.8) — no Item tab remains
-  // a disabled placeholder.
+  // General is active; Acquisition Sources and Used in Recipes are both
+  // real tab links — the Metadata tab was removed (Visual Pass sub-slice
+  // 4), so exactly three Item tabs exist and none is a disabled
+  // placeholder.
   const tabNav = page.getByRole("navigation", { name: "Item editor sections" });
   await expect(
     tabNav.getByRole("link", { name: "General", exact: true })
@@ -293,9 +296,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(
     tabNav.getByRole("link", { name: "Used in Recipes", exact: true })
   ).toBeVisible();
-  await expect(
-    tabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toBeVisible();
+  await expect(tabNav.getByRole("link")).toHaveCount(3);
   await expect(tabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
@@ -342,7 +343,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   // The normal edit above never touched the verification checkbox, so the
   // item must still render as unverified.
   await page.goto(`/admin/items/${EDITED.slug}/edit`);
-  await expect(verificationRow(page, "Verified against")).toHaveCount(0);
+  await expect(verificationRow(page, "Verified for")).toHaveCount(0);
 
   await page.goto("/items");
   const editedCard = cardLink(page, EDITED.name);
@@ -404,8 +405,8 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await expect(
     page.locator(".admin-status-badge", { hasText: "Unverified" })
   ).toBeVisible();
-  await expect(verificationRow(page, "Verified against")).toHaveCount(0);
-  const picker = page.getByLabel("Game version to verify against");
+  await expect(verificationRow(page, "Verified for")).toHaveCount(0);
+  const picker = page.getByLabel("Verify this record for");
   await expect(
     picker.locator("option:checked"),
     "the current version is preselected"
@@ -430,7 +431,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
       hasText: "Verified — current version",
     })
   ).toBeVisible();
-  await expect(verificationRow(page, "Verified against")).toContainText(
+  await expect(verificationRow(page, "Verified for")).toContainText(
     CURRENT_VERSION_NAME
   );
   const stampedDateText = await verificationRow(page, "Verified on").textContent();
@@ -449,7 +450,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   // item: verification is a per-save action, not persistent form state.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page
-    .getByLabel("Game version to verify against")
+    .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page
     .getByLabel(/^Description/)
@@ -466,7 +467,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
       hasText: "Verified — current version",
     })
   ).toBeVisible();
-  await expect(verificationRow(page, "Verified against")).toContainText(
+  await expect(verificationRow(page, "Verified for")).toContainText(
     CURRENT_VERSION_NAME
   );
   expect(await verificationRow(page, "Verified on").textContent()).toBe(
@@ -475,7 +476,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
 
   // --- Verifying against a SELECTED historical version ------------------
   await page
-    .getByLabel("Game version to verify against")
+    .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save item", exact: true }).click();
@@ -487,7 +488,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
       hasText: "Verified — older version",
     })
   ).toBeVisible();
-  await expect(verificationRow(page, "Verified against")).toContainText(
+  await expect(verificationRow(page, "Verified for")).toContainText(
     HISTORICAL_VERSION_NAME
   );
 

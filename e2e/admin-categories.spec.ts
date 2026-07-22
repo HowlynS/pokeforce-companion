@@ -166,7 +166,7 @@ test("Create category opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
-test("Category editor: create shows only General; edit marks General active with Items and Metadata both real; exactly one h1 renders; Timestamps and Image render on edit; no verification controls ever appear", async ({
+test("Category editor: create shows only General; edit marks General active with Items as the one other real tab; exactly one h1 renders; Timestamps and Image render on edit; no verification controls ever appear", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -201,7 +201,8 @@ test("Category editor: create shows only General; edit marks General active with
   });
 
   // --- Edit: exactly one h1 (the category's own name), General active,
-  // Items and Metadata both real, Timestamps and Image present, still no
+  // Items the one other real tab (the Metadata tab was removed — Visual
+  // Pass sub-slice 4), Timestamps and Image present, still no
   // verification controls --------------------------------------------------
   await recordRow(page, "Test E2E Category Tabs").click();
   await expect(page).toHaveURL("/admin/categories/test-e2e-category-tabs/edit");
@@ -219,14 +220,12 @@ test("Category editor: create shows only General; edit marks General active with
     editTabNav.getByRole("link", { name: "General", exact: true })
   ).toHaveAttribute("aria-current", "page");
   await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
-  // Items (Slice 9E.3) and Metadata (Slice 9E.4) are both real tabs now —
-  // no Category tab remains disabled.
+  // Items is the one other real tab — no Category tab remains disabled,
+  // and the removed Metadata tab does not reappear.
   await expect(
     editTabNav.getByRole("link", { name: "Items", exact: true })
   ).toBeVisible();
-  await expect(
-    editTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toBeVisible();
+  await expect(editTabNav.getByRole("link")).toHaveCount(2);
   await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(

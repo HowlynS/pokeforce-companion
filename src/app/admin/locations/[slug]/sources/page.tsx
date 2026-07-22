@@ -7,12 +7,10 @@ import { ContextPanel } from "@/components/admin/context-panel";
 import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
-  LOCATION_LIST_PATH,
   locationEditorTabs,
   locationSourcesHref,
   normalizeLocationSearchQuery,
   sortLocationAcquisitionSourcesByType,
-  withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
 import {
   ACQUISITION_TYPE_LABELS,
@@ -144,8 +142,6 @@ export default async function LocationSourcesPage({
             eyebrow="Location"
             title={location.name}
             subtitle={location.slug}
-            backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-            backLabel="Back to Location Management"
           />
 
           <EditorTabs label="Location editor sections" tabs={tabs} />

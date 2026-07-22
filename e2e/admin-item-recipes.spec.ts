@@ -284,7 +284,7 @@ test("an item with no recipe usage shows a valid empty state", async ({
   await expect(page.getByRole("table")).toHaveCount(0);
 });
 
-test("General, Acquisition Sources, and Metadata remain real links from the Used in Recipes tab", async ({
+test("General and Acquisition Sources remain real links from the Used in Recipes tab, and no Item tab is disabled", async ({
   page,
 }) => {
   const ITEM = {
@@ -299,11 +299,10 @@ test("General, Acquisition Sources, and Metadata remain real links from the Used
   ).toHaveAttribute("aria-current", "page");
   await expect(tabNav(page).locator('[aria-current="page"]')).toHaveCount(1);
 
-  // Metadata is a real tab since Slice 9B.8 — no Item tab remains a
-  // disabled placeholder.
-  await expect(
-    tabNav(page).getByRole("link", { name: "Metadata", exact: true })
-  ).toBeVisible();
+  // The Metadata tab was removed (Visual Pass sub-slice 4) — every
+  // remaining Item tab (General, Acquisition Sources, Used in Recipes)
+  // is a real link; none is a disabled placeholder.
+  await expect(tabNav(page).getByRole("link")).toHaveCount(3);
   await expect(tabNav(page).locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await tabNav(page)
@@ -328,14 +327,6 @@ test("General, Acquisition Sources, and Metadata remain real links from the Used
   await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/recipes`);
   await expect(
     tabNav(page).getByRole("link", { name: "Used in Recipes", exact: true })
-  ).toHaveAttribute("aria-current", "page");
-
-  await tabNav(page)
-    .getByRole("link", { name: "Metadata", exact: true })
-    .click();
-  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/metadata`);
-  await expect(
-    tabNav(page).getByRole("link", { name: "Metadata", exact: true })
   ).toHaveAttribute("aria-current", "page");
 });
 

@@ -13,7 +13,7 @@ function activeHrefFor(pathname: string): string | null {
 }
 
 describe("ADMIN_NAV_ITEMS", () => {
-  it("contains exactly the six approved primary destinations, in order", () => {
+  it("contains exactly the seven approved primary destinations, in order", () => {
     expect(ADMIN_NAV_ITEMS.map((item) => item.label)).toEqual([
       "Dashboard",
       "Items",
@@ -21,6 +21,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "Professions",
       "Categories",
       "Locations",
+      "Game Versions",
     ]);
     expect(ADMIN_NAV_ITEMS.map((item) => item.href)).toEqual([
       "/admin",
@@ -29,6 +30,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "/admin/professions",
       "/admin/categories",
       "/admin/locations",
+      "/admin/settings/game-versions",
     ]);
     expect(ADMIN_NAV_ITEMS.map((item) => item.icon)).toEqual([
       "dashboard",
@@ -37,27 +39,22 @@ describe("ADMIN_NAV_ITEMS", () => {
       "professions",
       "categories",
       "locations",
+      "gameVersions",
     ]);
   });
 
-  it("never includes Game Versions, Acquisition Sources, or other excluded destinations", () => {
+  it("never includes Acquisition Sources or other excluded destinations", () => {
     const labels = ADMIN_NAV_ITEMS.map((item) => item.label.toLowerCase());
     const hrefs = ADMIN_NAV_ITEMS.map((item) => item.href);
 
-    for (const excluded of [
-      "game version",
-      "acquisition",
-      "source",
-      "user",
-      "role",
-      "audit",
-      "route hub",
-      "settings",
-    ]) {
+    for (const excluded of ["acquisition", "user", "role", "audit", "route hub"]) {
       expect(labels.some((label) => label.includes(excluded))).toBe(false);
     }
-    expect(hrefs.some((href) => href.includes("settings"))).toBe(false);
     expect(hrefs.some((href) => href.includes("sources"))).toBe(false);
+    // Game Versions is now the ONE approved settings-scoped primary entry.
+    expect(hrefs.filter((href) => href.includes("settings"))).toEqual([
+      "/admin/settings/game-versions",
+    ]);
   });
 });
 
@@ -102,16 +99,23 @@ describe("isAdminNavItemActive", () => {
     expect(activeHrefFor("/admin/locations/route-1/delete")).toBe(
       "/admin/locations"
     );
+
+    // Game Versions (Visual Pass sub-slice 8): now a primary entry too,
+    // active on its own list route and every nested route.
+    expect(activeHrefFor("/admin/settings/game-versions")).toBe(
+      "/admin/settings/game-versions"
+    );
+    expect(activeHrefFor("/admin/settings/game-versions/abc123/edit")).toBe(
+      "/admin/settings/game-versions"
+    );
+    expect(activeHrefFor("/admin/settings/game-versions/abc123/delete")).toBe(
+      "/admin/settings/game-versions"
+    );
   });
 
   it("matches on path-segment boundaries, never on name prefixes", () => {
     expect(activeHrefFor("/admin/itemsomething")).toBeNull();
     expect(activeHrefFor("/admin/recipes-archive")).toBeNull();
-  });
-
-  it("marks nothing active on the secondary settings routes", () => {
-    expect(activeHrefFor("/admin/settings/game-versions")).toBeNull();
-    expect(activeHrefFor("/admin/settings/game-versions/abc123/edit")).toBeNull();
   });
 
   it("marks nothing active on public routes", () => {

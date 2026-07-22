@@ -95,25 +95,16 @@ export function locationSourcesHref(slug: string, query: string): string {
   );
 }
 
-/** The Metadata tab route for one location, preserving the query (Slice
-    9F.5) — read-only administrative information (timestamps and
-    verification), never internal ids. */
-export function locationMetadataHref(slug: string, query: string): string {
-  return withLocationSearchQuery(
-    `${LOCATION_LIST_PATH}/${slug}/metadata`,
-    query
-  );
-}
-
 /** Which Location editor tab is active — General (the record's own
-    fields), Hierarchy (Slice 9F.3), Acquisition Sources (Slice 9F.4), or
-    Metadata (Slice 9F.5). Every tab is now a real destination — none
-    renders as a disabled placeholder. */
-export type LocationEditorTabKey =
-  | "general"
-  | "hierarchy"
-  | "sources"
-  | "metadata";
+    fields), Hierarchy (Slice 9F.3), or Acquisition Sources (Slice 9F.4).
+    The former Metadata tab (Slice 9F.5) was removed in the Visual Pass
+    (sub-slice 4): type/parent are already visible on General/Hierarchy,
+    the sub-location and Acquisition Source counts are already shown by
+    the Hierarchy and Acquisition Sources tabs' own counts, and
+    Verification/Timestamps duplicate General's aside, so
+    /admin/locations/[slug]/metadata now redirects to General instead of
+    rendering a fourth tab. */
+export type LocationEditorTabKey = "general" | "hierarchy" | "sources";
 
 /**
  * Sorts Acquisition Sources for the Location Sources tab: grouped by
@@ -144,13 +135,12 @@ export type LocationEditorTab = {
 
 /**
  * The Location editor's tab strip, shared by every route inside the
- * Location workspace that renders tabs (General edit, Hierarchy,
- * Acquisition Sources, and the Metadata route added in Slice 9F.5) — one
- * function so every tab's href/active state can never drift out of sync
- * between pages. As of Slice 9F.5 every tab is a real link; none renders
- * as a disabled placeholder. The create page shows only General with no
- * placeholders at all (mirroring the Item/Recipe/Profession workspaces'
- * create-page precedent), so this helper stays edit-only.
+ * Location workspace that renders tabs (General edit, Hierarchy, and
+ * Acquisition Sources) — one function so every tab's href/active state
+ * can never drift out of sync between pages. The create page shows only
+ * General with no placeholders at all (mirroring the Item/Recipe/
+ * Profession workspaces' create-page precedent), so this helper stays
+ * edit-only.
  */
 export function locationEditorTabs(
   slug: string,
@@ -172,11 +162,6 @@ export function locationEditorTabs(
       label: "Acquisition Sources",
       href: locationSourcesHref(slug, query),
       active: active === "sources",
-    },
-    {
-      label: "Metadata",
-      href: locationMetadataHref(slug, query),
-      active: active === "metadata",
     },
   ];
 }

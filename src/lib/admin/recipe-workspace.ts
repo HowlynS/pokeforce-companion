@@ -69,13 +69,6 @@ export function recipeIngredientsHref(slug: string, query: string): string {
   return withRecipeSearchQuery(`${RECIPE_LIST_PATH}/${slug}/ingredients`, query);
 }
 
-/** The Metadata tab route for one recipe, preserving the query (Slice
-    9C.4) — read-only administrative metadata (timestamps and
-    verification), never internal ids. */
-export function recipeMetadataHref(slug: string, query: string): string {
-  return withRecipeSearchQuery(`${RECIPE_LIST_PATH}/${slug}/metadata`, query);
-}
-
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
     component into this pure, React-free module. */
@@ -86,20 +79,21 @@ export type RecipeEditorTab = {
   disabled?: boolean;
 };
 
-/** Which Recipe editor tab is active — General (Slice 9C.2), Ingredients
-    (Slice 9C.3), or Metadata (Slice 9C.4). Every tab is now a real
-    destination — none renders as a disabled placeholder. */
-export type RecipeEditorTabKey = "general" | "ingredients" | "metadata";
+/** Which Recipe editor tab is active — General (Slice 9C.2) or
+    Ingredients (Slice 9C.3). The former Metadata tab (Slice 9C.4) was
+    removed in the Visual Pass (sub-slice 4): every fact it showed was
+    already duplicated by General's own aside (Verification/Timestamps)
+    or the resulting item/profession/level fields on General itself, so
+    /admin/recipes/[slug]/metadata now redirects to General instead of
+    rendering a third tab. */
+export type RecipeEditorTabKey = "general" | "ingredients";
 
 /**
- * The Recipe edit/ingredients/metadata routes' shared tab strip (Slice
- * 9C.4, extending Slice 9C.3's `recipeEditorTabs`): General, Ingredients,
- * and Metadata are all real, independent destinations now — one function
- * so their hrefs/active state can never drift out of sync between the
- * three pages, exactly like the Item workspace's `itemEditorTabs` after
- * Slice 9B.8. The create page shows only General (mirroring the Item
- * workspace's create-page precedent), so this helper is deliberately
- * edit-only.
+ * The Recipe edit/ingredients routes' shared tab strip: one function so
+ * every tab's href/active state can never drift out of sync between the
+ * two pages, exactly like the Item workspace's `itemEditorTabs`. The
+ * create page shows only General (mirroring the Item workspace's
+ * create-page precedent), so this helper is deliberately edit-only.
  */
 export function recipeEditorTabs(
   slug: string,
@@ -116,11 +110,6 @@ export function recipeEditorTabs(
       label: "Ingredients",
       href: recipeIngredientsHref(slug, query),
       active: active === "ingredients",
-    },
-    {
-      label: "Metadata",
-      href: recipeMetadataHref(slug, query),
-      active: active === "metadata",
     },
   ];
 }

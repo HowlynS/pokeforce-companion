@@ -30,8 +30,10 @@ const CURRENT_VERSION_NAME = E2E_CURRENT_GAME_VERSION_NAME;
 // always catches it.
 const HISTORICAL_VERSION_NAME = "test-e2e-gv-recipes-historical";
 
-const VERIFICATION_CHECKBOX_LABEL =
-  "Mark gameplay data as verified for the selected game version.";
+// The checkbox's own label text is now dynamic ("Mark as verified for
+// {selected version's name}"), so every call site matches this pattern
+// rather than one fixed string.
+const VERIFICATION_CHECKBOX_LABEL = /^Mark as verified for/;
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -219,7 +221,7 @@ test("Create recipe opens the dedicated creation route", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("Recipe editor tabs: create shows only General; edit, ingredients, and metadata mark their own tab active with the other two real; exactly one h1 renders; Timestamps render on General edit and Metadata", async ({
+test("Recipe editor tabs: create shows only General; edit and ingredients mark their own tab active with the other one real; exactly one h1 renders; Timestamps render on General edit", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -249,8 +251,9 @@ test("Recipe editor tabs: create shows only General; edit, ingredients, and meta
   });
 
   // --- General edit: exactly one h1 (the recipe's own name), General
-  // active, Ingredients and Metadata both REAL tabs (Slice 9C.3/9C.4),
-  // Timestamps present (Created/Updated, no Verified stamp yet) ----------
+  // active, Ingredients is the one other REAL tab (the Metadata tab was
+  // removed — Visual Pass sub-slice 4), Timestamps present (Created/
+  // Updated only, no Verified row) ----------------------------------------
   await recordRow(page, "Test E2E Recipe Tabs").click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -272,9 +275,7 @@ test("Recipe editor tabs: create shows only General; edit, ingredients, and meta
   await expect(
     editTabNav.getByRole("link", { name: "Ingredients", exact: true })
   ).toBeVisible();
-  await expect(
-    editTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toBeVisible();
+  await expect(editTabNav.getByRole("link")).toHaveCount(2);
   await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(
@@ -293,7 +294,7 @@ test("Recipe editor tabs: create shows only General; edit, ingredients, and meta
   ).toHaveCount(0);
 
   // --- Ingredients: exactly one h1 (still the recipe's own name),
-  // Ingredients active, General and Metadata both REAL tabs, NO
+  // Ingredients active, General is the one other REAL tab, NO
   // Image/Verification/Timestamps panels (nothing to do with ingredients) -
   await editTabNav
     .getByRole("link", { name: "Ingredients", exact: true })
@@ -322,9 +323,7 @@ test("Recipe editor tabs: create shows only General; edit, ingredients, and meta
   await expect(
     ingredientsTabNav.getByRole("link", { name: "General", exact: true })
   ).toBeVisible();
-  await expect(
-    ingredientsTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toBeVisible();
+  await expect(ingredientsTabNav.getByRole("link")).toHaveCount(2);
   await expect(
     ingredientsTabNav.locator('[aria-disabled="true"]')
   ).toHaveCount(0);
@@ -342,53 +341,15 @@ test("Recipe editor tabs: create shows only General; edit, ingredients, and meta
     page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
   ).toHaveCount(0);
 
-  // --- Metadata: exactly one h1 (still the recipe's own name), Metadata
-  // active, General and Ingredients both REAL tabs, Verification and
-  // Timestamps panels present, NO Image panel (read-only tab) -----------
-  await ingredientsTabNav
-    .getByRole("link", { name: "Metadata", exact: true })
-    .click();
-  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-tabs/metadata");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  // The Danger zone reaches Delete even here, where there is no right
+  // rail (Visual Pass sub-slice 9) — rendered below the main content,
+  // outside the ingredient-capacity guard.
   await expect(
-    page.getByRole("heading", {
-      level: 1,
-      name: "Test E2E Recipe Tabs",
-      exact: true,
-    })
-  ).toBeVisible();
-
-  const metadataTabNav = page.getByRole("navigation", {
-    name: "Recipe editor sections",
-  });
-  await expect(
-    metadataTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toHaveAttribute("aria-current", "page");
-  await expect(
-    metadataTabNav.locator('[aria-current="page"]')
-  ).toHaveCount(1);
-  await expect(
-    metadataTabNav.getByRole("link", { name: "General", exact: true })
+    page.getByRole("heading", { level: 2, name: "Danger zone", exact: true })
   ).toBeVisible();
   await expect(
-    metadataTabNav.getByRole("link", { name: "Ingredients", exact: true })
-  ).toBeVisible();
-  await expect(metadataTabNav.locator('[aria-disabled="true"]')).toHaveCount(
-    0
-  );
-
-  await expect(
-    page.getByRole("heading", { level: 2, name: "Image", exact: true })
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("heading", { level: 2, name: "Verification", exact: true })
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
-  ).toBeVisible();
-  await expect(
-    page.getByRole("group", { name: "Ingredients (fill at least one row)" })
-  ).toHaveCount(0);
+    page.getByRole("link", { name: "Delete Recipe", exact: true })
+  ).toHaveAttribute("href", "/admin/recipes/test-e2e-recipe-tabs/delete");
 });
 
 test("recipe creation renders result, profession, and ingredients publicly", async ({
@@ -919,8 +880,10 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
     page.getByRole("group", { name: "Ingredients (fill at least one row)" })
   ).toHaveCount(0);
   // Deletion must never depend on the Ingredients form being renderable —
-  // the header's Delete Recipe action (EditorHeader `actions` slot) stays
-  // reachable even when the ingredient-count guard blocks the form.
+  // the unconditional Danger zone panel (rendered as a sibling of the
+  // guard's own banner, not nested inside it — this tab has no aside of
+  // its own) stays reachable even when the ingredient-count guard blocks
+  // the form.
   await expect(
     page.getByRole("link", { name: "Delete Recipe", exact: true })
   ).toBeVisible();
@@ -975,8 +938,9 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
     ingredients: [{ item: "Iron Ore", quantity: "1" }],
   });
 
-  // Quick switching opens the edit route; Delete is reached from its
-  // toolbar (the old table's per-row Delete link is gone).
+  // Quick switching opens the edit route; Delete is reached from the
+  // aside's Danger zone panel (the old table's per-row Delete link is
+  // gone, and Delete no longer lives in the sticky Save/Cancel bar).
   await recordRow(page, "Test E2E Recipe Delete").click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-delete/edit");
   await page.getByRole("link", { name: "Delete Recipe", exact: true }).click();
@@ -1030,10 +994,10 @@ test("gameplay verification stamps the selected game version and survives normal
   await expect(
     page.locator(".admin-status-badge", { hasText: "Unverified" })
   ).toBeVisible();
-  await expect(panelRow(page, "Verification", "Verified against")).toHaveCount(
+  await expect(panelRow(page, "Verification", "Verified for")).toHaveCount(
     0
   );
-  const picker = page.getByLabel("Game version to verify against");
+  const picker = page.getByLabel("Verify this record for");
   await expect(
     picker.locator("option:checked"),
     "the current version is preselected"
@@ -1059,11 +1023,14 @@ test("gameplay verification stamps the selected game version and survives normal
     })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(CURRENT_VERSION_NAME);
   const stampedDateText = await panelRow(page, "Verification", "Verified on")
     .textContent();
-  await expect(panelRow(page, "Timestamps", "Verified")).toBeVisible();
+  // The Verified date now lives only in VerificationPanel's own "Verified
+  // on" row above (Visual Pass sub-slice 7) — TimestampsPanel dropped the
+  // duplicate row entirely.
+  await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
 
   // --- A NORMAL edit, even one that moves the picker, must not alter the
   // stamp: the picker only ever proposes a version, and nothing is
@@ -1072,7 +1039,7 @@ test("gameplay verification stamps the selected game version and survives normal
   // recipe: verification is a per-save action, not persistent form state.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page
-    .getByLabel("Game version to verify against")
+    .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page.getByLabel("Resulting quantity", { exact: true }).fill("2");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
@@ -1085,7 +1052,7 @@ test("gameplay verification stamps the selected game version and survives normal
     })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(CURRENT_VERSION_NAME);
   expect(
     await panelRow(page, "Verification", "Verified on").textContent()
@@ -1093,7 +1060,7 @@ test("gameplay verification stamps the selected game version and survives normal
 
   // --- Verifying against a SELECTED historical version -------------------
   await page
-    .getByLabel("Game version to verify against")
+    .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
@@ -1104,7 +1071,7 @@ test("gameplay verification stamps the selected game version and survives normal
     page.locator(".admin-status-badge", { hasText: "Verified — older version" })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(HISTORICAL_VERSION_NAME);
 });
 

@@ -102,8 +102,6 @@ export default async function NewLocationPage({
             eyebrow="Location"
             title="Create Location"
             subtitle="Add a new location to the wiki."
-            backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-            backLabel="Back to Location Management"
           />
 
           <EditorTabs label="Location editor sections" tabs={tabs} />
@@ -117,20 +115,7 @@ export default async function NewLocationPage({
       }
       aside={
         <>
-          <ImagePanel>
-            <label className="form-field">
-              <span className="form-field-label">
-                Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-              </span>
-              <input
-                type="file"
-                name="image"
-                accept="image/png,image/jpeg,image/webp"
-                form={LOCATION_CREATE_FORM_ID}
-                className="form-input"
-              />
-            </label>
-          </ImagePanel>
+          <ImagePanel imageUrl={null} formId={LOCATION_CREATE_FORM_ID} />
 
           {/* No fake existing verification state on create: both fields
               are null, so the panel renders Unverified with no stamp
@@ -149,7 +134,7 @@ export default async function NewLocationPage({
       <form
         id={LOCATION_CREATE_FORM_ID}
         action={createLocationAction}
-        className="form-grid"
+        className="form-grid form-grid-responsive"
       >
         <p className="form-section-heading">Identity</p>
 

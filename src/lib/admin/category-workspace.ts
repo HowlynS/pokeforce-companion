@@ -73,20 +73,13 @@ export function categoryItemsHref(slug: string, query: string): string {
   return withCategorySearchQuery(`${CATEGORY_LIST_PATH}/${slug}/items`, query);
 }
 
-/** The Metadata tab route for one category, preserving the query (Slice
-    9E.4) — read-only administrative information (timestamps and Item
-    count), never internal ids, mirroring `professionMetadataHref`. */
-export function categoryMetadataHref(slug: string, query: string): string {
-  return withCategorySearchQuery(
-    `${CATEGORY_LIST_PATH}/${slug}/metadata`,
-    query
-  );
-}
-
 /** Which Category editor tab is active — General (the record's own
-    fields), Items (Slice 9E.3), or Metadata (Slice 9E.4). Every tab is
-    now a real destination — none renders as a disabled placeholder. */
-export type CategoryEditorTabKey = "general" | "items" | "metadata";
+    fields) or Items (Slice 9E.3). The former Metadata tab (Slice 9E.4)
+    was removed in the Visual Pass (sub-slice 4): its one fact (Item
+    count) is already shown by the Items tab's own count, and Timestamps
+    duplicates General's aside, so /admin/categories/[slug]/metadata now
+    redirects to General instead of rendering a third tab. */
+export type CategoryEditorTabKey = "general" | "items";
 
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
@@ -100,13 +93,11 @@ export type CategoryEditorTab = {
 
 /**
  * The Category editor's tab strip, shared by every route inside the
- * Category workspace that renders tabs (General edit, Items, and the
- * Metadata route added in Slice 9E.4) — one function so every tab's
- * href/active state can never drift out of sync between pages. As of
- * Slice 9E.4 every tab is a real link; none renders as a disabled
- * placeholder. The create page shows only General with no placeholders
- * at all (mirroring the Item/Recipe/Profession workspaces' create-page
- * precedent), so this helper stays edit-only.
+ * Category workspace that renders tabs (General edit and Items) — one
+ * function so every tab's href/active state can never drift out of sync
+ * between pages. The create page shows only General with no
+ * placeholders at all (mirroring the Item/Recipe/Profession workspaces'
+ * create-page precedent), so this helper stays edit-only.
  */
 export function categoryEditorTabs(
   slug: string,
@@ -123,11 +114,6 @@ export function categoryEditorTabs(
       label: "Items",
       href: categoryItemsHref(slug, query),
       active: active === "items",
-    },
-    {
-      label: "Metadata",
-      href: categoryMetadataHref(slug, query),
-      active: active === "metadata",
     },
   ];
 }

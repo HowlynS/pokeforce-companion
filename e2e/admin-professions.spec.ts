@@ -53,8 +53,10 @@ const CURRENT_VERSION_NAME = E2E_CURRENT_GAME_VERSION_NAME;
 // always catches it.
 const HISTORICAL_VERSION_NAME = "test-e2e-gv-professions-historical";
 
-const VERIFICATION_CHECKBOX_LABEL =
-  "Mark gameplay data as verified for the selected game version.";
+// The checkbox's own label text is now dynamic ("Mark as verified for
+// {selected version's name}"), so every call site matches this pattern
+// rather than one fixed string.
+const VERIFICATION_CHECKBOX_LABEL = /^Mark as verified for/;
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -195,7 +197,7 @@ test("Create profession opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
-test("Profession editor: create shows only General; edit marks General active with Recipes and Metadata both real; exactly one h1 renders; Timestamps render on edit only", async ({
+test("Profession editor: create shows only General; edit marks General active with Recipes as the one other real tab; exactly one h1 renders; Timestamps render on edit only", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -224,8 +226,9 @@ test("Profession editor: create shows only General; edit marks General active wi
   });
 
   // --- Edit: exactly one h1 (the profession's own name), General
-  // active, Recipes and Metadata both real links, Timestamps present
-  // (Created/Updated, no Verified stamp yet) ----------------------------
+  // active, Recipes the one other real link (the Metadata tab was
+  // removed — Visual Pass sub-slice 4), Timestamps present (Created/
+  // Updated only, no Verified row) ----------------------------------------
   await recordRow(page, "Test E2E Profession Tabs").click();
   await expect(page).toHaveURL("/admin/professions/test-e2e-profession-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -244,14 +247,12 @@ test("Profession editor: create shows only General; edit marks General active wi
     editTabNav.getByRole("link", { name: "General", exact: true })
   ).toHaveAttribute("aria-current", "page");
   await expect(editTabNav.locator('[aria-current="page"]')).toHaveCount(1);
-  // Recipes (Slice 9D.3) and Metadata (Slice 9D.4) are both real tabs now —
-  // no Profession tab remains disabled.
+  // Recipes is the one other real tab — no Profession tab remains
+  // disabled, and the removed Metadata tab does not reappear.
   await expect(
     editTabNav.getByRole("link", { name: "Recipes", exact: true })
   ).toBeVisible();
-  await expect(
-    editTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).toBeVisible();
+  await expect(editTabNav.getByRole("link")).toHaveCount(2);
   await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(
@@ -624,10 +625,10 @@ test("gameplay verification stamps the selected game version and survives normal
   await expect(
     page.locator(".admin-status-badge", { hasText: "Unverified" })
   ).toBeVisible();
-  await expect(panelRow(page, "Verification", "Verified against")).toHaveCount(
+  await expect(panelRow(page, "Verification", "Verified for")).toHaveCount(
     0
   );
-  const picker = page.getByLabel("Game version to verify against");
+  const picker = page.getByLabel("Verify this record for");
   await expect(
     picker.locator("option:checked"),
     "the current version is preselected"
@@ -653,11 +654,14 @@ test("gameplay verification stamps the selected game version and survives normal
     })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(CURRENT_VERSION_NAME);
   const stampedDateText = await panelRow(page, "Verification", "Verified on")
     .textContent();
-  await expect(panelRow(page, "Timestamps", "Verified")).toBeVisible();
+  // The Verified date now lives only in VerificationPanel's own "Verified
+  // on" row above (Visual Pass sub-slice 7) — TimestampsPanel dropped the
+  // duplicate row entirely.
+  await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
 
   // --- A NORMAL edit, even one that moves the picker, must not alter the
   // stamp: the picker only ever proposes a version, and nothing is
@@ -667,7 +671,7 @@ test("gameplay verification stamps the selected game version and survives normal
   // state.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page
-    .getByLabel("Game version to verify against")
+    .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page
     .getByLabel(/^Description/)
@@ -682,7 +686,7 @@ test("gameplay verification stamps the selected game version and survives normal
     })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(CURRENT_VERSION_NAME);
   expect(
     await panelRow(page, "Verification", "Verified on").textContent()
@@ -690,7 +694,7 @@ test("gameplay verification stamps the selected game version and survives normal
 
   // --- Verifying against a SELECTED historical version -------------------
   await page
-    .getByLabel("Game version to verify against")
+    .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
@@ -701,7 +705,7 @@ test("gameplay verification stamps the selected game version and survives normal
     page.locator(".admin-status-badge", { hasText: "Verified — older version" })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(HISTORICAL_VERSION_NAME);
 });
 

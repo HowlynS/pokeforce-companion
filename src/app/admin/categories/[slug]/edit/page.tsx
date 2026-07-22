@@ -6,6 +6,7 @@ import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
+import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
   CATEGORY_LIST_PATH,
@@ -90,8 +91,6 @@ export default async function EditCategoryPage({
             eyebrow="Category"
             title={category.name}
             subtitle={category.slug}
-            backHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-            backLabel="Back to Category Management"
           />
 
           <EditorTabs label="Category editor sections" tabs={tabs} />
@@ -105,61 +104,21 @@ export default async function EditCategoryPage({
       }
       aside={
         <>
-          <ImagePanel>
-            {imageUrl ? (
-              <div className="admin-image-preview-wrap">
-                <input
-                  type="checkbox"
-                  name="removeImage"
-                  id="removeImage"
-                  form={CATEGORY_EDIT_FORM_ID}
-                  className="admin-image-remove-checkbox"
-                />
-                <div className="admin-image-remove-frame">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
-                  <img
-                    src={imageUrl}
-                    alt={`Current image for ${category.name}`}
-                    className="admin-image-preview"
-                  />
-                  <label
-                    htmlFor="removeImage"
-                    title="Remove current image"
-                    className="admin-image-remove-toggle"
-                  >
-                    <span aria-hidden="true">&times;</span>
-                    <span className="admin-image-remove-hidden-text">
-                      Remove current image
-                    </span>
-                  </label>
-                </div>
-                <p className="admin-image-remove-note">
-                  Image will be removed when saved.
-                </p>
-              </div>
-            ) : (
-              <span className="admin-image-empty">No image uploaded.</span>
-            )}
-
-            <label className="form-field">
-              <span className="form-field-label">
-                {category.image
-                  ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
-                  : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
-              </span>
-              <input
-                type="file"
-                name="image"
-                accept="image/png,image/jpeg,image/webp"
-                form={CATEGORY_EDIT_FORM_ID}
-                className="form-input"
-              />
-            </label>
-          </ImagePanel>
+          <ImagePanel
+            imageUrl={imageUrl}
+            imageAlt={`Current image for ${category.name}`}
+            formId={CATEGORY_EDIT_FORM_ID}
+          />
 
           <TimestampsPanel
             createdAt={category.createdAt}
             updatedAt={category.updatedAt}
+          />
+
+          <DangerZonePanel
+            resourceLabel="category"
+            deleteHref={categoryDeleteHref(category.slug, query)}
+            deleteLabel="Delete Category"
           />
         </>
       }
@@ -168,7 +127,7 @@ export default async function EditCategoryPage({
       <form
         id={CATEGORY_EDIT_FORM_ID}
         action={updateCategoryAction}
-        className="form-grid"
+        className="form-grid form-grid-responsive"
       >
         <input type="hidden" name="id" value={category.id} />
         <input type="hidden" name="originalSlug" value={category.slug} />
@@ -208,8 +167,6 @@ export default async function EditCategoryPage({
         <EditorActions
           submitLabel="Save Changes"
           cancelHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-          deleteHref={categoryDeleteHref(category.slug, query)}
-          deleteLabel="Delete Category"
         />
       </form>
       </div>

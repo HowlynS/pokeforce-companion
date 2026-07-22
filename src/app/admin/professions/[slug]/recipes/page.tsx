@@ -6,11 +6,9 @@ import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ContextPanel } from "@/components/admin/context-panel";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
-  PROFESSION_LIST_PATH,
   normalizeProfessionSearchQuery,
   professionEditorTabs,
   professionRecipesHref,
-  withProfessionSearchQuery,
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
 
@@ -101,8 +99,6 @@ export default async function ProfessionRecipesPage({
             eyebrow="Profession"
             title={profession.name}
             subtitle={profession.slug}
-            backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-            backLabel="Back to Profession Management"
           />
 
           <EditorTabs label="Profession editor sections" tabs={tabs} />

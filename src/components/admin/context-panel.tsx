@@ -8,6 +8,9 @@ type ContextPanelProps = {
   title: string;
   description?: string;
   footer?: React.ReactNode;
+  /** Appended alongside the base "admin-panel" class (e.g. the Danger
+      zone's own danger-tinted border/heading) — never a replacement. */
+  className?: string;
   children: React.ReactNode;
 };
 
@@ -15,10 +18,11 @@ export function ContextPanel({
   title,
   description,
   footer,
+  className,
   children,
 }: ContextPanelProps) {
   return (
-    <section className="admin-panel">
+    <section className={className ? `admin-panel ${className}` : "admin-panel"}>
       <h2 className="admin-panel-title">{title}</h2>
 
       {description ? (

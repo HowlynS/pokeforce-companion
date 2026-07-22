@@ -87,8 +87,6 @@ export default async function NewProfessionPage({
             eyebrow="Profession"
             title="Create Profession"
             subtitle="Add a new profession to the wiki."
-            backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-            backLabel="Back to Profession Management"
           />
 
           <EditorTabs label="Profession editor sections" tabs={tabs} />
@@ -102,20 +100,7 @@ export default async function NewProfessionPage({
       }
       aside={
         <>
-          <ImagePanel>
-            <label className="form-field">
-              <span className="form-field-label">
-                Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-              </span>
-              <input
-                type="file"
-                name="image"
-                accept="image/png,image/jpeg,image/webp"
-                form={PROFESSION_CREATE_FORM_ID}
-                className="form-input"
-              />
-            </label>
-          </ImagePanel>
+          <ImagePanel imageUrl={null} formId={PROFESSION_CREATE_FORM_ID} />
 
           {/* No fake existing verification state on create: both fields
               are null, so the panel renders Unverified with no stamp
@@ -134,7 +119,7 @@ export default async function NewProfessionPage({
       <form
         id={PROFESSION_CREATE_FORM_ID}
         action={createProfessionAction}
-        className="form-grid"
+        className="form-grid form-grid-responsive"
       >
         {/* Client-enhanced Name field with live duplicate feedback; the
             submission-time duplicate check in createProfessionAction

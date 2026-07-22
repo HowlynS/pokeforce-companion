@@ -6,11 +6,9 @@ import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ContextPanel } from "@/components/admin/context-panel";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
-  ITEM_LIST_PATH,
   itemEditorTabs,
   itemUsedInRecipesHref,
   normalizeItemSearchQuery,
-  withItemSearchQuery,
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 
@@ -112,13 +110,7 @@ export default async function ItemRecipesPage({
       recordHref={itemUsedInRecipesHref}
       header={
         <>
-          <EditorHeader
-            eyebrow="Item"
-            title={item.name}
-            subtitle={item.slug}
-            backHref={withItemSearchQuery(ITEM_LIST_PATH, query)}
-            backLabel="Back to Item Management"
-          />
+          <EditorHeader eyebrow="Item" title={item.name} subtitle={item.slug} />
 
           <EditorTabs label="Item editor sections" tabs={tabs} />
         </>

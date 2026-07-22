@@ -6,11 +6,9 @@ import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ContextPanel } from "@/components/admin/context-panel";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
-  CATEGORY_LIST_PATH,
   categoryEditorTabs,
   categoryItemsHref,
   normalizeCategorySearchQuery,
-  withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
 import { prisma } from "@/lib/db";
 
@@ -97,8 +95,6 @@ export default async function CategoryItemsPage({
             eyebrow="Category"
             title={category.name}
             subtitle={category.slug}
-            backHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-            backLabel="Back to Category Management"
           />
 
           <EditorTabs label="Category editor sections" tabs={tabs} />

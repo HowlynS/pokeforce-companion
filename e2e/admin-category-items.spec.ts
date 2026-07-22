@@ -278,7 +278,7 @@ test("a category with no linked item shows a valid empty state", async ({
   await expect(page.getByRole("table")).toHaveCount(0);
 });
 
-test("General and Metadata remain real links from the Items tab, and no Category tab is disabled", async ({
+test("General remains a real link from the Items tab, and no Category tab is disabled", async ({
   page,
 }) => {
   const CATEGORY = {
@@ -293,11 +293,10 @@ test("General and Metadata remain real links from the Items tab, and no Category
   ).toHaveAttribute("aria-current", "page");
   await expect(tabNav(page).locator('[aria-current="page"]')).toHaveCount(1);
 
-  // Metadata is a real tab since Slice 9E.4 — no Category tab remains a
+  // The Metadata tab was removed (Visual Pass sub-slice 4) — every
+  // remaining Category tab (General, Items) is a real link; none is a
   // disabled placeholder.
-  await expect(
-    tabNav(page).getByRole("link", { name: "Metadata", exact: true })
-  ).toBeVisible();
+  await expect(tabNav(page).getByRole("link")).toHaveCount(2);
   await expect(tabNav(page).locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await tabNav(page).getByRole("link", { name: "General", exact: true }).click();
@@ -310,14 +309,6 @@ test("General and Metadata remain real links from the Items tab, and no Category
   await expect(page).toHaveURL(`/admin/categories/${CATEGORY.slug}/items`);
   await expect(
     tabNav(page).getByRole("link", { name: "Items", exact: true })
-  ).toHaveAttribute("aria-current", "page");
-
-  await tabNav(page)
-    .getByRole("link", { name: "Metadata", exact: true })
-    .click();
-  await expect(page).toHaveURL(`/admin/categories/${CATEGORY.slug}/metadata`);
-  await expect(
-    tabNav(page).getByRole("link", { name: "Metadata", exact: true })
   ).toHaveAttribute("aria-current", "page");
 });
 

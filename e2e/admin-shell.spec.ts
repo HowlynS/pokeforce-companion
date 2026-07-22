@@ -1,10 +1,10 @@
-// Browser coverage for the Slice 9B.1 shared admin shell against the REAL
+// Browser coverage for the shared admin shell against the REAL
 // application: the persistent sidebar wraps authenticated admin routes,
-// carries exactly the six approved primary destinations, marks the active
-// section (including on child routes), never appears on public pages, and
-// keeps Game Versions reachable only through the dashboard's secondary
-// settings link. Runs in the chromium-admin project with the storage state
-// saved by auth.setup.ts. Read-only: every visit targets seeded fixtures
+// carries exactly the seven approved primary destinations (Game Versions
+// promoted to primary in the Visual Pass, sub-slice 8), marks the active
+// section (including on child routes), and never appears on public
+// pages. Runs in the chromium-admin project with the storage state saved
+// by auth.setup.ts. Read-only: every visit targets seeded fixtures
 // (iron-ore, iron-sword, smithing, materials) or list pages, so no cleanup
 // hooks are needed. The fine-grained active-state mapping (every child
 // route shape, boundary cases, settings routes) is unit-tested in
@@ -20,6 +20,7 @@ const PRIMARY_DESTINATIONS = [
   { label: "Professions", href: "/admin/professions" },
   { label: "Categories", href: "/admin/categories" },
   { label: "Locations", href: "/admin/locations" },
+  { label: "Game Versions", href: "/admin/settings/game-versions" },
 ] as const;
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
@@ -43,7 +44,7 @@ function activeLink(page: Page) {
   return sidebar(page).locator('a[aria-current="page"]');
 }
 
-test("the sidebar carries exactly the six primary destinations with their approved targets", async ({
+test("the sidebar carries exactly the seven primary destinations with their approved targets", async ({
   page,
 }) => {
   await page.goto("/admin");
@@ -65,19 +66,22 @@ test("the sidebar carries exactly the six primary destinations with their approv
     );
   }
 
-  // Excluded destinations never join primary navigation: Game Versions
-  // stays a secondary settings link on the dashboard body, and
-  // Acquisition Sources stay contextual under their owning item.
-  await expect(
-    sidebar(page).getByRole("link", { name: /game version/i })
-  ).toHaveCount(0);
+  // Acquisition Sources still never joins primary navigation — it stays
+  // contextual under its owning item.
   await expect(
     sidebar(page).getByRole("link", { name: /source/i })
   ).toHaveCount(0);
 
-  // The secondary settings path itself still works from the dashboard.
+  // Game Versions is reachable from both the sidebar and the dashboard's
+  // own Game Version panel link (Visual Pass sub-slice 8 preserved that
+  // link — it did not replace it).
   await expect(
-    page.getByRole("link", { name: "Game Versions", exact: true })
+    sidebar(page).getByRole("link", { name: "Game Versions", exact: true })
+  ).toBeVisible();
+  await expect(
+    page
+      .locator(".admin-workspace-main")
+      .getByRole("link", { name: "Game Versions", exact: true })
   ).toBeVisible();
 });
 
@@ -150,15 +154,20 @@ test("child routes keep their section active", async ({ page }) => {
 
   await page.goto("/admin/categories/materials/edit");
   await expect(activeLink(page)).toHaveText("Categories");
+
+  // Game Versions (Visual Pass sub-slice 8): a primary destination now,
+  // active on nested routes too.
+  await page.goto("/admin/settings/game-versions");
+  await expect(activeLink(page)).toHaveText("Game Versions");
 });
 
-test("the secondary settings routes render inside the shell with no primary section active", async ({
+test("the Game Versions settings routes render inside the shell with Game Versions active", async ({
   page,
 }) => {
   await page.goto("/admin/settings/game-versions");
 
   await expect(sidebar(page)).toBeVisible();
-  await expect(activeLink(page)).toHaveCount(0);
+  await expect(activeLink(page)).toHaveText("Game Versions");
   await expect(
     page.getByRole("heading", { level: 1, name: "Game Versions" })
   ).toBeVisible();

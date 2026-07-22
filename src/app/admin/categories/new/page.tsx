@@ -76,8 +76,6 @@ export default async function NewCategoryPage({
             eyebrow="Category"
             title="Create Category"
             subtitle="Add a new category to the wiki."
-            backHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-            backLabel="Back to Category Management"
           />
 
           <EditorTabs label="Category editor sections" tabs={tabs} />
@@ -89,28 +87,13 @@ export default async function NewCategoryPage({
           ) : null}
         </>
       }
-      aside={
-        <ImagePanel>
-          <label className="form-field">
-            <span className="form-field-label">
-              Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-            </span>
-            <input
-              type="file"
-              name="image"
-              accept="image/png,image/jpeg,image/webp"
-              form={CATEGORY_CREATE_FORM_ID}
-              className="form-input"
-            />
-          </label>
-        </ImagePanel>
-      }
+      aside={<ImagePanel imageUrl={null} formId={CATEGORY_CREATE_FORM_ID} />}
     >
       <div className="admin-editor-surface">
       <form
         id={CATEGORY_CREATE_FORM_ID}
         action={createCategoryAction}
-        className="form-grid"
+        className="form-grid form-grid-responsive"
       >
         {/* Client-enhanced Name field with live duplicate feedback; the
             submission-time duplicate check in createCategoryAction

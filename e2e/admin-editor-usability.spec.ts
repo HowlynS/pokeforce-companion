@@ -81,10 +81,11 @@ test("the inner form content stays within its established readable width even th
 
   const formBox = await page.locator(".admin-editor-surface form.form-grid").boundingBox();
   expect(formBox).not.toBeNull();
-  // Matches the existing .form-grid max-width (560px) plus a small
-  // tolerance — proves controls never stretched to the surface's own
-  // much wider box.
-  expect(formBox!.width).toBeLessThanOrEqual(580);
+  // Visual Pass sub-slice 3: .form-grid-responsive widens to a capped
+  // two-column layout at wide widths (780px) instead of the old flat
+  // 560px single column — still a bounded, readable width, never
+  // stretched to the surface's own much wider box.
+  expect(formBox!.width).toBeLessThanOrEqual(800);
 });
 
 test("a no-aside route (Recipe Ingredients) keeps its surface within the main column and its fieldset content capped, with no horizontal overflow at any target width", async ({
@@ -101,8 +102,9 @@ test("a no-aside route (Recipe Ingredients) keeps its surface within the main co
 
   const fieldsetBox = await page.locator(".form-fieldset").boundingBox();
   expect(fieldsetBox).not.toBeNull();
-  // form-grid-wide's 680px cap plus tolerance.
-  expect(fieldsetBox!.width).toBeLessThanOrEqual(700);
+  // Visual Pass sub-slice 3: form-grid-wide-responsive's 920px cap plus
+  // tolerance (up from the old flat 680px cap).
+  expect(fieldsetBox!.width).toBeLessThanOrEqual(940);
 });
 
 test("Item edit's form section headings render in the documented order, and every original field is still present and labeled", async ({
@@ -156,7 +158,7 @@ test("the verification checkbox stays top-aligned with its label's first line, a
   await page.goto("/admin/items/iron-ore/edit");
 
   const checkbox = page.getByRole("checkbox", {
-    name: /Mark gameplay data as verified/,
+    name: /^Mark as verified for/,
   });
   await expect(checkbox).toBeVisible();
 

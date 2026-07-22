@@ -3,6 +3,7 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorActions } from "@/components/admin/editor-actions";
+import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -104,16 +105,6 @@ export default async function RecipeIngredientsPage({
             eyebrow="Recipe"
             title={recipe.name}
             subtitle={recipe.slug}
-            backHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
-            backLabel="Back to Recipe Management"
-            actions={
-              <a
-                href={recipeDeleteHref(recipe.slug, query)}
-                className="btn btn-compact btn-danger-ghost"
-              >
-                Delete Recipe
-              </a>
-            }
           />
 
           <EditorTabs label="Recipe editor sections" tabs={tabs} />
@@ -138,7 +129,7 @@ export default async function RecipeIngredientsPage({
         <div className="admin-editor-surface">
         <form
           action={updateRecipeIngredientsAction}
-          className="form-grid form-grid-wide"
+          className="form-grid form-grid-wide form-grid-responsive"
         >
           <input type="hidden" name="id" value={recipe.id} />
           <input type="hidden" name="originalSlug" value={recipe.slug} />
@@ -185,6 +176,18 @@ export default async function RecipeIngredientsPage({
         </form>
         </div>
       )}
+
+      {/* Rendered unconditionally, as a sibling of the guard above rather
+          than nested inside it — this tab has no aside column of its own
+          (Danger zone belongs "below the main editor content" per the
+          no-right-rail rule), and Delete must stay reachable even for an
+          over-capacity recipe whose form the guard replaces with a
+          banner. */}
+      <DangerZonePanel
+        resourceLabel="recipe"
+        deleteHref={recipeDeleteHref(recipe.slug, query)}
+        deleteLabel="Delete Recipe"
+      />
     </RecipeWorkspace>
   );
 }

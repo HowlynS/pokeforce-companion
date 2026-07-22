@@ -93,8 +93,10 @@ const VERIFY_LOCATION = {
   type: "Dungeon",
 } as const;
 
-const VERIFICATION_CHECKBOX_LABEL =
-  "Mark gameplay data as verified for the selected game version.";
+// The checkbox's own label text is now dynamic ("Mark as verified for
+// {selected version's name}"), so every call site matches this pattern
+// rather than one fixed string.
+const VERIFICATION_CHECKBOX_LABEL = /^Mark as verified for/;
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -243,7 +245,7 @@ test("Create Location opens the dedicated creation route", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("Location editor: create shows only General with its own parent selector; edit marks General active with Hierarchy, Acquisition Sources, and Metadata all real; exactly one h1 renders; Timestamps render on edit only", async ({
+test("Location editor: create shows only General with its own parent selector; edit marks General active with Hierarchy and Acquisition Sources both real; exactly one h1 renders; Timestamps render on edit only", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -281,10 +283,11 @@ test("Location editor: create shows only General with its own parent selector; e
   });
 
   // --- Edit: exactly one h1 (the location's own name), General active,
-  // Hierarchy, Acquisition Sources, and Metadata all now real (but not
-  // current) tabs — no Location tab remains disabled — Timestamps
-  // present (Created/Updated, no Verified stamp yet), and NO parent
-  // selector anywhere on General (Slice 9F.3 moved it to Hierarchy) -----
+  // Hierarchy and Acquisition Sources both now real (but not current)
+  // tabs — no Location tab remains disabled, and the removed Metadata
+  // tab does not reappear — Timestamps present (Created/Updated only, no
+  // Verified row), and NO parent selector anywhere on General (moved to
+  // Hierarchy) -------------------------------------------------------------
   await recordRow(page, "Test E2E Location Tabs").click();
   await expect(page).toHaveURL("/admin/locations/test-e2e-location-tabs/edit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -321,12 +324,8 @@ test("Location editor: create shows only General with its own parent selector; e
   await expect(
     editTabNav.getByText("Acquisition Sources", { exact: true })
   ).not.toHaveAttribute("aria-disabled", "true");
-  await expect(
-    editTabNav.getByRole("link", { name: "Metadata", exact: true })
-  ).not.toHaveAttribute("aria-current", "page");
-  await expect(
-    editTabNav.getByText("Metadata", { exact: true })
-  ).not.toHaveAttribute("aria-disabled", "true");
+  await expect(editTabNav.getByRole("link")).toHaveCount(3);
+  await expect(editTabNav.getByText("Metadata")).toHaveCount(0);
   await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(
@@ -521,10 +520,10 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await expect(
     page.locator(".admin-status-badge", { hasText: "Unverified" })
   ).toBeVisible();
-  await expect(panelRow(page, "Verification", "Verified against")).toHaveCount(
+  await expect(panelRow(page, "Verification", "Verified for")).toHaveCount(
     0
   );
-  const picker = page.getByLabel("Game version to verify against");
+  const picker = page.getByLabel("Verify this record for");
   await expect(
     picker.locator("option:checked"),
     "the current version is preselected"
@@ -550,11 +549,14 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(CURRENT_VERSION_NAME);
   const stampedDateText = await panelRow(page, "Verification", "Verified on")
     .textContent();
-  await expect(panelRow(page, "Timestamps", "Verified")).toBeVisible();
+  // The Verified date now lives only in VerificationPanel's own "Verified
+  // on" row above (Visual Pass sub-slice 7) — TimestampsPanel dropped the
+  // duplicate row entirely.
+  await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
 
   // Verification is admin-only since Slice 9A: the PUBLIC page must not
   // render it even for a verified location.
@@ -571,7 +573,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page
-    .getByLabel("Game version to verify against")
+    .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page
     .getByLabel(/^Description/)
@@ -591,7 +593,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(CURRENT_VERSION_NAME);
   expect(
     await panelRow(page, "Verification", "Verified on").textContent()
@@ -599,7 +601,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
 
   // --- Verifying against a SELECTED historical version -------------------
   await page
-    .getByLabel("Game version to verify against")
+    .getByLabel("Verify this record for")
     .selectOption({ label: HISTORICAL_VERSION_NAME });
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
@@ -610,7 +612,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     page.locator(".admin-status-badge", { hasText: "Verified — older version" })
   ).toBeVisible();
   await expect(
-    panelRow(page, "Verification", "Verified against")
+    panelRow(page, "Verification", "Verified for")
   ).toContainText(HISTORICAL_VERSION_NAME);
 });
 

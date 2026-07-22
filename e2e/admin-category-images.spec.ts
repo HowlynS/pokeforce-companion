@@ -117,7 +117,7 @@ async function createCategoryWithImage(
   await page.goto("/admin/categories/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Slug/).fill(data.slug);
-  await page.getByLabel(/^Image \(optional/).setInputFiles(imageFile);
+  await page.locator('input[name="image"]').setInputFiles(imageFile);
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
@@ -193,7 +193,7 @@ test("replacing the category image stores a new object and removes the old one",
   // untouched, keep every other field as prefilled.
   await page.goto(`/admin/categories/${CATEGORY.slug}/edit`);
   await page
-    .getByLabel(/^Replacement image \(optional/)
+    .locator('input[name="image"]')
     .setInputFiles(WEBP_FIXTURE);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
@@ -243,9 +243,9 @@ test("removing the category image clears the row, deletes the object, and restor
   // its accessible label is the visible toggle, and checking it reveals the
   // confirmation note. No replacement file is attached.
   await page.goto(`/admin/categories/${CATEGORY.slug}/edit`);
-  await page.getByTitle("Remove current image").click();
+  await page.getByTitle("Remove image").click();
   await expect(
-    page.getByRole("checkbox", { name: "Remove current image" })
+    page.getByRole("checkbox", { name: "Remove image" })
   ).toBeChecked();
   await expect(
     page.getByText("Image will be removed when saved.")
@@ -323,7 +323,7 @@ test("an unsupported file type is rejected and nothing is written", async ({
   await page.getByLabel(/^Slug/).fill("test-e2e-category-image-invalid");
   // setInputFiles bypasses the accept picker hint (which is not
   // validation), so the submission reaches the server-side type check.
-  await page.getByLabel(/^Image \(optional/).setInputFiles(TEXT_FIXTURE);
+  await page.locator('input[name="image"]').setInputFiles(TEXT_FIXTURE);
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
@@ -363,7 +363,7 @@ test("an oversized image is rejected and nothing is written", async ({
     await page
       .getByLabel(/^Slug/)
       .fill("test-e2e-category-image-oversized");
-    await page.getByLabel(/^Image \(optional/).setInputFiles(oversizedPath);
+    await page.locator('input[name="image"]').setInputFiles(oversizedPath);
     await page
       .getByRole("button", { name: "Create Category", exact: true })
       .click();

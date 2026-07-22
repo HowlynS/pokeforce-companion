@@ -371,7 +371,7 @@ test("a location with no acquisition sources shows a valid empty state", async (
   await expect(page.getByRole("table")).toHaveCount(0);
 });
 
-test("General, Hierarchy, and Metadata remain real links from the Acquisition Sources tab, and no Location tab is disabled", async ({
+test("General and Hierarchy remain real links from the Acquisition Sources tab, and no Location tab is disabled", async ({
   page,
 }) => {
   const LOCATION = {
@@ -390,7 +390,10 @@ test("General, Hierarchy, and Metadata remain real links from the Acquisition So
   ).toHaveAttribute("aria-current", "page");
   await expect(tabNav(page).locator('[aria-current="page"]')).toHaveCount(1);
 
-  // No Location tab remains a disabled placeholder (Slice 9F.5).
+  // The Metadata tab was removed (Visual Pass sub-slice 4) — every
+  // remaining Location tab (General, Hierarchy, Acquisition Sources) is
+  // a real link; none is a disabled placeholder.
+  await expect(tabNav(page).getByRole("link")).toHaveCount(3);
   await expect(tabNav(page).locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await tabNav(page).getByRole("link", { name: "General", exact: true }).click();
@@ -405,14 +408,6 @@ test("General, Hierarchy, and Metadata remain real links from the Acquisition So
   await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/hierarchy`);
   await expect(
     tabNav(page).getByRole("link", { name: "Hierarchy", exact: true })
-  ).toHaveAttribute("aria-current", "page");
-
-  await tabNav(page)
-    .getByRole("link", { name: "Metadata", exact: true })
-    .click();
-  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/metadata`);
-  await expect(
-    tabNav(page).getByRole("link", { name: "Metadata", exact: true })
   ).toHaveAttribute("aria-current", "page");
 
   await tabNav(page)

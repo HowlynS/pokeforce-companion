@@ -7,13 +7,11 @@ import { ContextPanel } from "@/components/admin/context-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
-  ITEM_LIST_PATH,
   itemEditorTabs,
   itemSourceDeleteHref,
   itemSourceEditHref,
   itemSourcesHref,
   normalizeItemSearchQuery,
-  withItemSearchQuery,
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 import {
@@ -100,13 +98,7 @@ export default async function AdminItemSourcesPage({
       recordHref={itemSourcesHref}
       header={
         <>
-          <EditorHeader
-            eyebrow="Item"
-            title={item.name}
-            subtitle={item.slug}
-            backHref={withItemSearchQuery(ITEM_LIST_PATH, query)}
-            backLabel="Back to Item Management"
-          />
+          <EditorHeader eyebrow="Item" title={item.name} subtitle={item.slug} />
 
           <EditorTabs label="Item editor sections" tabs={tabs} />
 
@@ -186,7 +178,10 @@ export default async function AdminItemSourcesPage({
       </ContextPanel>
 
       <ContextPanel title="Add Acquisition Source">
-        <form action={createAcquisitionSourceAction} className="form-grid">
+        <form
+          action={createAcquisitionSourceAction}
+          className="form-grid form-grid-responsive"
+        >
           <input type="hidden" name="itemId" value={item.id} />
           <input type="hidden" name="itemSlug" value={item.slug} />
 

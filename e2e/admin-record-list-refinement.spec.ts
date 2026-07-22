@@ -206,7 +206,7 @@ test("a real uploaded image renders a decoded, decorative thumbnail; a seeded it
   await page
     .getByRole("combobox", { name: "Category", exact: true })
     .selectOption({ label: "Materials" });
-  await page.getByLabel(/^Image \(optional/).setInputFiles(PNG_FIXTURE);
+  await page.locator('input[name="image"]').setInputFiles(PNG_FIXTURE);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
 

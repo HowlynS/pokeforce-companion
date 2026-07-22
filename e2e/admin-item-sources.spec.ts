@@ -16,8 +16,10 @@ import {
   deleteE2eTestAcquisitionRecords,
 } from "./helpers/database-cleanup";
 
-const VERIFICATION_CHECKBOX_LABEL =
-  "Mark gameplay data as verified for the selected game version.";
+// The checkbox's own label text is now dynamic ("Mark as verified for
+// {selected version's name}"), so every call site matches this pattern
+// rather than one fixed string.
+const VERIFICATION_CHECKBOX_LABEL = /^Mark as verified for/;
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -302,14 +304,12 @@ test("Item editor tabs: Acquisition Sources is a real link, General returns, eve
   await expect(
     tabNav().getByRole("link", { name: "Acquisition Sources", exact: true })
   ).toBeVisible();
-  // Used in Recipes is a real tab since Slice 9B.7; Metadata is a real
-  // tab since Slice 9B.8 — no Item tab remains a disabled placeholder.
+  // Used in Recipes is a real tab; the Metadata tab was removed (Visual
+  // Pass sub-slice 4) — no Item tab remains a disabled placeholder.
   await expect(
     tabNav().getByRole("link", { name: "Used in Recipes", exact: true })
   ).toBeVisible();
-  await expect(
-    tabNav().getByRole("link", { name: "Metadata", exact: true })
-  ).toBeVisible();
+  await expect(tabNav().getByRole("link", { name: "Metadata" })).toHaveCount(0);
   await expect(tabNav().locator('[aria-disabled="true"]')).toHaveCount(0);
   await expect(tabNav().locator('[aria-current="page"]')).toHaveCount(1);
 

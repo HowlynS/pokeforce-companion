@@ -113,8 +113,6 @@ export default async function NewRecipePage({
             eyebrow="Recipe"
             title="Create Recipe"
             subtitle="Add a new recipe to the wiki."
-            backHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
-            backLabel="Back to Recipe Management"
           />
 
           <EditorTabs label="Recipe editor sections" tabs={tabs} />
@@ -128,20 +126,7 @@ export default async function NewRecipePage({
       }
       aside={
         <>
-          <ImagePanel>
-            <label className="form-field">
-              <span className="form-field-label">
-                Image (optional — PNG, JPEG, or WebP, up to 5 MB)
-              </span>
-              <input
-                type="file"
-                name="image"
-                accept="image/png,image/jpeg,image/webp"
-                form={RECIPE_CREATE_FORM_ID}
-                className="form-input"
-              />
-            </label>
-          </ImagePanel>
+          <ImagePanel imageUrl={null} formId={RECIPE_CREATE_FORM_ID} />
 
           {/* No fake existing verification state on create: both fields
               are null, so the panel renders Unverified with no stamp
@@ -165,7 +150,7 @@ export default async function NewRecipePage({
         <form
           id={RECIPE_CREATE_FORM_ID}
           action={createRecipeAction}
-          className="form-grid form-grid-wide"
+          className="form-grid form-grid-wide form-grid-responsive"
         >
           <p className="form-section-heading">Identity</p>
 

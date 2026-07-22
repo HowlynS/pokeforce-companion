@@ -1,11 +1,11 @@
-// The ONE definition of the admin shell's primary navigation (Slice 9B.1):
-// exactly these six destinations, in this order. Deliberately absent, per
-// the milestone brief: Game Versions (a secondary settings destination
-// reached from the dashboard, never primary navigation), Acquisition
-// Sources (contextual, managed under their owning item), and any
-// users/roles/audit/route-hub destinations. Pure data plus a pure
-// active-state rule — no React, no environment — so the mapping every
-// admin route depends on is unit-testable.
+// The ONE definition of the admin shell's primary navigation: exactly
+// these seven destinations, in this order. Game Versions was promoted
+// from a secondary settings-only destination to a full primary entry
+// (Visual Pass sub-slice 8) — it stays last, after Locations. Acquisition
+// Sources remains deliberately absent (contextual, managed under its
+// owning item), along with any users/roles/audit/route-hub destinations.
+// Pure data plus a pure active-state rule — no React, no environment —
+// so the mapping every admin route depends on is unit-testable.
 
 // A stable identifier, not a component: this module stays pure data (no
 // React, no icon-library import) so it remains unit-testable without a
@@ -17,7 +17,8 @@ export type AdminNavIcon =
   | "recipes"
   | "professions"
   | "categories"
-  | "locations";
+  | "locations"
+  | "gameVersions";
 
 export type AdminNavItem = {
   label: string;
@@ -32,6 +33,11 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Professions", href: "/admin/professions", icon: "professions" },
   { label: "Categories", href: "/admin/categories", icon: "categories" },
   { label: "Locations", href: "/admin/locations", icon: "locations" },
+  {
+    label: "Game Versions",
+    href: "/admin/settings/game-versions",
+    icon: "gameVersions",
+  },
 ] as const;
 
 /**

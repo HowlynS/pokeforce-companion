@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Hammer,
+  History,
   LayoutDashboard,
   MapPinned,
   Package,
@@ -36,6 +37,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   professions: Hammer,
   categories: Shapes,
   locations: MapPinned,
+  gameVersions: History,
 };
 
 export function AdminNav() {

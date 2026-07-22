@@ -6,6 +6,7 @@ import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
+import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
@@ -115,8 +116,6 @@ export default async function EditLocationPage({
             eyebrow="Location"
             title={location.name}
             subtitle={location.slug}
-            backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-            backLabel="Back to Location Management"
           />
 
           <EditorTabs label="Location editor sections" tabs={tabs} />
@@ -130,57 +129,11 @@ export default async function EditLocationPage({
       }
       aside={
         <>
-          <ImagePanel>
-            {imageUrl ? (
-              <div className="admin-image-preview-wrap">
-                <input
-                  type="checkbox"
-                  name="removeImage"
-                  id="removeImage"
-                  form={LOCATION_EDIT_FORM_ID}
-                  className="admin-image-remove-checkbox"
-                />
-                <div className="admin-image-remove-frame">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
-                  <img
-                    src={imageUrl}
-                    alt={`Current image for ${location.name}`}
-                    className="admin-image-preview"
-                  />
-                  <label
-                    htmlFor="removeImage"
-                    title="Remove current image"
-                    className="admin-image-remove-toggle"
-                  >
-                    <span aria-hidden="true">&times;</span>
-                    <span className="admin-image-remove-hidden-text">
-                      Remove current image
-                    </span>
-                  </label>
-                </div>
-                <p className="admin-image-remove-note">
-                  Image will be removed when saved.
-                </p>
-              </div>
-            ) : (
-              <span className="admin-image-empty">No image uploaded.</span>
-            )}
-
-            <label className="form-field">
-              <span className="form-field-label">
-                {location.image
-                  ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
-                  : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
-              </span>
-              <input
-                type="file"
-                name="image"
-                accept="image/png,image/jpeg,image/webp"
-                form={LOCATION_EDIT_FORM_ID}
-                className="form-input"
-              />
-            </label>
-          </ImagePanel>
+          <ImagePanel
+            imageUrl={imageUrl}
+            imageAlt={`Current image for ${location.name}`}
+            formId={LOCATION_EDIT_FORM_ID}
+          />
 
           <VerificationPanel
             gameVersions={gameVersions}
@@ -192,7 +145,12 @@ export default async function EditLocationPage({
           <TimestampsPanel
             createdAt={location.createdAt}
             updatedAt={location.updatedAt}
-            verifiedAt={location.verifiedAt}
+          />
+
+          <DangerZonePanel
+            resourceLabel="location"
+            deleteHref={locationDeleteHref(location.slug, query)}
+            deleteLabel="Delete Location"
           />
         </>
       }
@@ -201,7 +159,7 @@ export default async function EditLocationPage({
       <form
         id={LOCATION_EDIT_FORM_ID}
         action={updateLocationGeneralAction}
-        className="form-grid"
+        className="form-grid form-grid-responsive"
       >
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
@@ -274,8 +232,6 @@ export default async function EditLocationPage({
         <EditorActions
           submitLabel="Save Changes"
           cancelHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-          deleteHref={locationDeleteHref(location.slug, query)}
-          deleteLabel="Delete Location"
         />
       </form>
       </div>

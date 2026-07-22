@@ -6,7 +6,6 @@ import {
   categoryEditHref,
   categoryEditorTabs,
   categoryItemsHref,
-  categoryMetadataHref,
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
@@ -74,15 +73,6 @@ describe("category workspace hrefs", () => {
       "/admin/categories/materials/items?q=mat"
     );
   });
-
-  it("builds the Metadata tab route, preserving the query", () => {
-    expect(categoryMetadataHref("materials", "")).toBe(
-      "/admin/categories/materials/metadata"
-    );
-    expect(categoryMetadataHref("materials", "mat")).toBe(
-      "/admin/categories/materials/metadata?q=mat"
-    );
-  });
 });
 
 describe("categoryEditorTabs", () => {
@@ -98,11 +88,6 @@ describe("categoryEditorTabs", () => {
       {
         label: "Items",
         href: "/admin/categories/materials/items",
-        active: false,
-      },
-      {
-        label: "Metadata",
-        href: "/admin/categories/materials/metadata",
         active: false,
       },
     ]);
@@ -121,19 +106,6 @@ describe("categoryEditorTabs", () => {
       href: "/admin/categories/materials/items?q=mat",
       active: true,
     });
-    expect(tabs[2].active).toBe(false);
-  });
-
-  it("marks Metadata active when that is the current tab", () => {
-    const tabs = categoryEditorTabs("materials", "mat", "metadata");
-
-    expect(tabs[2]).toEqual({
-      label: "Metadata",
-      href: "/admin/categories/materials/metadata?q=mat",
-      active: true,
-    });
-    expect(tabs[0].active).toBe(false);
-    expect(tabs[1].active).toBe(false);
   });
 
   it("preserves the query on every tab's own href", () => {
@@ -141,18 +113,17 @@ describe("categoryEditorTabs", () => {
 
     expect(tabs[0].href).toBe("/admin/categories/materials/edit?q=mat");
     expect(tabs[1].href).toBe("/admin/categories/materials/items?q=mat");
-    expect(tabs[2].href).toBe("/admin/categories/materials/metadata?q=mat");
   });
 
   it("marks exactly one tab active for every valid key", () => {
-    for (const active of ["general", "items", "metadata"] as const) {
+    for (const active of ["general", "items"] as const) {
       const tabs = categoryEditorTabs("materials", "", active);
       expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
     }
   });
 
   it("renders no disabled tabs — every Category tab is now a real destination", () => {
-    for (const active of ["general", "items", "metadata"] as const) {
+    for (const active of ["general", "items"] as const) {
       const tabs = categoryEditorTabs("materials", "", active);
       expect(tabs.every((tab) => !tab.disabled)).toBe(true);
       expect(tabs.every((tab) => tab.href !== "")).toBe(true);

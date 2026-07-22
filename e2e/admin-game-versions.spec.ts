@@ -94,12 +94,17 @@ async function createVersionThroughForm(
 test("game version lifecycle: reachable from the dashboard settings link, create, edit, mark current, delete", async ({
   page,
 }) => {
-  // --- Reachable only through the dashboard's Game Version panel --------
+  // --- Reachable from both the dashboard's own Game Version panel and
+  // the primary sidebar (Visual Pass sub-slice 8 promoted it there,
+  // without removing the dashboard's own link) ----------------------------
   await page.goto("/admin");
   await expect(
     page.getByRole("heading", { level: 2, name: "Game Version" })
   ).toBeVisible();
-  await page.getByRole("link", { name: "Game Versions", exact: true }).click();
+  await page
+    .locator(".admin-workspace-main")
+    .getByRole("link", { name: "Game Versions", exact: true })
+    .click();
   await expect(page).toHaveURL("/admin/settings/game-versions");
   await expect(
     page.getByRole("heading", { level: 1, name: "Game Versions" })
@@ -290,7 +295,7 @@ test("a deletable current version warns that no version will remain current", as
   // — a historical version is never silently preselected. (The item
   // creation form lives on /admin/items/new since Slice 9B.4.)
   await page.goto("/admin/items/new");
-  const picker = page.getByLabel("Game version to verify against");
+  const picker = page.getByLabel("Verify this record for");
   await expect(picker).toBeVisible();
   await expect(picker).toHaveValue("");
   await expect(picker.locator("option:checked")).toHaveText(

@@ -159,35 +159,60 @@ describe("ContextPanel", () => {
 });
 
 describe("ImagePanel", () => {
-  it("wraps the existing upload controls in the pointer-cursor body without altering them", () => {
+  it("shows the empty state with a Choose Image action when there is no image", () => {
     const html = renderToStaticMarkup(
-      <ImagePanel>
-        <input type="file" name="image" accept="image/png" />
-      </ImagePanel>
+      <ImagePanel imageUrl={null} formId="item-create-form" />
     );
 
-    // The wrapper class is the CSS hook that applies cursor: pointer to
-    // every upload surface inside; the input itself passes through with
-    // its props intact — no upload behavior lives in this component.
     expect(html).toContain("admin-image-panel-body");
-    expect(html).toMatch(
-      /<input [^>]*type="file"[^>]*>|<input [^>]*name="image"[^>]*>/
-    );
-    expect(html).toContain('type="file"');
-    expect(html).toContain('name="image"');
-    expect(html).toContain('accept="image/png"');
-    expect(html).toContain("Image");
+    expect(html).toContain("No image uploaded.");
+    expect(html).toContain("PNG, JPEG or WebP · Max 5 MB");
+    expect(html).toContain("Choose Image");
+    expect(html).not.toContain("Change Image");
+    // No existing image, so no remove control or its confirmation note.
+    expect(html).not.toContain("admin-image-remove-checkbox");
+    expect(html).not.toContain("Remove image");
+    expect(html).not.toContain("Image will be removed when saved.");
   });
 
-  it("accepts a custom title and description", () => {
+  it("shows the existing-image state with a preview, Change Image action, and a separate trash button", () => {
     const html = renderToStaticMarkup(
-      <ImagePanel title="Recipe image" description="PNG, JPEG, or WebP">
-        <input type="file" name="image" />
-      </ImagePanel>
+      <ImagePanel
+        imageUrl="https://example.test/items/iron-ore.png"
+        imageAlt="Current image for Iron Ore"
+        formId="item-edit-form"
+      />
+    );
+
+    expect(html).toContain("admin-image-preview-lg");
+    expect(html).toContain('alt="Current image for Iron Ore"');
+    expect(html).toContain("PNG, JPEG or WebP · Max 5 MB");
+    expect(html).toContain("Change Image");
+    expect(html).not.toContain("Choose Image");
+    expect(html).not.toContain("No image uploaded.");
+    expect(html).toContain("admin-image-trash-btn");
+    expect(html).toContain('aria-label="Remove image"');
+    expect(html).toContain("Image will be removed when saved.");
+  });
+
+  it("keeps the native file input in the DOM, associated with the external form, but out of tab order", () => {
+    const html = renderToStaticMarkup(
+      <ImagePanel imageUrl={null} formId="item-create-form" />
+    );
+
+    expect(html).toContain('type="file"');
+    expect(html).toContain('name="image"');
+    expect(html).toContain('form="item-create-form"');
+    expect(html).toContain('accept="image/png,image/jpeg,image/webp"');
+    expect(html).toContain('tabindex="-1"');
+  });
+
+  it("accepts a custom title", () => {
+    const html = renderToStaticMarkup(
+      <ImagePanel title="Recipe image" imageUrl={null} formId="recipe-create-form" />
     );
 
     expect(html).toContain("Recipe image");
-    expect(html).toContain("PNG, JPEG, or WebP");
   });
 });
 
@@ -207,10 +232,12 @@ describe("VerificationPanel", () => {
     );
 
     expect(html).toContain("Unverified");
-    expect(html).not.toContain("Verified against");
+    expect(html).not.toContain("Verified for");
     expect(html).not.toContain("Verified on");
     expect(html).toContain("Current version");
     expect(html).toContain("Summer Update");
+    // The current Game Version carries its own compact Current badge.
+    expect(html).toContain("admin-status-badge-current");
   });
 
   it("shows the current-version status for a record verified against the current version", () => {
@@ -224,7 +251,7 @@ describe("VerificationPanel", () => {
 
     expect(html).toContain("Verified — current version");
     expect(html).toContain("admin-status-badge-current");
-    expect(html).toContain("Verified against");
+    expect(html).toContain("Verified for");
     expect(html).toContain("2026-07-17");
   });
 
@@ -243,7 +270,7 @@ describe("VerificationPanel", () => {
     expect(html).toContain("2026-01-05");
   });
 
-  it("composes the real shared picker and opt-in checkbox", () => {
+  it("composes the real shared picker and opt-in checkbox, defaulting the label to the current version", () => {
     const html = renderToStaticMarkup(
       <VerificationPanel
         gameVersions={versions}
@@ -254,12 +281,26 @@ describe("VerificationPanel", () => {
 
     expect(html).toContain('name="verifiedGameVersionId"');
     expect(html).toContain('name="markVerified"');
-    expect(html).toContain(
-      "Mark gameplay data as verified for the selected game version."
-    );
+    expect(html).toContain("Verify this record for");
+    expect(html).toContain("Mark as verified for Summer Update");
     // The current version is preselected in the picker, exactly as the
     // shared control has always behaved.
     expect(html).toContain('selected=""');
+  });
+
+  it("falls back to generic checkbox wording when no version is current", () => {
+    const noCurrentVersions = [{ id: "v1", name: "Launch", isCurrent: false }];
+    const html = renderToStaticMarkup(
+      <VerificationPanel
+        gameVersions={noCurrentVersions}
+        verifiedAt={null}
+        verifiedGameVersion={null}
+      />
+    );
+
+    expect(html).toContain("Mark as verified for the selected version");
+    expect(html).toContain("None");
+    expect(html).not.toContain("admin-status-badge-current");
   });
 
   it("associates the composed picker and checkbox with an external form when rendered outside it", () => {
@@ -299,7 +340,7 @@ describe("VerificationPanel", () => {
     );
 
     expect(html).toContain("Verified — current version");
-    expect(html).toContain("Verified against");
+    expect(html).toContain("Verified for");
     expect(html).toContain("Summer Update");
     expect(html).toContain("2026-07-17");
     expect(html).toContain("Current version");
@@ -322,7 +363,7 @@ describe("VerificationPanel", () => {
     expect(html).toContain("Unverified");
     expect(html).toContain("Current version");
     expect(html).toContain("Summer Update");
-    expect(html).not.toContain("Verified against");
+    expect(html).not.toContain("Verified for");
     expect(html).not.toContain('name="verifiedGameVersionId"');
   });
 });
@@ -342,25 +383,12 @@ describe("TimestampsPanel", () => {
     expect(html).toContain("2026-07-16");
   });
 
-  it("omits the verification row when there is no stamp", () => {
+  it("never renders a Verified row — that fact now lives only in VerificationPanel", () => {
     const html = renderToStaticMarkup(
       <TimestampsPanel createdAt={createdAt} updatedAt={updatedAt} />
     );
 
     expect(html).not.toContain("Verified");
-  });
-
-  it("includes the verification row when a stamp exists", () => {
-    const html = renderToStaticMarkup(
-      <TimestampsPanel
-        createdAt={createdAt}
-        updatedAt={updatedAt}
-        verifiedAt={new Date("2026-07-17T00:00:00.000Z")}
-      />
-    );
-
-    expect(html).toContain("Verified");
-    expect(html).toContain("2026-07-17");
   });
 });
 
@@ -376,29 +404,34 @@ describe("EditorActions", () => {
     expect(html).toContain("Cancel");
   });
 
-  it("omits the delete action when no delete href is supplied", () => {
+  it("never renders a delete action — Delete moved to the aside's DangerZonePanel", () => {
     const html = renderToStaticMarkup(
       <EditorActions submitLabel="Save Changes" cancelHref="/admin/items" />
     );
 
     expect(html).not.toContain("btn-danger");
     expect(html).not.toContain("Delete");
+    expect(html.match(/type="submit"/g)).toHaveLength(1);
   });
+});
 
-  it("links the optional delete action to the existing confirmation route", () => {
+describe("DangerZonePanel", () => {
+  it("renders a destructive link to the existing delete confirmation route, never a submit button", async () => {
+    const { DangerZonePanel } = await import("./danger-zone-panel");
     const html = renderToStaticMarkup(
-      <EditorActions
-        submitLabel="Save Changes"
-        cancelHref="/admin/items"
+      <DangerZonePanel
+        resourceLabel="item"
         deleteHref="/admin/items/iron-ore/delete"
+        deleteLabel="Delete Item"
       />
     );
 
+    expect(html).toContain("Danger zone");
+    expect(html).toContain("admin-danger-zone");
     expect(html).toContain('href="/admin/items/iron-ore/delete"');
-    expect(html).toContain("Delete");
+    expect(html).toContain("Delete Item");
     expect(html).toContain("btn-danger");
-    // The delete control is a LINK to the confirmation page, never a
-    // second submit button inside the edit form.
-    expect(html.match(/type="submit"/g)).toHaveLength(1);
+    expect(html).not.toContain("<form");
+    expect(html).not.toContain('type="submit"');
   });
 });

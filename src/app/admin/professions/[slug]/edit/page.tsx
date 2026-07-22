@@ -6,6 +6,7 @@ import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
+import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
   PROFESSION_LIST_PATH,
@@ -106,8 +107,6 @@ export default async function EditProfessionPage({
             eyebrow="Profession"
             title={profession.name}
             subtitle={profession.slug}
-            backHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-            backLabel="Back to Profession Management"
           />
 
           <EditorTabs label="Profession editor sections" tabs={tabs} />
@@ -121,57 +120,11 @@ export default async function EditProfessionPage({
       }
       aside={
         <>
-          <ImagePanel>
-            {imageUrl ? (
-              <div className="admin-image-preview-wrap">
-                <input
-                  type="checkbox"
-                  name="removeImage"
-                  id="removeImage"
-                  form={PROFESSION_EDIT_FORM_ID}
-                  className="admin-image-remove-checkbox"
-                />
-                <div className="admin-image-remove-frame">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice */}
-                  <img
-                    src={imageUrl}
-                    alt={`Current image for ${profession.name}`}
-                    className="admin-image-preview"
-                  />
-                  <label
-                    htmlFor="removeImage"
-                    title="Remove current image"
-                    className="admin-image-remove-toggle"
-                  >
-                    <span aria-hidden="true">&times;</span>
-                    <span className="admin-image-remove-hidden-text">
-                      Remove current image
-                    </span>
-                  </label>
-                </div>
-                <p className="admin-image-remove-note">
-                  Image will be removed when saved.
-                </p>
-              </div>
-            ) : (
-              <span className="admin-image-empty">No image uploaded.</span>
-            )}
-
-            <label className="form-field">
-              <span className="form-field-label">
-                {profession.image
-                  ? "Replacement image (optional — PNG, JPEG, or WebP, up to 5 MB)"
-                  : "Image (optional — PNG, JPEG, or WebP, up to 5 MB)"}
-              </span>
-              <input
-                type="file"
-                name="image"
-                accept="image/png,image/jpeg,image/webp"
-                form={PROFESSION_EDIT_FORM_ID}
-                className="form-input"
-              />
-            </label>
-          </ImagePanel>
+          <ImagePanel
+            imageUrl={imageUrl}
+            imageAlt={`Current image for ${profession.name}`}
+            formId={PROFESSION_EDIT_FORM_ID}
+          />
 
           <VerificationPanel
             gameVersions={gameVersions}
@@ -183,7 +136,12 @@ export default async function EditProfessionPage({
           <TimestampsPanel
             createdAt={profession.createdAt}
             updatedAt={profession.updatedAt}
-            verifiedAt={profession.verifiedAt}
+          />
+
+          <DangerZonePanel
+            resourceLabel="profession"
+            deleteHref={professionDeleteHref(profession.slug, query)}
+            deleteLabel="Delete Profession"
           />
         </>
       }
@@ -192,7 +150,7 @@ export default async function EditProfessionPage({
       <form
         id={PROFESSION_EDIT_FORM_ID}
         action={updateProfessionAction}
-        className="form-grid"
+        className="form-grid form-grid-responsive"
       >
         <input type="hidden" name="id" value={profession.id} />
         <input type="hidden" name="originalSlug" value={profession.slug} />
@@ -232,8 +190,6 @@ export default async function EditProfessionPage({
         <EditorActions
           submitLabel="Save Changes"
           cancelHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-          deleteHref={professionDeleteHref(profession.slug, query)}
-          deleteLabel="Delete Profession"
         />
       </form>
       </div>

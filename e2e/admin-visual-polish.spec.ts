@@ -88,7 +88,7 @@ test("a very long item name wraps inside the header instead of causing horizonta
   await noHorizontalOverflow(page);
 });
 
-test("Recipe's header-placed Delete action keeps its restrained danger styling but still links to the real delete-confirmation route", async ({
+test("Recipe's Danger zone Delete action keeps its restrained placement, separate from Save/Cancel, but still links to the real delete-confirmation route", async ({
   page,
 }) => {
   // Seeded fixture only — read, never modified.
@@ -100,10 +100,18 @@ test("Recipe's header-placed Delete action keeps its restrained danger styling b
     "href",
     "/admin/recipes/iron-sword/delete"
   );
-  // Distinct from the sticky bar's solid .btn-danger treatment used
-  // everywhere else — an outlined ghost variant that never dominates the
-  // header, never a plain unstyled text link either.
-  await expect(deleteLink).toHaveClass(/btn-danger-ghost/);
+  // Delete moved out of the header and the sticky Save/Cancel bar (Visual
+  // Pass sub-slice 9) into the aside's Danger zone panel — solid
+  // .btn-danger, matching every other resource's Danger zone button.
+  await expect(deleteLink).toHaveClass(/btn-danger/);
+  await expect(
+    page.locator(".admin-editor-actions").getByRole("link", { name: "Delete Recipe" })
+  ).toHaveCount(0);
+  await expect(
+    page
+      .locator(".admin-danger-zone")
+      .getByRole("link", { name: "Delete Recipe", exact: true })
+  ).toBeVisible();
 
   await deleteLink.click();
   await expect(page).toHaveURL("/admin/recipes/iron-sword/delete");

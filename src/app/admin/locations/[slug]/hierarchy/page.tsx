@@ -5,6 +5,7 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { ContextPanel } from "@/components/admin/context-panel";
+import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
@@ -109,9 +110,9 @@ export default async function LocationHierarchyPage({
   // type, description, access note, image, and verification metadata are
   // never read from this form and never written by this action. No
   // ImagePanel/VerificationPanel/TimestampsPanel — this tab has nothing
-  // to do with any of them. Delete lives directly in `EditorActions`'
-  // own `deleteHref`, exactly like General, since Locations carry no
-  // capacity guard that would ever need to hide the form.
+  // to do with any of them. Delete lives in an unconditional
+  // DangerZonePanel below the main content (this route has no aside
+  // column of its own) rather than the sticky Save/Cancel bar.
   return (
     <LocationWorkspace
       rawQuery={q}
@@ -123,8 +124,6 @@ export default async function LocationHierarchyPage({
             eyebrow="Location"
             title={location.name}
             subtitle={location.slug}
-            backHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-            backLabel="Back to Location Management"
           />
 
           <EditorTabs label="Location editor sections" tabs={tabs} />
@@ -138,7 +137,10 @@ export default async function LocationHierarchyPage({
       }
     >
       <div className="admin-editor-surface">
-      <form action={updateLocationHierarchyAction} className="form-grid">
+      <form
+        action={updateLocationHierarchyAction}
+        className="form-grid form-grid-responsive"
+      >
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
 
@@ -165,8 +167,6 @@ export default async function LocationHierarchyPage({
         <EditorActions
           submitLabel="Save Hierarchy"
           cancelHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-          deleteHref={locationDeleteHref(location.slug, query)}
-          deleteLabel="Delete Location"
         />
       </form>
       </div>
@@ -206,6 +206,12 @@ export default async function LocationHierarchyPage({
           </div>
         </ContextPanel>
       )}
+
+      <DangerZonePanel
+        resourceLabel="location"
+        deleteHref={locationDeleteHref(location.slug, query)}
+        deleteLabel="Delete Location"
+      />
     </LocationWorkspace>
   );
 }

@@ -37,7 +37,14 @@ body {
   margin: 0;
   background: var(--color-background);
   color: var(--color-text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Technical identifiers (slugs, internal ids, version/build codes) stay
+   monospace everywhere they appear — the one deliberate exception to the
+   site-wide Manrope typeface, so data reads as data. */
+.font-mono {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 
 a {
@@ -297,6 +304,7 @@ select:focus-visible {
 .form-grid {
   display: grid;
   gap: 20px;
+  width: 100%;
   max-width: 560px;
 }
 
@@ -304,9 +312,99 @@ select:focus-visible {
   max-width: 680px;
 }
 
+/* Visual Pass sub-slice 3: an opt-in responsive two-column mode for
+   general editor forms, added alongside (never replacing) .form-grid/
+   .form-grid-wide. A VIEWPORT media query — a container query was tried
+   first (queried against .admin-editor-surface) but was reverted after
+   a corrective audit proved it unsafe: .admin-frame is a shrinkable flex
+   item of .admin-shell (no flex-shrink: 0, no matching min-width), so it
+   is *expected* to shrink below its own clamp(1432px, 96vw, 2700px)
+   floor at real viewports/effective widths under ~1300px — a pre-existing,
+   accepted characteristic (the page scrolls horizontally rather than
+   reflowing below that point). Establishing container-type: inline-size
+   anywhere inside that shrinking flex chain measurably broke this: at a
+   genuinely narrow real viewport (850px, no zoom at all) the container
+   query made .admin-editor-surface's own content overflow ITSELF by 81px,
+   where the unmodified flex-shrink behavior produces zero internal
+   overflow (only the pre-existing, accepted page-level scroll). The same
+   81px figure reproduced Chromium's non-standard `zoom` proxy at 1280px,
+   which is what first surfaced this as an e2e failure — zoom did not
+   invent the bug, it just also triggers the same narrow-effective-width
+   path. A viewport media query has no flex/containment interaction risk
+   at all, at the cost of not knowing whether an aside column is present
+   (a no-aside tab like Location Hierarchy simply gets two columns very
+   slightly later than the absolute minimum necessary — never a defect,
+   never overflow). Below the threshold every field stays exactly one
+   column, identical to the unmodified classes. Fields that must never
+   split across columns (section headings, textareas, checkbox groups,
+   fieldsets, and the sticky actions row) are forced to span both columns
+   via their own existing classes — :has() targets the .form-field
+   wrapper around a <textarea> without requiring a new class on every
+   textarea field, so no field markup or order changes anywhere a
+   two-column layout applies.
+
+   Threshold measured live: at the narrow-desktop target (1440px
+   viewport, WITH both a record list and an aside present) the main
+   column's own available width is ~562px — two columns only begin at
+   1920px viewport and up (main ~926px+), so the threshold sits at
+   1700px: comfortably above every 1440px-viewport scenario (including
+   narrower-aside variants) and comfortably below 1920px. */
+@media (min-width: 1700px) {
+  .form-grid-responsive {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+    max-width: 780px;
+  }
+
+  /* Grid items default to min-width: auto, which can force a column
+     wider than its track to fit an unshrinkable child even though the
+     track itself is minmax(0, 1fr) — every direct child needs its own
+     min-width: 0 so the column can actually shrink down to it (.form-input
+     already sets this on the input/select/textarea itself; this covers
+     the .form-field wrapper one level up). */
+  .form-grid-responsive > * {
+    min-width: 0;
+  }
+
+  .form-grid-responsive.form-grid-wide {
+    max-width: 920px;
+  }
+
+  .form-grid-responsive > .form-section-heading,
+  .form-grid-responsive > .form-field:has(textarea),
+  .form-grid-responsive > .form-checkbox-group,
+  .form-grid-responsive > .form-fieldset,
+  .form-grid-responsive > .admin-editor-actions,
+  .form-grid-responsive > .admin-panel,
+  .form-grid-responsive > .form-actions {
+    grid-column: 1 / -1;
+  }
+
+  /* Grid's default align-items: stretch would otherwise stretch a
+     lone .form-actions cell (e.g. the Acquisition Sources create
+     form's own plain "Add Source" button, which predates
+     EditorActions) to match a tall neighboring row — align-items
+     already resets the CROSS-axis stretch grid would apply, but
+     .form-actions is also a flex row whose OWN default align-items:
+     stretch would then stretch the button itself vertically inside
+     it; align-items: start on both keeps every button its natural
+     height regardless of row height. */
+  .form-grid-responsive > .admin-editor-actions,
+  .form-grid-responsive > .form-actions {
+    align-items: start;
+  }
+}
+
 .form-field {
   display: grid;
   gap: 8px;
+  /* A grid item's default min-width: auto would otherwise force its
+     .form-grid track no narrower than the field's own unshrinkable
+     content (e.g. an input's intrinsic minimum) — .form-grid has always
+     intended fields to shrink freely under its max-width cap, at any
+     column count, so this holds unconditionally rather than only inside
+     the two-column @container rule below. */
+  min-width: 0;
 }
 
 /* Compact but clearly a label: heavier weight and a touch smaller than
@@ -374,6 +472,7 @@ input[type="checkbox"] {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 28px;
+  min-width: 0;
 }
 
 /* Form Section Hierarchy pass: a lightweight divider marking a new group
@@ -529,6 +628,21 @@ input[type="checkbox"] {
    (not the document), so a tall scrolled-through form never drags the
    artwork past its own edge and exposes a seam. */
 .admin-shell {
+  /* Visual Pass sub-slice 2: an admin-only charcoal/slate palette,
+     scoped entirely to this one element that wraps every admin route.
+     Every existing admin component already reads its colors through
+     these same custom properties, so overriding them here alone
+     reskins the whole admin surface with no component changes — public
+     pages never render inside .admin-shell, so :root's own values (and
+     every public page) are completely unaffected. Accent, danger,
+     success, and text colors are deliberately NOT overridden here: the
+     gold identity, the readable danger red, and the existing muted-
+     green success/current treatment already match the approved
+     direction and remain shared with the public site. */
+  --color-background: #0d1420;
+  --color-surface: #141d29;
+  --color-surface-soft: #1b2633;
+  --color-border: #2b3948;
   display: flex;
   min-height: 100vh;
   background-color: var(--color-background);
@@ -804,23 +918,6 @@ input[type="checkbox"] {
   gap: 12px;
 }
 
-/* Restrained destructive action placed directly in the header (Recipe's
-   General/Ingredients tabs, whose own ingredient-capacity guard can hide
-   the sticky EditorActions bar — see recipes/[slug]/edit and
-   recipes/[slug]/ingredients): an outlined danger treatment reads as
-   clearly destructive without the visual weight of the solid
-   .btn-danger used in the sticky bar, so it never competes with Save. */
-.btn-danger-ghost {
-  border: 1px solid var(--color-danger);
-  background: transparent;
-  color: var(--color-danger);
-}
-
-.btn-danger-ghost:hover {
-  background: var(--color-danger);
-  color: var(--color-text);
-}
-
 /* Editor tab navigation: link-based tabs under the header, active tab
    marked with the gold accent AND aria-current (one hook for both the
    visual and the accessible state). Sits flush under the header's own
@@ -900,6 +997,10 @@ input[type="checkbox"] {
   border-radius: 12px;
   padding: 28px 32px;
   margin-bottom: 24px;
+  /* Deliberately NOT a query container (a corrective audit tried and
+     reverted container-type: inline-size here — see the responsive
+     two-column comment on .form-grid-responsive above for the measured
+     regression and why a plain viewport media query replaced it). */
 }
 
 /* Contextual panel/card: the shared supporting-information surface
@@ -941,6 +1042,25 @@ input[type="checkbox"] {
 .admin-panel-footer {
   border-top: 1px solid var(--color-border);
   padding-top: 12px;
+}
+
+/* ---- Danger zone (Visual Pass sub-slice 9) ----------------------------
+   The right-rail panel Delete now lives in, below Timestamps, instead of
+   the sticky Save/Cancel bar — a restrained danger-tinted border and
+   heading are enough to mark it destructive without the heavier
+   .confirm-card treatment reserved for the actual confirmation page. */
+.admin-danger-zone {
+  border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+}
+
+.admin-danger-zone .admin-panel-title {
+  color: var(--color-danger);
+}
+
+.admin-danger-zone-description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
 }
 
 /* Slice 9H: the dt/dd list wrapping a panel's own admin-panel-rows
@@ -993,58 +1113,99 @@ input[type="checkbox"] {
   color: var(--color-warning);
 }
 
-/* Image panel body: every upload surface must read as interactive. The
-   wrapper only styles — upload/replace/remove behavior stays with the
-   existing controls placed inside it. */
-.admin-image-panel-body input[type="file"] {
-  cursor: pointer;
+/* ---- Image panel (Visual Pass sub-slice 6) ---------------------------
+   A single shared visual language for every ImagePanel instance: a
+   large centered preview (or an intentional empty placeholder), compact
+   helper copy, a gold "Choose/Change Image" action, and a separate
+   icon-only trash button. The native <input type="file"> stays in the
+   DOM and fully functional (src/components/admin/image-panel.tsx
+   triggers it via a ref, so it works with a real keyboard-focusable
+   button rather than a non-focusable label) — this block only hides its
+   default browser chrome and the old remove-checkbox's own box, never
+   the input's accessibility. */
+.admin-image-panel-body {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
 }
 
-.admin-image-panel-body input[type="file"]::file-selector-button {
-  cursor: pointer;
-}
-
-/* Existing-image preview wrapper and thumbnail: identical inline styles
-   had been copied into the Item, Recipe, Profession, and Location edit
-   pages (Slice 9H consolidates all four into these two classes). */
-.admin-image-preview-wrap {
-  position: relative;
-  justify-self: start;
-}
-
-.admin-image-preview {
+.admin-image-preview-lg {
   display: block;
-  max-width: 160px;
+  max-width: 100%;
+  max-height: 220px;
+  width: auto;
   height: auto;
-  padding: 8px;
+  padding: 12px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--color-surface);
+  transition: opacity 0.15s ease;
 }
 
-/* "No image uploaded" — an intentional quiet placeholder (dashed border,
-   barely-there fill) rather than plain unstyled text, echoing the same
-   missing-thumbnail language .admin-record-thumb-empty already
-   established for record-list rows. Edit pages only; create pages have
-   nothing to report yet, so they render no empty-image note at all. */
-.admin-image-empty {
-  display: block;
-  padding: 10px 12px;
+/* Intentional empty placeholder (dashed border, barely-there fill),
+   echoing the same missing-thumbnail language .admin-record-thumb-empty
+   already established for record-list rows. */
+.admin-image-empty-lg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 140px;
+  padding: 16px;
   border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: 8px;
+  border-radius: 12px;
   background: color-mix(in srgb, var(--color-surface-soft) 60%, transparent);
   color: var(--color-text-muted);
   font-size: 14px;
 }
 
-/* Remove-current-image toggle (Slice 9B.5, migrated from the Item edit
-   page's former inline <style> block — same behavior, shared class names
-   so any future ImagePanel adopter can reuse it unchanged). The checkbox
-   itself is visually hidden (screen-reader pattern); its sibling label
-   is the visible round toggle, and checking it dims the preview and
-   reveals the confirmation note via the sibling combinator. */
-.admin-image-remove-checkbox,
-.admin-image-remove-hidden-text {
+.admin-image-helper {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.admin-image-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Separate icon-only trash button, beside Change/Choose Image rather
+   than overlaid on the image itself. Toggles the visually hidden
+   removeImage checkbox it is paired with via htmlFor/id (pure HTML —
+   no click handler needed); the checked state below restyles this same
+   button so the destructive choice stays visible even after the label
+   click that made it. */
+.admin-image-trash-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.admin-image-trash-btn:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.admin-image-trash-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-image-remove-checkbox {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1056,49 +1217,53 @@ input[type="checkbox"] {
   border: 0;
 }
 
-.admin-image-remove-frame {
-  position: relative;
-  display: inline-block;
-}
-
-.admin-image-remove-toggle {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 9999px;
-  background: var(--color-danger);
-  color: var(--color-background);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-  user-select: none;
-}
-
-.admin-image-remove-checkbox:focus-visible
-  ~ .admin-image-remove-frame
-  .admin-image-remove-toggle {
+.admin-image-remove-checkbox:focus-visible ~ .admin-image-actions .admin-image-trash-btn {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-.admin-image-remove-checkbox:checked ~ .admin-image-remove-frame img {
+.admin-image-remove-checkbox:checked ~ .admin-image-actions .admin-image-trash-btn {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 15%, var(--color-surface));
+  color: var(--color-danger);
+}
+
+.admin-image-remove-checkbox:checked ~ .admin-image-preview-lg {
   opacity: 0.35;
 }
 
 .admin-image-remove-note {
   display: none;
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--color-danger);
+  font-size: 13px;
 }
 
 .admin-image-remove-checkbox:checked ~ .admin-image-remove-note {
   display: block;
+}
+
+/* The real file input stays in the DOM and accessible to assistive
+   technology, but visually hidden and out of tab order — the visible,
+   keyboard-operable trigger is the Choose/Change Image button beside it
+   (image-panel.tsx opens this input via a ref on click). */
+.admin-image-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-image-filename {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 /* Sticky editor actions: pinned to the bottom of the scrolling content
@@ -1125,12 +1290,6 @@ input[type="checkbox"] {
   margin-top: 28px;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
-}
-
-/* Pushes an optional delete action to the far edge, away from
-   save/cancel, so the destructive control is never a neighbor slip. */
-.admin-editor-actions-spacer {
-  flex: 1;
 }
 
 /* ---- Admin record list (Slice 9B.3; accent unified to gold in Slice

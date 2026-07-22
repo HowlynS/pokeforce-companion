@@ -132,7 +132,7 @@ async function fillMinimalRecipeForm(
     .selectOption({ label: "Iron Ore" });
   await ingredientGroup(page).getByRole("spinbutton").nth(0).fill("1");
   if (imageFile) {
-    await page.getByLabel(/^Image \(optional/).setInputFiles(imageFile);
+    await page.locator('input[name="image"]').setInputFiles(imageFile);
   }
 }
 
@@ -206,7 +206,7 @@ test("replacing the recipe image stores a new object and removes the old one", a
   // untouched by this General-only save.
   await page.goto(`/admin/recipes/${RECIPE.slug}/edit`);
   await page
-    .getByLabel(/^Replacement image \(optional/)
+    .locator('input[name="image"]')
     .setInputFiles(WEBP_FIXTURE);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
@@ -250,9 +250,9 @@ test("removing the recipe image clears the row, deletes the object, and restores
   // its accessible label is the visible toggle, and checking it reveals the
   // confirmation note. No replacement file is attached.
   await page.goto(`/admin/recipes/${RECIPE.slug}/edit`);
-  await page.getByTitle("Remove current image").click();
+  await page.getByTitle("Remove image").click();
   await expect(
-    page.getByRole("checkbox", { name: "Remove current image" })
+    page.getByRole("checkbox", { name: "Remove image" })
   ).toBeChecked();
   await expect(
     page.getByText("Image will be removed when saved.")
@@ -289,9 +289,9 @@ test("choosing a replacement and removal together is rejected without changes", 
   // Both a replacement file AND the remove control: the action rejects the
   // conflicting intent before any upload or deletion happens.
   await page.goto(`/admin/recipes/${RECIPE.slug}/edit`);
-  await page.getByTitle("Remove current image").click();
+  await page.getByTitle("Remove image").click();
   await page
-    .getByLabel(/^Replacement image \(optional/)
+    .locator('input[name="image"]')
     .setInputFiles(WEBP_FIXTURE);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 

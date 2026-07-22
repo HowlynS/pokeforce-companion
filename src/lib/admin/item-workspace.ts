@@ -83,18 +83,14 @@ export function itemUsedInRecipesHref(slug: string, query: string): string {
   return withItemSearchQuery(`${ITEM_LIST_PATH}/${slug}/recipes`, query);
 }
 
-/** The Metadata tab route for one item, preserving the query (Slice
-    9B.8) — read-only administrative metadata (timestamps and
-    verification), never internal ids. */
-export function itemMetadataHref(slug: string, query: string): string {
-  return withItemSearchQuery(`${ITEM_LIST_PATH}/${slug}/metadata`, query);
-}
-
 /** Which Item editor tab is active — General (the record's own fields),
-    Acquisition Sources (Slice 9B.6), Used in Recipes (Slice 9B.7), or
-    Metadata (Slice 9B.8). Every tab is now a real destination — none
-    renders as a disabled placeholder. */
-export type ItemEditorTabKey = "general" | "sources" | "recipes" | "metadata";
+    Acquisition Sources (Slice 9B.6), or Used in Recipes (Slice 9B.7).
+    The former Metadata tab (Slice 9B.8) was removed in the Visual Pass
+    (sub-slice 4): every fact it showed was already duplicated by
+    General's own aside (Verification/Timestamps) or this tab's own
+    relationship views, so /admin/items/[slug]/metadata now redirects to
+    General instead of rendering a fourth tab. */
+export type ItemEditorTabKey = "general" | "sources" | "recipes";
 
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
@@ -134,11 +130,6 @@ export function itemEditorTabs(
       label: "Used in Recipes",
       href: itemUsedInRecipesHref(slug, query),
       active: active === "recipes",
-    },
-    {
-      label: "Metadata",
-      href: itemMetadataHref(slug, query),
-      active: active === "metadata",
     },
   ];
 }
