@@ -362,15 +362,23 @@ test("an Acquisition Source edit form renders inside the same editor surface tre
   await expect(saveButton).toBeVisible();
 });
 
-test("the Game Version create and edit forms adopt the same editor surface treatment", async ({
+test("the Game Version create and edit forms adopt a consistent editor-card treatment", async ({
   page,
 }) => {
   await page.goto("/admin/settings/game-versions");
 
-  const createSurface = surface(page);
-  await expect(createSurface).toBeVisible();
-  await expect(createSurface.locator("form")).toHaveCount(1);
-  await noHorizontalOverflow(createSurface);
+  // Game Version 70/30 overview pass: the inline Create Game Version form
+  // lives directly inside its own EditorSection card on the 70/30 overview
+  // layout — there is no separate .admin-editor-surface wrapper here (the
+  // whole overview page IS the section-card layout, unlike a resource
+  // workspace's create/edit route). The Existing Game Versions card and
+  // Create Game Version card, located by their own heading text.
+  const createCard = page
+    .locator(".admin-editor-section")
+    .filter({ has: page.getByRole("heading", { name: "Create Game Version" }) });
+  await expect(createCard).toBeVisible();
+  await expect(createCard.locator("form")).toHaveCount(1);
+  await noHorizontalOverflow(createCard);
 
   // Seeded fixture row only — read, never modified (no submission below).
   const currentRow = page
@@ -379,8 +387,13 @@ test("the Game Version create and edit forms adopt the same editor surface treat
   await currentRow.getByRole("link", { name: "Edit", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/settings\/game-versions\/.+\/edit/);
 
+  // The Edit page (action-strip consistency fix) DOES use the shared
+  // .admin-editor-surface wrapper, exactly like every other resource's
+  // editor — EditorActions now sits beside the Game Version card rather
+  // than nested inside it.
   const editSurface = surface(page);
   await expect(editSurface).toBeVisible();
+  await expect(editSurface.locator("form")).toHaveCount(1);
   await noHorizontalOverflow(editSurface);
 });
 

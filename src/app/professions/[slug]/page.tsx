@@ -4,28 +4,16 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { prisma } from "@/lib/db";
 import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
 type ProfessionDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2
-      style={{
-        margin: "0 0 16px",
-        fontSize: "24px",
-        lineHeight: 1.2,
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
 
 export default async function ProfessionDetailPage({ params }: ProfessionDetailPageProps) {
   const { slug } = await params;
@@ -71,7 +59,7 @@ export default async function ProfessionDetailPage({ params }: ProfessionDetailP
           The Details card above still states "Recipes: 0". */}
       {profession.recipes.length > 0 ? (
         <section>
-          <SectionHeading>Recipes</SectionHeading>
+          <SectionHeading icon={SECTION_ICONS.recipes}>Recipes</SectionHeading>
 
           <ContentGrid>
             {profession.recipes.map((recipe) => (

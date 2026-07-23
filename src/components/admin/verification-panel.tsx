@@ -22,6 +22,8 @@ import {
   VERIFICATION_STATUS_LABELS,
   classifyVerificationStatus,
 } from "@/lib/admin/verification-status";
+import { formatDisplayDate } from "@/lib/format-date";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 type VerificationPanelProps = {
   /** Every Game Version, current first — the same list the picker uses. */
@@ -66,6 +68,7 @@ export function VerificationPanel({
   return (
     <ContextPanel
       title="Verification"
+      icon={SECTION_ICONS.verification}
       footer={
         readOnly ? null : (
           <GameVersionVerificationControls
@@ -96,9 +99,10 @@ export function VerificationPanel({
         </div>
 
         {/* Rendered only when BOTH stamp fields are populated — never as
-            empty rows; the stable YYYY-MM-DD date never depends on the
-            server locale. Technical version names display exactly as
-            stored, with no reformatting. */}
+            empty rows; formatted through the shared formatDisplayDate
+            helper ("DD MMM YYYY") so it never depends on the server
+            locale. Technical version names display exactly as stored,
+            with no reformatting. */}
         {verifiedVersionName ? (
           <>
             <div className="admin-panel-row">
@@ -107,7 +111,7 @@ export function VerificationPanel({
             </div>
             <div className="admin-panel-row">
               <dt>Verified on</dt>
-              <dd>{verifiedAt!.toISOString().slice(0, 10)}</dd>
+              <dd>{formatDisplayDate(verifiedAt)}</dd>
             </div>
           </>
         ) : null}

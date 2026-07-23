@@ -339,6 +339,17 @@ select:focus-visible {
   color: var(--color-text-muted);
 }
 
+/* A column that should only ever be as wide as its own short content
+   (a status word, one compact button, an Edit/Delete pair) — e.g. the
+   Game Versions table's Current/Set current/Actions columns — rather
+   than sharing the table's remaining width evenly with Name/Release
+   date. white-space: nowrap stops a compact column from ever wrapping
+   and growing taller than its neighbors. */
+.admin-table-col-compact {
+  width: 1%;
+  white-space: nowrap;
+}
+
 /* Edit/Delete pair at the end of a table row. */
 .row-actions {
   display: inline-flex;
@@ -349,16 +360,28 @@ select:focus-visible {
 /* Form column plus its field/label/input vocabulary. Widths bumped (Admin
    Editor Surface pass) from the original 480/560 so fields have more room
    to breathe inside the new .admin-editor-surface panel below — still a
-   readable line length, never stretched to the panel's full width. */
+   readable line length, never stretched to the panel's full width.
+
+   Admin Visual/UX Correction pass: bumped again (560/680 -> 640/760).
+   Live measurement (e2e/admin-tmp-visual-audit.spec.ts, deleted after
+   this pass) showed the single-column form-grid was actually using its
+   FULL 560px cap at every measured desktop width (the surrounding
+   .admin-editor-surface's own available width already exceeded it
+   everywhere), so the form's rendered width was 560px-flat regardless
+   of how much wider the card around it grew — the exact "half-empty
+   card" defect this pass corrects. 640/760 still fit comfortably inside
+   the narrowest real target (1440px viewport, narrow-desktop tier,
+   where the editor column's own available width was measured at
+   ~700px+ after the record-list/aside trims above). */
 .form-grid {
   display: grid;
   gap: 20px;
   width: 100%;
-  max-width: 560px;
+  max-width: 640px;
 }
 
 .form-grid-wide {
-  max-width: 680px;
+  max-width: 760px;
 }
 
 /* Visual Pass sub-slice 3: an opt-in responsive two-column mode for
@@ -397,12 +420,40 @@ select:focus-visible {
    column's own available width is ~562px — two columns only begin at
    1920px viewport and up (main ~926px+), so the threshold sits at
    1700px: comfortably above every 1440px-viewport scenario (including
-   narrower-aside variants) and comfortably below 1920px. */
+   narrower-aside variants) and comfortably below 1920px.
+
+   Admin Visual/UX Correction pass: max-width bumped once to a flat 900px,
+   then corrected to clamp(900px, 58vw, 1320px) — a flat cap (780px, then
+   900px) can never track a growing card: at 2560px/3440px the main
+   editor column's real available width (1526px/1969px after the Part 3
+   record-list/aside trims above) left a flat cap binding at the SAME
+   pixel value regardless of viewport, so the form's rendered width
+   stopped growing past that one fixed number exactly like the original
+   780px defect this pass corrects — confirmed via live measurement,
+   screenshot review showed a still-substantial empty region beside the
+   form at 3440px with the flat 900px value. The clamp's 900px floor
+   keeps 1920px (58vw ~= 1114px, already above the floor) unaffected
+   downward from the flat-900px baseline; the 58vw preferred value is
+   what actually drives growth toward the ~70-80%-of-card target at
+   wider viewports.
+
+   Follow-up correction pass: ceiling raised again (1320px -> 1600px).
+   Live measurement showed BOTH 2560px and 3440px were already hitting
+   the 1320px ceiling identically (58vw exceeds 1320 at any viewport
+   wider than ~2276px) — at 3440px specifically, the editor card itself
+   is 1970px wide (unaffected by this pass; the Part 2 outer-frame
+   ceiling stays exactly 2900px) but the readable form content stopped
+   at 1320px, leaving a 650px unused strip inside the card before the
+   context rail even starts. 1600px recovers most of that (leaving a
+   deliberate ~300px margin, never edge-to-edge) while a two-column
+   field still lands around 776px — wide but bounded, not an unbounded
+   full-card stretch. 1920px is completely unaffected (58vw ~= 1114px,
+   nowhere near either ceiling). */
 @media (min-width: 1700px) {
   .form-grid-responsive {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 24px;
-    max-width: 780px;
+    max-width: clamp(900px, 58vw, 1600px);
   }
 
   /* Grid items default to min-width: auto, which can force a column
@@ -415,33 +466,371 @@ select:focus-visible {
     min-width: 0;
   }
 
+  /* Same clamp() correction, scaled up proportionally for the wider
+     variant (Recipe's own General/Ingredients forms — see form-grid-wide
+     usage). Follow-up correction pass: ceiling raised proportionally
+     (1520px -> 1840px), same reasoning as .form-grid-responsive above. */
   .form-grid-responsive.form-grid-wide {
-    max-width: 920px;
+    max-width: clamp(1060px, 68vw, 1840px);
   }
 
-  .form-grid-responsive > .form-section-heading,
   .form-grid-responsive > .form-field:has(textarea),
   .form-grid-responsive > .form-checkbox-group,
   .form-grid-responsive > .form-fieldset,
+  .form-grid-responsive > .form-row-details,
   .form-grid-responsive > .admin-editor-actions,
   .form-grid-responsive > .admin-panel,
+  .form-grid-responsive > .admin-editor-sections,
+  .form-grid-responsive > .admin-editor-section,
   .form-grid-responsive > .form-actions {
     grid-column: 1 / -1;
   }
 
   /* Grid's default align-items: stretch would otherwise stretch a
-     lone .form-actions cell (e.g. the Acquisition Sources create
-     form's own plain "Add Source" button, which predates
-     EditorActions) to match a tall neighboring row — align-items
-     already resets the CROSS-axis stretch grid would apply, but
-     .form-actions is also a flex row whose OWN default align-items:
-     stretch would then stretch the button itself vertically inside
-     it; align-items: start on both keeps every button its natural
-     height regardless of row height. */
+     lone .form-actions cell (e.g. the Game Version create form's own
+     plain single-button row) to match a tall neighboring row —
+     align-items already resets the CROSS-axis stretch grid would
+     apply, but .form-actions is also a flex row whose OWN default
+     align-items: stretch would then stretch the button itself
+     vertically inside it; align-items: start on both keeps every
+     button its natural height regardless of row height. */
   .form-grid-responsive > .admin-editor-actions,
   .form-grid-responsive > .form-actions {
     align-items: start;
   }
+}
+
+/* Admin Full-Width Card Layout pass: root-cause fix for section cards
+   (EditorSection/.admin-editor-sections, and Item's own
+   .item-general-columns) stopping well short of the editor's true
+   available width. .form-grid/.form-grid-wide/.form-grid-responsive
+   above were designed for the OLD single-set-of-fields form and cap the
+   <form> element itself (640px flat, up to clamp(900-1600px) or
+   clamp(1060-1840px) at >=1700px) — every card-based page still carries
+   those same classes on its <form> (for the responsive two-column FIELD
+   behavior those rules also provide, still needed and unchanged), so the
+   whole card grid nested inside inherited a max-width meant for a single
+   readable line of fields, leaving a large unused gap between the last
+   card and .admin-editor-surface's own far wider edge (measured live at
+   3440px: the form stopped at 1600px while the surface itself exceeded
+   1900px).
+   :has() targets exactly the section-card case (a form whose direct
+   child is a card grid or a lone card) without a new modifier class
+   needed on every affected <form> — forms that still hold nothing but
+   bare fields directly (the Game Version create/edit forms, which
+   deliberately keep a compact, readable-width form) are untouched, since
+   neither selector below matches them. Placed after every rule that sets
+   a competing max-width on these same classes (including the >=1700px
+   media-scoped ones) so it reliably wins ties on specificity and source
+   order regardless of viewport. */
+.form-grid:has(> .admin-editor-sections),
+.form-grid:has(> .item-general-columns),
+.form-grid:has(> .admin-editor-section) {
+  width: 100%;
+  max-width: none;
+}
+
+/* Acquisition Source layout pass: the Details section's Source
+   label + Quantity row — Source label is the flexible/main field,
+   Quantity is a compact number field that must never read as a
+   second large text field. minmax(8rem, 12rem) keeps Quantity a
+   sensible fixed-ish width (128-192px) at every viewport, while
+   Source label absorbs whatever width remains via minmax(0, 1fr).
+   Both fields already share the same .form-input min-height (44px),
+   so their controls align without any extra rule. Stacks to one
+   column below a width where two fields plus a healthy label/helper
+   column would otherwise feel cramped — matching this form's own
+   narrow-tier behavior rather than an arbitrary device breakpoint. */
+.form-row-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 12rem);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 520px) {
+  .form-row-details {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A field that should never grow to the form's full readable width —
+   e.g. Acquisition Source's own Type <select>, which is a short,
+   fixed vocabulary and reads oddly stretched across a wide form. */
+.form-field-narrow {
+  max-width: 280px;
+}
+
+/* Location's own Identity section: Name and Page address may sit side
+   by side as "a two-field row" once the section card itself is wide
+   enough to give both fields a comfortable width — reuses the same
+   1700px threshold every other responsive admin grid does. Below that,
+   no rule applies at all, so RecordIdentityFields' own two .form-field
+   elements simply stack as ordinary block children, identical to every
+   other section's default single-column behavior. */
+@media (min-width: 1700px) {
+  .location-identity-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+/* Item General editor: an explicit, Item-specific two-column
+   composition — Name/Page address/Description stacked in a left
+   column, Category/Held item/Tradeable/Base value stacked in a right
+   column — deliberately NOT built on .form-grid-responsive's own
+   generic auto-flow 2-column grid above. That auto-flow places
+   whatever field happens to be next in DOM order into the next open
+   cell, which produced a half-empty row here (Category alone in one
+   cell, since the next element — the "Gameplay details" heading — is
+   forced to span both columns and so starts a fresh row): the field
+   grouping Item's own manual-review direction calls for is a
+   deliberate LEFT-STACK/RIGHT-STACK split, not row-by-row pairing, so
+   it needs its own nested grid rather than a forced-span exception
+   list entry. Only Item's General form (create and edit) uses these
+   classes — Recipe/Profession/Category/Location keep using the shared
+   .form-grid-responsive auto-flow above untouched, and its own
+   max-width clamp() is untouched too (see below for how Item's form
+   still benefits from it).
+
+   .item-general-form.form-grid-responsive below (specificity 0,2,0,
+   beating the plain .form-grid-responsive rule's 0,1,0 regardless of
+   source order) cancels the generic 2-column auto-flow back to a
+   single column ONLY for Item's own form, so .item-general-columns —
+   its one remaining direct child besides EditorActions — becomes the
+   full-width content of that single column, still governed by
+   .form-grid-responsive's own existing max-width clamp (no duplicated
+   width logic). EditorActions stays a sibling of .item-general-columns,
+   so Save/Cancel aligns with the same width, below both columns.
+
+   Reuses .form-grid-responsive's own existing 1700px breakpoint —
+   rather than a new arbitrary breakpoint, or a container query — so
+   both column systems switch together at the one threshold already
+   measured for "the record list and context rail leave the editor
+   column genuinely wide enough for two columns" (see the
+   .form-grid-responsive comment above). A container query was already
+   tried project-wide for this exact scenario and reverted as unsafe:
+   establishing container-type anywhere inside .admin-frame's
+   shrinking flex chain measurably broke narrow-viewport sizing (see
+   the same comment) — a plain viewport media query at the
+   already-proven-safe threshold is the robust, project-supported
+   choice here. */
+.item-general-form.form-grid-responsive {
+  grid-template-columns: 1fr;
+}
+
+.item-general-columns {
+  display: grid;
+  gap: 20px;
+  /* Admin Full-Width Card Layout pass: this is itself a grid ITEM of
+     .form-grid's own single implicit column, and a grid item's default
+     min-width: auto refuses to shrink below its own children's min-content
+     size. Harmless while .form-grid still carried a ~640-680px max-width
+     cap (the cards' own min-content never exceeded that), but once that
+     cap was removed for section-card forms, this became a genuine
+     self-overflow at narrow effective widths (measured live: 62px of
+     .admin-editor-surface self-overflow at 150% zoom on a 1280px
+     viewport) — the exact hazard every other grid/flex item down this
+     same chain (.item-general-column, .admin-workspace-*, etc.) already
+     guards against with this identical property. */
+  min-width: 0;
+}
+
+.item-general-column {
+  display: grid;
+  gap: 20px;
+  /* Packs this column's own fields at the top rather than spreading
+     them out with extra gaps if grid row-stretch (below) makes this
+     column taller than its own natural content — relevant whenever
+     the two columns hold a different number/height of fields. */
+  align-content: start;
+  min-width: 0;
+}
+
+@media (min-width: 1700px) {
+  .item-general-columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 48px;
+  }
+}
+
+/* ---- Admin editor section cards (Admin Editor Section Redesign pass) --
+   The shared inner-card system EditorSection (src/components/admin/
+   editor-section.tsx) renders into. Replaces the old long full-width
+   .form-section-heading divider line (removed below, once every page
+   using it was converted to this system instead — a plain heading
+   paragraph with a border-top spanning the whole card read as "weak
+   hierarchy, large empty regions" exactly per the approved direction)
+   with a genuinely bordered, distinctly-surfaced card per logical field
+   group. Deliberately the SAME --color-surface-soft tone
+   .admin-panel (the aside/relationship-view card) already uses — the
+   outer .admin-editor-surface stays the lighter --color-surface "base"
+   every card sits on, so the contrast is visible but restrained, never
+   a loud new color. No shadow, no glassmorphism: border + background
+   only, matching every other surface in this admin. */
+.admin-editor-section {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  /* Admin Full-Width Card Layout pass: every EditorSection card sits
+     inside a CSS Grid ancestor somewhere (.item-general-column,
+     .admin-editor-sections, or the auto-flow .form-grid-responsive), which
+     makes this card itself a grid ITEM — a grid item's default
+     min-width: auto refuses to shrink below its own content's min-content
+     size. Harmless while the surrounding form still carried a capped
+     max-width (the card's min-content never exceeded that cap), but once
+     that cap was removed for section-card forms, a narrow enough
+     effective width (measured live: real 853px viewport, and the
+     equivalent 150%-zoomed 1280px viewport) let this card's own
+     min-content genuinely exceed its grid track, overflowing
+     .admin-editor-surface by dozens of pixels. min-width: 0 here is the
+     same fix every other grid/flex item down this same chain
+     (.item-general-column, .admin-workspace-*, etc.) already needed. */
+  min-width: 0;
+  /* Default spacing for a section used as an ordinary standalone block
+     (e.g. Item Acquisition Sources' own "Existing Sources" card, sitting
+     above the create form rather than inside an .admin-editor-sections
+     grid) — reset to 0 immediately below wherever a grid ancestor's own
+     `gap` already provides that spacing, so the two mechanisms never
+     stack into a doubled gap. */
+  margin-bottom: 24px;
+}
+
+.admin-editor-sections > .admin-editor-section,
+.item-general-column > .admin-editor-section {
+  margin-bottom: 0;
+}
+
+.admin-editor-section-heading {
+  display: flex;
+  /* flex-start, not center: when an optional description line (below)
+     is present, the heading text block is two lines tall — the icon
+     bubble should align with the TITLE's own line, not the vertical
+     center of both lines together. Negligible visual difference for
+     the common single-line-title case. */
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* Admin Full-Width Card Layout pass: the title(+description) text block
+   beside the icon is a FLEX item of .admin-editor-section-heading above,
+   and a flex item's default min-width: auto refuses to shrink below its
+   own child's (the h2 title's) min-content size — the last remaining
+   piece of the same self-overflow chain .admin-editor-section itself
+   needed min-width: 0 for (see that rule's own comment): at a narrow
+   enough effective width this text block was still forcing a few dozen
+   pixels of overflow even after every ancestor grid/flex container
+   correctly shrank. */
+.admin-editor-section-heading-text {
+  min-width: 0;
+}
+
+/* Identical typography to the retired .form-section-heading — the
+   established section-label style, just without the border-top divider
+   the card itself now replaces. */
+.admin-editor-section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  /* Admin Full-Width Card Layout pass: a single unbroken word (e.g.
+     "Classification") has no natural wrap point, so without this the
+     title enforced its own whole-word min-content width regardless of
+     min-width: 0 anywhere up the ancestor chain — the last few pixels of
+     the same self-overflow chain .admin-editor-section and its heading
+     text wrapper needed min-width: 0 for. Matches the identical
+     overflow-wrap: anywhere already used on .admin-editor-title/
+     .admin-editor-subtitle for the same reason. */
+  overflow-wrap: anywhere;
+}
+
+/* Mirrors .admin-panel-description exactly — the same restrained count-
+   line treatment, so EditorSection and ContextPanel read as one
+   consistent card language wherever either is used. */
+.admin-editor-section-description {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.admin-editor-section-body {
+  display: grid;
+  gap: 20px;
+}
+
+/* The auto-flow grid EditorSection cards are arranged in: a single
+   column by default (every viewport stacks safely), opting into two
+   columns only above the same 1700px threshold every other responsive
+   admin grid already uses (see .form-grid-responsive's own comment) —
+   never a container query, for the same already-proven-unsafe reason
+   documented there. A section carrying --full always spans the entire
+   row, at any column count, for content that reads better full-width
+   (e.g. Recipe's own Identity row, or a lone Content section holding two
+   full-width textareas) while its siblings pair up beside each other. */
+.admin-editor-sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+@media (min-width: 1700px) {
+  .admin-editor-sections.admin-editor-sections--two-col {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 24px;
+  }
+
+  .admin-editor-sections--two-col > .admin-editor-section--full {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---- Section icon, Option B (SectionIcon, src/components/admin/
+   section-icon.tsx) — a small BARE semantic icon beside a section/panel
+   title, used identically in admin and on public section headings. No
+   bubble, no outline, no background block, no click affordance: purely
+   decorative (aria-hidden on the wrapping span in the component itself),
+   sized and colored so it reads as subordinate to the title beside it —
+   muted gold/yellow (--color-accent, the same identity color everywhere
+   else on this site), never the loud full-strength text color.
+   translateY nudges the icon down slightly to optically center it
+   against the title's own line box: an 18px/15px icon is taller than a
+   13px/12px uppercase title's own glyph height, so naive align-items:
+   center (which centers against the whole flex line box, including the
+   icon) reads as "too high" relative to where the title's letters
+   actually sit — measured live (see globals.css history / commit notes)
+   across every icon-bearing heading in both admin and public contexts. */
+.admin-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-accent);
+  transform: translateY(1px);
+}
+
+.admin-section-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-section-icon-compact svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* The aside/relationship-card heading row an icon-bearing ContextPanel
+   renders — mirrors .admin-editor-section-heading's own layout at a
+   slightly tighter gap, matching .admin-panel's own denser rhythm. */
+.admin-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .form-field {
@@ -505,7 +894,16 @@ select:focus-visible {
    cell's own available width is genuinely too narrow for both
    (flex-wrap, not a media query, since the right threshold depends on
    the outer grid's own current column count/width, not the viewport
-   alone). */
+   alone).
+
+   Admin Visual/UX Correction pass, follow-up #2: flex-basis/min-width
+   bumped (120px -> 200px) — at 120px, each Minimum/Maximum block's own
+   multi-sentence helper paragraph below it (see .form-field-helper) was
+   wrapping across five or six tiny-width lines, reading as cramped even
+   though nothing was actually overflowing. 200px gives that helper text
+   a genuinely readable line length while the number INPUT itself stays
+   compact via its own max-width immediately below — the block grows,
+   the control inside it does not. */
 .recipe-quantity-range {
   display: flex;
   flex-wrap: wrap;
@@ -515,8 +913,18 @@ select:focus-visible {
 .recipe-quantity-field {
   display: grid;
   gap: 8px;
-  flex: 1 1 120px;
-  min-width: 120px;
+  flex: 1 1 200px;
+  min-width: 200px;
+}
+
+/* The actual number input stays a compact, sensible width regardless of
+   how wide its surrounding .recipe-quantity-field block grows — never a
+   large stretched spinner control, matching the same "compact control,
+   more room for its own label/helper text" pattern
+   .form-row-details/.form-field-narrow already established for
+   Acquisition Source. */
+.recipe-quantity-field .form-input {
+  max-width: 10rem;
 }
 
 /* Static guidance beneath a field's label (distinct from
@@ -570,6 +978,32 @@ select:focus-visible {
 
 textarea.form-input {
   resize: vertical;
+}
+
+/* Shared autosizing textarea (Admin Visual/UX Correction pass, follow-up
+   #2) — see src/components/admin/autosize-textarea.tsx for the resize
+   logic itself, which reads these two values back via getComputedStyle
+   rather than duplicating them as JS literals, so this is the ONE place
+   the sizing target is declared. min-height ~7.5rem keeps a converted
+   field's STARTING size close to the old fixed rows={4} textareas (never
+   a visible shrink for existing short content); max-height ~28rem was
+   measured live to comfortably fit several paragraphs of pasted text
+   before internal scrolling takes over, without ever approaching the
+   surrounding editor card's own height. overflow-y starts hidden (no
+   scrollbar while the box is still free to grow) — the component itself
+   flips it to auto only once content genuinely exceeds max-height.
+   resize: none is deliberate (documented in the component itself): free
+   manual resize would fight the JS recomputing height on every
+   keystroke, so predictable autosizing was chosen over free manual
+   resize project-wide, not a half-supported mix of both. The higher
+   specificity here (two classes) intentionally overrides
+   textarea.form-input's own resize: vertical above, without touching
+   that rule for any textarea that has not been converted. */
+textarea.form-input.admin-autosize-textarea {
+  min-height: 7.5rem;
+  max-height: 28rem;
+  overflow-y: hidden;
+  resize: none;
 }
 
 input[type="checkbox"] {
@@ -628,29 +1062,15 @@ input[type="checkbox"] {
 }
 
 /* Form Section Hierarchy pass: a lightweight divider marking a new group
-   of related fields inside an existing single-column .form-grid — never
-   a nested bordered card (that visual weight is reserved for genuinely
-   separate content, e.g. .form-fieldset's Ingredients/Parent Location).
-   A plain <p>, not a heading element: the page's own h1/h2 outline
-   (EditorHeader's title, ContextPanel's titles) is not extended by
-   purely visual form groupings. Matches .admin-panel-title's existing
-   13px/700/uppercase/muted treatment, so "section label" reads as one
-   consistent tier across the whole admin surface. */
-.form-section-heading {
-  margin: 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-border);
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-}
-
-.form-section-heading:first-child {
-  padding-top: 0;
-  border-top: none;
-}
+   of related fields inside an existing single-column .form-grid.
+   RETIRED by the Admin Editor Section Redesign pass: every page that
+   used this long full-width border-top line to separate logical field
+   groups now wraps each group in EditorSection's own bordered card
+   instead (see .admin-editor-section above) — the exact "weak
+   hierarchy, long decorative separator lines" pattern the approved
+   mock-up replaced. No remaining consumer references this class; kept
+   only as a removed-rule marker in source history via this comment,
+   not as live CSS. */
 
 .form-fieldset {
   border: 1px solid var(--color-border);
@@ -672,6 +1092,20 @@ input[type="checkbox"] {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0 4px;
+}
+
+/* Admin Editor Section Redesign pass: a .form-fieldset nested inside an
+   EditorSection card (e.g. Recipe's own Ingredients rows) drops its own
+   border/background/padding — the surrounding card already provides
+   that same visual tier, so keeping both would double up as a visibly
+   redundant card-within-a-card. The grid/gap layout and the legend's
+   own native grouping semantics (still a real <fieldset>/<legend> pair,
+   so assistive technology and existing role="group" lookups are
+   unaffected) are untouched. */
+.admin-editor-section-body > .form-fieldset {
+  border: none;
+  background: transparent;
+  padding: 0;
 }
 
 /* One recipe ingredient row: item select plus quantity. */
@@ -794,6 +1228,20 @@ input[type="checkbox"] {
   --color-background: #0d1420;
   --color-surface: #141d29;
   --color-surface-soft: #1b2633;
+  /* Admin Editor Section Redesign pass: one more step up the same
+     tonal progression above (background -> surface -> surface-soft),
+     for EditorSection's own inner cards specifically. --color-surface-
+     soft was tried first and reused directly (matching .admin-panel's
+     own aside-column tone) but measured live as visually indistinct:
+     .admin-panel sits directly on the page's own --color-background,
+     a two-step jump, while EditorSection's cards sit one level deeper,
+     INSIDE .admin-editor-surface (already --color-surface) — reusing
+     the same --color-surface-soft value there is only a one-step jump,
+     which read as almost no contrast at all once actually screenshotted
+     at real admin viewport sizes. This dedicated, slightly lighter tier
+     restores a genuinely visible (still restrained — no new hue, same
+     blue-gray family) card distinction against .admin-editor-surface. */
+  --color-surface-raised: #222f3d;
   --color-border: #2b3948;
   display: flex;
   min-height: 100vh;
@@ -840,7 +1288,21 @@ input[type="checkbox"] {
    miniaturized against the full ultrawide viewport. 96vw still governs
    growth below the ceiling, so 1440/1920/2560 are completely unaffected
    (each already sits below both the old and new ceiling) — only
-   viewports wide enough to have hit the old 2700px cap grow further. */
+   viewports wide enough to have hit the old 2700px cap grow further.
+
+   Admin Visual/UX Correction pass: the ceiling was lowered from 3150px
+   to 2900px — measured live (see e2e/admin-tmp-visual-audit.spec.ts,
+   deleted after this pass) to visibly double the scenic gutter at
+   3440px (145px per side -> ~270px per side) so noticeably more
+   wallpaper reads at ultrawide, while staying entirely a ceiling
+   change: 96vw still governs 1440/1920/2560 (each already sits well
+   below both the old and new ceiling — 2560's own 96vw is 2457.6px,
+   nowhere near either ceiling), so none of them shift by a single
+   pixel. Only viewports wide enough to actually hit the ceiling
+   (roughly 3021px and up) are affected at all. The editor column still
+   dominates the reduced frame (main column remains well over 1900px at
+   3440px — see Part 3/4 below for how that space is then rebalanced
+   between the workspace's own columns). */
 .admin-frame {
   display: flex;
   align-items: stretch;
@@ -852,7 +1314,7 @@ input[type="checkbox"] {
      content-based size instead of growing to it. An explicit width (with
      clamp() supplying its own floor/ceiling) is what actually makes the
      frame occupy its full intended width at every viewport. */
-  width: clamp(1432px, 96vw, 3150px);
+  width: clamp(1432px, 96vw, 2900px);
   margin: 0 auto;
   border-left: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);
@@ -978,9 +1440,17 @@ input[type="checkbox"] {
 /* The record-list column scales gently with the viewport (clamp floor
    matches the previous fixed 260px exactly, so behavior at 1440px and
    narrower is unchanged) instead of staying pinned at its old fixed
-   width while the editor absorbs 100% of any extra desktop space. */
+   width while the editor absorbs 100% of any extra desktop space.
+
+   Admin Visual/UX Correction pass: floor/vw-factor/ceiling all trimmed
+   (260/16vw/340 -> 240/14vw/300) to give the main editor column more of
+   the frame's own width at every viewport wide enough for the vw term
+   to matter — rows, thumbnails, the filter field, the count line, and
+   "+ New" all stay comfortably readable at the new floor (unchanged
+   from the narrow-desktop tier's own long-standing 185px override
+   below, which this pass does not touch). */
 .admin-workspace-record-list {
-  flex: 0 0 clamp(260px, 16vw, 340px);
+  flex: 0 0 clamp(240px, 14vw, 300px);
   min-width: 0;
 }
 
@@ -1031,8 +1501,13 @@ input[type="checkbox"] {
   min-width: 0;
 }
 
+/* Admin Visual/UX Correction pass: floor/vw-factor/ceiling trimmed
+   (280/14vw/320 -> 260/12vw/300), the same rebalancing the record-list
+   column above received — the context rail stays compact and every
+   existing panel (image, verification, timestamps) remains fully
+   readable at the new floor. */
 .admin-workspace-aside {
-  flex: 0 0 clamp(280px, 14vw, 320px);
+  flex: 0 0 clamp(260px, 12vw, 300px);
   min-width: 0;
   display: grid;
   gap: 16px;
@@ -1360,6 +1835,13 @@ input[type="checkbox"] {
 }
 
 .admin-danger-zone .admin-panel-title {
+  color: var(--color-danger);
+}
+
+/* The Danger zone's own icon carries the same red semantic treatment as
+   its title — every other section/panel icon stays muted gold, this is
+   the one deliberate exception. */
+.admin-danger-zone .admin-section-icon {
   color: var(--color-danger);
 }
 
@@ -2184,4 +2666,47 @@ input[type="checkbox"] {
    styled action. */
 .empty-state-action {
   margin-top: 20px;
+}
+
+/* ---- Game Versions 70/30 layout (Admin Full-Width Card Layout pass;
+   stacking-breakpoint correction pass) ----------------------------------
+   Existing Game Versions (the table) beside Create Game Version (a
+   compact three-field form), approximately 70/30 — this settings page
+   has no record-list/aside columns competing for width (unlike a
+   resource workspace), so its own available content width is simply
+   .admin-frame minus the 232px sidebar minus .admin-content-inner's own
+   48px horizontal padding.
+
+   A first pass used min-width: 1100px on the theory that .admin-frame's
+   clamp(1432px, 96vw, 2900px) has a hard, un-shrinkable 1432px floor, so
+   any breakpoint below that would be dead code. Live resize measurement
+   (getBoundingClientRect on .admin-frame while stepping the viewport from
+   1920px down to 1300px) disproved that assumption: .admin-frame is a
+   flex item and actually keeps shrinking well below its own nominal
+   clamp() floor as the viewport narrows (measured: 1843px at 1920px
+   viewport, 1632px at 1700px, 1300px at a 1300px viewport) — there is no
+   pinned dead zone here, content width is a genuinely continuous function
+   of viewport across the whole practical range, with zero horizontal
+   overflow observed at any tested width. The earlier 1100px breakpoint
+   was simply never reached before 1920/2560/3440 needed to stay 70/30,
+   not because the container was structurally incapable of shrinking.
+   The corrected threshold is 1700px — reusing the exact same breakpoint
+   every other responsive admin grid in this file already uses (see
+   .form-grid-responsive's own comment) rather than inventing a second
+   arbitrary number — and was confirmed live: gridTemplateColumns reports
+   two real tracks (e.g. "928px 398px") at a 1700px viewport and exactly
+   one track (the full content width) at 1699px, with the Existing Game
+   Versions table and Create Game Version form both still fully usable
+   and un-cramped at every width tested down to 1300px. */
+.admin-gameversions-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1700px) {
+  .admin-gameversions-layout {
+    grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+  }
 }

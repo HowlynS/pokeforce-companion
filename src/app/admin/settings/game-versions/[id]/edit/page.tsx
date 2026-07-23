@@ -3,6 +3,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { EditorActions } from "@/components/admin/editor-actions";
+import { EditorSection } from "@/components/admin/editor-section";
+import { DateField } from "@/components/admin/date-field";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateGameVersionAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -56,50 +60,72 @@ export default async function EditGameVersionPage({
         </p>
       ) : null}
 
+      {/* Action-strip consistency fix: EditorActions renders its own
+          background matching .admin-editor-surface — the same surface
+          every other resource's editor wraps its <form> in, with
+          EditorActions as a SIBLING of the section card(s) rather than
+          nested inside one. The previous structure put EditorActions
+          INSIDE EditorSection's own card (a lighter --color-surface-raised
+          tone), so EditorActions' own --color-surface background read as
+          a separate, disconnected darker rectangle floating inside the
+          card. Moving the form (and EditorActions with it) out to this
+          shared .admin-editor-surface wrapper — exactly the Item/Recipe/
+          Profession/Category/Location composition — fixes the mismatch
+          without touching EditorActions' own component or CSS at all. */}
       <div className="admin-editor-surface">
-      <form action={updateGameVersionAction} className="form-grid">
-        <input type="hidden" name="id" value={version.id} />
+        <form action={updateGameVersionAction} className="form-grid">
+          <input type="hidden" name="id" value={version.id} />
 
-        <label className="form-field">
-          <span className="form-field-label">Name</span>
-          <input
-            type="text"
-            name="name"
-            required
-            defaultValue={version.name}
-            className="form-input"
+          <EditorSection title="Game Version" icon={SECTION_ICONS.gameVersions}>
+            <label className="form-field form-field-narrow">
+              <span className="form-field-label">Name</span>
+              <input
+                type="text"
+                name="name"
+                required
+                defaultValue={version.name}
+                className="form-input"
+              />
+            </label>
+
+            <div className="form-field-narrow">
+              <DateField
+                name="releaseDate"
+                label="Release date (optional)"
+                defaultValue={
+                  version.releaseDate
+                    ? version.releaseDate.toISOString().slice(0, 10)
+                    : null
+                }
+              />
+            </div>
+
+            <label className="form-field">
+              <span className="form-field-label">Description (optional)</span>
+              <AutosizeTextarea
+                name="description"
+                defaultValue={version.description ?? ""}
+                className="form-input"
+                placeholder="Summarize the key features or gameplay changes introduced in this version."
+              />
+            </label>
+
+            {/* The current flag is deliberately not editable here: it
+                moves only through the explicit "Mark as current" action
+                on the list page, so an edit can never accidentally
+                change which version is current. */}
+            <p className="text-muted">
+              {version.isCurrent
+                ? "This is the current game version."
+                : "This is a historical game version. Use “Mark as current” on the Game Versions page to make it current."}
+            </p>
+          </EditorSection>
+
+          <EditorActions
+            submitLabel="Save Changes"
+            cancelHref="/admin/settings/game-versions"
           />
-        </label>
-
-        <label className="form-field">
-          <span className="form-field-label">Release date (optional)</span>
-          <input
-            type="date"
-            name="releaseDate"
-            defaultValue={
-              version.releaseDate
-                ? version.releaseDate.toISOString().slice(0, 10)
-                : ""
-            }
-            className="form-input"
-          />
-        </label>
-
-        {/* The current flag is deliberately not editable here: it moves only
-            through the explicit "Mark as current" action on the list page,
-            so an edit can never accidentally change which version is
-            current. */}
-        <p className="text-muted">
-          {version.isCurrent
-            ? "This is the current game version."
-            : "This is a historical game version. Use “Mark as current” on the Game Versions page to make it current."}
-        </p>
-
-        <EditorActions
-          submitLabel="Save Changes"
-          cancelHref="/admin/settings/game-versions"
-        />
-      </form>
+        </form>
       </div>
     </>
   );

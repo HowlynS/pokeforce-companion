@@ -3,11 +3,13 @@ import { RecordIdentityFields } from "@/components/admin/record-identity-fields"
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   itemDeleteHref,
@@ -17,6 +19,7 @@ import {
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateItemAction } from "../../actions";
 import { checkItemNameAvailability } from "../../name-availability";
 import { checkItemSlugAvailability } from "../../slug-availability";
@@ -173,96 +176,108 @@ export default async function EditItemPage({
       <form
         id={ITEM_EDIT_FORM_ID}
         action={updateItemAction}
-        className="form-grid form-grid-responsive"
+        className="form-grid form-grid-responsive item-general-form"
       >
         <input type="hidden" name="id" value={item.id} />
         <input type="hidden" name="originalSlug" value={item.slug} />
 
-        <p className="form-section-heading">Identity</p>
+        <div className="item-general-columns">
+          <div className="item-general-column">
+            <EditorSection title="Identity" icon={SECTION_ICONS.identity}>
+              {/* Client-enhanced Name + Page address fields (Phase B1).
+                  Both saved values count as "current" (never queried
+                  against themselves), and the record's own id is
+                  excluded server-side so it cannot conflict with itself;
+                  updateItemAction stays the authoritative check for
+                  both. Page address starts showing the persisted value
+                  and tracks Name live until the contributor manually
+                  edits it themselves (Part 11) — the same one-way
+                  auto/manual behavior create forms already had. */}
+              <RecordIdentityFields
+                checkNameAvailabilityAction={checkItemNameAvailability}
+                nameTakenText="An item with that name already exists."
+                nameRegionId="item-name-availability"
+                originalName={item.name}
+                checkSlugAvailabilityAction={checkItemSlugAvailability}
+                slugTakenText="An item with that page address already exists."
+                slugRegionId="item-slug-availability"
+                initialSlug={item.slug}
+                excludeId={item.id}
+              />
+            </EditorSection>
 
-        {/* Client-enhanced Name + Page address fields (Phase B1). Both
-            saved values count as "current" (never queried against
-            themselves), and the record's own id is excluded server-side
-            so it cannot conflict with itself; updateItemAction stays the
-            authoritative check for both. Page address starts manually
-            controlled (never auto-regenerated from Name edits) to
-            protect the existing persisted URL. */}
-        <RecordIdentityFields
-          mode="edit"
-          checkNameAvailabilityAction={checkItemNameAvailability}
-          nameTakenText="An item with that name already exists."
-          nameRegionId="item-name-availability"
-          originalName={item.name}
-          checkSlugAvailabilityAction={checkItemSlugAvailability}
-          slugTakenText="An item with that page address already exists."
-          slugRegionId="item-slug-availability"
-          initialSlug={item.slug}
-          excludeId={item.id}
-        />
+            <EditorSection title="Description" icon={SECTION_ICONS.content}>
+              <label className="form-field">
+                <span className="form-field-label">Description (optional)</span>
+                <AutosizeTextarea
+                  name="description"
+                  defaultValue={item.description ?? ""}
+                  className="form-input"
+                />
+              </label>
+            </EditorSection>
+          </div>
 
-        <p className="form-section-heading">Description</p>
+          <div className="item-general-column">
+            <EditorSection
+              title="Classification"
+              icon={SECTION_ICONS.classification}
+            >
+              <label className="form-field">
+                <span className="form-field-label">Category</span>
+                <select
+                  name="categoryId"
+                  defaultValue={item.categoryId ?? ""}
+                  className="form-input"
+                >
+                  <option value="">No category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Description (optional)</span>
-          <textarea
-            name="description"
-            rows={4}
-            defaultValue={item.description ?? ""}
-            className="form-input"
-          />
-        </label>
+            <EditorSection
+              title="Gameplay Details"
+              icon={SECTION_ICONS.gameplayDetails}
+            >
+              <div className="form-checkbox-group">
+                <label className="form-checkbox-field">
+                  <input
+                    type="checkbox"
+                    name="heldItem"
+                    defaultChecked={item.heldItem}
+                  />
+                  <span>Held item</span>
+                </label>
 
-        <p className="form-section-heading">Classification</p>
+                <label className="form-checkbox-field">
+                  <input
+                    type="checkbox"
+                    name="tradeable"
+                    defaultChecked={item.tradeable}
+                  />
+                  <span>Tradeable</span>
+                </label>
+              </div>
 
-        <label className="form-field">
-          <span className="form-field-label">Category</span>
-          <select
-            name="categoryId"
-            defaultValue={item.categoryId ?? ""}
-            className="form-input"
-          >
-            <option value="">No category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <p className="form-section-heading">Gameplay details</p>
-
-        <div className="form-checkbox-group">
-          <label className="form-checkbox-field">
-            <input
-              type="checkbox"
-              name="heldItem"
-              defaultChecked={item.heldItem}
-            />
-            <span>Held item</span>
-          </label>
-
-          <label className="form-checkbox-field">
-            <input
-              type="checkbox"
-              name="tradeable"
-              defaultChecked={item.tradeable}
-            />
-            <span>Tradeable</span>
-          </label>
+              <label className="form-field">
+                <span className="form-field-label">Base value (optional)</span>
+                <input
+                  type="number"
+                  name="baseValue"
+                  min={0}
+                  step={1}
+                  defaultValue={item.baseValue ?? ""}
+                  className="form-input"
+                />
+              </label>
+            </EditorSection>
+          </div>
         </div>
-
-        <label className="form-field">
-          <span className="form-field-label">Base value (optional)</span>
-          <input
-            type="number"
-            name="baseValue"
-            min={0}
-            step={1}
-            defaultValue={item.baseValue ?? ""}
-            className="form-input"
-          />
-        </label>
 
         <EditorActions
           submitLabel="Save Changes"

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateRecipeIngredientsAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -133,40 +135,42 @@ export default async function RecipeIngredientsPage({
           <input type="hidden" name="id" value={recipe.id} />
           <input type="hidden" name="originalSlug" value={recipe.slug} />
 
-          <fieldset className="form-fieldset">
-            <legend>Ingredients (fill at least one row)</legend>
+          <EditorSection title="Ingredients" icon={SECTION_ICONS.ingredients}>
+            <fieldset className="form-fieldset">
+              <legend>Ingredients (fill at least one row)</legend>
 
-            {ingredientRows.map((row) => {
-              const existingIngredient = recipe.ingredients[row - 1];
+              {ingredientRows.map((row) => {
+                const existingIngredient = recipe.ingredients[row - 1];
 
-              return (
-                <div key={row} className="ingredient-row">
-                  <select
-                    name={`ingredientItemId${row}`}
-                    defaultValue={existingIngredient?.itemId ?? ""}
-                    className="form-input"
-                  >
-                    <option value="">No ingredient</option>
-                    {items.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
+                return (
+                  <div key={row} className="ingredient-row">
+                    <select
+                      name={`ingredientItemId${row}`}
+                      defaultValue={existingIngredient?.itemId ?? ""}
+                      className="form-input"
+                    >
+                      <option value="">No ingredient</option>
+                      {items.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
 
-                  <input
-                    type="number"
-                    name={`ingredientQuantity${row}`}
-                    min={1}
-                    step={1}
-                    placeholder="Qty"
-                    defaultValue={existingIngredient?.quantity ?? ""}
-                    className="form-input"
-                  />
-                </div>
-              );
-            })}
-          </fieldset>
+                    <input
+                      type="number"
+                      name={`ingredientQuantity${row}`}
+                      min={1}
+                      step={1}
+                      placeholder="Qty"
+                      defaultValue={existingIngredient?.quantity ?? ""}
+                      className="form-input"
+                    />
+                  </div>
+                );
+              })}
+            </fieldset>
+          </EditorSection>
 
           <EditorActions
             submitLabel="Save Ingredients"

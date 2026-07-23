@@ -73,22 +73,27 @@ test("the editor surface fills its main-column width at 3440px, leaving no arbit
   await noHorizontalOverflow(page);
 });
 
-test("the inner form content stays within its established readable width even though the surface itself is wide", async ({
+test("the inner form content fills the editor surface's width — the legacy reading-width cap is gone for section-card forms", async ({
   page,
 }) => {
   await page.goto("/admin/items/iron-ore/edit");
   await page.setViewportSize({ width: 3440, height: 1440 });
 
   const formBox = await page.locator(".admin-editor-surface form.form-grid").boundingBox();
+  const surfaceBox = await page.locator(".admin-editor-surface").boundingBox();
   expect(formBox).not.toBeNull();
-  // Visual Pass sub-slice 3: .form-grid-responsive widens to a capped
-  // two-column layout at wide widths (780px) instead of the old flat
-  // 560px single column — still a bounded, readable width, never
-  // stretched to the surface's own much wider box.
-  expect(formBox!.width).toBeLessThanOrEqual(800);
+  expect(surfaceBox).not.toBeNull();
+  // Admin Full-Width Card Layout pass: the old capped max-width
+  // (clamp(900px, 58vw, 1600px), proven live to leave a large unused
+  // strip inside the card at 3440px) was removed for any form wrapping
+  // section cards (.form-grid:has(> .admin-editor-section...) in
+  // globals.css) — the form now fills essentially the surface's own
+  // width (minus the surface's own 32px horizontal padding each side),
+  // rather than stopping hundreds of pixels short of it.
+  expect(surfaceBox!.width - formBox!.width).toBeLessThanOrEqual(80);
 });
 
-test("a no-aside route (Recipe Ingredients) keeps its surface within the main column and its fieldset content capped, with no horizontal overflow at any target width", async ({
+test("a no-aside route (Recipe Ingredients) keeps its surface within the main column with no horizontal overflow, and its fieldset now fills the section width", async ({
   page,
 }) => {
   // Seeded fixture only — read, never modified.
@@ -101,10 +106,16 @@ test("a no-aside route (Recipe Ingredients) keeps its surface within the main co
   }
 
   const fieldsetBox = await page.locator(".form-fieldset").boundingBox();
+  const surfaceBox = await page.locator(".admin-editor-surface").boundingBox();
   expect(fieldsetBox).not.toBeNull();
-  // Visual Pass sub-slice 3: form-grid-wide-responsive's 920px cap plus
-  // tolerance (up from the old flat 680px cap).
-  expect(fieldsetBox!.width).toBeLessThanOrEqual(940);
+  expect(surfaceBox).not.toBeNull();
+  // Admin Full-Width Card Layout pass: the old capped max-width
+  // (clamp(1060px, 68vw, 1840px)) is gone for this same reason — the
+  // fieldset (nested inside EditorSection, whose own
+  // .admin-editor-section-body > .form-fieldset rule resets its border/
+  // background/padding to avoid a doubled card) now fills essentially
+  // the full surface width instead of a bounded reading width.
+  expect(surfaceBox!.width - fieldsetBox!.width).toBeLessThanOrEqual(150);
 });
 
 test("Item edit's form section headings render in the documented order, and every original field is still present and labeled", async ({
@@ -113,13 +124,13 @@ test("Item edit's form section headings render in the documented order, and ever
   await page.goto("/admin/items/iron-ore/edit");
 
   const headings = await page
-    .locator(".admin-editor-surface .form-section-heading")
+    .locator(".admin-editor-surface .admin-editor-section-title")
     .allTextContents();
   expect(headings).toEqual([
     "Identity",
     "Description",
     "Classification",
-    "Gameplay details",
+    "Gameplay Details",
   ]);
 
   // Every field from before this pass is still reachable by its exact
@@ -150,6 +161,165 @@ test("Item create's every original field name still exists inside the same form 
   await expect(page.locator('#item-create-form input[name="heldItem"]')).toHaveCount(1);
   await expect(page.locator('#item-create-form input[name="tradeable"]')).toHaveCount(1);
   await expect(page.locator('#item-create-form input[name="baseValue"]')).toHaveCount(1);
+});
+
+// Admin Visual/UX Correction pass, follow-up: the Item General editor's
+// explicit two-column composition (Name/Page address/Description on the
+// left; Category/Held item/Tradeable/Base value on the right) — a
+// deliberate LEFT-STACK/RIGHT-STACK grouping, not the shared
+// .form-grid-responsive auto-flow every other resource still uses.
+// `elementHandle.evaluate` locates each field's own nearest
+// .item-general-column ancestor and reads back which side it landed in,
+// so this is a structural proof of the grouping itself (not just that
+// every field is present, which the tests above already cover).
+//
+// Admin Editor Section Redesign pass: the right column's own
+// .item-general-column-right modifier class (and its border-left divider)
+// was removed once the four EditorSection cards made the split visually
+// clear on their own — both columns now share the identical
+// .item-general-column class, so "which side" is read from DOM order
+// (first vs. second column) instead of a class that no longer exists.
+function columnSideOf(page: Page, fieldLocator: string) {
+  return page.locator(fieldLocator).evaluate((el) => {
+    const column = el.closest(".item-general-column");
+    if (!column) return "no-column";
+    const columns = Array.from(
+      column.parentElement?.querySelectorAll(":scope > .item-general-column") ?? []
+    );
+    const index = columns.indexOf(column);
+    if (index === 0) return "left";
+    if (index === 1) return "right";
+    return "unknown-column";
+  });
+}
+
+test("Item edit: General renders the explicit two-column composition — Name/Page address/Description left, Category/Held item/Tradeable/Base value right — with Save/Cancel outside both columns", async ({
+  page,
+}) => {
+  await page.goto("/admin/items/iron-ore/edit");
+
+  const columns = page.locator(".item-general-columns > .item-general-column");
+  await expect(columns).toHaveCount(2);
+
+  // Left column: Name, Page address, Description.
+  await expect(
+    columnSideOf(page, '#item-edit-form input[name="name"]')
+  ).resolves.toBe("left");
+  await expect(
+    columnSideOf(page, '#item-edit-form input[name="slug"]')
+  ).resolves.toBe("left");
+  await expect(
+    columnSideOf(page, '#item-edit-form textarea[name="description"]')
+  ).resolves.toBe("left");
+
+  // Right column: Category, Held item, Tradeable, Base value.
+  await expect(
+    columnSideOf(page, '#item-edit-form select[name="categoryId"]')
+  ).resolves.toBe("right");
+  await expect(
+    columnSideOf(page, '#item-edit-form input[name="heldItem"]')
+  ).resolves.toBe("right");
+  await expect(
+    columnSideOf(page, '#item-edit-form input[name="tradeable"]')
+  ).resolves.toBe("right");
+  await expect(
+    columnSideOf(page, '#item-edit-form input[name="baseValue"]')
+  ).resolves.toBe("right");
+
+  // No field appears in both columns, or outside the two-column wrapper
+  // entirely (besides the two hidden id/originalSlug inputs, which carry
+  // no visible column membership at all).
+  const fieldCounts = await page.evaluate(() => {
+    const names = ["name", "slug", "description", "categoryId", "heldItem", "tradeable", "baseValue"];
+    return names.map((name) => ({
+      name,
+      count: document.querySelectorAll(
+        `#item-edit-form .item-general-columns [name="${name}"]`
+      ).length,
+    }));
+  });
+  for (const { name, count } of fieldCounts) {
+    expect(count, `${name} should appear exactly once inside the columns`).toBe(1);
+  }
+
+  // The action row is a sibling of .item-general-columns, never nested
+  // inside either column.
+  const actionsInsideColumns = await page
+    .locator(".item-general-columns .admin-editor-actions")
+    .count();
+  expect(actionsInsideColumns).toBe(0);
+  await expect(page.locator("#item-edit-form > .admin-editor-actions")).toHaveCount(1);
+});
+
+test("Item create: General renders the same explicit two-column composition, with Save/Cancel outside both columns", async ({
+  page,
+}) => {
+  await page.goto("/admin/items/new");
+
+  const columns = page.locator(".item-general-columns > .item-general-column");
+  await expect(columns).toHaveCount(2);
+
+  await expect(
+    columnSideOf(page, '#item-create-form input[name="name"]')
+  ).resolves.toBe("left");
+  await expect(
+    columnSideOf(page, '#item-create-form input[name="slug"]')
+  ).resolves.toBe("left");
+  await expect(
+    columnSideOf(page, '#item-create-form textarea[name="description"]')
+  ).resolves.toBe("left");
+  await expect(
+    columnSideOf(page, '#item-create-form select[name="categoryId"]')
+  ).resolves.toBe("right");
+  await expect(
+    columnSideOf(page, '#item-create-form input[name="heldItem"]')
+  ).resolves.toBe("right");
+  await expect(
+    columnSideOf(page, '#item-create-form input[name="tradeable"]')
+  ).resolves.toBe("right");
+  await expect(
+    columnSideOf(page, '#item-create-form input[name="baseValue"]')
+  ).resolves.toBe("right");
+
+  const actionsInsideColumns = await page
+    .locator(".item-general-columns .admin-editor-actions")
+    .count();
+  expect(actionsInsideColumns).toBe(0);
+  await expect(page.locator("#item-create-form > .admin-editor-actions")).toHaveCount(1);
+});
+
+test("Item General: the two-column composition activates at wide widths and stacks cleanly at 1440x900 — the old divider is gone, replaced by the section cards' own borders", async ({
+  page,
+}) => {
+  await page.goto("/admin/items/iron-ore/edit");
+
+  // Wide: two columns, side by side. Admin Editor Section Redesign pass:
+  // the right column's old border-left divider was removed once the four
+  // EditorSection cards (Identity/Description/Classification/Gameplay
+  // Details) made the split visually clear on their own — asserting a
+  // divider that was deliberately retired would be a stale expectation,
+  // not a real regression check.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const leftBox = await page.locator(".item-general-column").nth(0).boundingBox();
+  const rightBox = await page.locator(".item-general-column").nth(1).boundingBox();
+  expect(leftBox).not.toBeNull();
+  expect(rightBox).not.toBeNull();
+  // Side by side, not stacked: the right column starts to the right of
+  // where the left column ends.
+  expect(rightBox!.x).toBeGreaterThan(leftBox!.x + leftBox!.width);
+
+  // Narrow: stacked, no horizontal overflow.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const stackedLeft = await page.locator(".item-general-column").nth(0).boundingBox();
+  const stackedRight = await page.locator(".item-general-column").nth(1).boundingBox();
+  expect(stackedLeft).not.toBeNull();
+  expect(stackedRight).not.toBeNull();
+  // Stacked: the right column starts below the left column, not beside it.
+  expect(stackedRight!.y).toBeGreaterThanOrEqual(
+    stackedLeft!.y + stackedLeft!.height
+  );
+
+  await noHorizontalOverflow(page);
 });
 
 test("the verification checkbox stays top-aligned with its label's first line, and remains keyboard-operable", async ({

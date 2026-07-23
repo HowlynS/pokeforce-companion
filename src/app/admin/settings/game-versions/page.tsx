@@ -1,8 +1,11 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { designTokens } from "@/lib/design-tokens";
+import { DateField } from "@/components/admin/date-field";
+import { EditorSection } from "@/components/admin/editor-section";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { formatDisplayDate } from "@/lib/format-date";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import {
   createGameVersionAction,
   markGameVersionCurrentAction,
@@ -32,10 +35,11 @@ type GameVersionSettingsPageProps = {
   searchParams: Promise<{ error?: string; success?: string }>;
 };
 
-// Stable server-side YYYY-MM-DD so output never depends on the server
-// locale; release dates are stored at UTC midnight by the parser.
+// Formatted through the shared formatDisplayDate helper ("DD MMM YYYY")
+// so output never depends on the server locale; release dates are stored
+// at UTC midnight by the parser.
 function formatReleaseDate(releaseDate: Date | null): string {
-  return releaseDate ? releaseDate.toISOString().slice(0, 10) : "—";
+  return formatDisplayDate(releaseDate) ?? "—";
 }
 
 export default async function GameVersionSettingsPage({
@@ -63,16 +67,6 @@ export default async function GameVersionSettingsPage({
         description="Manage the game versions used to verify gameplay data. Exactly one version can be current; historical versions stay available."
       />
 
-      <nav className="admin-toolbar" aria-label="Game Version management">
-        <a href="/admin" className="link-accent">
-          &larr; Back to Admin
-        </a>
-
-        <a href="#create-game-version" className="btn btn-secondary btn-compact">
-          + New game version
-        </a>
-      </nav>
-
       {errorMessage ? (
         <p role="alert" className="banner banner-error">
           {errorMessage}
@@ -85,19 +79,21 @@ export default async function GameVersionSettingsPage({
         </p>
       ) : null}
 
-      <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-        <h2 className="section-title">Existing Game Versions</h2>
-
+      <div className="admin-gameversions-layout">
+      <EditorSection
+        title="Existing Game Versions"
+        icon={SECTION_ICONS.gameVersions}
+      >
         {versions.length > 0 ? (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  {["Name", "Release Date", "Current", "Actions"].map(
-                    (heading) => (
-                      <th key={heading}>{heading}</th>
-                    )
-                  )}
+                  <th>Name</th>
+                  <th>Release date</th>
+                  <th className="admin-table-col-compact">Current</th>
+                  <th className="admin-table-col-compact">Set current</th>
+                  <th className="admin-table-col-compact">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -105,29 +101,33 @@ export default async function GameVersionSettingsPage({
                   <tr key={version.id}>
                     <td>{version.name}</td>
                     <td>{formatReleaseDate(version.releaseDate)}</td>
-                    <td>
+                    <td className="admin-table-col-compact">
                       {version.isCurrent ? (
                         <strong className="text-accent">Current</strong>
                       ) : (
                         "No"
                       )}
                     </td>
-                    <td>
-                      <span className="row-actions">
-                        {!version.isCurrent ? (
-                          <form
-                            action={markGameVersionCurrentAction}
-                            style={{ display: "inline" }}
+                    <td className="admin-table-col-compact">
+                      {version.isCurrent ? (
+                        <span className="text-muted">&mdash;</span>
+                      ) : (
+                        <form
+                          action={markGameVersionCurrentAction}
+                          style={{ display: "inline" }}
+                        >
+                          <input type="hidden" name="id" value={version.id} />
+                          <button
+                            type="submit"
+                            className="btn btn-secondary btn-compact"
                           >
-                            <input type="hidden" name="id" value={version.id} />
-                            <button
-                              type="submit"
-                              className="btn btn-secondary btn-compact"
-                            >
-                              Mark as current
-                            </button>
-                          </form>
-                        ) : null}
+                            Mark as current
+                          </button>
+                        </form>
+                      )}
+                    </td>
+                    <td className="admin-table-col-compact">
+                      <span className="row-actions">
                         <a
                           href={`/admin/settings/game-versions/${version.id}/edit`}
                           className="btn btn-secondary btn-compact"
@@ -153,22 +153,20 @@ export default async function GameVersionSettingsPage({
             description="Create the first game version using the form below. The first one automatically becomes the current version."
           />
         )}
-      </section>
+      </EditorSection>
 
-      <section id="create-game-version">
-        <h2 className="section-title">Create Game Version</h2>
-
-        <div className="admin-editor-surface">
+      <EditorSection
+        id="create-game-version"
+        title="Create Game Version"
+        icon={SECTION_ICONS.gameVersions}
+      >
         <form action={createGameVersionAction} className="form-grid">
           <label className="form-field">
             <span className="form-field-label">Name</span>
             <input type="text" name="name" required className="form-input" />
           </label>
 
-          <label className="form-field">
-            <span className="form-field-label">Release date (optional)</span>
-            <input type="date" name="releaseDate" className="form-input" />
-          </label>
+          <DateField name="releaseDate" label="Release date (optional)" />
 
           <div className="form-actions">
             <button type="submit" className="btn btn-primary">
@@ -176,8 +174,8 @@ export default async function GameVersionSettingsPage({
             </button>
           </div>
         </form>
-        </div>
-      </section>
+      </EditorSection>
+      </div>
     </>
   );
 }

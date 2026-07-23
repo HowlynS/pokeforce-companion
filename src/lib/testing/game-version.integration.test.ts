@@ -252,6 +252,97 @@ describe("game versions (integration)", () => {
     });
   });
 
+  describe("editing the optional description", () => {
+    it("saves a non-empty description and preserves internal line breaks", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const created = await prisma.gameVersion.create({
+        data: { name: `${N}desc-a` },
+      });
+
+      const result = await updateGameVersion(prisma, created.id, {
+        name: `${N}desc-a`,
+        releaseDate: null,
+        description: "Line one\nLine two",
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.version.description).toBe("Line one\nLine two");
+      }
+    });
+
+    it("changing only the name preserves an existing description (description omitted from input)", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const created = await prisma.gameVersion.create({
+        data: { name: `${N}desc-b`, description: "Original description" },
+      });
+
+      // The caller does not supply description at all here — matching a
+      // hypothetical future caller that only touches name/releaseDate.
+      const result = await updateGameVersion(prisma, created.id, {
+        name: `${N}desc-b-renamed`,
+        releaseDate: null,
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.version.name).toBe(`${N}desc-b-renamed`);
+        expect(result.version.description).toBe("Original description");
+      }
+    });
+
+    it("changing only the release date preserves an existing description (description omitted from input)", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const created = await prisma.gameVersion.create({
+        data: { name: `${N}desc-c`, description: "Keep me" },
+      });
+
+      const result = await updateGameVersion(prisma, created.id, {
+        name: `${N}desc-c`,
+        releaseDate: new Date("2026-03-01T00:00:00.000Z"),
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.version.releaseDate?.toISOString()).toBe(
+          "2026-03-01T00:00:00.000Z"
+        );
+        expect(result.version.description).toBe("Keep me");
+      }
+    });
+
+    it("clearing an existing description by explicitly passing null persists null", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const created = await prisma.gameVersion.create({
+        data: { name: `${N}desc-d`, description: "Will be cleared" },
+      });
+
+      const result = await updateGameVersion(prisma, created.id, {
+        name: `${N}desc-d`,
+        releaseDate: null,
+        description: null,
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.version.description).toBeNull();
+      }
+    });
+
+    it("a version created without a description has a null description", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const created = await createGameVersion(prisma, {
+        name: `${N}desc-e`,
+        releaseDate: null,
+      });
+
+      expect(created.ok).toBe(true);
+      if (created.ok) {
+        expect(created.version.description).toBeNull();
+      }
+    });
+  });
+
   describe("switching the current version", () => {
     it("marks a version current and safely unsets the previous one in the same transaction", async () => {
       const prisma = await getVerifiedTestPrisma();

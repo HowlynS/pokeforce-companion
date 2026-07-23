@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   itemEditorTabs,
@@ -18,6 +20,7 @@ import {
   ACQUISITION_TYPE_LABELS,
 } from "@/lib/validation/acquisition-source";
 import { updateAcquisitionSourceAction } from "../../actions";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -158,92 +161,98 @@ export default async function EditAcquisitionSourcePage({
         <input type="hidden" name="id" value={source.id} />
         <input type="hidden" name="itemSlug" value={item.slug} />
 
-        <p className="form-section-heading">Source</p>
+        <div className="admin-editor-sections">
+          <EditorSection title="Source" icon={SECTION_ICONS.source}>
+            <label className="form-field form-field-narrow">
+              <span className="form-field-label">Type</span>
+              <select
+                name="type"
+                required
+                defaultValue={source.type}
+                className="form-input"
+              >
+                {ACQUISITION_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {ACQUISITION_TYPE_LABELS[type]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Type</span>
-          <select
-            name="type"
-            required
-            defaultValue={source.type}
-            className="form-input"
+          <EditorSection
+            title="Linked Context"
+            icon={SECTION_ICONS.linkedContext}
           >
-            {ACQUISITION_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {ACQUISITION_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
-        </label>
+            <label className="form-field">
+              <span className="form-field-label">Location (optional)</span>
+              <select
+                name="locationId"
+                defaultValue={source.locationId ?? ""}
+                className="form-input"
+              >
+                <option value="">No location</option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <p className="form-section-heading">Linked context</p>
+            <label className="form-field">
+              <span className="form-field-label">Profession (optional)</span>
+              <select
+                name="professionId"
+                defaultValue={source.professionId ?? ""}
+                className="form-input"
+              >
+                <option value="">No profession</option>
+                {professions.map((profession) => (
+                  <option key={profession.id} value={profession.id}>
+                    {profession.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Location (optional)</span>
-          <select
-            name="locationId"
-            defaultValue={source.locationId ?? ""}
-            className="form-input"
-          >
-            <option value="">No location</option>
-            {locations.map((location) => (
-              <option key={location.id} value={location.id}>
-                {location.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <EditorSection title="Details" icon={SECTION_ICONS.details}>
+            <div className="form-row-details">
+              <label className="form-field">
+                <span className="form-field-label">
+                  Source label (optional — e.g. &quot;Seed Merchant&quot; or
+                  &quot;Vendor on Route 4&quot;)
+                </span>
+                <input
+                  type="text"
+                  name="sourceLabel"
+                  defaultValue={source.sourceLabel ?? ""}
+                  className="form-input"
+                />
+              </label>
 
-        <label className="form-field">
-          <span className="form-field-label">Profession (optional)</span>
-          <select
-            name="professionId"
-            defaultValue={source.professionId ?? ""}
-            className="form-input"
-          >
-            <option value="">No profession</option>
-            {professions.map((profession) => (
-              <option key={profession.id} value={profession.id}>
-                {profession.name}
-              </option>
-            ))}
-          </select>
-        </label>
+              <label className="form-field">
+                <span className="form-field-label">Quantity (optional)</span>
+                <input
+                  type="text"
+                  name="quantity"
+                  defaultValue={source.quantity ?? ""}
+                  className="form-input"
+                />
+              </label>
+            </div>
 
-        <p className="form-section-heading">Details</p>
-
-        <label className="form-field">
-          <span className="form-field-label">
-            Source label (optional — e.g. &quot;Seed Merchant&quot; or
-            &quot;Vendor on Route 4&quot;)
-          </span>
-          <input
-            type="text"
-            name="sourceLabel"
-            defaultValue={source.sourceLabel ?? ""}
-            className="form-input"
-          />
-        </label>
-
-        <label className="form-field">
-          <span className="form-field-label">Quantity (optional)</span>
-          <input
-            type="text"
-            name="quantity"
-            defaultValue={source.quantity ?? ""}
-            className="form-input"
-          />
-        </label>
-
-        <label className="form-field">
-          <span className="form-field-label">Notes (optional)</span>
-          <textarea
-            name="notes"
-            rows={4}
-            defaultValue={source.notes ?? ""}
-            className="form-input"
-          />
-        </label>
+            <label className="form-field">
+              <span className="form-field-label">Notes (optional)</span>
+              <AutosizeTextarea
+                name="notes"
+                defaultValue={source.notes ?? ""}
+                className="form-input"
+              />
+            </label>
+          </EditorSection>
+        </div>
 
         <EditorActions
           submitLabel="Save Changes"

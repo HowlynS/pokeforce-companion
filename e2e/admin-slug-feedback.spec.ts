@@ -1,18 +1,25 @@
 // Authenticated coverage for the Phase B1 (System B) Page-address field —
-// live auto-generation from Name, manual-override tracking, the "Use
-// name" reset control, and live slug-availability feedback — across all
-// five slug-based resources (Item/Recipe/Profession/Category share one
-// table-driven block against stable seeded fixtures; Location gets its
-// own block since prisma/seed.ts seeds no Location rows at all). Mirrors
+// edit-mode synchronization revised in the Admin Visual/UX Correction pass
+// (Part 11) — live auto-generation from Name, manual-override tracking,
+// and live slug-availability feedback — across all five slug-based
+// resources (Item/Recipe/Profession/Category share one table-driven block
+// against stable seeded fixtures; Location gets its own block since
+// prisma/seed.ts seeds no Location rows at all). Mirrors
 // admin-name-feedback.spec.ts's own structure and non-destructive design:
-// no form submission in THIS file ever succeeds for a mutating purpose —
-// the one submission each resource attempts intentionally collides with a
-// seeded slug, which the authoritative server action rejects, so no row
-// is ever created, updated, or removed by the table-driven block. The
-// final test proves the seeded fixtures are unchanged. The Location block
-// is the only one that creates/deletes its own temporary rows (no seed to
-// read from), using the existing guard-first
+// no form submission in THIS file ever succeeds for a mutating purpose on
+// the table-driven block (the one submission each resource attempts
+// intentionally collides with a seeded slug, which the authoritative
+// server action rejects, so no row is ever created, updated, or removed).
+// The final test proves the seeded fixtures are unchanged. The Location
+// block is the only one that creates/deletes its own temporary rows (no
+// seed to read from), using the existing guard-first
 // deleteE2eTestLocationRecords cleanup already relied on elsewhere.
+//
+// Part 11 removed the visible "Use name" reset control entirely (no test
+// in this file references it) and changed edit-mode's STARTING behavior:
+// edit now starts in auto-generation mode too, showing the PERSISTED Page
+// address until Name actually changes, then tracking Name live exactly
+// like create — manual override remains the one-way escape hatch on both.
 
 import { expect, test, type Page } from "@playwright/test";
 import {
@@ -127,43 +134,49 @@ function slugInput(page: Page) {
   return page.getByLabel(/^Page address/);
 }
 
-function useNameButton(page: Page) {
-  return page.getByRole("button", { name: "Use name", exact: true });
-}
-
 for (const resource of RESOURCES) {
-  test(`${resource.label} create form: Page address auto-generates from Name, manual edit stops it, and Use name resumes it`, async ({
+  test(`${resource.label} create form: Page address tracks Name live, including deleting and replacing words, until manually edited`, async ({
     page,
   }) => {
     await page.goto(resource.createUrl);
 
-    // Auto-generation follows Name live.
+    // Auto-generation follows Name live from the first keystroke.
     await nameInput(page).fill("Test E2E Slug Autogen Demo");
     await expect(slugInput(page)).toHaveValue("test-e2e-slug-autogen-demo");
-    await nameInput(page).fill("Test E2E Slug Autogen Demo Two");
-    await expect(slugInput(page)).toHaveValue("test-e2e-slug-autogen-demo-two");
+
+    // Deleting a word from Name updates Page address immediately.
+    await nameInput(page).fill("Test E2E Slug Autogen");
+    await expect(slugInput(page)).toHaveValue("test-e2e-slug-autogen");
+
+    // Replacing a word updates it too.
+    await nameInput(page).fill("Test E2E Slug Regenerated");
+    await expect(slugInput(page)).toHaveValue("test-e2e-slug-regenerated");
+
+    // Clearing Name entirely clears the automatically generated Page
+    // address.
+    await nameInput(page).fill("");
+    await expect(slugInput(page)).toHaveValue("");
+
+    // Typing Name again resumes auto-generation (nothing was manually
+    // edited yet).
+    await nameInput(page).fill("Test E2E Slug Autogen Resumed");
+    await expect(slugInput(page)).toHaveValue("test-e2e-slug-autogen-resumed");
 
     // Manually editing the Page address stops it from following Name.
     await slugInput(page).fill("my-own-custom-address");
-    await nameInput(page).fill("Test E2E Slug Autogen Demo Three");
+    await nameInput(page).fill("Test E2E Slug Autogen Final");
     await expect(slugInput(page)).toHaveValue("my-own-custom-address");
 
-    // Deleting the manual value entirely does not silently resume
-    // auto-generation.
+    // Clearing the manually-set value does not silently resume
+    // auto-generation — manual override is a one-way, final state.
     await slugInput(page).fill("");
-    await nameInput(page).fill("Test E2E Slug Autogen Demo Four");
+    await nameInput(page).fill("Test E2E Slug Autogen After Clear");
     await expect(slugInput(page)).toHaveValue("");
 
-    // "Use name" deliberately resumes auto-generation from the CURRENT
-    // Name, and Name changes keep updating it again afterward.
-    await useNameButton(page).click();
-    await expect(slugInput(page)).toHaveValue(
-      "test-e2e-slug-autogen-demo-four"
-    );
-    await nameInput(page).fill("Test E2E Slug Autogen Demo Five");
-    await expect(slugInput(page)).toHaveValue(
-      "test-e2e-slug-autogen-demo-five"
-    );
+    // No "Use name" control exists anywhere on the page.
+    await expect(
+      page.getByRole("button", { name: "Use name", exact: true })
+    ).toHaveCount(0);
   });
 
   test(`${resource.label} create form: live availability feedback for available and taken Page addresses`, async ({
@@ -205,32 +218,70 @@ for (const resource of RESOURCES) {
     await expect(feedback).toHaveText("Page address is available.");
   });
 
-  test(`${resource.label} edit form: Page address starts manual, Name changes never touch the persisted value, and the current slug is accepted`, async ({
+  test(`${resource.label} edit form: starts showing the persisted Page address, then tracks Name live (deleting/replacing words) until manually edited`, async ({
     page,
   }) => {
     await page.goto(resource.editUrl);
     const feedback = page.locator(resource.slugRegionId);
 
-    // The persisted slug needs no request at all — it is its own current
-    // value — rendering the same blank feedback a valid slug always gets.
+    // Initial synchronization state: the PERSISTED slug, needing no
+    // request at all — it is its own current value.
     await expect(slugInput(page)).toHaveValue(resource.seededSlug);
     await expect(feedback).toHaveText("");
+    await expect(page).toHaveURL(resource.editUrl);
 
-    // Editing Name must never rewrite the already-persisted Page address —
-    // it starts manually controlled, protecting the existing URL.
+    // Editing Name updates Page address live, in real time — the
+    // user-approved Part 11 behavior, even though it proposes a new URL
+    // for an existing record. The route itself never changes while
+    // typing (saving is still required for the URL to actually change).
     await nameInput(page).fill("Some Entirely Different Name");
-    await expect(slugInput(page)).toHaveValue(resource.seededSlug);
+    await expect(slugInput(page)).toHaveValue("some-entirely-different-name");
+    await expect(page).toHaveURL(resource.editUrl);
 
-    // A DIFFERENT existing record's slug is still detected as taken.
-    await slugInput(page).fill(resource.otherSeededSlug);
+    // Deleting a word from the (now-live-tracked) Name keeps updating it.
+    await nameInput(page).fill("Some Entirely Different");
+    await expect(slugInput(page)).toHaveValue("some-entirely-different");
+
+    // Replacing a word keeps updating it too.
+    await nameInput(page).fill("Some Totally Different");
+    await expect(slugInput(page)).toHaveValue("some-totally-different");
+
+    // A live-generated candidate that collides with a DIFFERENT record's
+    // slug is correctly detected as taken — availability checking keeps
+    // working after these automatic changes, not just after a manual
+    // edit.
+    await nameInput(page).fill(resource.otherSeededSlug);
     await expect(feedback).toHaveText(resource.slugTakenText);
 
-    // Explicitly asking to regenerate from Name works deliberately on edit
-    // too.
-    await useNameButton(page).click();
+    // Manually editing Page address stops it from following Name any
+    // further.
+    await slugInput(page).fill("my-manual-edit-address");
+    await nameInput(page).fill("Yet Another Name Entirely");
+    await expect(slugInput(page)).toHaveValue("my-manual-edit-address");
+
+    // No "Use name" control exists, and no navigation ever occurred
+    // purely from typing.
+    await expect(
+      page.getByRole("button", { name: "Use name", exact: true })
+    ).toHaveCount(0);
+    await expect(page).toHaveURL(resource.editUrl);
+  });
+
+  test(`${resource.label} edit form: returning Name to its original value re-shows the persisted Page address`, async ({
+    page,
+  }) => {
+    await page.goto(resource.editUrl);
+    const originalName = await nameInput(page).inputValue();
+
+    await nameInput(page).fill("Temporarily Different Name");
     await expect(slugInput(page)).toHaveValue(
-      "some-entirely-different-name"
+      "temporarily-different-name"
     );
+
+    // Back to the exact original Name: the field is still in auto mode
+    // (never manually touched), so it re-derives the persisted slug.
+    await nameInput(page).fill(originalName);
+    await expect(slugInput(page)).toHaveValue(resource.seededSlug);
   });
 
   test(`${resource.label} duplicate Page address submission remains rejected server-side`, async ({
@@ -300,7 +351,7 @@ test("the Page address feedback row has a fixed height that never moves the Desc
   expect(descriptionAfter?.y).toBe(descriptionBefore?.y);
 });
 
-test("Location create/edit: Page address auto-generation, manual override, reset, and availability (no seeded fixture — created and torn down here)", async ({
+test("Location create/edit: Page address live tracking, manual override, and availability (no seeded fixture — created and torn down here)", async ({
   page,
 }) => {
   const PARENT = {
@@ -308,19 +359,20 @@ test("Location create/edit: Page address auto-generation, manual override, reset
     slug: "test-e2e-location-slug-feedback-parent",
   };
 
-  // --- Create: same auto-generation/manual-override/reset contract -------
+  // --- Create: same live-tracking/manual-override contract ---------------
   await page.goto("/admin/locations/new");
   await nameInput(page).fill(PARENT.name);
   await expect(slugInput(page)).toHaveValue(PARENT.slug);
 
+  // Deleting a word still updates it live.
+  await nameInput(page).fill("Test E2E Location Slug Feedback");
+  await expect(slugInput(page)).toHaveValue(
+    "test-e2e-location-slug-feedback"
+  );
+
   await slugInput(page).fill("custom-location-address");
   await nameInput(page).fill("Test E2E Location Slug Feedback Parent Two");
   await expect(slugInput(page)).toHaveValue("custom-location-address");
-
-  await useNameButton(page).click();
-  await expect(slugInput(page)).toHaveValue(
-    "test-e2e-location-slug-feedback-parent-two"
-  );
 
   // Actually create it with the intended fixed name/slug pair for the
   // edit half below.
@@ -349,8 +401,8 @@ test("Location create/edit: Page address auto-generation, manual override, reset
     .click();
   await expect(page).toHaveURL("/admin/locations?success=created");
 
-  // --- Edit: manual from the start, Name never touches the persisted
-  // slug, another record's slug is taken, reset works deliberately -------
+  // --- Edit: starts on the persisted slug, tracks Name live, another
+  // record's slug is taken, manual edit stops sync -------------------------
   await page.goto(`/admin/locations/${PARENT.slug}/edit`);
   const feedback = page.locator("#location-slug-availability");
 
@@ -358,15 +410,16 @@ test("Location create/edit: Page address auto-generation, manual override, reset
   await expect(feedback).toHaveText("");
 
   await nameInput(page).fill("Something Else Entirely");
-  await expect(slugInput(page)).toHaveValue(PARENT.slug);
+  await expect(slugInput(page)).toHaveValue("something-else-entirely");
 
   await slugInput(page).fill(CHILD.slug);
   await expect(feedback).toHaveText(
     "A location with that page address already exists."
   );
 
-  await useNameButton(page).click();
-  await expect(slugInput(page)).toHaveValue("something-else-entirely");
+  await slugInput(page).fill("my-manual-location-address");
+  await nameInput(page).fill("A Name Change After Manual Edit");
+  await expect(slugInput(page)).toHaveValue("my-manual-location-address");
 });
 
 test("seeded fixtures are unchanged — the table-driven suite never wrote anything", async () => {

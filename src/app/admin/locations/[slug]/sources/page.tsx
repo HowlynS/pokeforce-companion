@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
-import { ContextPanel } from "@/components/admin/context-panel";
+import { EditorSection } from "@/components/admin/editor-section";
 import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
@@ -17,6 +17,7 @@ import {
   ACQUISITION_TYPE_LABELS,
   type AcquisitionType,
 } from "@/lib/validation/acquisition-source";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -164,8 +165,9 @@ export default async function LocationSourcesPage({
           description="Acquisition sources that name this location will appear here. Manage them from the item's own Acquisition Sources tab."
         />
       ) : (
-        <ContextPanel
+        <EditorSection
           title="Acquisition Sources"
+          icon={SECTION_ICONS.existingSources}
           description={`${sources.length} ${
             sources.length === 1 ? "source" : "sources"
           }`}
@@ -186,7 +188,7 @@ export default async function LocationSourcesPage({
               </tbody>
             </table>
           </div>
-        </ContextPanel>
+        </EditorSection>
       )}
     </LocationWorkspace>
   );

@@ -19,7 +19,6 @@ import type { RecordNameAvailability } from "@/lib/admin/record-name";
 import type { RecordSlugAvailability } from "@/lib/admin/record-slug";
 
 type RecordIdentityFieldsProps = {
-  mode: "create" | "edit";
   checkNameAvailabilityAction: (
     rawName: string,
     rawExcludeId?: string
@@ -40,7 +39,6 @@ type RecordIdentityFieldsProps = {
 };
 
 export function RecordIdentityFields({
-  mode,
   checkNameAvailabilityAction,
   nameTakenText,
   nameRegionId,
@@ -64,7 +62,6 @@ export function RecordIdentityFields({
         onNameChange={setName}
       />
       <RecordSlugField
-        mode={mode}
         nameValue={name}
         initialSlug={initialSlug}
         excludeId={excludeId}

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
@@ -18,6 +19,7 @@ import {
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateRecipeGeneralAction } from "../../actions";
 import { checkRecipeNameAvailability } from "../../name-availability";
 import { checkRecipeSlugAvailability } from "../../slug-availability";
@@ -187,112 +189,125 @@ export default async function EditRecipePage({
         <input type="hidden" name="id" value={recipe.id} />
         <input type="hidden" name="originalSlug" value={recipe.slug} />
 
-        <p className="form-section-heading">Identity</p>
-
-        {/* Client-enhanced Name + Page address fields (Phase B1). Both
-            saved values count as "current" (never queried against
-            themselves), and the record's own id is excluded server-side
-            so it cannot conflict with itself; updateRecipeGeneralAction
-            stays the authoritative check for both. Page address starts
-            manually controlled (never auto-regenerated from Name edits)
-            to protect the existing persisted URL. */}
-        <RecordIdentityFields
-          mode="edit"
-          checkNameAvailabilityAction={checkRecipeNameAvailability}
-          nameTakenText="A recipe with that name already exists."
-          nameRegionId="recipe-name-availability"
-          originalName={recipe.name}
-          checkSlugAvailabilityAction={checkRecipeSlugAvailability}
-          slugTakenText="A recipe with that page address already exists."
-          slugRegionId="recipe-slug-availability"
-          initialSlug={recipe.slug}
-          excludeId={recipe.id}
-        />
-
-        <p className="form-section-heading">Output</p>
-
-        <label className="form-field">
-          <span className="form-field-label">Resulting item</span>
-          <select
-            name="resultingItemId"
-            required
-            defaultValue={recipe.resultingItemId}
-            className="form-input"
+        <div className="admin-editor-sections admin-editor-sections--two-col">
+          <EditorSection
+            title="Identity"
+            icon={SECTION_ICONS.identity}
+            className="admin-editor-section--full"
           >
-            {items.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            {/* Client-enhanced Name + Page address fields (Phase B1).
+                Both saved values count as "current" (never queried
+                against themselves), and the record's own id is excluded
+                server-side so it cannot conflict with itself;
+                updateRecipeGeneralAction stays the authoritative check
+                for both. Page address starts showing the persisted
+                value and tracks Name live until the contributor
+                manually edits it themselves (Part 11) — the same
+                one-way auto/manual behavior create forms already had. */}
+            <RecordIdentityFields
+              checkNameAvailabilityAction={checkRecipeNameAvailability}
+              nameTakenText="A recipe with that name already exists."
+              nameRegionId="recipe-name-availability"
+              originalName={recipe.name}
+              checkSlugAvailabilityAction={checkRecipeSlugAvailability}
+              slugTakenText="A recipe with that page address already exists."
+              slugRegionId="recipe-slug-availability"
+              initialSlug={recipe.slug}
+              excludeId={recipe.id}
+            />
+          </EditorSection>
 
-        <div className="form-field">
-          <div className="recipe-quantity-range">
-            <div className="recipe-quantity-field">
-              <label className="form-field">
-                <span className="form-field-label">Minimum quantity</span>
-                <input
-                  type="number"
-                  name="resultQuantityMin"
-                  min={1}
-                  step={1}
-                  defaultValue={recipe.resultQuantityMin}
-                  className="form-input"
-                />
-              </label>
-              <p className="form-field-helper">
-                The smallest number of items this recipe can produce.
-              </p>
-            </div>
+          <EditorSection title="Output" icon={SECTION_ICONS.output}>
+            <label className="form-field">
+              <span className="form-field-label">Resulting item</span>
+              <select
+                name="resultingItemId"
+                required
+                defaultValue={recipe.resultingItemId}
+                className="form-input"
+              >
+                {items.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-            <div className="recipe-quantity-field">
-              <label className="form-field">
-                <span className="form-field-label">Maximum quantity</span>
-                <input
-                  type="number"
-                  name="resultQuantityMax"
-                  min={1}
-                  step={1}
-                  defaultValue={recipe.resultQuantityMax}
-                  className="form-input"
-                />
-              </label>
-              <p className="form-field-helper">
-                The largest number of items this recipe can produce. Use
-                the same value as minimum when the output is fixed.
-              </p>
+            <div className="form-field">
+              <div className="recipe-quantity-range">
+                <div className="recipe-quantity-field">
+                  <label className="form-field">
+                    <span className="form-field-label">Minimum quantity</span>
+                    <input
+                      type="number"
+                      name="resultQuantityMin"
+                      min={1}
+                      step={1}
+                      defaultValue={recipe.resultQuantityMin}
+                      className="form-input"
+                    />
+                  </label>
+                  <p className="form-field-helper">
+                    The smallest number of items this recipe can produce.
+                  </p>
+                </div>
+
+                <div className="recipe-quantity-field">
+                  <label className="form-field">
+                    <span className="form-field-label">Maximum quantity</span>
+                    <input
+                      type="number"
+                      name="resultQuantityMax"
+                      min={1}
+                      step={1}
+                      defaultValue={recipe.resultQuantityMax}
+                      className="form-input"
+                    />
+                  </label>
+                  <p className="form-field-helper">
+                    The largest number of items this recipe can produce.
+                    Use the same value as minimum when the output is
+                    fixed.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          </EditorSection>
+
+          <EditorSection
+            title="Requirements"
+            icon={SECTION_ICONS.requirements}
+          >
+            <label className="form-field">
+              <span className="form-field-label">Profession</span>
+              <select
+                name="professionId"
+                defaultValue={recipe.professionId ?? ""}
+                className="form-input"
+              >
+                <option value="">No profession</option>
+                {professions.map((profession) => (
+                  <option key={profession.id} value={profession.id}>
+                    {profession.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="form-field form-field-narrow">
+              <span className="form-field-label">Required level (optional)</span>
+              <input
+                type="number"
+                name="requiredLevel"
+                min={0}
+                step={1}
+                defaultValue={recipe.requiredLevel ?? ""}
+                className="form-input"
+              />
+            </label>
+          </EditorSection>
         </div>
-
-        <label className="form-field">
-          <span className="form-field-label">Profession</span>
-          <select
-            name="professionId"
-            defaultValue={recipe.professionId ?? ""}
-            className="form-input"
-          >
-            <option value="">No profession</option>
-            {professions.map((profession) => (
-              <option key={profession.id} value={profession.id}>
-                {profession.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="form-field">
-          <span className="form-field-label">Required level (optional)</span>
-          <input
-            type="number"
-            name="requiredLevel"
-            min={0}
-            step={1}
-            defaultValue={recipe.requiredLevel ?? ""}
-            className="form-input"
-          />
-        </label>
 
         <EditorActions
           submitLabel="Save Changes"

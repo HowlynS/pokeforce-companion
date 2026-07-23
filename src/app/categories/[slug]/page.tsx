@@ -4,27 +4,15 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { prisma } from "@/lib/db";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
 type CategoryDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2
-      style={{
-        margin: "0 0 16px",
-        fontSize: "24px",
-        lineHeight: 1.2,
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
 
 function buildItemCardDescription(item: { tradeable: boolean }): string {
   return `Tradeable: ${item.tradeable ? "Yes" : "No"}`;
@@ -73,7 +61,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
           The Details card above still states "Items: 0". */}
       {category.items.length > 0 ? (
         <section>
-          <SectionHeading>Items</SectionHeading>
+          <SectionHeading icon={SECTION_ICONS.items}>Items</SectionHeading>
 
           <ContentGrid>
             {category.items.map((item) => (

@@ -4,7 +4,7 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorActions } from "@/components/admin/editor-actions";
-import { ContextPanel } from "@/components/admin/context-panel";
+import { EditorSection } from "@/components/admin/editor-section";
 import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
@@ -16,6 +16,7 @@ import {
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
 import { LOCATION_TYPE_LABELS, type LocationType } from "@/lib/validation/location";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateLocationHierarchyAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -153,30 +154,30 @@ export default async function LocationHierarchyPage({
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
 
-        {/* Visual Pass II correction pass (Section 9): the old
-            <fieldset><legend>Parent Location</legend> wrapper duplicated
-            this same fact twice — the uppercase legend and the smaller
-            "Parent location" field label right beneath it said the same
-            thing. A single ordinary field (matching every ungrouped field
-            elsewhere in this form) is the one clear heading now; removing
-            the fieldset's own border also removes the extra divider it
-            created immediately above the sticky Save Hierarchy/Cancel
-            row, leaving only that row's own standard top border. */}
-        <label className="form-field">
-          <span className="form-field-label">Parent location</span>
-          <select
-            name="parentId"
-            defaultValue={location.parentId ?? ""}
-            className="form-input"
-          >
-            <option value="">No parent</option>
-            {parentOptions.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {/* Visual Pass II correction pass (Section 9) originally
+            flattened this into a single ordinary field, since the old
+            <fieldset><legend> wrapper duplicated "Parent Location"
+            twice. The Admin Editor Section Redesign pass reintroduces
+            one clear heading here — but as the shared EditorSection
+            icon-bubble card every other section now uses, never a
+            second bare label repeating the field's own. */}
+        <EditorSection title="Parent Location" icon={SECTION_ICONS.hierarchy}>
+          <label className="form-field">
+            <span className="form-field-label">Parent location</span>
+            <select
+              name="parentId"
+              defaultValue={location.parentId ?? ""}
+              className="form-input"
+            >
+              <option value="">No parent</option>
+              {parentOptions.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </EditorSection>
 
         <EditorActions
           submitLabel="Save Hierarchy"
@@ -191,8 +192,9 @@ export default async function LocationHierarchyPage({
           description="Locations that use this one as their parent will appear here."
         />
       ) : (
-        <ContextPanel
+        <EditorSection
           title="Sub-locations"
+          icon={SECTION_ICONS.subLocations}
           description={`${location.children.length} ${
             location.children.length === 1 ? "sub-location" : "sub-locations"
           }`}
@@ -218,7 +220,7 @@ export default async function LocationHierarchyPage({
               </tbody>
             </table>
           </div>
-        </ContextPanel>
+        </EditorSection>
       )}
     </LocationWorkspace>
   );

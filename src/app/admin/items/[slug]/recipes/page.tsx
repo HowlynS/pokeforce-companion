@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
-import { ContextPanel } from "@/components/admin/context-panel";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   itemEditorTabs,
@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -131,8 +132,9 @@ export default async function ItemRecipesPage({
       ) : (
         <>
           {hasIngredientUsage ? (
-            <ContextPanel
+            <EditorSection
               title="Used as an ingredient in"
+              icon={SECTION_ICONS.recipes}
               description={`${item.recipeIngredients.length} ${
                 item.recipeIngredients.length === 1 ? "recipe" : "recipes"
               }`}
@@ -164,12 +166,13 @@ export default async function ItemRecipesPage({
                   </tbody>
                 </table>
               </div>
-            </ContextPanel>
+            </EditorSection>
           ) : null}
 
           {hasProducedBy ? (
-            <ContextPanel
+            <EditorSection
               title="Produced by"
+              icon={SECTION_ICONS.recipes}
               description={`${item.recipesProduced.length} ${
                 item.recipesProduced.length === 1 ? "recipe" : "recipes"
               }`}
@@ -203,7 +206,7 @@ export default async function ItemRecipesPage({
                   </tbody>
                 </table>
               </div>
-            </ContextPanel>
+            </EditorSection>
           ) : null}
         </>
       )}

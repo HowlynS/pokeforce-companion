@@ -1,17 +1,38 @@
 "use client";
 
 // Live Page-address (slug) field for an admin create/edit form (Phase B1,
-// System B): auto-generates from the current Name while in "auto" mode,
-// switching to "manual" mode the instant the contributor edits the field
-// themselves (typing OR pasting — both fire the same onChange). Manual
-// override is final for the rest of that form session — the earlier
-// visible "Use name" reset control was removed in a later UI-cleanup
-// pass (no way remains to flip back to auto mode without reloading the
-// page), so `isManual` can now only ever transition false→true. Combines
-// two things RecordNameField already does well (controlled input +
-// debounced/sequence-guarded availability checking) with the one thing
-// this field alone needs: reconciling its own value against a live
-// sibling field's value.
+// System B; edit-mode synchronization revised in the Admin Visual/UX
+// Correction pass, Part 11): auto-generates from the current Name while in
+// "auto" mode, switching to "manual" mode the instant the contributor
+// edits the field themselves (typing OR pasting — both fire the same
+// onChange). Manual override is final for the rest of that form session —
+// the earlier visible "Use name" reset control was removed in a later
+// UI-cleanup pass (no way remains to flip back to auto mode without
+// reloading the page), so `isManual` can now only ever transition
+// false→true. Combines two things RecordNameField already does well
+// (controlled input + debounced/sequence-guarded availability checking)
+// with the one thing this field alone needs: reconciling its own value
+// against a live sibling field's value.
+//
+// BOTH create and edit now start in auto mode (edit used to start
+// permanently manual, protecting the persisted slug by never touching it
+// again — the user-approved behavior now is that a Name edit CAN propose
+// a new URL, exactly like create already did, right up until the
+// contributor manually edits Page address themselves). What differs
+// between the two modes is only the auto-generated VALUE while still
+// auto: `initialNameRef` captures whichever `nameValue` this field first
+// rendered with (blank on create, the record's persisted name on edit).
+// While `nameValue` still equals that captured value, the auto value is
+// `initialSlug` — the persisted slug (or "" on create, where there is
+// none) — so an edit form's Page address stays exactly what is currently
+// saved until Name genuinely changes. The MOMENT `nameValue` differs from
+// that first-rendered value, the auto value switches to
+// `normalizeSlug(nameValue)`, live, on every further keystroke — deleting
+// a word, replacing a word, or clearing Name down to blank (which
+// normalizes to "") all update Page address immediately, matching create
+// mode's existing behavior exactly. This is a pure per-render derivation,
+// never a state update pushed from an effect, so it can never lag a
+// keystroke by a render.
 //
 // The displayed feedback state is DERIVED during render, mirroring
 // RecordNameField's own shape (idle/checking/available/taken/current/
@@ -61,16 +82,15 @@ const FEEDBACK_COLOR: Record<FeedbackState, string> = {
 };
 
 type RecordSlugFieldProps = {
-  /** "create": starts in auto-generation mode, following the live Name
-      value, until manually edited. "edit": starts manually controlled
-      from the start (protects the existing persisted URL) — Name
-      changes never touch it automatically, even if the persisted slug
-      happens to resemble the current Name. */
-  mode: "create" | "edit";
   /** The live Name value from a sibling field (RecordNameField's own
-      onNameChange), used only while in auto-generation mode. */
+      onNameChange) — both create and edit start in auto-generation mode
+      and track this live until the contributor manually edits Page
+      address themselves (Part 11: edit no longer starts permanently
+      manual). */
   nameValue: string;
-  /** Edit-only: the record's persisted Page address. */
+  /** Edit-only: the record's persisted Page address — the auto value
+      shown until Name actually changes from its own first-rendered
+      value. */
   initialSlug?: string;
   /** Edit-only: the record's own id, excluded server-side so it cannot
       conflict with itself. */
@@ -87,7 +107,6 @@ type RecordSlugFieldProps = {
 };
 
 export function RecordSlugField({
-  mode,
   nameValue,
   initialSlug,
   excludeId,
@@ -100,20 +119,44 @@ export function RecordSlugField({
   // render rather than pushed into state from an effect, so there is no
   // extra render cycle and no risk of the effect and a keystroke racing.
   const [manualSlug, setManualSlug] = useState(initialSlug ?? "");
-  // Edit starts manually controlled from the start (B4) — there is no
-  // "resembles the current Name" heuristic that would silently re-enable
-  // auto-generation on a persisted record.
-  const [isManual, setIsManual] = useState(mode === "edit");
+  // Part 11: BOTH create and edit start in auto mode now — nothing ever
+  // sets isManual back to false again once the contributor edits Page
+  // address themselves (no "Use name" reset control exists), matching
+  // create's own long-standing one-way behavior.
+  const [isManual, setIsManual] = useState(false);
   const [result, setResult] = useState<CheckResult | null>(null);
   const requestSequence = useRef(0);
+  // Captures whichever `nameValue` this field first rendered with — ""
+  // on create (Name starts blank), the record's persisted name on edit —
+  // exactly ONCE, on mount, never updated again. A lazy useState
+  // initializer (not useRef): reading a ref's `.current` DURING render is
+  // a lint-flagged anti-pattern (react-hooks/refs) even though it would
+  // have worked here; state read during render is the correct tool for
+  // "a value computed once at mount and never changed again." This is
+  // what lets edit mode start showing the PERSISTED slug (not a value
+  // re-derived from Name) while still tracking Name live from the moment
+  // it actually changes.
+  const [initialNameValue] = useState(nameValue);
 
-  // While still auto (`mode` decides the STARTING value of `isManual` —
-  // create starts auto, edit starts manual, per B2/B4, and nothing ever
-  // sets it back to false again now that the reset control is gone), the
-  // field's value simply IS the live Name's own generated slug —
-  // recomputed every render, never stored separately, so it can never
-  // drift from `nameValue`.
-  const slug = !isManual ? normalizeSlug(nameValue) : manualSlug;
+  // Whether there is a persisted slug to start from at all is the real
+  // discriminator (not an arbitrary create/edit flag): create passes no
+  // `initialSlug`, so its auto value is simply the live generated slug,
+  // always — identical to this field's original create-only behavior,
+  // and correct regardless of what nameValue happens to be on any given
+  // render. When a persisted `initialSlug` DOES exist (edit), the auto
+  // value stays that persisted value for as long as Name has not yet
+  // diverged from the value this field first rendered with — an edit
+  // form's Page address stays exactly what is currently saved until Name
+  // genuinely changes. The moment Name differs from that first-rendered
+  // value, the auto value switches to the live generated slug and keeps
+  // tracking every further keystroke — deleting a word, replacing a
+  // word, or clearing Name to blank all update Page address immediately,
+  // matching create mode's own always-live behavior from that point on.
+  const autoSlug =
+    initialSlug !== undefined && nameValue === initialNameValue
+      ? initialSlug
+      : normalizeSlug(nameValue);
+  const slug = !isManual ? autoSlug : manualSlug;
 
   const candidate = normalizeSlug(slug);
   const isBlankField = slug.trim() === "";

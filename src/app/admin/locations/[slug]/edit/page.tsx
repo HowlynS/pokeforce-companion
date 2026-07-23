@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
@@ -20,6 +22,7 @@ import {
 } from "@/lib/admin/location-workspace";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/lib/validation/location";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateLocationGeneralAction } from "../../actions";
 import { checkLocationNameAvailability } from "../../name-availability";
 import { checkLocationSlugAvailability } from "../../slug-availability";
@@ -179,67 +182,76 @@ export default async function EditLocationPage({
         <input type="hidden" name="id" value={location.id} />
         <input type="hidden" name="originalSlug" value={location.slug} />
 
-        <p className="form-section-heading">Identity</p>
+        <div className="admin-editor-sections">
+          <EditorSection title="Identity" icon={SECTION_ICONS.identity}>
+            {/* Client-enhanced Name + Page address fields (Phase B1).
+                Both saved values count as "current" (never queried
+                against themselves), and the record's own id is excluded
+                server-side so it cannot conflict with itself;
+                updateLocationGeneralAction stays the authoritative
+                check for both. Page address starts showing the
+                persisted value and tracks Name live until the
+                contributor manually edits it themselves (Part 11) — the
+                same one-way auto/manual behavior create forms already
+                had. */}
+            <div className="location-identity-row">
+              <RecordIdentityFields
+                checkNameAvailabilityAction={checkLocationNameAvailability}
+                nameTakenText="A location with that name already exists."
+                nameRegionId="location-name-availability"
+                originalName={location.name}
+                checkSlugAvailabilityAction={checkLocationSlugAvailability}
+                slugTakenText="A location with that page address already exists."
+                slugRegionId="location-slug-availability"
+                initialSlug={location.slug}
+                excludeId={location.id}
+              />
+            </div>
+          </EditorSection>
 
-        {/* Client-enhanced Name + Page address fields (Phase B1). Both
-            saved values count as "current" (never queried against
-            themselves), and the record's own id is excluded server-side
-            so it cannot conflict with itself; updateLocationGeneralAction
-            stays the authoritative check for both. Page address starts
-            manually controlled (never auto-regenerated from Name edits)
-            to protect the existing persisted URL. */}
-        <RecordIdentityFields
-          mode="edit"
-          checkNameAvailabilityAction={checkLocationNameAvailability}
-          nameTakenText="A location with that name already exists."
-          nameRegionId="location-name-availability"
-          originalName={location.name}
-          checkSlugAvailabilityAction={checkLocationSlugAvailability}
-          slugTakenText="A location with that page address already exists."
-          slugRegionId="location-slug-availability"
-          initialSlug={location.slug}
-          excludeId={location.id}
-        />
-
-        <label className="form-field">
-          <span className="form-field-label">Type</span>
-          <select
-            name="type"
-            required
-            defaultValue={location.type}
-            className="form-input"
+          <EditorSection
+            title="Classification"
+            icon={SECTION_ICONS.classification}
           >
-            {LOCATION_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {LOCATION_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
-        </label>
+            <label className="form-field">
+              <span className="form-field-label">Type</span>
+              <select
+                name="type"
+                required
+                defaultValue={location.type}
+                className="form-input"
+              >
+                {LOCATION_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {LOCATION_TYPE_LABELS[type]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </EditorSection>
 
-        <p className="form-section-heading">Content</p>
+          <EditorSection title="Content" icon={SECTION_ICONS.content}>
+            <label className="form-field">
+              <span className="form-field-label">Description (optional)</span>
+              <AutosizeTextarea
+                name="description"
+                defaultValue={location.description ?? ""}
+                className="form-input"
+              />
+            </label>
 
-        <label className="form-field">
-          <span className="form-field-label">Description (optional)</span>
-          <textarea
-            name="description"
-            rows={4}
-            defaultValue={location.description ?? ""}
-            className="form-input"
-          />
-        </label>
-
-        <label className="form-field">
-          <span className="form-field-label">
-            Extra information (optional)
-          </span>
-          <textarea
-            name="accessNote"
-            rows={4}
-            defaultValue={location.accessNote ?? ""}
-            className="form-input"
-          />
-        </label>
+            <label className="form-field">
+              <span className="form-field-label">
+                Extra information (optional)
+              </span>
+              <AutosizeTextarea
+                name="accessNote"
+                defaultValue={location.accessNote ?? ""}
+                className="form-input"
+              />
+            </label>
+          </EditorSection>
+        </div>
 
         <EditorActions
           submitLabel="Save Changes"

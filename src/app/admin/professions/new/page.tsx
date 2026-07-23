@@ -1,6 +1,7 @@
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
@@ -12,6 +13,8 @@ import {
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { createProfessionAction } from "../actions";
 import { checkProfessionNameAvailability } from "../name-availability";
 import { checkProfessionSlugAvailability } from "../slug-availability";
@@ -122,23 +125,28 @@ export default async function NewProfessionPage({
         action={createProfessionAction}
         className="form-grid form-grid-responsive"
       >
-        {/* Client-enhanced Name + Page address fields (Phase B1); the
-            submission-time checks in createProfessionAction remain the
-            authoritative protection for both. */}
-        <RecordIdentityFields
-          mode="create"
-          checkNameAvailabilityAction={checkProfessionNameAvailability}
-          nameTakenText="A profession with that name already exists."
-          nameRegionId="profession-name-availability"
-          checkSlugAvailabilityAction={checkProfessionSlugAvailability}
-          slugTakenText="A profession with that page address already exists."
-          slugRegionId="profession-slug-availability"
-        />
+        <div className="admin-editor-sections">
+          <EditorSection title="Identity" icon={SECTION_ICONS.identity}>
+            {/* Client-enhanced Name + Page address fields (Phase B1); the
+                submission-time checks in createProfessionAction remain
+                the authoritative protection for both. */}
+            <RecordIdentityFields
+              checkNameAvailabilityAction={checkProfessionNameAvailability}
+              nameTakenText="A profession with that name already exists."
+              nameRegionId="profession-name-availability"
+              checkSlugAvailabilityAction={checkProfessionSlugAvailability}
+              slugTakenText="A profession with that page address already exists."
+              slugRegionId="profession-slug-availability"
+            />
+          </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Description (optional)</span>
-          <textarea name="description" rows={4} className="form-input" />
-        </label>
+          <EditorSection title="Description" icon={SECTION_ICONS.content}>
+            <label className="form-field">
+              <span className="form-field-label">Description (optional)</span>
+              <AutosizeTextarea name="description" className="form-input" />
+            </label>
+          </EditorSection>
+        </div>
 
         <EditorActions
           submitLabel="Create Profession"

@@ -2,6 +2,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
@@ -14,6 +15,7 @@ import {
 import { prisma } from "@/lib/db";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { createRecipeAction } from "../actions";
 import { checkRecipeNameAvailability } from "../name-availability";
 import { checkRecipeSlugAvailability } from "../slug-availability";
@@ -157,135 +159,152 @@ export default async function NewRecipePage({
           action={createRecipeAction}
           className="form-grid form-grid-wide form-grid-responsive"
         >
-          <p className="form-section-heading">Identity</p>
-
-          {/* Client-enhanced Name + Page address fields (Phase B1); the
-              submission-time checks in createRecipeAction remain the
-              authoritative protection for both. */}
-          <RecordIdentityFields
-            mode="create"
-            checkNameAvailabilityAction={checkRecipeNameAvailability}
-            nameTakenText="A recipe with that name already exists."
-            nameRegionId="recipe-name-availability"
-            checkSlugAvailabilityAction={checkRecipeSlugAvailability}
-            slugTakenText="A recipe with that page address already exists."
-            slugRegionId="recipe-slug-availability"
-          />
-
-          <p className="form-section-heading">Output</p>
-
-          <label className="form-field">
-            <span className="form-field-label">Resulting item</span>
-            <select
-              name="resultingItemId"
-              required
-              defaultValue=""
-              className="form-input"
+          <div className="admin-editor-sections admin-editor-sections--two-col">
+            <EditorSection
+              title="Identity"
+              icon={SECTION_ICONS.identity}
+              className="admin-editor-section--full"
             >
-              <option value="" disabled>
-                Select an item
-              </option>
-              {items.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              {/* Client-enhanced Name + Page address fields (Phase B1);
+                  the submission-time checks in createRecipeAction remain
+                  the authoritative protection for both. */}
+              <RecordIdentityFields
+                checkNameAvailabilityAction={checkRecipeNameAvailability}
+                nameTakenText="A recipe with that name already exists."
+                nameRegionId="recipe-name-availability"
+                checkSlugAvailabilityAction={checkRecipeSlugAvailability}
+                slugTakenText="A recipe with that page address already exists."
+                slugRegionId="recipe-slug-availability"
+              />
+            </EditorSection>
 
-          <div className="form-field">
-            <div className="recipe-quantity-range">
-              <div className="recipe-quantity-field">
-                <label className="form-field">
-                  <span className="form-field-label">Minimum quantity</span>
-                  <input
-                    type="number"
-                    name="resultQuantityMin"
-                    min={1}
-                    step={1}
-                    defaultValue={1}
-                    className="form-input"
-                  />
-                </label>
-                <p className="form-field-helper">
-                  The smallest number of items this recipe can produce.
-                </p>
-              </div>
-
-              <div className="recipe-quantity-field">
-                <label className="form-field">
-                  <span className="form-field-label">Maximum quantity</span>
-                  <input
-                    type="number"
-                    name="resultQuantityMax"
-                    min={1}
-                    step={1}
-                    defaultValue={1}
-                    className="form-input"
-                  />
-                </label>
-                <p className="form-field-helper">
-                  The largest number of items this recipe can produce. Use
-                  the same value as minimum when the output is fixed.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <label className="form-field">
-            <span className="form-field-label">Profession</span>
-            <select name="professionId" defaultValue="" className="form-input">
-              <option value="">No profession</option>
-              {professions.map((profession) => (
-                <option key={profession.id} value={profession.id}>
-                  {profession.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="form-field">
-            <span className="form-field-label">
-              Required level (optional)
-            </span>
-            <input
-              type="number"
-              name="requiredLevel"
-              min={0}
-              step={1}
-              className="form-input"
-            />
-          </label>
-
-          <fieldset className="form-fieldset">
-            <legend>Ingredients (fill at least one row)</legend>
-
-            {ingredientRows.map((row) => (
-              <div key={row} className="ingredient-row">
+            <EditorSection title="Output" icon={SECTION_ICONS.output}>
+              <label className="form-field">
+                <span className="form-field-label">Resulting item</span>
                 <select
-                  name={`ingredientItemId${row}`}
+                  name="resultingItemId"
+                  required
                   defaultValue=""
                   className="form-input"
                 >
-                  <option value="">No ingredient</option>
+                  <option value="" disabled>
+                    Select an item
+                  </option>
                   {items.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
                     </option>
                   ))}
                 </select>
+              </label>
 
+              <div className="form-field">
+                <div className="recipe-quantity-range">
+                  <div className="recipe-quantity-field">
+                    <label className="form-field">
+                      <span className="form-field-label">Minimum quantity</span>
+                      <input
+                        type="number"
+                        name="resultQuantityMin"
+                        min={1}
+                        step={1}
+                        defaultValue={1}
+                        className="form-input"
+                      />
+                    </label>
+                    <p className="form-field-helper">
+                      The smallest number of items this recipe can produce.
+                    </p>
+                  </div>
+
+                  <div className="recipe-quantity-field">
+                    <label className="form-field">
+                      <span className="form-field-label">Maximum quantity</span>
+                      <input
+                        type="number"
+                        name="resultQuantityMax"
+                        min={1}
+                        step={1}
+                        defaultValue={1}
+                        className="form-input"
+                      />
+                    </label>
+                    <p className="form-field-helper">
+                      The largest number of items this recipe can produce.
+                      Use the same value as minimum when the output is
+                      fixed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </EditorSection>
+
+            <EditorSection
+              title="Requirements"
+              icon={SECTION_ICONS.requirements}
+            >
+              <label className="form-field">
+                <span className="form-field-label">Profession</span>
+                <select name="professionId" defaultValue="" className="form-input">
+                  <option value="">No profession</option>
+                  {professions.map((profession) => (
+                    <option key={profession.id} value={profession.id}>
+                      {profession.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="form-field form-field-narrow">
+                <span className="form-field-label">
+                  Required level (optional)
+                </span>
                 <input
                   type="number"
-                  name={`ingredientQuantity${row}`}
-                  min={1}
+                  name="requiredLevel"
+                  min={0}
                   step={1}
-                  placeholder="Qty"
                   className="form-input"
                 />
-              </div>
-            ))}
-          </fieldset>
+              </label>
+            </EditorSection>
+
+            <EditorSection
+              title="Ingredients"
+              icon={SECTION_ICONS.ingredients}
+              className="admin-editor-section--full"
+            >
+              <fieldset className="form-fieldset">
+                <legend>Ingredients (fill at least one row)</legend>
+
+                {ingredientRows.map((row) => (
+                  <div key={row} className="ingredient-row">
+                    <select
+                      name={`ingredientItemId${row}`}
+                      defaultValue=""
+                      className="form-input"
+                    >
+                      <option value="">No ingredient</option>
+                      {items.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="number"
+                      name={`ingredientQuantity${row}`}
+                      min={1}
+                      step={1}
+                      placeholder="Qty"
+                      className="form-input"
+                    />
+                  </div>
+                ))}
+              </fieldset>
+            </EditorSection>
+          </div>
 
           <EditorActions
             submitLabel="Create Recipe"

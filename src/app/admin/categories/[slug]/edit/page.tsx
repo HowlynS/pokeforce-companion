@@ -3,10 +3,12 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
   CATEGORY_LIST_PATH,
@@ -17,6 +19,7 @@ import {
 } from "@/lib/admin/category-workspace";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { getImagePublicUrl } from "@/lib/storage/images";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateCategoryAction } from "../../actions";
 import { checkCategoryNameAvailability } from "../../name-availability";
 import { checkCategorySlugAvailability } from "../../slug-availability";
@@ -141,35 +144,41 @@ export default async function EditCategoryPage({
         <input type="hidden" name="id" value={category.id} />
         <input type="hidden" name="originalSlug" value={category.slug} />
 
-        {/* Client-enhanced Name + Page address fields (Phase B1). Both
-            saved values count as "current" (never queried against
-            themselves), and the record's own id is excluded server-side
-            so it cannot conflict with itself; updateCategoryAction stays
-            the authoritative check for both. Page address starts
-            manually controlled (never auto-regenerated from Name edits)
-            to protect the existing persisted URL. */}
-        <RecordIdentityFields
-          mode="edit"
-          checkNameAvailabilityAction={checkCategoryNameAvailability}
-          nameTakenText="A category with that name already exists."
-          nameRegionId="category-name-availability"
-          originalName={category.name}
-          checkSlugAvailabilityAction={checkCategorySlugAvailability}
-          slugTakenText="A category with that page address already exists."
-          slugRegionId="category-slug-availability"
-          initialSlug={category.slug}
-          excludeId={category.id}
-        />
+        <div className="admin-editor-sections">
+          <EditorSection title="Identity" icon={SECTION_ICONS.identity}>
+            {/* Client-enhanced Name + Page address fields (Phase B1).
+                Both saved values count as "current" (never queried
+                against themselves), and the record's own id is excluded
+                server-side so it cannot conflict with itself;
+                updateCategoryAction stays the authoritative check for
+                both. Page address starts showing the persisted value
+                and tracks Name live until the contributor manually
+                edits it themselves (Part 11) — the same one-way
+                auto/manual behavior create forms already had. */}
+            <RecordIdentityFields
+              checkNameAvailabilityAction={checkCategoryNameAvailability}
+              nameTakenText="A category with that name already exists."
+              nameRegionId="category-name-availability"
+              originalName={category.name}
+              checkSlugAvailabilityAction={checkCategorySlugAvailability}
+              slugTakenText="A category with that page address already exists."
+              slugRegionId="category-slug-availability"
+              initialSlug={category.slug}
+              excludeId={category.id}
+            />
+          </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Description (optional)</span>
-          <textarea
-            name="description"
-            rows={4}
-            defaultValue={category.description ?? ""}
-            className="form-input"
-          />
-        </label>
+          <EditorSection title="Description" icon={SECTION_ICONS.content}>
+            <label className="form-field">
+              <span className="form-field-label">Description (optional)</span>
+              <AutosizeTextarea
+                name="description"
+                defaultValue={category.description ?? ""}
+                className="form-input"
+              />
+            </label>
+          </EditorSection>
+        </div>
 
         <EditorActions
           submitLabel="Save Changes"

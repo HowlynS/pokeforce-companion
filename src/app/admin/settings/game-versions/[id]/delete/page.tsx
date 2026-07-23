@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { countVerificationReferences } from "@/lib/game-versions";
+import { formatDisplayDate } from "@/lib/format-date";
 import { deleteGameVersionAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -73,10 +74,7 @@ export default async function DeleteGameVersionPage({
         </p>
 
         <p className="text-muted">
-          Release date:{" "}
-          {version.releaseDate
-            ? version.releaseDate.toISOString().slice(0, 10)
-            : "None"}
+          Release date: {formatDisplayDate(version.releaseDate) ?? "None"}
         </p>
 
         <p className="text-muted">

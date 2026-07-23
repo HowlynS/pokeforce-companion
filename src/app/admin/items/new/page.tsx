@@ -1,12 +1,15 @@
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import {
   ITEM_LIST_PATH,
   normalizeItemSearchQuery,
@@ -120,70 +123,81 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
       <form
         id={ITEM_CREATE_FORM_ID}
         action={createItemAction}
-        className="form-grid form-grid-responsive"
+        className="form-grid form-grid-responsive item-general-form"
       >
-        <p className="form-section-heading">Identity</p>
+        <div className="item-general-columns">
+          <div className="item-general-column">
+            <EditorSection title="Identity" icon={SECTION_ICONS.identity}>
+              {/* Client-enhanced Name + Page address fields (Phase B1):
+                  live duplicate-name feedback, live slug auto-generation
+                  from Name, and live slug-availability feedback. The
+                  submission-time checks in createItemAction remain the
+                  authoritative protection for both fields. */}
+              <RecordIdentityFields
+                checkNameAvailabilityAction={checkItemNameAvailability}
+                nameTakenText="An item with that name already exists."
+                nameRegionId="item-name-availability"
+                checkSlugAvailabilityAction={checkItemSlugAvailability}
+                slugTakenText="An item with that page address already exists."
+                slugRegionId="item-slug-availability"
+              />
+            </EditorSection>
 
-        {/* Client-enhanced Name + Page address fields (Phase B1): live
-            duplicate-name feedback, live slug auto-generation from Name,
-            and live slug-availability feedback. The submission-time
-            checks in createItemAction remain the authoritative
-            protection for both fields. */}
-        <RecordIdentityFields
-          mode="create"
-          checkNameAvailabilityAction={checkItemNameAvailability}
-          nameTakenText="An item with that name already exists."
-          nameRegionId="item-name-availability"
-          checkSlugAvailabilityAction={checkItemSlugAvailability}
-          slugTakenText="An item with that page address already exists."
-          slugRegionId="item-slug-availability"
-        />
+            <EditorSection title="Description" icon={SECTION_ICONS.content}>
+              <label className="form-field">
+                <span className="form-field-label">Description (optional)</span>
+                <AutosizeTextarea name="description" className="form-input" />
+              </label>
+            </EditorSection>
+          </div>
 
-        <p className="form-section-heading">Description</p>
+          <div className="item-general-column">
+            <EditorSection
+              title="Classification"
+              icon={SECTION_ICONS.classification}
+            >
+              <label className="form-field">
+                <span className="form-field-label">Category</span>
+                <select name="categoryId" defaultValue="" className="form-input">
+                  <option value="">No category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Description (optional)</span>
-          <textarea name="description" rows={4} className="form-input" />
-        </label>
+            <EditorSection
+              title="Gameplay Details"
+              icon={SECTION_ICONS.gameplayDetails}
+            >
+              <div className="form-checkbox-group">
+                <label className="form-checkbox-field">
+                  <input type="checkbox" name="heldItem" />
+                  <span>Held item</span>
+                </label>
 
-        <p className="form-section-heading">Classification</p>
+                <label className="form-checkbox-field">
+                  <input type="checkbox" name="tradeable" />
+                  <span>Tradeable</span>
+                </label>
+              </div>
 
-        <label className="form-field">
-          <span className="form-field-label">Category</span>
-          <select name="categoryId" defaultValue="" className="form-input">
-            <option value="">No category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <p className="form-section-heading">Gameplay details</p>
-
-        <div className="form-checkbox-group">
-          <label className="form-checkbox-field">
-            <input type="checkbox" name="heldItem" />
-            <span>Held item</span>
-          </label>
-
-          <label className="form-checkbox-field">
-            <input type="checkbox" name="tradeable" />
-            <span>Tradeable</span>
-          </label>
+              <label className="form-field">
+                <span className="form-field-label">Base value (optional)</span>
+                <input
+                  type="number"
+                  name="baseValue"
+                  min={0}
+                  step={1}
+                  className="form-input"
+                />
+              </label>
+            </EditorSection>
+          </div>
         </div>
-
-        <label className="form-field">
-          <span className="form-field-label">Base value (optional)</span>
-          <input
-            type="number"
-            name="baseValue"
-            min={0}
-            step={1}
-            className="form-input"
-          />
-        </label>
 
         <EditorActions
           submitLabel="Create item"

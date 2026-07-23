@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
 import {
@@ -11,26 +12,13 @@ import {
   groupAcquisitionSourcesByType,
 } from "@/lib/validation/acquisition-source";
 import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
 type ItemDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2
-      style={{
-        margin: "0 0 16px",
-        fontSize: "24px",
-        lineHeight: 1.2,
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
 
 export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
   const { slug } = await params;
@@ -122,7 +110,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
           heading makes no claim that the list is complete. */}
       {acquisitionGroups.length > 0 ? (
         <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-          <SectionHeading>How to obtain</SectionHeading>
+          <SectionHeading icon={SECTION_ICONS.source}>How to obtain</SectionHeading>
 
           {acquisitionGroups.map((group) => (
             <div key={group.type} style={{ marginBottom: "16px" }}>
@@ -158,7 +146,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
           item — public detail pages never render empty optional sections. */}
       {item.recipesProduced.length > 0 ? (
         <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-          <SectionHeading>Produced by</SectionHeading>
+          <SectionHeading icon={SECTION_ICONS.recipes}>Produced by</SectionHeading>
 
           <ContentGrid>
             {item.recipesProduced.map((recipe) => (
@@ -177,7 +165,9 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
           as an ingredient — never a public empty state. */}
       {item.recipeIngredients.length > 0 ? (
         <section>
-          <SectionHeading>Used as an ingredient in</SectionHeading>
+          <SectionHeading icon={SECTION_ICONS.ingredients}>
+            Used as an ingredient in
+          </SectionHeading>
 
           <ContentGrid>
             {item.recipeIngredients.map((ingredient) => (

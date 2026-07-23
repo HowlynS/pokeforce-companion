@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
-import { ContextPanel } from "@/components/admin/context-panel";
+import { EditorSection } from "@/components/admin/editor-section";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
   categoryEditorTabs,
@@ -11,6 +11,7 @@ import {
   normalizeCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
 import { prisma } from "@/lib/db";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -109,8 +110,9 @@ export default async function CategoryItemsPage({
           description="Items linked to this category will appear here."
         />
       ) : (
-        <ContextPanel
+        <EditorSection
           title="Items"
+          icon={SECTION_ICONS.items}
           description={`${category.items.length} ${
             category.items.length === 1 ? "item" : "items"
           }`}
@@ -139,7 +141,7 @@ export default async function CategoryItemsPage({
               </tbody>
             </table>
           </div>
-        </ContextPanel>
+        </EditorSection>
       )}
     </CategoryWorkspace>
   );

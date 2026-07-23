@@ -29,6 +29,7 @@ model GameVersion {
   id                         String              @id @default(cuid())
   name                       String              @unique
   releaseDate                DateTime?
+  description                String?
   isCurrent                  Boolean             @default(false)
   verifiedItems              Item[]
   verifiedLocations          Location[]

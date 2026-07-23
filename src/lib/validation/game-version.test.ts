@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  parseGameVersionEditInput,
   parseGameVersionInput,
   parseReleaseDateInput,
 } from "@/lib/validation/game-version";
@@ -86,6 +87,60 @@ describe("parseGameVersionInput", () => {
     expect(result).toEqual({
       ok: true,
       value: { name: "V1", releaseDate: null },
+    });
+  });
+});
+
+describe("parseGameVersionEditInput", () => {
+  it("shares parseGameVersionInput's own name/date rules, rejecting a missing name", () => {
+    const result = parseGameVersionEditInput(formDataFrom({ name: "  " }));
+
+    expect(result).toEqual({ ok: false, error: "missing_name" });
+  });
+
+  it("shares parseGameVersionInput's own rules, rejecting an invalid release date", () => {
+    const result = parseGameVersionEditInput(
+      formDataFrom({ name: "V1", releaseDate: "2026-02-31" })
+    );
+
+    expect(result).toEqual({ ok: false, error: "invalid_release_date" });
+  });
+
+  it("accepts and trims a multi-line description, preserving internal line breaks", () => {
+    const result = parseGameVersionEditInput(
+      formDataFrom({
+        name: "V1",
+        description: "  Line one\nLine two\n\nLine four  ",
+      })
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        name: "V1",
+        releaseDate: null,
+        description: "Line one\nLine two\n\nLine four",
+      },
+    });
+  });
+
+  it("normalizes an absent description to null", () => {
+    const result = parseGameVersionEditInput(formDataFrom({ name: "V1" }));
+
+    expect(result).toEqual({
+      ok: true,
+      value: { name: "V1", releaseDate: null, description: null },
+    });
+  });
+
+  it("normalizes an empty or whitespace-only description to null", () => {
+    const result = parseGameVersionEditInput(
+      formDataFrom({ name: "V1", description: "   " })
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: { name: "V1", releaseDate: null, description: null },
     });
   });
 });

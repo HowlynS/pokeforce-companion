@@ -1,6 +1,7 @@
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
@@ -12,7 +13,9 @@ import {
 } from "@/lib/admin/location-workspace";
 import { prisma } from "@/lib/db";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/lib/validation/location";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { createLocationAction } from "../actions";
 import { checkLocationNameAvailability } from "../name-availability";
 import { checkLocationSlugAvailability } from "../slug-availability";
@@ -137,60 +140,68 @@ export default async function NewLocationPage({
         action={createLocationAction}
         className="form-grid form-grid-responsive"
       >
-        <p className="form-section-heading">Identity</p>
+        <div className="admin-editor-sections">
+          <EditorSection title="Identity" icon={SECTION_ICONS.identity}>
+            {/* Client-enhanced Name + Page address fields (Phase B1);
+                the submission-time checks in createLocationAction remain
+                the authoritative protection for both. */}
+            <div className="location-identity-row">
+              <RecordIdentityFields
+                checkNameAvailabilityAction={checkLocationNameAvailability}
+                nameTakenText="A location with that name already exists."
+                nameRegionId="location-name-availability"
+                checkSlugAvailabilityAction={checkLocationSlugAvailability}
+                slugTakenText="A location with that page address already exists."
+                slugRegionId="location-slug-availability"
+              />
+            </div>
+          </EditorSection>
 
-        {/* Client-enhanced Name + Page address fields (Phase B1); the
-            submission-time checks in createLocationAction remain the
-            authoritative protection for both. */}
-        <RecordIdentityFields
-          mode="create"
-          checkNameAvailabilityAction={checkLocationNameAvailability}
-          nameTakenText="A location with that name already exists."
-          nameRegionId="location-name-availability"
-          checkSlugAvailabilityAction={checkLocationSlugAvailability}
-          slugTakenText="A location with that page address already exists."
-          slugRegionId="location-slug-availability"
-        />
+          <EditorSection
+            title="Classification"
+            icon={SECTION_ICONS.classification}
+          >
+            <label className="form-field">
+              <span className="form-field-label">Type</span>
+              <select name="type" required defaultValue="" className="form-input">
+                <option value="" disabled>
+                  Select a type
+                </option>
+                {LOCATION_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {LOCATION_TYPE_LABELS[type]}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="form-field">
-          <span className="form-field-label">Type</span>
-          <select name="type" required defaultValue="" className="form-input">
-            <option value="" disabled>
-              Select a type
-            </option>
-            {LOCATION_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {LOCATION_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
-        </label>
+            <label className="form-field">
+              <span className="form-field-label">Parent location</span>
+              <select name="parentId" defaultValue="" className="form-input">
+                <option value="">No parent</option>
+                {parentOptions.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Parent location</span>
-          <select name="parentId" defaultValue="" className="form-input">
-            <option value="">No parent</option>
-            {parentOptions.map((location) => (
-              <option key={location.id} value={location.id}>
-                {location.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <EditorSection title="Content" icon={SECTION_ICONS.content}>
+            <label className="form-field">
+              <span className="form-field-label">Description (optional)</span>
+              <AutosizeTextarea name="description" className="form-input" />
+            </label>
 
-        <p className="form-section-heading">Content</p>
-
-        <label className="form-field">
-          <span className="form-field-label">Description (optional)</span>
-          <textarea name="description" rows={4} className="form-input" />
-        </label>
-
-        <label className="form-field">
-          <span className="form-field-label">
-            Extra information (optional)
-          </span>
-          <textarea name="accessNote" rows={4} className="form-input" />
-        </label>
+            <label className="form-field">
+              <span className="form-field-label">
+                Extra information (optional)
+              </span>
+              <AutosizeTextarea name="accessNote" className="form-input" />
+            </label>
+          </EditorSection>
+        </div>
 
         <EditorActions
           submitLabel="Create Location"

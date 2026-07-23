@@ -3,8 +3,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
-import { ContextPanel } from "@/components/admin/context-panel";
+import { EditorSection } from "@/components/admin/editor-section";
 import { VerificationPanel } from "@/components/admin/verification-panel";
+import { EditorActions } from "@/components/admin/editor-actions";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   itemEditorTabs,
@@ -19,6 +21,7 @@ import {
   ACQUISITION_TYPE_LABELS,
 } from "@/lib/validation/acquisition-source";
 import { createAcquisitionSourceAction } from "./actions";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -125,7 +128,7 @@ export default async function AdminItemSourcesPage({
         </>
       }
     >
-      <ContextPanel title="Existing Sources">
+      <EditorSection title="Existing Sources" icon={SECTION_ICONS.existingSources}>
         {item.acquisitionSources.length > 0 ? (
           <div className="admin-table-wrap">
             <table className="admin-table">
@@ -184,77 +187,82 @@ export default async function AdminItemSourcesPage({
             description="Add the first source using the form below."
           />
         )}
-      </ContextPanel>
+      </EditorSection>
 
-      <ContextPanel title="Add Acquisition Source">
-        <form
-          action={createAcquisitionSourceAction}
-          className="form-grid form-grid-responsive"
-        >
-          <input type="hidden" name="itemId" value={item.id} />
-          <input type="hidden" name="itemSlug" value={item.slug} />
+      <form
+        action={createAcquisitionSourceAction}
+        className="form-grid form-grid-responsive"
+      >
+        <input type="hidden" name="itemId" value={item.id} />
+        <input type="hidden" name="itemSlug" value={item.slug} />
 
-          <p className="form-section-heading">Source</p>
-
-          <label className="form-field">
-            <span className="form-field-label">Type</span>
-            <select name="type" required defaultValue="" className="form-input">
-              <option value="" disabled>
-                Select a type
-              </option>
-              {ACQUISITION_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {ACQUISITION_TYPE_LABELS[type]}
+        <div className="admin-editor-sections">
+          <EditorSection title="Source" icon={SECTION_ICONS.source}>
+            <label className="form-field form-field-narrow">
+              <span className="form-field-label">Type</span>
+              <select name="type" required defaultValue="" className="form-input">
+                <option value="" disabled>
+                  Select a type
                 </option>
-              ))}
-            </select>
-          </label>
+                {ACQUISITION_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {ACQUISITION_TYPE_LABELS[type]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </EditorSection>
 
-          <p className="form-section-heading">Linked context</p>
+          <EditorSection
+            title="Linked Context"
+            icon={SECTION_ICONS.linkedContext}
+          >
+            <label className="form-field">
+              <span className="form-field-label">Location (optional)</span>
+              <select name="locationId" defaultValue="" className="form-input">
+                <option value="">No location</option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label className="form-field">
-            <span className="form-field-label">Location (optional)</span>
-            <select name="locationId" defaultValue="" className="form-input">
-              <option value="">No location</option>
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label className="form-field">
+              <span className="form-field-label">Profession (optional)</span>
+              <select name="professionId" defaultValue="" className="form-input">
+                <option value="">No profession</option>
+                {professions.map((profession) => (
+                  <option key={profession.id} value={profession.id}>
+                    {profession.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </EditorSection>
 
-          <label className="form-field">
-            <span className="form-field-label">Profession (optional)</span>
-            <select name="professionId" defaultValue="" className="form-input">
-              <option value="">No profession</option>
-              {professions.map((profession) => (
-                <option key={profession.id} value={profession.id}>
-                  {profession.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <EditorSection title="Details" icon={SECTION_ICONS.details}>
+            <div className="form-row-details">
+              <label className="form-field">
+                <span className="form-field-label">
+                  Source label (optional — e.g. &quot;Seed Merchant&quot; or
+                  &quot;Vendor on Route 4&quot;)
+                </span>
+                <input type="text" name="sourceLabel" className="form-input" />
+              </label>
 
-          <p className="form-section-heading">Details</p>
+              <label className="form-field">
+                <span className="form-field-label">Quantity (optional)</span>
+                <input type="text" name="quantity" className="form-input" />
+              </label>
+            </div>
 
-          <label className="form-field">
-            <span className="form-field-label">
-              Source label (optional — e.g. &quot;Seed Merchant&quot; or
-              &quot;Vendor on Route 4&quot;)
-            </span>
-            <input type="text" name="sourceLabel" className="form-input" />
-          </label>
-
-          <label className="form-field">
-            <span className="form-field-label">Quantity (optional)</span>
-            <input type="text" name="quantity" className="form-input" />
-          </label>
-
-          <label className="form-field">
-            <span className="form-field-label">Notes (optional)</span>
-            <textarea name="notes" rows={4} className="form-input" />
-          </label>
+            <label className="form-field">
+              <span className="form-field-label">Notes (optional)</span>
+              <AutosizeTextarea name="notes" className="form-input" />
+            </label>
+          </EditorSection>
 
           {/* No fake existing verification state on create: both fields
               are null, so the panel renders Unverified with no stamp
@@ -264,14 +272,13 @@ export default async function AdminItemSourcesPage({
             verifiedAt={null}
             verifiedGameVersion={null}
           />
+        </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Add Source
-            </button>
-          </div>
-        </form>
-      </ContextPanel>
+        <EditorActions
+          submitLabel="Add Source"
+          cancelHref={itemSourcesHref(item.slug, query)}
+        />
+      </form>
     </ItemWorkspace>
   );
 }

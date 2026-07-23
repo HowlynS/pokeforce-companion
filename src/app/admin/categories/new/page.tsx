@@ -1,6 +1,7 @@
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
@@ -10,6 +11,8 @@ import {
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { createCategoryAction } from "../actions";
 import { checkCategoryNameAvailability } from "../name-availability";
 import { checkCategorySlugAvailability } from "../slug-availability";
@@ -96,23 +99,28 @@ export default async function NewCategoryPage({
         action={createCategoryAction}
         className="form-grid form-grid-responsive"
       >
-        {/* Client-enhanced Name + Page address fields (Phase B1); the
-            submission-time checks in createCategoryAction remain the
-            authoritative protection for both. */}
-        <RecordIdentityFields
-          mode="create"
-          checkNameAvailabilityAction={checkCategoryNameAvailability}
-          nameTakenText="A category with that name already exists."
-          nameRegionId="category-name-availability"
-          checkSlugAvailabilityAction={checkCategorySlugAvailability}
-          slugTakenText="A category with that page address already exists."
-          slugRegionId="category-slug-availability"
-        />
+        <div className="admin-editor-sections">
+          <EditorSection title="Identity" icon={SECTION_ICONS.identity}>
+            {/* Client-enhanced Name + Page address fields (Phase B1); the
+                submission-time checks in createCategoryAction remain the
+                authoritative protection for both. */}
+            <RecordIdentityFields
+              checkNameAvailabilityAction={checkCategoryNameAvailability}
+              nameTakenText="A category with that name already exists."
+              nameRegionId="category-name-availability"
+              checkSlugAvailabilityAction={checkCategorySlugAvailability}
+              slugTakenText="A category with that page address already exists."
+              slugRegionId="category-slug-availability"
+            />
+          </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Description (optional)</span>
-          <textarea name="description" rows={4} className="form-input" />
-        </label>
+          <EditorSection title="Description" icon={SECTION_ICONS.content}>
+            <label className="form-field">
+              <span className="form-field-label">Description (optional)</span>
+              <AutosizeTextarea name="description" className="form-input" />
+            </label>
+          </EditorSection>
+        </div>
 
         <EditorActions
           submitLabel="Create Category"

@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
@@ -13,26 +14,13 @@ import {
   loadLocationAncestors,
   type LocationAncestor,
 } from "@/lib/locations/location-hierarchy";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
 type LocationDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2
-      style={{
-        margin: "0 0 16px",
-        fontSize: "24px",
-        lineHeight: 1.2,
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
 
 // Semantic breadcrumb navigation (Slice 10C; visual pass in Slice 10D): a
 // labeled <nav> around an <ol>, so the hierarchy is understandable to
@@ -203,7 +191,9 @@ export default async function LocationDetailPage({
           is not (yet) meaningful information for a location page. */}
       {location.children.length > 0 ? (
         <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-          <SectionHeading>Sub-locations</SectionHeading>
+          <SectionHeading icon={SECTION_ICONS.subLocations}>
+            Sub-locations
+          </SectionHeading>
 
           <ContentGrid>
             {location.children.map((child) => (
@@ -226,7 +216,7 @@ export default async function LocationDetailPage({
           mirroring the Item page's own "How to obtain" section. */}
       {obtainableGroups.length > 0 ? (
         <section>
-          <SectionHeading>Obtainable Items</SectionHeading>
+          <SectionHeading icon={SECTION_ICONS.items}>Obtainable Items</SectionHeading>
 
           {obtainableGroups.map((group) => (
             <div key={group.type} style={{ marginBottom: "16px" }}>

@@ -127,7 +127,7 @@ test("the shell fills the viewport with no horizontal document overflow, at ever
   }
 });
 
-test("the combined frame grows substantially between 1920 and 2560, and reaches its ceiling by 3440 within the approved ~3100-3200px target", async ({
+test("the combined frame grows substantially between 1920 and 2560, and reaches its ceiling by 3440 within the approved ~2850-2950px target", async ({
   page,
 }) => {
   await page.goto("/admin/items/iron-ore/edit");
@@ -146,14 +146,16 @@ test("the combined frame grows substantially between 1920 and 2560, and reaches 
   // toward its ceiling here, not already capped.
   expect(at2560.frame!.width).toBeGreaterThan(at1920.frame!.width + 300);
   // The frame still grows a bit further from 2560 to 3440 (it only meets
-  // its ceiling at the widest target). Visual Pass II Section 1 raised the
-  // ceiling from ~2700px to ~3150px so the interface reads meaningfully
-  // wider at ultrawide instead of miniaturized, while still keeping a
-  // clearly visible scenic gutter (never an unbounded, edge-to-edge
-  // sprawl).
+  // its ceiling at the widest target). Admin Visual/UX Correction pass
+  // (Part 2): the ceiling was LOWERED from ~3150px to ~2900px — measured
+  // live to visibly double the scenic gutter at 3440px (roughly 145px per
+  // side -> roughly 270px per side) while the editor/record/context
+  // columns still meaningfully dominate the reduced frame, rather than
+  // the interface reading as miniaturized against the full ultrawide
+  // viewport.
   expect(at3440.frame!.width).toBeGreaterThan(at2560.frame!.width);
-  expect(at3440.frame!.width).toBeGreaterThanOrEqual(3100);
-  expect(at3440.frame!.width).toBeLessThanOrEqual(3200);
+  expect(at3440.frame!.width).toBeGreaterThanOrEqual(2850);
+  expect(at3440.frame!.width).toBeLessThanOrEqual(2950);
 
   // The frame is substantially wider than the pre-frame-correction
   // content-only shell (1650px) ever reached, at both wider breakpoints.
@@ -175,16 +177,19 @@ test("record-list and context-rail widths stay within their intended ranges, and
     // way elsewhere in this suite (see admin-editor-surface.spec.ts).
     await expect
       .poll(async () => (await columnWidths(page)).aside?.width)
-      .toBeLessThanOrEqual(320);
+      .toBeLessThanOrEqual(300);
     const widths = await columnWidths(page);
     expect(widths.recordList).not.toBeNull();
     expect(widths.aside).not.toBeNull();
     expect(widths.main).not.toBeNull();
 
-    expect(widths.recordList!.width).toBeGreaterThanOrEqual(260);
-    expect(widths.recordList!.width).toBeLessThanOrEqual(340);
-    expect(widths.aside!.width).toBeGreaterThanOrEqual(280);
-    expect(widths.aside!.width).toBeLessThanOrEqual(320);
+    // Admin Visual/UX Correction pass (Part 3): both ranges trimmed
+    // (record-list 260-340 -> 240-300, aside 280-320 -> 260-300) to give
+    // the main editor column more of the frame's own width.
+    expect(widths.recordList!.width).toBeGreaterThanOrEqual(240);
+    expect(widths.recordList!.width).toBeLessThanOrEqual(300);
+    expect(widths.aside!.width).toBeGreaterThanOrEqual(260);
+    expect(widths.aside!.width).toBeLessThanOrEqual(300);
 
     // The editor is always the dominant column — wider than either fixed
     // side column on its own.

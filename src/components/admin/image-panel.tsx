@@ -24,6 +24,7 @@
 import { useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { ContextPanel } from "@/components/admin/context-panel";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 const HELPER_TEXT = "PNG, JPEG or WebP · Max 5 MB";
 
@@ -55,7 +56,7 @@ export function ImagePanel({
   const removeCheckboxId = `${formId}-${removeFieldName}`;
 
   return (
-    <ContextPanel title={title}>
+    <ContextPanel title={title} icon={SECTION_ICONS.image}>
       <div className="admin-image-panel-body">
         {imageUrl ? (
           <input

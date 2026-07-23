@@ -25,14 +25,20 @@ import {
   removeVerifiedItemsReferencingVersions,
 } from "./helpers/database-cleanup";
 
+// Admin Visual/UX Correction pass (Part 10): the release-date field is now
+// the shared unambiguous DateField, entered and displayed as "DD MMM YYYY"
+// — never the browser-locale-dependent native date input's numeric format.
+// Since entry text and display text are the identical convention here, one
+// value serves both what this suite TYPES and what it expects to read back
+// in the table.
 const CREATED = {
   name: "test-e2e-gv-alpha",
-  releaseDate: "2026-07-01",
+  releaseDate: "01 Jul 2026",
 } as const;
 
 const EDITED = {
   name: "test-e2e-gv-alpha-updated",
-  releaseDate: "2026-07-15",
+  releaseDate: "15 Jul 2026",
 } as const;
 
 const DELETABLE_NAME = "test-e2e-gv-deletable";
@@ -84,7 +90,16 @@ async function createVersionThroughForm(
 ) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   if (data.releaseDate) {
-    await page.getByLabel(/^Release date/).fill(data.releaseDate);
+    const releaseDateField = page.getByLabel(/^Release date/);
+    await releaseDateField.fill(data.releaseDate);
+    // Blurring the field BEFORE clicking Submit matters here: DateField
+    // shows its own client-side error paragraph on blur for malformed
+    // text, which shifts the submit button down. Blurring first (Tab)
+    // lets that shift finish settling before Playwright computes the
+    // submit button's click coordinates, rather than racing a shift
+    // caused by the click's own mousedown-triggered blur — the second
+    // ordering can miss the button entirely.
+    await page.keyboard.press("Tab");
   }
   await page
     .getByRole("button", { name: "Create Game Version", exact: true })
@@ -302,4 +317,229 @@ test("a deletable current version warns that no version will remain current", as
   await expect(picker.locator("option:checked")).toHaveText(
     "Select a game version…"
   );
+});
+
+// --- Admin Visual/UX Correction pass: table structure, Back to Admin
+// removal, and unambiguous date display/entry -----------------------------
+
+test("Game Versions table: Set current has its own column, Actions holds only Edit/Delete, and Back to Admin is gone", async ({
+  page,
+}) => {
+  await page.goto("/admin/settings/game-versions");
+
+  // Part 7: exactly the five columns, in this order.
+  const headers = page.getByRole("columnheader");
+  await expect(headers).toHaveText([
+    "Name",
+    "Release date",
+    "Current",
+    "Set current",
+    "Actions",
+  ]);
+
+  // The persistent fixture is current: its own row shows "Current" (not
+  // "No") in the Current column and an em dash — never a disabled
+  // "Mark as current" button — in the Set current column (the fourth
+  // <td>: Name, Release date, Current, Set current, Actions — targeted
+  // by position since the fixture's own Release date cell can ALSO
+  // legitimately read "—" when it has no release date set).
+  const fixtureRow = versionRow(page, E2E_CURRENT_GAME_VERSION_NAME);
+  await expect(fixtureRow.getByText("Current", { exact: true })).toBeVisible();
+  await expect(
+    fixtureRow.getByRole("button", { name: "Mark as current" })
+  ).toHaveCount(0);
+  await expect(fixtureRow.getByRole("cell").nth(3)).toHaveText("—");
+
+  // A non-current version shows "No" in Current, a real "Mark as
+  // current" button in Set current, and Edit/Delete only in Actions.
+  await createVersionThroughForm(page, { name: DELETABLE_NAME });
+  const createdRow = versionRow(page, DELETABLE_NAME);
+  await expect(createdRow.getByText("No", { exact: true })).toBeVisible();
+  await expect(
+    createdRow.getByRole("button", { name: "Mark as current", exact: true })
+  ).toBeVisible();
+  await expect(
+    createdRow.getByRole("link", { name: "Edit", exact: true })
+  ).toBeVisible();
+  await expect(
+    createdRow.getByRole("link", { name: "Delete", exact: true })
+  ).toBeVisible();
+
+  // Part 8: the redundant "Back to Admin" link is gone — the sidebar
+  // already covers top-level admin navigation. The unrelated,
+  // resource-specific "Back to Game Versions" links on the edit/delete
+  // pages are untouched (checked separately below).
+  await expect(
+    page.getByRole("link", { name: "Back to Admin" })
+  ).toHaveCount(0);
+  // The top-right jump link was removed once the 70/30 overview layout
+  // put the inline Create Game Version form permanently on-screen beside
+  // the table — there is no longer anything for it to jump to.
+  await expect(
+    page.getByRole("link", { name: "+ New game version" })
+  ).toHaveCount(0);
+
+  await createdRow.getByRole("link", { name: "Delete", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Delete Permanently", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    "/admin/settings/game-versions?success=deleted"
+  );
+});
+
+test("resource-specific Back to Game Versions links remain on the edit and delete pages", async ({
+  page,
+}) => {
+  await page.goto("/admin/settings/game-versions");
+  await versionRow(page, E2E_CURRENT_GAME_VERSION_NAME)
+    .getByRole("link", { name: "Edit", exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", { name: "Back to Game Versions" })
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Back to Game Versions" }).click();
+  await expect(page).toHaveURL("/admin/settings/game-versions");
+});
+
+test("release date displays as DD MMM YYYY and the date-entry field is unambiguous (no locale-dependent native date input)", async ({
+  page,
+}) => {
+  await page.goto("/admin/settings/game-versions");
+
+  // No native <input type="date"> exists anywhere on this page — its
+  // visible numeric ordering depends on the browser's own locale, which
+  // is exactly what Part 10 replaces.
+  await expect(page.locator('input[type="date"]')).toHaveCount(0);
+
+  const releaseDateField = page.getByLabel(/^Release date/);
+  await expect(releaseDateField).toHaveAttribute("placeholder", "DD MMM YYYY");
+  await expect(page.getByText("Format: DD MMM YYYY")).toBeVisible();
+
+  await createVersionThroughForm(page, {
+    name: DELETABLE_NAME,
+    releaseDate: CREATED.releaseDate,
+  });
+  await expect(page).toHaveURL(
+    "/admin/settings/game-versions?success=created"
+  );
+
+  // Displays exactly the unambiguous DD MMM YYYY text — never a raw ISO
+  // string and never a locale-numeric one.
+  const row = versionRow(page, DELETABLE_NAME);
+  await expect(
+    row.getByRole("cell", { name: CREATED.releaseDate, exact: true })
+  ).toBeVisible();
+  await expect(page.getByText("2026-07-01")).toHaveCount(0);
+
+  // Editing shows the persisted date back in the same unambiguous format.
+  await row.getByRole("link", { name: "Edit", exact: true }).click();
+  await expect(page.getByLabel(/^Release date/)).toHaveValue(
+    CREATED.releaseDate
+  );
+});
+
+test("the date-entry field rejects malformed text and keeps the optional field genuinely optional", async ({
+  page,
+}) => {
+  await page.goto("/admin/settings/game-versions");
+
+  // A blank optional field creates cleanly with no release date.
+  await createVersionThroughForm(page, { name: DELETABLE_NAME });
+  await expect(page).toHaveURL(
+    "/admin/settings/game-versions?success=created"
+  );
+  await expect(
+    versionRow(page, DELETABLE_NAME).getByRole("cell", {
+      name: "—",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  // Malformed text is rejected server-side with the existing error —
+  // never silently coerced into "no date".
+  await createVersionThroughForm(page, {
+    name: "test-e2e-gv-malformed-date",
+    releaseDate: "not a real date",
+  });
+  await expect(page).toHaveURL(
+    "/admin/settings/game-versions?error=invalid_release_date"
+  );
+  await expect(
+    page.getByText("Enter the release date as a valid calendar date.")
+  ).toBeVisible();
+});
+
+// --- Game Version description (action-strip fix + optional description) --
+
+test("the inline Create Game Version form has no description field", async ({
+  page,
+}) => {
+  await page.goto("/admin/settings/game-versions");
+  await expect(page.getByLabel("Description (optional)")).toHaveCount(0);
+});
+
+test("Edit Game Version: description persists with line breaks, clears to empty, never appears on the overview, and the action area is no longer nested inside the card", async ({
+  page,
+}) => {
+  await page.goto("/admin/settings/game-versions");
+  await createVersionThroughForm(page, { name: DELETABLE_NAME });
+
+  await versionRow(page, DELETABLE_NAME)
+    .getByRole("link", { name: "Edit", exact: true })
+    .click();
+
+  // Action-strip structural fix: EditorActions no longer renders INSIDE
+  // the Game Version card (.admin-editor-section) — it now sits beside
+  // it in the shared .admin-editor-surface wrapper, exactly like every
+  // other resource's editor, so its own background matches the surface
+  // it actually sits on instead of reading as a separate darker block.
+  // Asserted structurally, not by color/pixel.
+  await expect(
+    page.locator(".admin-editor-section .admin-editor-actions")
+  ).toHaveCount(0);
+  await expect(
+    page.locator(".admin-editor-surface > form > .admin-editor-actions")
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole("button", { name: "Save Changes", exact: true })
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Cancel", exact: true })).toBeVisible();
+
+  const descriptionField = page.getByLabel("Description (optional)");
+  await expect(descriptionField).toHaveValue("");
+
+  const multilineDescription =
+    "Adds new crafting recipes.\n\nFixes a rare duplication bug.";
+  await descriptionField.fill(multilineDescription);
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL(
+    "/admin/settings/game-versions?success=updated"
+  );
+
+  // The overview page never displays the description anywhere — table,
+  // Create card, or otherwise.
+  await expect(page.getByText("Adds new crafting recipes.")).toHaveCount(0);
+  await expect(page.getByLabel("Description (optional)")).toHaveCount(0);
+
+  // Reopening Edit shows the persisted description back, line breaks
+  // intact.
+  await versionRow(page, DELETABLE_NAME)
+    .getByRole("link", { name: "Edit", exact: true })
+    .click();
+  await expect(page.getByLabel("Description (optional)")).toHaveValue(
+    multilineDescription
+  );
+
+  // Clearing it and saving persists an empty value.
+  await page.getByLabel("Description (optional)").fill("");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+  await expect(page).toHaveURL(
+    "/admin/settings/game-versions?success=updated"
+  );
+
+  await versionRow(page, DELETABLE_NAME)
+    .getByRole("link", { name: "Edit", exact: true })
+    .click();
+  await expect(page.getByLabel("Description (optional)")).toHaveValue("");
 });

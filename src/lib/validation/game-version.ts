@@ -68,3 +68,38 @@ export function parseGameVersionInput(
     value: { name, releaseDate: releaseDate.value },
   };
 }
+
+export type GameVersionEditInput = GameVersionInput & {
+  description: string | null;
+};
+
+export type GameVersionEditParseResult =
+  | { ok: true; value: GameVersionEditInput }
+  | { ok: false; error: GameVersionValidationError };
+
+/**
+ * The Edit Game Version form's own parser: the same name/release-date
+ * rules as parseGameVersionInput (never reimplemented — reused directly),
+ * plus the optional description only the edit form exposes. Trimmed the
+ * same way every other optional-text field in this codebase normalizes
+ * (item/location/profession/category description) — .trim() strips only
+ * leading/trailing whitespace, so internal line breaks a contributor
+ * typed are preserved exactly; an empty or whitespace-only value becomes
+ * null, never an empty string, matching the same `value || null` pattern.
+ */
+export function parseGameVersionEditInput(
+  formData: FormData
+): GameVersionEditParseResult {
+  const base = parseGameVersionInput(formData);
+
+  if (!base.ok) {
+    return base;
+  }
+
+  const description = String(formData.get("description") ?? "").trim();
+
+  return {
+    ok: true,
+    value: { ...base.value, description: description || null },
+  };
+}

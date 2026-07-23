@@ -8,6 +8,7 @@
 // moved.
 
 import { ContextPanel } from "@/components/admin/context-panel";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 type DangerZonePanelProps = {
   /** e.g. "item", "recipe", "location" — used only in the description
@@ -23,7 +24,11 @@ export function DangerZonePanel({
   deleteLabel,
 }: DangerZonePanelProps) {
   return (
-    <ContextPanel title="Danger zone" className="admin-danger-zone">
+    <ContextPanel
+      title="Danger zone"
+      icon={SECTION_ICONS.dangerZone}
+      className="admin-danger-zone"
+    >
       <p className="admin-danger-zone-description">
         Deleting this {resourceLabel} is permanent once any dependencies
         that block it are cleared.

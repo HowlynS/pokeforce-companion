@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
-import { parseGameVersionInput } from "@/lib/validation/game-version";
+import {
+  parseGameVersionEditInput,
+  parseGameVersionInput,
+} from "@/lib/validation/game-version";
 import {
   createGameVersion,
   deleteGameVersion,
@@ -55,15 +58,16 @@ export async function updateGameVersionAction(formData: FormData) {
     redirect(`${LIST_PATH}?error=missing_version`);
   }
 
-  const parsed = parseGameVersionInput(formData);
+  const parsed = parseGameVersionEditInput(formData);
 
   if (!parsed.ok) {
     redirect(`${editPath ?? LIST_PATH}?error=${parsed.error}`);
   }
 
-  // Only name and release date are editable; the current flag moves
-  // exclusively through markGameVersionCurrentAction, and verification
-  // stamps referencing this version follow the rename automatically.
+  // Name, release date, and description are editable here; the current
+  // flag moves exclusively through markGameVersionCurrentAction, and
+  // verification stamps referencing this version follow the rename
+  // automatically.
   const result = await updateGameVersion(prisma, id, parsed.value);
 
   if (!result.ok) {

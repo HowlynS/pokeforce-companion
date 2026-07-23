@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { Clock } from "lucide-react";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ContextPanel } from "@/components/admin/context-panel";
@@ -311,6 +312,33 @@ describe("ContextPanel", () => {
     expect(html).toContain("admin-panel-footer");
     expect(html).toContain("Manage");
   });
+
+  it("omits the icon bubble when no icon is supplied (existing callers without one stay unchanged)", () => {
+    const html = renderToStaticMarkup(
+      <ContextPanel title="Verification">
+        <p>Body</p>
+      </ContextPanel>
+    );
+
+    expect(html).not.toContain("admin-section-icon");
+  });
+
+  it("renders the compact icon bubble beside the title when an icon is supplied", () => {
+    const html = renderToStaticMarkup(
+      <ContextPanel title="Timestamps" icon={Clock}>
+        <p>Body</p>
+      </ContextPanel>
+    );
+
+    expect(html).toContain('<div class="admin-panel-heading">');
+    expect(html).toContain(
+      'class="admin-section-icon admin-section-icon-compact"'
+    );
+    // Decorative: the bubble itself carries no accessible name of its
+    // own — the heading text right beside it already identifies the
+    // panel.
+    expect(html).toMatch(/<span aria-hidden="true"[^>]*admin-section-icon/);
+  });
 });
 
 describe("ImagePanel", () => {
@@ -412,7 +440,7 @@ describe("VerificationPanel", () => {
     expect(html).toContain("Verified — current version");
     expect(html).toContain("admin-status-badge-current");
     expect(html).toContain("Verified for");
-    expect(html).toContain("2026-07-17");
+    expect(html).toContain("17 Jul 2026");
   });
 
   it("shows the outdated status for a record verified against an older version", () => {
@@ -427,7 +455,7 @@ describe("VerificationPanel", () => {
     expect(html).toContain("Verified — older version");
     expect(html).toContain("admin-status-badge-outdated");
     expect(html).toContain("Launch");
-    expect(html).toContain("2026-01-05");
+    expect(html).toContain("05 Jan 2026");
   });
 
   it("composes the real shared picker and opt-in checkbox, defaulting the label to the current version", () => {
@@ -502,7 +530,7 @@ describe("VerificationPanel", () => {
     expect(html).toContain("Verified — current version");
     expect(html).toContain("Verified for");
     expect(html).toContain("Summer Update");
-    expect(html).toContain("2026-07-17");
+    expect(html).toContain("17 Jul 2026");
     expect(html).toContain("Current version");
     expect(html).not.toContain('name="verifiedGameVersionId"');
     expect(html).not.toContain('name="markVerified"');
@@ -538,9 +566,9 @@ describe("TimestampsPanel", () => {
     );
 
     expect(html).toContain("Created");
-    expect(html).toContain("2026-07-10");
+    expect(html).toContain("10 Jul 2026");
     expect(html).toContain("Updated");
-    expect(html).toContain("2026-07-16");
+    expect(html).toContain("16 Jul 2026");
   });
 
   it("never renders a Verified row — that fact now lives only in VerificationPanel", () => {

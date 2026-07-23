@@ -4,29 +4,17 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
 import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
 type RecipeDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2
-      style={{
-        margin: "0 0 16px",
-        fontSize: "24px",
-        lineHeight: 1.2,
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
 
 export default async function RecipeDetailPage({ params }: RecipeDetailPageProps) {
   const { slug } = await params;
@@ -91,7 +79,7 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
           only guards data reached outside the admin UI. */}
       {recipe.ingredients.length > 0 ? (
         <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-          <SectionHeading>Ingredients</SectionHeading>
+          <SectionHeading icon={SECTION_ICONS.ingredients}>Ingredients</SectionHeading>
 
           <ContentGrid>
             {recipe.ingredients.map((ingredient) => (

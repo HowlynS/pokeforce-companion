@@ -43,6 +43,7 @@ export type GameVersionRecord = {
   id: string;
   name: string;
   releaseDate: Date | null;
+  description: string | null;
   isCurrent: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -186,17 +187,28 @@ export type UpdateGameVersionResult =
   | { ok: false; error: "missing_version" | "duplicate_name" };
 
 /**
- * Edits a version's name and release date only. isCurrent is deliberately
- * not editable here — the current flag moves exclusively through
+ * Edits a version's name and release date, plus its optional description
+ * when the caller supplies one. isCurrent is deliberately not editable
+ * here — the current flag moves exclusively through
  * setCurrentGameVersion, so an edit can never accidentally create a second
  * current version or silently demote the current one. Verification stamps
  * referencing this version follow the rename automatically (they reference
  * the row, not the name).
+ *
+ * description is optional on the input type, not merely nullable: when a
+ * caller omits it entirely (every pre-existing caller, including the
+ * Create-Game-Version-adjacent flows that never touch description), the
+ * Prisma `data` object below leaves the key out entirely — Prisma treats a
+ * genuinely absent key as "do not change this column," so an update that
+ * only ever intended to change name/releaseDate can never silently erase
+ * an existing description. The Edit Game Version form is the only caller
+ * that supplies description at all (always, even as null when cleared),
+ * so only that form's own submissions can ever change it.
  */
 export async function updateGameVersion(
   db: GameDataClient,
   id: string,
-  input: { name: string; releaseDate: Date | null }
+  input: { name: string; releaseDate: Date | null; description?: string | null }
 ): Promise<UpdateGameVersionResult> {
   const existing = await db.gameVersion.findUnique({ where: { id } });
 
@@ -208,11 +220,21 @@ export async function updateGameVersion(
     return { ok: false, error: "duplicate_name" };
   }
 
+  const data: {
+    name: string;
+    releaseDate: Date | null;
+    description?: string | null;
+  } = {
+    name: input.name,
+    releaseDate: input.releaseDate,
+  };
+
+  if (input.description !== undefined) {
+    data.description = input.description;
+  }
+
   try {
-    const version = await db.gameVersion.update({
-      where: { id },
-      data: { name: input.name, releaseDate: input.releaseDate },
-    });
+    const version = await db.gameVersion.update({ where: { id }, data });
     return { ok: true, version };
   } catch (error) {
     if (isUniqueConstraintError(error)) {

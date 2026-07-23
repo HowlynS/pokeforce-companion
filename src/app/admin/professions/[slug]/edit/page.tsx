@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
+import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
   PROFESSION_LIST_PATH,
@@ -18,6 +20,7 @@ import {
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateProfessionAction } from "../../actions";
 import { checkProfessionNameAvailability } from "../../name-availability";
 import { checkProfessionSlugAvailability } from "../../slug-availability";
@@ -162,35 +165,41 @@ export default async function EditProfessionPage({
         <input type="hidden" name="id" value={profession.id} />
         <input type="hidden" name="originalSlug" value={profession.slug} />
 
-        {/* Client-enhanced Name + Page address fields (Phase B1). Both
-            saved values count as "current" (never queried against
-            themselves), and the record's own id is excluded server-side
-            so it cannot conflict with itself; updateProfessionAction
-            stays the authoritative check for both. Page address starts
-            manually controlled (never auto-regenerated from Name edits)
-            to protect the existing persisted URL. */}
-        <RecordIdentityFields
-          mode="edit"
-          checkNameAvailabilityAction={checkProfessionNameAvailability}
-          nameTakenText="A profession with that name already exists."
-          nameRegionId="profession-name-availability"
-          originalName={profession.name}
-          checkSlugAvailabilityAction={checkProfessionSlugAvailability}
-          slugTakenText="A profession with that page address already exists."
-          slugRegionId="profession-slug-availability"
-          initialSlug={profession.slug}
-          excludeId={profession.id}
-        />
+        <div className="admin-editor-sections">
+          <EditorSection title="Identity" icon={SECTION_ICONS.identity}>
+            {/* Client-enhanced Name + Page address fields (Phase B1).
+                Both saved values count as "current" (never queried
+                against themselves), and the record's own id is excluded
+                server-side so it cannot conflict with itself;
+                updateProfessionAction stays the authoritative check for
+                both. Page address starts showing the persisted value
+                and tracks Name live until the contributor manually
+                edits it themselves (Part 11) — the same one-way
+                auto/manual behavior create forms already had. */}
+            <RecordIdentityFields
+              checkNameAvailabilityAction={checkProfessionNameAvailability}
+              nameTakenText="A profession with that name already exists."
+              nameRegionId="profession-name-availability"
+              originalName={profession.name}
+              checkSlugAvailabilityAction={checkProfessionSlugAvailability}
+              slugTakenText="A profession with that page address already exists."
+              slugRegionId="profession-slug-availability"
+              initialSlug={profession.slug}
+              excludeId={profession.id}
+            />
+          </EditorSection>
 
-        <label className="form-field">
-          <span className="form-field-label">Description (optional)</span>
-          <textarea
-            name="description"
-            rows={4}
-            defaultValue={profession.description ?? ""}
-            className="form-input"
-          />
-        </label>
+          <EditorSection title="Description" icon={SECTION_ICONS.content}>
+            <label className="form-field">
+              <span className="form-field-label">Description (optional)</span>
+              <AutosizeTextarea
+                name="description"
+                defaultValue={profession.description ?? ""}
+                className="form-input"
+              />
+            </label>
+          </EditorSection>
+        </div>
 
         <EditorActions
           submitLabel="Save Changes"

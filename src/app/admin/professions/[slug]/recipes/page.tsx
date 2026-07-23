@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
-import { ContextPanel } from "@/components/admin/context-panel";
+import { EditorSection } from "@/components/admin/editor-section";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
   normalizeProfessionSearchQuery,
@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
+import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -114,8 +115,9 @@ export default async function ProfessionRecipesPage({
           description="Recipes linked to this profession will appear here."
         />
       ) : (
-        <ContextPanel
+        <EditorSection
           title="Recipes"
+          icon={SECTION_ICONS.recipes}
           description={`${profession.recipes.length} ${
             profession.recipes.length === 1 ? "recipe" : "recipes"
           }`}
@@ -149,7 +151,7 @@ export default async function ProfessionRecipesPage({
               </tbody>
             </table>
           </div>
-        </ContextPanel>
+        </EditorSection>
       )}
     </ProfessionWorkspace>
   );
