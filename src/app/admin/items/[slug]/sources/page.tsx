@@ -5,7 +5,7 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { VerificationPanel } from "@/components/admin/verification-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
@@ -274,9 +274,17 @@ export default async function AdminItemSourcesPage({
           />
         </div>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: guarded actions row. The itemId/itemSlug
+            hidden fields are immutable technical context (never edited),
+            excluded alongside the verification picker (a no-op unless the
+            opt-in checkbox is checked). Draft key is scoped to this item's
+            own create form, isolated from every other item and from any
+            source's own edit form. */}
+        <AdminFormGuard
           submitLabel="Add Source"
           cancelHref={itemSourcesHref(item.slug, query)}
+          excludeFields={["itemId", "itemSlug", "verifiedGameVersionId"]}
+          draftKey={`acquisition-source:new:${item.id}:source-create-form`}
         />
       </form>
     </ItemWorkspace>

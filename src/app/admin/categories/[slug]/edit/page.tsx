@@ -6,7 +6,7 @@ import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
@@ -180,9 +180,17 @@ export default async function EditCategoryPage({
           </EditorSection>
         </div>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: the guarded actions row replaces the plain
+            EditorActions — unsaved-changes protection, draft persistence,
+            Ctrl/Cmd+S, and save-state feedback, all scoped to this form.
+            The record id and its original slug are excluded from dirty
+            comparison; Categories carry no verification picker. */}
+        <AdminFormGuard
           submitLabel="Save Changes"
           cancelHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+          excludeFields={["id", "originalSlug"]}
+          draftKey={`category:edit:${category.id}:category-edit-form`}
+          serverUpdatedAt={category.updatedAt.toISOString()}
         />
       </form>
       </div>

@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DateField } from "@/components/admin/date-field";
 import { EditorSection } from "@/components/admin/editor-section";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
@@ -168,11 +169,25 @@ export default async function GameVersionSettingsPage({
 
           <DateField name="releaseDate" label="Release date (optional)" />
 
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Create Game Version
-            </button>
-          </div>
+          {/* Sonnet Rollout Pass: only THIS form is guarded — the
+              per-row "Mark as current" forms above are separate <form>
+              elements the guard never attaches to (it scopes strictly to
+              its own owning form), so they stay unaffected and Ctrl/Cmd+S
+              always targets this Create form. No id/originalSlug hidden
+              fields exist here, and Game Versions carry no verification
+              picker of their own to exclude. layout="inline" (visual
+              regression fix): this form lives directly inside its own
+              EditorSection card rather than a dedicated
+              .admin-editor-surface panel, so the default sticky/surface
+              actions footer would read as a detached darker rectangle —
+              the inline layout removes that surface/sticky treatment
+              while keeping every button, status, and behavior identical. */}
+          <AdminFormGuard
+            submitLabel="Create Game Version"
+            cancelHref="/admin/settings/game-versions"
+            draftKey="game-version:new:game-version-create-form"
+            layout="inline"
+          />
         </form>
       </EditorSection>
       </div>

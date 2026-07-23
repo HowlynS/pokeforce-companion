@@ -203,6 +203,26 @@ describe("RecordSlugField structure and accessibility", () => {
     expect(html).not.toContain("form-field-inline-action");
   });
 
+  it("exposes its sync mode as a data-attribute defaulting to 'auto' on a fresh render, never as a named form field", () => {
+    // Sonnet Rollout Pass, Part 3 correction: AdminFormGuard reads this
+    // attribute directly off the DOM when writing a draft, storing it as
+    // draft metadata rather than a snapshot value — a named field would
+    // instead become part of the meaningful-change comparison and wrongly
+    // mark the form dirty after a manual edit is retyped back to its
+    // original value. A fresh render always starts unmanual — reachable
+    // statically here.
+    const createHtml = renderField({ nameValue: "Iron Sword" });
+    expect(createHtml).toMatch(/data-slug-sync-mode="auto"/);
+    expect(createHtml).not.toContain("slugSyncMode");
+
+    const editHtml = renderField({
+      nameValue: "Iron Sword",
+      initialSlug: "iron-sword",
+    });
+    expect(editHtml).toMatch(/data-slug-sync-mode="auto"/);
+    expect(editHtml).not.toContain("slugSyncMode");
+  });
+
   it("does not accept a mode prop (Part 11: create and edit behave identically)", () => {
     // TypeScript already enforces this at compile time (RecordSlugField's
     // props no longer declare `mode`) — this test only documents the

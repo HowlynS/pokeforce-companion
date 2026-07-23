@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { EditorSection } from "@/components/admin/editor-section";
 import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
@@ -179,9 +179,18 @@ export default async function LocationHierarchyPage({
           </label>
         </EditorSection>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: guarded actions row, isolated from the
+            General tab's own draft by a distinct form identity
+            ("location-hierarchy-form" vs "location-edit-form"). The
+            read-only Sub-locations table below renders OUTSIDE this
+            </form> entirely, so it can never enter the snapshot or
+            pollute this tab's own draft. */}
+        <AdminFormGuard
           submitLabel="Save Hierarchy"
           cancelHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+          excludeFields={["id", "originalSlug"]}
+          draftKey={`location:edit:${location.id}:location-hierarchy-form`}
+          serverUpdatedAt={location.updatedAt.toISOString()}
         />
       </form>
       </div>

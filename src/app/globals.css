@@ -957,6 +957,113 @@ select:focus-visible {
   }
 }
 
+/* Optional-help field label row (Opus Pass 1): a real <label> beside a
+   discreet InfoTooltip trigger, replacing the permanent helper paragraph
+   some fields used to carry beneath the input. The row keeps the shared
+   .form-field-label typography and 14px inset (so the label text still
+   aligns with the input value below it); this modifier only lays the
+   label and the info trigger out on one line, vertically centered. */
+.form-field-label--with-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The label text carries no extra box — it inherits color, size, and
+   weight from its .form-field-label parent, and its htmlFor still focuses
+   the input when the text is clicked. */
+.form-field-label-text {
+  padding: 0;
+}
+
+/* Discreet circled-i help trigger (Opus Pass 1). A real, Tab-reachable
+   <button> with an aria-label accessible name, but styled as a small,
+   secondary help affordance — never a prominent button: transparent
+   background, no border, a generous 24px square hit area around a 15px
+   Lucide "info" glyph whose own normalized geometry keeps the i centered
+   in its circle far more reliably than drawing a circle around ordinary
+   text would. Muted grey at rest (circle and i share one currentColor);
+   the shared gold accent only on hover, keyboard focus, or while open —
+   the same hover-only accent convention .nav-pill/.interactive-card use,
+   and deliberately distinct from the always-gold semantic section icons.
+   No fill, glow, size change, or layout shift in any state; the standard
+   :focus-visible outline (declared globally) supplies the keyboard focus
+   ring on top of the color change. */
+.admin-info-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.admin-info-tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.admin-info-tooltip-trigger:hover,
+.admin-info-tooltip-trigger:focus-visible,
+.admin-info-tooltip-trigger[data-open="true"] {
+  color: var(--color-accent);
+}
+
+.admin-info-tooltip-icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* The revealed content. Absolutely positioned (out of normal flow, so
+   showing it never reflows the form or shifts layout), flush to the
+   trigger's bottom edge with a transparent padding "bridge" so the
+   pointer can travel from the trigger into the surface without crossing a
+   dead gap (no hover flicker). Natural width up to a readable cap — the
+   shorter Minimum-quantity copy stays narrow, the longer Maximum-quantity
+   copy grows to the cap and wraps. Sits above the sticky editor actions
+   bar (z-index 10) on the rare chance they overlap. */
+.admin-info-tooltip-content {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: max-content;
+  max-width: 300px;
+  padding-top: 8px;
+}
+
+.admin-info-tooltip-content[hidden] {
+  display: none;
+}
+
+/* The visible tooltip surface: a restrained elevated card that reads
+   clearly against the dark admin background — a thin admin-accent yellow
+   border (Opus Pass 2, Part 1) that improves separation from the
+   surrounding dark interface without becoming dominant (1px only, no fill,
+   no glow — the surface stays dark and the shadow/radius/padding are
+   unchanged), a raised surface, a soft shadow consistent with the design
+   system's depth cues, comfortable padding, and high-contrast text. */
+.admin-info-tooltip-surface {
+  display: block;
+  border: 1px solid var(--color-accent);
+  border-radius: 8px;
+  background: var(--color-surface-raised);
+  padding: 10px 12px;
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.45);
+}
+
 .form-input {
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -2098,6 +2205,29 @@ input[type="checkbox"] {
   border-top: 1px solid var(--color-border);
 }
 
+/* AdminFormGuard's "inline" layout (Sonnet Rollout Pass, visual
+   regression fix): for a form that lives directly inside an existing
+   card — currently only the Game Versions overview's inline Create form,
+   which sits inside its own EditorSection rather than a dedicated
+   .admin-editor-surface panel — the sticky footer above reads as a
+   visually detached darker rectangle: EditorSection's own card is the
+   lighter --color-surface-raised tone, so the sticky bar's --color-surface
+   background, its own border-top divider, and its `position: sticky`
+   (meaningless for a short inline form with nothing to scroll under it)
+   all combine to look like a separate panel punched into the card. This
+   modifier neutralizes exactly those properties — never a page-specific
+   override — so the SAME row (identical buttons, identical status,
+   identical behavior) instead blends into the surrounding card using the
+   card's own natural spacing. */
+.admin-editor-actions--inline {
+  position: static;
+  z-index: auto;
+  padding: 0;
+  margin-top: 0;
+  background: transparent;
+  border-top: none;
+}
+
 /* Visual Pass II Section 6; corrected in the Visual Pass II correction
    pass (Section 7): Save Changes carries its own small save/floppy-disk
    icon, but no longer grows its OWN padding/font-size beyond the plain
@@ -2115,6 +2245,89 @@ input[type="checkbox"] {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+}
+
+/* Restrained save-state indicator in the sticky actions row (Sonnet
+   Rollout Pass, Part 2 correction). Sits immediately after Save in normal
+   flex flow (DOM order is Cancel, Save, status) — never pushed to the far
+   right, since `margin-left: auto` previously stranded it away from the
+   button it describes. Cancel/Save keep their own left-aligned positions
+   because the status simply follows them; the parent's own `gap` supplies
+   the small, consistent spacing, and `flex-wrap: wrap` on the parent lets
+   the status wrap onto its own line when the row is genuinely too tight,
+   with no overlap. Clean state is empty (no visual noise). The active
+   state (Unsaved changes / Saving…) adds a small accent dot — a subtle use
+   of the gold theme, deliberately distinct from the gameplay-verification
+   badge. */
+.admin-form-status {
+  align-self: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  min-height: 1.2em;
+}
+
+.admin-form-status-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.admin-form-status-active::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  flex-shrink: 0;
+}
+
+/* Shared admin modal (Opus Pass 2): the ONE surface both the discard and
+   the draft-recovery confirmations render through. A dark admin card with
+   a restrained yellow-accented border (improving separation from the dimmed
+   page without a loud fill), the same radius/border language as every other
+   admin surface, over a dimming backdrop. Red is reserved for the
+   destructive button inside, never the card itself. No animation, so
+   reduced-motion needs no special-casing. */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.62);
+}
+
+.admin-modal {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-border) 45%, var(--color-accent));
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.6);
+}
+
+.admin-modal-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.admin-modal-message {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.admin-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 /* ---- Admin record list (Slice 9B.3; accent unified to gold in Slice

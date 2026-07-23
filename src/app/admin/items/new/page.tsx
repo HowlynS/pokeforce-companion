@@ -3,7 +3,7 @@ import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
@@ -199,9 +199,16 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
           </div>
         </div>
 
-        <EditorActions
+        {/* Opus Pass 2 pilot: guarded actions row (see the edit page).
+            No id/originalSlug hidden fields exist on create; the
+            verification picker is excluded (no-op unless the opt-in
+            checkbox is checked). Draft key is create-scoped, isolated
+            from every edit record. */}
+        <AdminFormGuard
           submitLabel="Create item"
           cancelHref={withItemSearchQuery(ITEM_LIST_PATH, query)}
+          excludeFields={["verifiedGameVersionId"]}
+          draftKey="item:new:item-create-form"
         />
       </form>
       </div>

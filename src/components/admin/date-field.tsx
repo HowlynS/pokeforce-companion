@@ -28,11 +28,12 @@
 // the DD/MMM/YYYY digits themselves, never through a `Date` object (which
 // would round-trip through the runtime's local timezone).
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   formatIsoToDateEntryText,
   parseDateEntryText,
 } from "@/lib/date-field";
+import { dispatchFormChange } from "@/lib/admin/form-change-event";
 
 type DateFieldProps = {
   /** The form field name the normalized ISO value submits as. */
@@ -61,6 +62,22 @@ export function DateField({ name, label, defaultValue }: DateFieldProps) {
   // coerced to "" (which would read as "no date" instead of "invalid
   // date").
   const submittedValue = parsed.ok ? parsed.iso ?? "" : text;
+
+  // The hidden <input> that actually submits. The visible text input has no
+  // `name`, so its own native input event carries no form value; the value
+  // the guard must see lives here and is updated by React (no native
+  // event). Emit the shared form-change signal whenever the SUBMITTED value
+  // changes so the AdminFormGuard's dirty detection is deterministic rather
+  // than reliant on a timed recompute. See form-change-event.ts.
+  const hiddenRef = useRef<HTMLInputElement>(null);
+  const dateMountedRef = useRef(false);
+  useEffect(() => {
+    if (!dateMountedRef.current) {
+      dateMountedRef.current = true;
+      return;
+    }
+    dispatchFormChange(hiddenRef.current);
+  }, [submittedValue]);
 
   return (
     <div className="form-field">
@@ -103,7 +120,7 @@ export function DateField({ name, label, defaultValue }: DateFieldProps) {
           : ""}
       </p>
 
-      <input type="hidden" name={name} value={submittedValue} />
+      <input ref={hiddenRef} type="hidden" name={name} value={submittedValue} />
     </div>
   );
 }

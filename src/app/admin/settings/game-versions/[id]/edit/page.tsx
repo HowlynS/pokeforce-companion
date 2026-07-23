@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { EditorSection } from "@/components/admin/editor-section";
 import { DateField } from "@/components/admin/date-field";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
@@ -121,9 +121,16 @@ export default async function EditGameVersionPage({
             </p>
           </EditorSection>
 
-          <EditorActions
+          {/* Sonnet Rollout Pass: the guarded actions row replaces the
+              plain EditorActions. The record id is excluded from dirty
+              comparison; Game Versions carry no verification picker of
+              their own. */}
+          <AdminFormGuard
             submitLabel="Save Changes"
             cancelHref="/admin/settings/game-versions"
+            excludeFields={["id"]}
+            draftKey={`game-version:edit:${version.id}:game-version-edit-form`}
+            serverUpdatedAt={version.updatedAt.toISOString()}
           />
         </form>
       </div>

@@ -4,7 +4,7 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { VerificationPanel } from "@/components/admin/verification-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
@@ -254,9 +254,17 @@ export default async function EditAcquisitionSourcePage({
           </EditorSection>
         </div>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: the guarded actions row replaces the plain
+            EditorActions. The record id, the owning item's slug (context,
+            never edited here), and the verification picker (a no-op
+            unless the opt-in checkbox is checked) are excluded from dirty
+            comparison. */}
+        <AdminFormGuard
           submitLabel="Save Changes"
           cancelHref={itemSourcesHref(item.slug, query)}
+          excludeFields={["id", "itemSlug", "verifiedGameVersionId"]}
+          draftKey={`acquisition-source:edit:${source.id}:source-edit-form`}
+          serverUpdatedAt={source.updatedAt.toISOString()}
         />
       </form>
       </div>

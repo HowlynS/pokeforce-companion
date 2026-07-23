@@ -6,7 +6,7 @@ import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
@@ -19,6 +19,7 @@ import {
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { FieldLabelWithHelp } from "@/components/admin/field-label-with-help";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateRecipeGeneralAction } from "../../actions";
 import { checkRecipeNameAvailability } from "../../name-availability";
@@ -237,39 +238,41 @@ export default async function EditRecipePage({
             <div className="form-field">
               <div className="recipe-quantity-range">
                 <div className="recipe-quantity-field">
-                  <label className="form-field">
-                    <span className="form-field-label">Minimum quantity</span>
-                    <input
-                      type="number"
-                      name="resultQuantityMin"
-                      min={1}
-                      step={1}
-                      defaultValue={recipe.resultQuantityMin}
-                      className="form-input"
-                    />
-                  </label>
-                  <p className="form-field-helper">
-                    The smallest number of items this recipe can produce.
-                  </p>
+                  <FieldLabelWithHelp
+                    htmlFor="recipe-result-quantity-min"
+                    helpLabel="More information about Minimum quantity"
+                    helpContent="The smallest number of items this recipe can produce."
+                  >
+                    Minimum quantity
+                  </FieldLabelWithHelp>
+                  <input
+                    id="recipe-result-quantity-min"
+                    type="number"
+                    name="resultQuantityMin"
+                    min={1}
+                    step={1}
+                    defaultValue={recipe.resultQuantityMin}
+                    className="form-input"
+                  />
                 </div>
 
                 <div className="recipe-quantity-field">
-                  <label className="form-field">
-                    <span className="form-field-label">Maximum quantity</span>
-                    <input
-                      type="number"
-                      name="resultQuantityMax"
-                      min={1}
-                      step={1}
-                      defaultValue={recipe.resultQuantityMax}
-                      className="form-input"
-                    />
-                  </label>
-                  <p className="form-field-helper">
-                    The largest number of items this recipe can produce.
-                    Use the same value as minimum when the output is
-                    fixed.
-                  </p>
+                  <FieldLabelWithHelp
+                    htmlFor="recipe-result-quantity-max"
+                    helpLabel="More information about Maximum quantity"
+                    helpContent="The largest number of items this recipe can produce. Use the same value as minimum when the output is fixed."
+                  >
+                    Maximum quantity
+                  </FieldLabelWithHelp>
+                  <input
+                    id="recipe-result-quantity-max"
+                    type="number"
+                    name="resultQuantityMax"
+                    min={1}
+                    step={1}
+                    defaultValue={recipe.resultQuantityMax}
+                    className="form-input"
+                  />
                 </div>
               </div>
             </div>
@@ -309,9 +312,18 @@ export default async function EditRecipePage({
           </EditorSection>
         </div>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: the guarded actions row replaces the plain
+            EditorActions — unsaved-changes protection, draft persistence,
+            Ctrl/Cmd+S, and save-state feedback, all scoped to this form.
+            The record id, its original slug, and the verification picker
+            (a no-op unless the opt-in checkbox is checked) are excluded
+            from dirty comparison. */}
+        <AdminFormGuard
           submitLabel="Save Changes"
           cancelHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+          excludeFields={["id", "originalSlug", "verifiedGameVersionId"]}
+          draftKey={`recipe:edit:${recipe.id}:recipe-edit-form`}
+          serverUpdatedAt={recipe.updatedAt.toISOString()}
         />
       </form>
       </div>

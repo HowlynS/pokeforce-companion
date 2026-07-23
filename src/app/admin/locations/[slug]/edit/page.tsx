@@ -6,7 +6,7 @@ import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { prisma } from "@/lib/db";
@@ -253,9 +253,19 @@ export default async function EditLocationPage({
           </EditorSection>
         </div>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: the guarded actions row replaces the plain
+            EditorActions — unsaved-changes protection, draft persistence,
+            Ctrl/Cmd+S, and save-state feedback, all scoped to this form.
+            The record id, its original slug, and the verification picker
+            (a no-op unless the opt-in checkbox is checked) are excluded
+            from dirty comparison. General never submits parentId, so this
+            form's own snapshot never touches Hierarchy's own field. */}
+        <AdminFormGuard
           submitLabel="Save Changes"
           cancelHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+          excludeFields={["id", "originalSlug", "verifiedGameVersionId"]}
+          draftKey={`location:edit:${location.id}:location-edit-form`}
+          serverUpdatedAt={location.updatedAt.toISOString()}
         />
       </form>
       </div>

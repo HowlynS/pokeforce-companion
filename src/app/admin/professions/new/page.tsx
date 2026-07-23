@@ -4,7 +4,7 @@ import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
   PROFESSION_LIST_PATH,
@@ -148,9 +148,16 @@ export default async function NewProfessionPage({
           </EditorSection>
         </div>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: guarded actions row (see the Item create
+            page). No id/originalSlug hidden fields exist on create; the
+            verification picker is excluded (no-op unless the opt-in
+            checkbox is checked). Draft key is create-scoped, isolated
+            from every edit record. */}
+        <AdminFormGuard
           submitLabel="Create Profession"
           cancelHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+          excludeFields={["verifiedGameVersionId"]}
+          draftKey="profession:new:profession-create-form"
         />
       </form>
       </div>

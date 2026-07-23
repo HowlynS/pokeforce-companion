@@ -6,7 +6,7 @@ import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
@@ -201,9 +201,18 @@ export default async function EditProfessionPage({
           </EditorSection>
         </div>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: the guarded actions row replaces the plain
+            EditorActions — unsaved-changes protection, draft persistence,
+            Ctrl/Cmd+S, and save-state feedback, all scoped to this form.
+            The record id, its original slug, and the verification picker
+            (a no-op unless the opt-in checkbox is checked) are excluded
+            from dirty comparison. */}
+        <AdminFormGuard
           submitLabel="Save Changes"
           cancelHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+          excludeFields={["id", "originalSlug", "verifiedGameVersionId"]}
+          draftKey={`profession:edit:${profession.id}:profession-edit-form`}
+          serverUpdatedAt={profession.updatedAt.toISOString()}
         />
       </form>
       </div>

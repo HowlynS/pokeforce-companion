@@ -3,7 +3,7 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -172,9 +172,18 @@ export default async function RecipeIngredientsPage({
             </fieldset>
           </EditorSection>
 
-          <EditorActions
+          {/* Sonnet Rollout Pass: guarded actions row, isolated from the
+              General tab's own draft by a distinct form identity
+              ("recipe-ingredients-form" vs "recipe-edit-form") — the same
+              record's two tabs never share a draft. No image or
+              verification control exists on this tab, so no field needs
+              excluding beyond the record id/slug. */}
+          <AdminFormGuard
             submitLabel="Save Ingredients"
             cancelHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+            excludeFields={["id", "originalSlug"]}
+            draftKey={`recipe:edit:${recipe.id}:recipe-ingredients-form`}
+            serverUpdatedAt={recipe.updatedAt.toISOString()}
           />
         </form>
         </div>

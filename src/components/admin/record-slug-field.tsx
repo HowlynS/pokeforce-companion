@@ -46,6 +46,11 @@
 import { useEffect, useRef, useState } from "react";
 import { designTokens } from "@/lib/design-tokens";
 import { normalizeSlug } from "@/lib/slug";
+import { dispatchFormChange } from "@/lib/admin/form-change-event";
+import {
+  SLUG_RESTORE_EVENT,
+  type SlugRestoreDetail,
+} from "@/lib/admin/slug-restore-event";
 import type { RecordSlugAvailability } from "@/lib/admin/record-slug";
 
 const DEBOUNCE_MS = 300;
@@ -158,6 +163,14 @@ export function RecordSlugField({
       : normalizeSlug(nameValue);
   const slug = !isManual ? autoSlug : manualSlug;
 
+  // The rendered <input>, so a PROGRAMMATIC slug change (auto-sync from
+  // Name, which React writes to the controlled value with no native input
+  // event) can emit the shared form-change signal for the AdminFormGuard's
+  // dirty detection — deterministically, instead of relying on a timed
+  // recompute. See src/lib/admin/form-change-event.ts.
+  const inputRef = useRef<HTMLInputElement>(null);
+  const slugMountedRef = useRef(false);
+
   const candidate = normalizeSlug(slug);
   const isBlankField = slug.trim() === "";
   const isInvalidCandidate = !isBlankField && candidate === "";
@@ -230,6 +243,41 @@ export function RecordSlugField({
     checkAvailabilityAction,
   ]);
 
+  // Emit the shared form-change signal whenever the COMMITTED slug value
+  // changes (skipping the initial mount, whose value already matches the
+  // guard's baseline). This fires for auto-sync from Name — the change that
+  // carries no native input event — and harmlessly (idempotently) for
+  // manual typing too, which already emits its own input event.
+  useEffect(() => {
+    if (!slugMountedRef.current) {
+      slugMountedRef.current = true;
+      return;
+    }
+    dispatchFormChange(inputRef.current);
+  }, [slug]);
+
+  // Sonnet Rollout Pass, Part 3 correction: AdminFormGuard's draft
+  // restoration applies this exact value + sync mode directly to state via
+  // a dedicated custom event, bypassing handleChange entirely — restoring
+  // a draft is not a manual edit, and must not be treated like one. See
+  // src/lib/admin/slug-restore-event.ts.
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+    const onRestore = (event: Event) => {
+      const detail = (event as CustomEvent<SlugRestoreDetail>).detail;
+      if (!detail) {
+        return;
+      }
+      setManualSlug(detail.value);
+      setIsManual(detail.manual);
+    };
+    input.addEventListener(SLUG_RESTORE_EVENT, onRestore);
+    return () => input.removeEventListener(SLUG_RESTORE_EVENT, onRestore);
+  }, []);
+
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     // Any direct edit — typed or pasted, this handler fires identically
     // either way — switches to manual mode immediately: further Name
@@ -243,15 +291,26 @@ export function RecordSlugField({
       <label className="form-field">
         <span className="form-field-label">Page address</span>
         <input
+          ref={inputRef}
           type="text"
           name="slug"
           value={slug}
           onChange={handleChange}
           onPaste={() => setIsManual(true)}
           aria-describedby={regionId}
+          // A plain data-attribute, never a named form field: it must NOT be
+          // part of FormData (it would otherwise become part of
+          // AdminFormGuard's meaningful-change comparison, which would
+          // wrongly report the form dirty after entering manual mode and
+          // then retyping back to the original value — the sync mode
+          // itself is restoration metadata, not editable record data). See
+          // slug-restore-event.ts and AdminFormGuard's writeDraftNow, which
+          // read this attribute directly off the DOM.
+          data-slug-sync-mode={isManual ? "manual" : "auto"}
           className="form-input"
         />
       </label>
+
       <p
         id={regionId}
         aria-live="polite"

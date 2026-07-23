@@ -3,7 +3,7 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
-import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
   CATEGORY_LIST_PATH,
@@ -122,9 +122,14 @@ export default async function NewCategoryPage({
           </EditorSection>
         </div>
 
-        <EditorActions
+        {/* Sonnet Rollout Pass: guarded actions row (see the Item create
+            page). No id/originalSlug hidden fields exist on create, and
+            Categories carry no verification picker to exclude. Draft key
+            is create-scoped, isolated from every edit record. */}
+        <AdminFormGuard
           submitLabel="Create Category"
           cancelHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+          draftKey="category:new:category-create-form"
         />
       </form>
       </div>
