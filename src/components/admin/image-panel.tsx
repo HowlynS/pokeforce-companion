@@ -17,12 +17,23 @@
 //
 // Preview precedence: a newly selected file (previewUrl) always wins over
 // everything else — it is the most specific, most recent signal of intent
-// — then the removeImage checkbox's own checked state (removed), then
-// finally the record's persisted imageUrl. This mirrors, rather than
+// — otherwise the record's own persisted imageUrl when it has one,
+// otherwise the optional inherited fallback. This mirrors, rather than
 // replaces, the existing form-level validation that already rejects
 // choosing a replacement AND removal together (conflicting_image_input);
 // the preview simply shows the file, the server remains the sole
 // authority on whether that combination is allowed to save.
+//
+// Admin UI Corrections pass: checking Remove no longer swaps the
+// displayed image out for the empty/inherited fallback before save — the
+// record's own persisted image stays exactly where it was, only visually
+// MUTED (admin-image-preview-lg--pending-removal), so a contributor can
+// still recognize what they are about to remove. The empty state (or, for
+// Recipes, the inherited resulting-item image) only appears once the
+// removal is actually persisted and this panel reloads with a null
+// imageUrl — never before. This restores the pre-inheritance behavior for
+// every resource and additionally keeps a Recipe's inherited image from
+// appearing prematurely.
 //
 // Object URLs are created only from the browser-local File the contributor
 // just chose (URL.createObjectURL) — never uploaded, never touching
@@ -38,19 +49,25 @@
 // selecting a file already marked the form dirty and was already excluded
 // from drafts before this pass; this preview is purely additive.
 //
-// A client component only for three purposes now: making the native file
-// input keyboard-accessible behind a real <button> (a <label> alone is not
+// A client component for four purposes now: making the native file input
+// keyboard-accessible behind a real <button> (a <label> alone is not
 // focusable/operable by keyboard), echoing the selected file's name after a
-// choice is made, and driving the local preview described above. Every
-// other behavior — including the remove-toggle's confirmation-note
-// reveal — stays pure CSS via the existing checkbox+sibling-selector
-// pattern; canceling the OS file picker can still never affect the
-// removeImage checkbox or the currently stored image.
+// choice is made, driving the local preview described above, and — since
+// the Admin UI Corrections pass — computing the muted-pending-removal
+// class, which needs the previewUrl/removed JS state together (a pure CSS
+// :checked sibling selector alone cannot tell "removal is pending" apart
+// from "removal is pending AND a local file is also being previewed," and
+// the latter must never look muted). The remove-toggle's confirmation-note
+// reveal (Image will be removed when saved) still stays pure CSS via the
+// existing checkbox+sibling-selector pattern; canceling the OS file picker
+// can still never affect the removeImage checkbox or the currently stored
+// image.
 
 import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { ContextPanel } from "@/components/admin/context-panel";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
+import { resolveImagePanelDisplay } from "@/lib/admin/image-panel-display";
 
 const HELPER_TEXT = "PNG, JPEG or WebP · Max 5 MB";
 
@@ -120,26 +137,11 @@ export function ImagePanel({
     };
   }, [previewUrl]);
 
-  // Precedence: a freshly chosen file always wins; otherwise show the
-  // removed (empty) state if Remove is checked; otherwise the persisted
-  // image. See the module comment for why a file selected while Remove is
-  // also checked still previews (the server alone rejects that combination).
-  //
-  // The optional inherited fallback (Recipe Image Inheritance follow-up)
-  // slots into the SAME precedence one step below the persisted image —
-  // when inheritedImageUrl is undefined (every non-Recipe caller today)
-  // `inheritedFallback` is null and every line below reduces to exactly the
-  // pre-existing behavior.
-  const inheritedFallback = inheritedImageUrl ?? null;
-  const displayImageUrl =
-    previewUrl ?? (removed ? inheritedFallback : imageUrl ?? inheritedFallback);
-
-  // Which source is actually on screen right now, for the optional
-  // explanatory notes below — never used to CHANGE displayImageUrl itself.
-  const hasInheritance = inheritedImageUrl !== undefined;
-  const isShowingInherited =
-    hasInheritance && !previewUrl && (removed || !imageUrl) && inheritedFallback !== null;
-  const isShowingOverride = hasInheritance && !previewUrl && !removed && Boolean(imageUrl);
+  // The precedence/muting decision itself is pure data-in-data-out logic,
+  // extracted to image-panel-display.ts so it can be unit-tested directly
+  // without a DOM — see that module's own comment for the full rule.
+  const { displayImageUrl, isPendingRemoval, isShowingInherited, isShowingOverride } =
+    resolveImagePanelDisplay({ previewUrl, imageUrl, inheritedImageUrl, removed });
   const effectiveAlt = isShowingInherited ? inheritedImageAlt ?? imageAlt : imageAlt;
 
   return (
@@ -161,7 +163,11 @@ export function ImagePanel({
           <img
             src={displayImageUrl}
             alt={effectiveAlt}
-            className="admin-image-preview-lg"
+            className={
+              isPendingRemoval
+                ? "admin-image-preview-lg admin-image-preview-lg--pending-removal"
+                : "admin-image-preview-lg"
+            }
           />
         ) : (
           <div className="admin-image-empty-lg">No image uploaded.</div>

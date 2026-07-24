@@ -206,6 +206,8 @@ test("removing the image clears the row, deletes the object, and restores the fa
   // its accessible label is the visible toggle, and checking it reveals the
   // confirmation note. No replacement file is attached.
   await page.goto(`/admin/items/${ITEM.slug}/edit`);
+  const preview = page.locator("img.admin-image-preview-lg");
+  await expect(preview).toBeVisible();
   await page.getByTitle("Remove image").click();
   await expect(
     page.getByRole("checkbox", { name: "Remove image" })
@@ -213,6 +215,29 @@ test("removing the image clears the row, deletes the object, and restores the fa
   await expect(
     page.getByText("Image will be removed when saved.")
   ).toBeVisible();
+
+  // Admin UI Corrections pass: the persisted image itself stays visible —
+  // muted, not swapped for the empty fallback — until the removal is
+  // actually saved.
+  await expect(preview).toBeVisible();
+  await expect(preview).toHaveClass(/admin-image-preview-lg--pending-removal/);
+  await expect(page.getByText("No image uploaded.")).toHaveCount(0);
+
+  // Reversing removal restores the normal (non-muted) image immediately,
+  // without saving anything.
+  await page.getByTitle("Remove image").click();
+  await expect(
+    page.getByRole("checkbox", { name: "Remove image" })
+  ).not.toBeChecked();
+  await expect(preview).not.toHaveClass(
+    /admin-image-preview-lg--pending-removal/
+  );
+
+  // Re-check removal and actually save this time.
+  await page.getByTitle("Remove image").click();
+  await expect(
+    page.getByRole("checkbox", { name: "Remove image" })
+  ).toBeChecked();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);

@@ -1,6 +1,7 @@
-// Component test for SaveShortcutLabel (Admin Polish Pass 2, Part 4),
-// rendered to static HTML with react-dom/server — the established
-// Node-only approach for this codebase's presentational components.
+// Component test for SaveShortcutLabel (Admin Polish Pass 2, Part 4;
+// moved inside the Save button by the Admin UI Corrections pass), rendered
+// to static HTML with react-dom/server — the established Node-only
+// approach for this codebase's presentational components.
 // renderToStaticMarkup never runs effects, so this exercises exactly the
 // safe, pre-detection default render every real page load also starts
 // from (before the mount-only navigator check can run) — the Mac-
@@ -19,12 +20,14 @@ describe("SaveShortcutLabel: safe default render", () => {
     expect(html).not.toContain("⌘S");
   });
 
-  it("exposes a spelled-out accessible label, never relying solely on the glyph", () => {
+  it("is aria-hidden, so it never duplicates the enclosing button's own accessible name or becomes a second focus target", () => {
     const html = renderToStaticMarkup(<SaveShortcutLabel />);
-    expect(html).toContain('aria-label="Save shortcut: Control S"');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).not.toContain("aria-label");
+    expect(html).not.toMatch(/tabindex|tabIndex/i);
   });
 
-  it("renders inside the shared hint class", () => {
+  it("renders inside the shared hint/badge class", () => {
     const html = renderToStaticMarkup(<SaveShortcutLabel />);
     expect(html).toContain("admin-editor-shortcut-hint");
   });

@@ -41,6 +41,13 @@ function shortcutHint(page: import("@playwright/test").Page) {
   return page.locator(".admin-editor-shortcut-hint");
 }
 
+// The button the shortcut badge must render INSIDE (Admin UI Corrections
+// pass) — the same submit button the badge used to sit beside, as a
+// sibling, before this pass moved it in.
+function saveButton(page: import("@playwright/test").Page) {
+  return page.locator("button.admin-editor-submit");
+}
+
 // Stubs exactly the two signals SaveShortcutLabel itself reads, in the
 // order it reads them (userAgentData.platform first, navigator.platform
 // as the fallback) — a direct, non-brittle emulation of the real browser
@@ -61,17 +68,20 @@ async function emulateMacPlatform(page: import("@playwright/test").Page) {
   });
 }
 
-test("on a real (non-Mac) test runner, the shortcut hint shows the Ctrl+S label", async ({
+test("on a real (non-Mac) test runner, the shortcut badge shows Ctrl+S inside the Save button", async ({
   page,
 }) => {
   await page.goto("/admin/items/iron-ore/edit");
   const hint = shortcutHint(page);
   await expect(hint).toBeVisible();
   await expect(hint).toHaveText("Ctrl+S");
-  await expect(hint).toHaveAttribute("aria-label", "Save shortcut: Control S");
+  // Admin UI Corrections pass: purely decorative now that it renders
+  // inside the button — see the "descendant of the Save button" and
+  // "accessible name" tests below for the full structural/a11y proof.
+  await expect(hint).toHaveAttribute("aria-hidden", "true");
 });
 
-test("emulating a macOS platform signal upgrades the hint to the Command label", async ({
+test("emulating a macOS platform signal upgrades the badge to the Command label", async ({
   page,
 }) => {
   await emulateMacPlatform(page);
@@ -80,10 +90,59 @@ test("emulating a macOS platform signal upgrades the hint to the Command label",
   const hint = shortcutHint(page);
   await expect(hint).toBeVisible();
   await expect(hint).toHaveText("⌘S");
-  await expect(hint).toHaveAttribute(
-    "aria-label",
-    "Save shortcut: Command S"
+  await expect(hint).toHaveAttribute("aria-hidden", "true");
+});
+
+test("the shortcut badge — icon, label, and Ctrl+S — are all descendants of the same Save button, never an external sibling", async ({
+  page,
+}) => {
+  await page.goto("/admin/items/iron-ore/edit");
+
+  const button = saveButton(page);
+  await expect(button).toBeVisible();
+  // The Save icon, the "Save Changes" text, and the shortcut badge must
+  // all resolve as descendants of this one button element.
+  await expect(button.locator("svg.admin-editor-submit-icon")).toHaveCount(1);
+  await expect(button).toContainText("Save Changes");
+  await expect(button.locator(".admin-editor-shortcut-hint")).toHaveText(
+    "Ctrl+S"
   );
+
+  // The badge no longer exists as a sibling of the button — the ONLY
+  // shortcut-hint element on the page is the one inside it.
+  await expect(shortcutHint(page)).toHaveCount(1);
+  await expect(page.locator(".admin-editor-shortcut-hint")).toHaveCount(1);
+});
+
+test("the shortcut badge is not a separate focus target, and the button's own accessible name stays clean", async ({
+  page,
+}) => {
+  await page.goto("/admin/items/iron-ore/edit");
+
+  const button = saveButton(page);
+  // aria-hidden content is excluded from the accessible name computation,
+  // so the button's own name is exactly its visible label — never
+  // "Save Changes Ctrl+S" or similar duplication.
+  await expect(button).toHaveAccessibleName("Save Changes");
+
+  // Tabbing focus onto the button lands on the BUTTON itself; the badge
+  // inside it is not independently reachable (no separate tab stop).
+  await button.focus();
+  const focusedIsButton = await page.evaluate(() => {
+    const active = document.activeElement;
+    return active?.classList.contains("admin-editor-submit") ?? false;
+  });
+  expect(focusedIsButton).toBe(true);
+
+  await page.keyboard.press("Tab");
+  const focusedShortcutBadge = await page.evaluate(() => {
+    return (
+      document.activeElement?.classList.contains(
+        "admin-editor-shortcut-hint"
+      ) ?? false
+    );
+  });
+  expect(focusedShortcutBadge).toBe(false);
 });
 
 test("Ctrl+S still saves the form when the hint shows the Mac label", async ({

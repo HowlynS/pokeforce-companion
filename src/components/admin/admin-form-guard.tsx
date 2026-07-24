@@ -687,12 +687,15 @@ export function AdminFormGuard({
         >
           <Save aria-hidden="true" className="admin-editor-submit-icon" />
           {pending ? savingLabel : submitLabel}
+          {/* OS-aware save-shortcut badge (Admin UI Corrections pass): one
+              shared component, so every guarded form shows it consistently,
+              inside the same clickable button, with no per-page
+              OS-detection code. Purely decorative to assistive tech (see
+              SaveShortcutLabel's own aria-hidden) so it never becomes a
+              second focus target and never duplicates the button's own
+              accessible name ("Save Changes"/"Saving…"). */}
+          <SaveShortcutLabel />
         </button>
-
-        {/* OS-aware save-shortcut hint (Admin Polish Pass 2, Part 4) — one
-            shared component, so every guarded form shows it consistently
-            with no per-page OS-detection code. */}
-        <SaveShortcutLabel />
 
         {/* aria-live alone (no role="status") makes this a live region for
             assistive tech without also claiming the ARIA "status" role —

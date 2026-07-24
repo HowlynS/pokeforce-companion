@@ -319,7 +319,7 @@ test("a locally selected recipe image overrides the inherited item image and per
   await expect(detailImage).toHaveAttribute("src", /\.webp&/);
 });
 
-test("removing the recipe's custom image reveals the resulting item's image immediately, and leaves the item's own image untouched", async ({
+test("removing the recipe's custom image keeps it visible, muted, until save — then reveals the resulting item's image, leaving the item's own image untouched", async ({
   page,
 }) => {
   const ITEM = {
@@ -353,14 +353,39 @@ test("removing the recipe's custom image reveals the resulting item's image imme
     page.getByRole("checkbox", { name: "Remove image" })
   ).toBeChecked();
 
-  // Immediate fallback to the item's image, BEFORE any save.
-  await expect(preview(page)).toHaveAttribute("src", /\.png$/);
+  // BEFORE any save: the recipe's own (webp) custom image stays visible —
+  // muted, not replaced by the empty fallback or the inherited item's
+  // (png) image — and the inherited note must NOT appear yet, since the
+  // custom image has not actually been removed.
+  await expect(preview(page)).toHaveAttribute("src", /\.webp$/);
+  await expect(preview(page)).toHaveClass(
+    /admin-image-preview-lg--pending-removal/
+  );
+  await expect(
+    page.getByText("Image will be removed when saved.")
+  ).toBeVisible();
   await expect(
     page.getByText(
       "Using the resulting item's image. Upload a Recipe image only to override it."
     )
-  ).toBeVisible();
+  ).toHaveCount(0);
 
+  // Reversing removal restores the normal (non-muted) custom image
+  // immediately, without saving anything.
+  await page.getByTitle("Remove image").click();
+  await expect(
+    page.getByRole("checkbox", { name: "Remove image" })
+  ).not.toBeChecked();
+  await expect(preview(page)).toHaveAttribute("src", /\.webp$/);
+  await expect(preview(page)).not.toHaveClass(
+    /admin-image-preview-lg--pending-removal/
+  );
+
+  // Re-check removal and actually save this time.
+  await page.getByTitle("Remove image").click();
+  await expect(
+    page.getByRole("checkbox", { name: "Remove image" })
+  ).toBeChecked();
   await page
     .getByRole("button", { name: "Save Changes", exact: true })
     .click();
@@ -376,8 +401,12 @@ test("removing the recipe's custom image reveals the resulting item's image imme
   expect(await itemImageObjectExists(itemImagePath as string)).toBe(true);
   expect(await readItemImagePath(ITEM.slug)).toBe(itemImagePath);
 
-  // Still inherited after the save-in-place reload.
+  // Only NOW, after the save-in-place reload, does the inherited item
+  // image appear.
   await expect(preview(page)).toHaveAttribute("src", /\.png$/);
+  await expect(preview(page)).not.toHaveClass(
+    /admin-image-preview-lg--pending-removal/
+  );
 
   // next/image rewrites the rendered src through its own optimizer proxy
   // (see the override test's identical comment above).

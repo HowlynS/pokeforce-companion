@@ -1578,6 +1578,13 @@ input[type="checkbox"] {
      blue-gray family) card distinction against .admin-editor-surface. */
   --color-surface-raised: #222f3d;
   --color-border: #2b3948;
+  /* Admin UI Corrections pass: the ONE definition of .admin-frame's own
+     resolved width, shared with the success toast's fixed-position
+     centering math further down (search --admin-frame-width) — a single
+     source of truth rather than duplicating this clamp() formula in two
+     places that could silently drift apart. See .admin-frame's own rule
+     below for the full history of how this value was tuned. */
+  --admin-frame-width: clamp(1432px, 96vw, 2900px);
   display: flex;
   min-height: 100vh;
   background-color: var(--color-background);
@@ -1648,8 +1655,10 @@ input[type="checkbox"] {
      by "fill the container," so max-width alone only caps that
      content-based size instead of growing to it. An explicit width (with
      clamp() supplying its own floor/ceiling) is what actually makes the
-     frame occupy its full intended width at every viewport. */
-  width: clamp(1432px, 96vw, 2900px);
+     frame occupy its full intended width at every viewport. Now sourced
+     from --admin-frame-width (declared on .admin-shell) rather than a
+     second copy of this clamp() — see that declaration's own comment. */
+  width: var(--admin-frame-width);
   margin: 0 auto;
   border-left: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);
@@ -2378,8 +2387,18 @@ input[type="checkbox"] {
   color: var(--color-danger);
 }
 
-.admin-image-remove-checkbox:checked ~ .admin-image-preview-lg {
-  opacity: 0.35;
+/* Admin UI Corrections pass: replaces the old blanket
+   `.admin-image-remove-checkbox:checked ~ .admin-image-preview-lg` rule,
+   which muted WHATEVER image happened to be rendered while Remove was
+   checked — including a freshly selected local-file preview, which must
+   never look muted. This explicit class is applied only by image-panel.tsx
+   itself, only while the record's OWN persisted image is on screen and its
+   removal is pending, so it can never catch a local preview or an
+   inherited fallback. Restrained: recognizably dimmed and partially
+   desaturated, never so faint the image itself becomes unrecognizable. */
+.admin-image-preview-lg--pending-removal {
+  opacity: 0.5;
+  filter: grayscale(0.6);
 }
 
 .admin-image-remove-note {
@@ -2483,6 +2502,21 @@ input[type="checkbox"] {
    governs both buttons' height identically. */
 .admin-editor-submit {
   gap: 8px;
+  /* Admin UI Corrections pass: the shortcut badge moved from a sibling of
+     this button (able to wrap onto its own line within the wrapping
+     .admin-editor-actions row) to a child of it. Without flex-wrap here,
+     the button's own min-content width became the SUM of icon + label +
+     badge (the badge's short "Ctrl+S"/"⌘S" text never breaks mid-string),
+     which is wider than the old sibling arrangement ever required and
+     overflowed .admin-editor-surface under extreme browser zoom (caught
+     by e2e/admin-editor-surface.spec.ts's own zoom-overflow test).
+     flex-wrap here lets the badge drop to its own second line inside the
+     SAME button — still one element, still no external sibling, still no
+     separate focus target — the moment real space runs out, instead of
+     forcing the whole row wider. Invisible at every viewport width this
+     pass's own visual review covered (1280–3440px, no zoom); it only
+     engages under genuinely extreme conditions. */
+  flex-wrap: wrap;
 }
 
 .admin-editor-submit-icon {
@@ -2525,13 +2559,26 @@ input[type="checkbox"] {
   flex-shrink: 0;
 }
 
-/* OS-aware save-shortcut hint (Admin Polish Pass 2, Part 4) — a small,
-   muted label beside Save, matching the restrained tone of the status
-   text next to it rather than competing for attention. */
+/* OS-aware save-shortcut badge (Admin Polish Pass 2, Part 4; moved inside
+   the Save button by the Admin UI Corrections pass): a small inset badge —
+   a slightly darker/translucent overlay on the button's own gold surface,
+   never a loud fill of its own — so it reads as visually secondary to the
+   "Save Changes" label beside it rather than competing for attention.
+   color: inherit picks up .btn-primary's own dark text color, so contrast
+   against both the gold button and the darkened badge surface is
+   guaranteed without a separate color token. Sits as an ordinary flex item
+   in the button's own row (.admin-editor-submit's existing gap already
+   spaces it from the label) — no absolute positioning needed. */
 .admin-editor-shortcut-hint {
-  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
   font-size: 12px;
-  color: var(--color-text-muted);
+  font-weight: 600;
+  line-height: 1.3;
   white-space: nowrap;
 }
 
@@ -2584,28 +2631,55 @@ input[type="checkbox"] {
   gap: 12px;
 }
 
-/* Shared admin success toast (Admin Polish Pass 2, Part 3). Rendered by
-   AdminShell as the very FIRST child of .admin-content-inner, before the
-   page's own content — deliberately plain document flow, never
-   `position: absolute/fixed`: an overlay positioned by a fixed pixel
-   offset would risk covering a page header tall enough to include the
-   error/eyebrow/tabs stack, exactly what this must never do. Being the
-   first flow child instead guarantees it can never sit on top of
-   anything — it only ever pushes that page's own header down for the
-   few seconds it is visible, then disappears and the page reflows back.
-   `justify-content: center` on the viewport row centers the toast within
-   .admin-content-inner's own width, which already excludes the 232px
-   sidebar column (a sibling, never a parent, of this element) — no JS
-   layout measurement needed. `position: sticky` keeps it reachable near
-   the top of the viewport even if the page itself is already mid-scroll
-   when a toast appears. */
+/* Shared admin success toast (Admin Polish Pass 2, Part 3; converted to a
+   true viewport overlay by the Admin UI Corrections pass). `position:
+   fixed` — genuinely anchored to the VIEWPORT, not to any scrolling
+   ancestor — for two reasons: (1) appearing/disappearing causes ZERO
+   layout shift, since a fixed box never occupies space in normal flow at
+   all (the previous `position: sticky` approach still reserved its own
+   box height in flow, which is exactly what pushed the page's own header
+   down while a toast was visible — that regression is what this pass
+   corrects); (2) an EARLIER version of this fix used `position: absolute`
+   against a `position: relative` .admin-content-inner, which technically
+   also avoided layout shift but scrolled away with the page — measured
+   live, opening the in-editor delete dialog from a record whose Delete
+   button sits below the fold auto-scrolls the page to reveal it, which
+   left the toast rendered far above the (now-scrolled) visible viewport,
+   defeating its whole purpose as a persistent notification. `position:
+   fixed` has no such failure mode: it stays exactly where a contributor
+   can see it regardless of scroll position.
+   Horizontal centering over the CONTENT area specifically (excluding the
+   232px sidebar) — without any JS layout measurement, and identically
+   whether or not the current route's workspace has a record-list aside,
+   since neither participates in this calculation — replicates
+   .admin-content's own resolved box in viewport coordinates using
+   --admin-frame-width (declared once on .admin-shell, the same value
+   .admin-frame's own width uses): `left` is the frame's own left edge
+   (the frame is centered via `margin: 0 auto`) plus the frame's 1px
+   border plus the sidebar's fixed 232px; `width` is the frame's width
+   minus the sidebar's 232px and both of the frame's 1px borders.
+   `top: 8px` plus the toast's own compact height keeps its bottom edge
+   above every real page header's actual title text (verified against
+   both PageHeader's 36px h1 and EditorHeader's 28px h1, each preceded by
+   a small eyebrow row) — it may briefly sit over the small eyebrow label
+   above the title, never the title itself or the tabs beneath it.
+   `pointer-events: none` on the (invisible) content-width viewport row
+   lets clicks pass through to page content on either side of the
+   centered card; the card re-enables them on itself. z-index sits above
+   ordinary content (10/20/30 elsewhere in this stylesheet) but well below
+   .admin-modal-overlay's 1000, so the in-editor delete-confirmation
+   dialog always stays above a toast that happens to be visible at the
+   same time. */
 .admin-toast-viewport {
   display: flex;
   justify-content: center;
-  position: sticky;
-  top: 12px;
-  z-index: 30;
-  margin-bottom: 20px;
+  position: fixed;
+  top: 8px;
+  left: calc((100vw - var(--admin-frame-width)) / 2 + 233px);
+  width: calc(var(--admin-frame-width) - 234px);
+  z-index: 40;
+  padding: 0 24px;
+  pointer-events: none;
 }
 
 .admin-toast {
@@ -2614,7 +2688,7 @@ input[type="checkbox"] {
   gap: 12px;
   width: 100%;
   max-width: 480px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 10px;
   background: var(--color-surface-raised);
   border: 1px solid var(--color-accent);
@@ -2622,6 +2696,7 @@ input[type="checkbox"] {
   color: var(--color-text);
   font-size: 14px;
   line-height: 1.4;
+  pointer-events: auto;
 }
 
 .admin-toast-message {

@@ -76,7 +76,7 @@ test("choosing a replacement file swaps the preview and revokes the previous obj
   expect(firstUrlStillValid).toBe(false);
 });
 
-test("remove clears the preview immediately on an existing image, and reversing it restores the saved preview", async ({
+test("remove keeps the existing preview visible but muted (Admin UI Corrections pass), and reversing it restores the normal preview", async ({
   page,
 }) => {
   await page.goto("/admin/items/new");
@@ -93,17 +93,24 @@ test("remove clears the preview immediately on an existing image, and reversing 
   expect(savedSrc).not.toMatch(/^blob:/);
 
   await page.getByTitle("Remove image").click();
-  await expect(page.locator("img.admin-image-preview-lg")).toHaveCount(0);
-  await expect(page.getByText("No image uploaded.")).toBeVisible();
+  // Admin UI Corrections pass: checking Remove no longer swaps the image
+  // out for the empty fallback before save — the persisted image stays
+  // exactly where it was, visually muted, so the contributor can still see
+  // what they are about to remove.
+  await expect(preview).toBeVisible();
+  await expect(preview).toHaveAttribute("src", savedSrc as string);
+  await expect(preview).toHaveClass(/admin-image-preview-lg--pending-removal/);
+  await expect(page.getByText("No image uploaded.")).toHaveCount(0);
   await expect(page.getByText("Image will be removed when saved.")).toBeVisible();
 
-  // Reversing removal restores the exact saved preview. The note stays in
-  // the DOM either way (CSS display:none via the checkbox's own :checked
-  // sibling selector) — visibility, not raw count, is the correct check.
+  // Reversing removal restores the exact saved preview, unmuted,
+  // immediately — the note stays in the DOM either way (CSS display:none
+  // via the checkbox's own :checked sibling selector) — visibility, not
+  // raw count, is the correct check.
   await page.getByTitle("Remove image").click();
-  await expect(page.locator("img.admin-image-preview-lg")).toHaveAttribute(
-    "src",
-    savedSrc as string
+  await expect(preview).toHaveAttribute("src", savedSrc as string);
+  await expect(preview).not.toHaveClass(
+    /admin-image-preview-lg--pending-removal/
   );
   await expect(
     page.getByText("Image will be removed when saved.")
