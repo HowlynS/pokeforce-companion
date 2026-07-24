@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
+import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   CATEGORY_LIST_PATH,
   normalizeCategorySearchQuery,
@@ -83,14 +84,20 @@ export default async function DeleteCategoryPage({
         </>
       }
     >
-      <div className="confirm-card">
-        <p className="confirm-card-eyebrow">Destructive action</p>
-        <p>
-          You are about to permanently delete{" "}
-          <strong>{category.name}</strong> ({category.slug}). This action
-          cannot be undone.
-        </p>
-
+      <DeleteRecordDialog
+        title="Delete Category"
+        description={
+          <>
+            You are about to permanently delete{" "}
+            <strong>{category.name}</strong> ({category.slug}). This action
+            cannot be undone.
+          </>
+        }
+        canDelete={canDelete}
+        formAction={deleteCategoryAction}
+        hiddenFields={{ id: category.id, slug: category.slug }}
+        cancelHref={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
+      >
         <p className="text-muted">Linked items: {itemCount}</p>
 
         {!canDelete ? (
@@ -100,26 +107,7 @@ export default async function DeleteCategoryPage({
             first.
           </p>
         ) : null}
-
-        <div className="form-actions">
-          {canDelete ? (
-            <form action={deleteCategoryAction}>
-              <input type="hidden" name="id" value={category.id} />
-              <input type="hidden" name="slug" value={category.slug} />
-              <button type="submit" className="btn btn-danger">
-                Delete Permanently
-              </button>
-            </form>
-          ) : null}
-
-          <a
-            href={withCategorySearchQuery(CATEGORY_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
-      </div>
+      </DeleteRecordDialog>
     </CategoryWorkspace>
   );
 }

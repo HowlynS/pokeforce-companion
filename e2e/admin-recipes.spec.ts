@@ -11,6 +11,7 @@
 // written or deleted.
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestRecipeRecords,
@@ -124,13 +125,14 @@ function ingredientQuantity(page: Page, row: number) {
   return ingredientGroup(page).getByRole("spinbutton").nth(row);
 }
 
-// Reads the visible text of a <select>'s currently selected option, for
+// Reads the visible text of an AdminSelect's currently selected value, for
 // prefill assertions where option values (database ids) are unknown.
+// AdminSelect's trigger button's own text content IS the selected label
+// (unlike a native <select>, whose plain textContent would concatenate
+// every <option> rather than just the selected one — the reason this
+// helper originally read `.selectedOptions[0]` instead).
 async function selectedOptionLabel(select: Locator): Promise<string> {
-  return select.evaluate(
-    (el) =>
-      (el as HTMLSelectElement).selectedOptions[0]?.textContent?.trim() ?? ""
-  );
+  return (await select.textContent())?.trim() ?? "";
 }
 
 type RecipeFormData = {
@@ -151,9 +153,10 @@ type RecipeFormData = {
 async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: data.resultingItem });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    data.resultingItem
+  );
   if (data.resultQuantityMin) {
     await page
       .getByLabel("Minimum quantity", { exact: true })
@@ -165,17 +168,16 @@ async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
       .fill(data.resultQuantityMax);
   }
   if (data.profession) {
-    await page
-      .getByRole("combobox", { name: "Profession", exact: true })
-      .selectOption({ label: data.profession });
+    await selectAdminOption(
+      page.getByRole("combobox", { name: "Profession", exact: true }),
+      data.profession
+    );
   }
   if (data.requiredLevel) {
     await page.getByLabel(/^Required level/).fill(data.requiredLevel);
   }
   for (const [index, ingredient] of data.ingredients.entries()) {
-    await ingredientSelect(page, index).selectOption({
-      label: ingredient.item,
-    });
+    await selectAdminOption(ingredientSelect(page, index), ingredient.item);
     await ingredientQuantity(page, index).fill(ingredient.quantity);
   }
   await page
@@ -532,12 +534,13 @@ test("a maximum quantity below the minimum is rejected with a useful error, both
   await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Invalid Range");
   await page.getByLabel(/^Page address/).fill("test-e2e-recipe-invalid-range");
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: "Iron Ingot" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    "Iron Ingot"
+  );
   await page.getByLabel("Minimum quantity", { exact: true }).fill("4");
   await page.getByLabel("Maximum quantity", { exact: true }).fill("1");
-  await ingredientSelect(page, 0).selectOption({ label: "Iron Ore" });
+  await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   await ingredientQuantity(page, 0).fill("1");
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
@@ -681,16 +684,18 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
   // --- ingredients and image untouched -----------------------------------
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Updated");
   await page.getByLabel("Page address", { exact: true }).fill("test-e2e-recipe-updated");
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: "Copper Ingot" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    "Copper Ingot"
+  );
   await page.getByLabel("Minimum quantity", { exact: true }).fill("3");
   await page.getByLabel("Maximum quantity", { exact: true }).fill("3");
   // Clearing the Profession exercises the optional relation: the empty
   // "No profession" option stores null.
-  await page
-    .getByRole("combobox", { name: "Profession", exact: true })
-    .selectOption({ label: "No profession" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Profession", exact: true }),
+    "No profession"
+  );
   await page.getByLabel(/^Required level/).fill("");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
@@ -793,9 +798,9 @@ test("Ingredients editing updates the ingredient rows and leaves General fields 
   }
 
   // --- Replace both ingredient rows; every other field untouched --------
-  await ingredientSelect(page, 0).selectOption({ label: "Wood" });
+  await selectAdminOption(ingredientSelect(page, 0), "Wood");
   await ingredientQuantity(page, 0).fill("4");
-  await ingredientSelect(page, 1).selectOption({ label: "Spring Water" });
+  await selectAdminOption(ingredientSelect(page, 1), "Spring Water");
   await ingredientQuantity(page, 1).fill("5");
   await page
     .getByRole("button", { name: "Save Ingredients", exact: true })
@@ -848,10 +853,11 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
   // Item selected but quantity left empty.
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Incomplete");
   await page.getByLabel(/^Page address/).fill("test-e2e-recipe-incomplete");
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: "Iron Ingot" });
-  await ingredientSelect(page, 0).selectOption({ label: "Iron Ore" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    "Iron Ingot"
+  );
+  await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
@@ -867,9 +873,10 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
   // fresh form, so every field is filled again).
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Incomplete");
   await page.getByLabel(/^Page address/).fill("test-e2e-recipe-incomplete");
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: "Iron Ingot" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    "Iron Ingot"
+  );
   await ingredientQuantity(page, 0).fill("2");
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
@@ -895,10 +902,11 @@ test("ingredient quantities are guarded by browser-native validation with no upp
   // input is the only invalid control.
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Max Quantity");
   await page.getByLabel(/^Page address/).fill("test-e2e-recipe-max-quantity");
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: "Iron Ingot" });
-  await ingredientSelect(page, 0).selectOption({ label: "Iron Ore" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    "Iron Ingot"
+  );
+  await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   const quantity = ingredientQuantity(page, 0);
 
   // Zero and negative values violate min=1; a decimal violates step=1. In
@@ -953,12 +961,13 @@ test("selecting the same ingredient twice is rejected server-side", async ({
 
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Duplicate");
   await page.getByLabel(/^Page address/).fill("test-e2e-recipe-duplicate-ingredient");
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: "Iron Ingot" });
-  await ingredientSelect(page, 0).selectOption({ label: "Iron Ore" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    "Iron Ingot"
+  );
+  await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   await ingredientQuantity(page, 0).fill("1");
-  await ingredientSelect(page, 1).selectOption({ label: "Iron Ore" });
+  await selectAdminOption(ingredientSelect(page, 1), "Iron Ore");
   await ingredientQuantity(page, 1).fill("2");
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
@@ -994,7 +1003,7 @@ test("Ingredients editing rejects invalid submissions exactly like creation, wit
   // A duplicate ingredient item is rejected server-side, exactly like the
   // create form — the same shared parser, reached through a different
   // action.
-  await ingredientSelect(page, 1).selectOption({ label: "Iron Ore" });
+  await selectAdminOption(ingredientSelect(page, 1), "Iron Ore");
   await ingredientQuantity(page, 1).fill("2");
   await page
     .getByRole("button", { name: "Save Ingredients", exact: true })
@@ -1211,14 +1220,18 @@ test("gameplay verification stamps the selected game version and survives normal
   await expect(panelRow(page, "Verification", "Verified for")).toHaveCount(
     0
   );
+  // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
+  // replaced the native <select> here — see admin-items.spec.ts's own
+  // identical fix for why.
   const picker = page.getByLabel("Verify this record for");
+  await expect(picker, "the current version is preselected").toHaveText(
+    `${CURRENT_VERSION_NAME} (current)`
+  );
+  await picker.click();
   await expect(
-    picker.locator("option:checked"),
-    "the current version is preselected"
-  ).toHaveText(`${CURRENT_VERSION_NAME} (current)`);
-  await expect(
-    picker.locator("option", { hasText: HISTORICAL_VERSION_NAME })
+    page.getByRole("option", { name: HISTORICAL_VERSION_NAME, exact: true })
   ).toHaveCount(1);
+  await page.keyboard.press("Escape");
 
   // --- Verify via the explicit opt-in checkbox (picker untouched) -------
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
@@ -1252,9 +1265,10 @@ test("gameplay verification stamps the selected game version and survives normal
   // Unchecked by default on every render, even for an already-verified
   // recipe: verification is a per-save action, not persistent form state.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
-  await page
-    .getByLabel("Verify this record for")
-    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await selectAdminOption(
+    page.getByLabel("Verify this record for"),
+    HISTORICAL_VERSION_NAME
+  );
   await page.getByLabel("Minimum quantity", { exact: true }).fill("2");
   await page.getByLabel("Maximum quantity", { exact: true }).fill("2");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
@@ -1274,9 +1288,10 @@ test("gameplay verification stamps the selected game version and survives normal
   ).toBe(stampedDateText);
 
   // --- Verifying against a SELECTED historical version -------------------
-  await page
-    .getByLabel("Verify this record for")
-    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await selectAdminOption(
+    page.getByLabel("Verify this record for"),
+    HISTORICAL_VERSION_NAME
+  );
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/recipes?success=updated");

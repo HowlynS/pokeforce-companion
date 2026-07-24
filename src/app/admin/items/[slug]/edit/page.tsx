@@ -8,6 +8,7 @@ import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
@@ -225,18 +226,17 @@ export default async function EditItemPage({
             >
               <label className="form-field">
                 <span className="form-field-label">Category</span>
-                <select
+                <AdminSelect
                   name="categoryId"
                   defaultValue={item.categoryId ?? ""}
-                  className="form-input"
-                >
-                  <option value="">No category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: "", label: "No category" },
+                    ...categories.map((category) => ({
+                      value: category.id,
+                      label: category.name,
+                    })),
+                  ]}
+                />
               </label>
             </EditorSection>
 

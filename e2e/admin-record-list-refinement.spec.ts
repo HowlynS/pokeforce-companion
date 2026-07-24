@@ -29,6 +29,7 @@
 // record rather than sharing the four-route loop.
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import path from "node:path";
 import {
   countE2eTestItemImageRecords,
@@ -203,9 +204,10 @@ test("a real uploaded image renders a decoded, decorative thumbnail; a seeded it
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
-  await page
-    .getByRole("combobox", { name: "Category", exact: true })
-    .selectOption({ label: "Materials" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Category", exact: true }),
+    "Materials"
+  );
   await page.locator('input[name="image"]').setInputFiles(PNG_FIXTURE);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=created");
@@ -386,9 +388,10 @@ async function createTestLocation(
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(location.name);
   await page.getByLabel(/^Page address/).fill(location.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Town" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Town"
+  );
 
   // Settled = anything other than the in-flight message; the component
   // never blocks submission, so every settled outcome is fine here.

@@ -13,6 +13,7 @@
 // slug prefix.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   countE2eTestLocationRecords,
   deleteE2eTestLocationRecords,
@@ -52,9 +53,10 @@ async function createTemporaryLocation(
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: data.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    data.type
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();

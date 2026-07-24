@@ -157,7 +157,10 @@ test("Item create's every original field name still exists inside the same form 
   await expect(page.locator('#item-create-form input[name="name"]')).toHaveCount(1);
   await expect(page.locator('#item-create-form input[name="slug"]')).toHaveCount(1);
   await expect(page.locator('#item-create-form textarea[name="description"]')).toHaveCount(1);
-  await expect(page.locator('#item-create-form select[name="categoryId"]')).toHaveCount(1);
+  // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
+  // replaced the native <select> here — the field's own name is still
+  // carried by its submitted proxy <input>.
+  await expect(page.locator('#item-create-form input[name="categoryId"]')).toHaveCount(1);
   await expect(page.locator('#item-create-form input[name="heldItem"]')).toHaveCount(1);
   await expect(page.locator('#item-create-form input[name="tradeable"]')).toHaveCount(1);
   await expect(page.locator('#item-create-form input[name="baseValue"]')).toHaveCount(1);
@@ -214,7 +217,7 @@ test("Item edit: General renders the explicit two-column composition — Name/Pa
 
   // Right column: Category, Held item, Tradeable, Base value.
   await expect(
-    columnSideOf(page, '#item-edit-form select[name="categoryId"]')
+    columnSideOf(page, '#item-edit-form input[name="categoryId"]')
   ).resolves.toBe("right");
   await expect(
     columnSideOf(page, '#item-edit-form input[name="heldItem"]')
@@ -269,7 +272,7 @@ test("Item create: General renders the same explicit two-column composition, wit
     columnSideOf(page, '#item-create-form textarea[name="description"]')
   ).resolves.toBe("left");
   await expect(
-    columnSideOf(page, '#item-create-form select[name="categoryId"]')
+    columnSideOf(page, '#item-create-form input[name="categoryId"]')
   ).resolves.toBe("right");
   await expect(
     columnSideOf(page, '#item-create-form input[name="heldItem"]')
@@ -433,12 +436,15 @@ test("every delete confirmation now shows the destructive eyebrow, and Delete/Ca
   );
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
 
-  // The withheld-delete dependency warning is still shown, and no delete
-  // form renders while the dependency blocks it.
+  // The withheld-delete dependency warning is still shown, and the delete
+  // action is disabled (visible, never hidden) while the dependency blocks
+  // it.
   await expect(
     page.getByText(/cannot be deleted because it is used as/)
   ).toBeVisible();
-  await expect(page.locator(".confirm-card form")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Delete Permanently", exact: true })
+  ).toBeDisabled();
 
   const cancel = page.getByRole("link", { name: "Cancel", exact: true });
   await expect(cancel).toHaveAttribute("href", "/admin/items/iron-ore/edit");

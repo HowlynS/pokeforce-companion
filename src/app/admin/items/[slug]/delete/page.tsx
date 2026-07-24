@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
+import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import {
   itemEditHref,
@@ -107,13 +108,19 @@ export default async function DeleteItemPage({
         </>
       }
     >
-      <div className="confirm-card">
-        <p className="confirm-card-eyebrow">Destructive action</p>
-        <p>
-          You are about to permanently delete <strong>{item.name}</strong> (
-          {item.slug}). This action cannot be undone.
-        </p>
-
+      <DeleteRecordDialog
+        title="Delete Item"
+        description={
+          <>
+            You are about to permanently delete <strong>{item.name}</strong>{" "}
+            ({item.slug}). This action cannot be undone.
+          </>
+        }
+        canDelete={canDelete}
+        formAction={deleteItemAction}
+        hiddenFields={{ id: item.id, slug: item.slug }}
+        cancelHref={itemEditHref(item.slug, query)}
+      >
         <p className="text-muted">
           Category: {item.category?.name ?? "Uncategorized"}
         </p>
@@ -131,26 +138,7 @@ export default async function DeleteItemPage({
             or reassign those recipe references first.
           </p>
         ) : null}
-
-        <div className="form-actions">
-          {canDelete ? (
-            <form action={deleteItemAction}>
-              <input type="hidden" name="id" value={item.id} />
-              <input type="hidden" name="slug" value={item.slug} />
-              <button type="submit" className="btn btn-danger">
-                Delete Permanently
-              </button>
-            </form>
-          ) : null}
-
-          <a
-            href={itemEditHref(item.slug, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
-      </div>
+      </DeleteRecordDialog>
     </ItemWorkspace>
   );
 }

@@ -91,6 +91,18 @@ export async function AdminShell({ children }: AdminShellProps) {
           <main className="admin-content-inner">{children}</main>
         </div>
       </div>
+
+      {/* AdminSelect's open panel portals here rather than to
+          document.body: the admin dark-mode color tokens (--color-surface-
+          raised, --color-border, etc.) are scoped to .admin-shell, not
+          :root, so a panel appended directly under <body> would inherit
+          none of them and render fully transparent. This div is a plain,
+          unstyled descendant of .admin-shell — position: fixed children
+          still anchor to the viewport exactly as they did under
+          document.body, since nothing here or in .admin-shell applies a
+          transform/filter/perspective that would create a containing
+          block. */}
+      <div id="admin-select-portal-root" />
     </div>
   );
 }

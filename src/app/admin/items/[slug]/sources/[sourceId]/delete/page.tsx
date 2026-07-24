@@ -3,6 +3,7 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
+import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   itemEditorTabs,
   itemSourcesHref,
@@ -91,14 +92,20 @@ export default async function DeleteAcquisitionSourcePage({
         </>
       }
     >
-      <div className="confirm-card">
-        <p className="confirm-card-eyebrow">Destructive action</p>
-        <p>
-          You are about to permanently delete this{" "}
-          <strong>{ACQUISITION_TYPE_LABELS[source.type]}</strong> source for{" "}
-          <strong>{item.name}</strong>. This action cannot be undone.
-        </p>
-
+      <DeleteRecordDialog
+        title="Delete Acquisition Source"
+        description={
+          <>
+            You are about to permanently delete this{" "}
+            <strong>{ACQUISITION_TYPE_LABELS[source.type]}</strong> source
+            for <strong>{item.name}</strong>. This action cannot be undone.
+          </>
+        }
+        canDelete
+        formAction={deleteAcquisitionSourceAction}
+        hiddenFields={{ id: source.id, itemSlug: item.slug }}
+        cancelHref={itemSourcesHref(item.slug, query)}
+      >
         <p className="text-muted">
           Source label: {source.sourceLabel ?? "None"}
         </p>
@@ -108,24 +115,7 @@ export default async function DeleteAcquisitionSourcePage({
         <p className="text-muted">
           Profession: {source.profession?.name ?? "None"}
         </p>
-
-        <div className="form-actions">
-          <form action={deleteAcquisitionSourceAction}>
-            <input type="hidden" name="id" value={source.id} />
-            <input type="hidden" name="itemSlug" value={item.slug} />
-            <button type="submit" className="btn btn-danger">
-              Delete Permanently
-            </button>
-          </form>
-
-          <a
-            href={itemSourcesHref(item.slug, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
-      </div>
+      </DeleteRecordDialog>
     </ItemWorkspace>
   );
 }

@@ -471,9 +471,13 @@ describe("VerificationPanel", () => {
     expect(html).toContain('name="markVerified"');
     expect(html).toContain("Verify this record for");
     expect(html).toContain("Mark as verified for Summer Update");
-    // The current version is preselected in the picker, exactly as the
-    // shared control has always behaved.
-    expect(html).toContain('selected=""');
+    // The current version is preselected in the picker (AdminSelect,
+    // Massive Admin Interaction Completion Pass, Phase 1), exactly as the
+    // shared control has always behaved — shown as the trigger's own
+    // displayed value and carried by the submitted proxy field's value,
+    // rather than a native <option selected>.
+    expect(html).toContain('class="admin-select-value">Summer Update (current)<');
+    expect(html).toMatch(/name="verifiedGameVersionId" value="v2"/);
   });
 
   it("falls back to generic checkbox wording when no version is current", () => {
@@ -501,7 +505,10 @@ describe("VerificationPanel", () => {
       />
     );
 
-    expect(html).toMatch(/<select[^>]*form="item-edit-form"[^>]*>/);
+    // The Game Version picker is AdminSelect (Massive Admin Interaction
+    // Completion Pass, Phase 1) — its own submitted proxy field, not a
+    // native <select>, carries the form association now.
+    expect(html).toMatch(/<input[^>]*form="item-edit-form"[^>]*name="verifiedGameVersionId"[^>]*>/);
     expect(html).toMatch(/<input[^>]*form="item-edit-form"[^>]*name="markVerified"[^>]*>/);
   });
 

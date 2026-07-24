@@ -4,6 +4,7 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { EditorSection } from "@/components/admin/editor-section";
 import { prisma } from "@/lib/db";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
@@ -164,18 +165,17 @@ export default async function LocationHierarchyPage({
         <EditorSection title="Parent Location" icon={SECTION_ICONS.hierarchy}>
           <label className="form-field">
             <span className="form-field-label">Parent location</span>
-            <select
+            <AdminSelect
               name="parentId"
               defaultValue={location.parentId ?? ""}
-              className="form-input"
-            >
-              <option value="">No parent</option>
-              {parentOptions.map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "No parent" },
+                ...parentOptions.map((candidate) => ({
+                  value: candidate.id,
+                  label: candidate.name,
+                })),
+              ]}
+            />
           </label>
         </EditorSection>
 

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
+import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   RECIPE_LIST_PATH,
   normalizeRecipeSearchQuery,
@@ -92,13 +93,20 @@ export default async function DeleteRecipePage({
         </>
       }
     >
-      <div className="confirm-card">
-        <p className="confirm-card-eyebrow">Destructive action</p>
-        <p>
-          You are about to permanently delete <strong>{recipe.name}</strong> (
-          {recipe.slug}). This action cannot be undone.
-        </p>
-
+      <DeleteRecordDialog
+        title="Delete Recipe"
+        description={
+          <>
+            You are about to permanently delete{" "}
+            <strong>{recipe.name}</strong> ({recipe.slug}). This action
+            cannot be undone.
+          </>
+        }
+        canDelete
+        formAction={deleteRecipeAction}
+        hiddenFields={{ id: recipe.id, slug: recipe.slug }}
+        cancelHref={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
+      >
         <p className="text-muted">
           Result:{" "}
           {formatRecipeQuantityRange(
@@ -120,24 +128,7 @@ export default async function DeleteRecipePage({
           The resulting item, ingredient items, and profession will not be
           deleted — only this recipe and its own ingredient list entries.
         </p>
-
-        <div className="form-actions">
-          <form action={deleteRecipeAction}>
-            <input type="hidden" name="id" value={recipe.id} />
-            <input type="hidden" name="slug" value={recipe.slug} />
-            <button type="submit" className="btn btn-danger">
-              Delete Permanently
-            </button>
-          </form>
-
-          <a
-            href={withRecipeSearchQuery(RECIPE_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
-      </div>
+      </DeleteRecordDialog>
     </RecipeWorkspace>
   );
 }

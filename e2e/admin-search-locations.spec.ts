@@ -7,6 +7,7 @@
 // admin-locations.spec.ts's own suite — no new prefix or cleanup surface.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   countE2eTestLocationRecords,
   deleteE2eTestLocationRecords,
@@ -55,9 +56,10 @@ test("a location matching by name appears in search results and links to its pub
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Page address/).fill(LOCATION.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: LOCATION.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    LOCATION.type
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();

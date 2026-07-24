@@ -13,6 +13,7 @@
 // written or deleted.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestItemRecords,
@@ -206,9 +207,10 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await page.getByLabel(/^Description/).fill(INITIAL.description);
   // getByLabel cannot target the select exactly (a wrapping label's text
   // includes the option texts), so the accessible role/name is used.
-  await page
-    .getByRole("combobox", { name: "Category", exact: true })
-    .selectOption({ label: INITIAL.category });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Category", exact: true }),
+    INITIAL.category
+  );
   // Held item stays unchecked: the omitted checkbox must resolve to false.
   await page.getByLabel("Tradeable").check();
   await page.getByLabel(/^Base value/).fill(INITIAL.baseValue);
@@ -302,9 +304,10 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
   await page.getByLabel(/^Description/).fill(EDITED.description);
-  await page
-    .getByRole("combobox", { name: "Category", exact: true })
-    .selectOption({ label: EDITED.category });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Category", exact: true }),
+    EDITED.category
+  );
   await page.getByLabel("Held item").check();
   await page.getByLabel("Tradeable").uncheck();
   await page.getByLabel(/^Base value/).fill(EDITED.baseValue);
@@ -406,14 +409,20 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     page.locator(".admin-status-badge", { hasText: "Unverified" })
   ).toBeVisible();
   await expect(verificationRow(page, "Verified for")).toHaveCount(0);
+  // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
+  // replaced the native <select> here — the current version is preselected
+  // as the trigger's own displayed text, and the historical version is
+  // confirmed present by opening the panel rather than querying
+  // <option:checked>, which no longer exists.
   const picker = page.getByLabel("Verify this record for");
+  await expect(picker, "the current version is preselected").toHaveText(
+    `${CURRENT_VERSION_NAME} (current)`
+  );
+  await picker.click();
   await expect(
-    picker.locator("option:checked"),
-    "the current version is preselected"
-  ).toHaveText(`${CURRENT_VERSION_NAME} (current)`);
-  await expect(
-    picker.locator("option", { hasText: HISTORICAL_VERSION_NAME })
+    page.getByRole("option", { name: HISTORICAL_VERSION_NAME, exact: true })
   ).toHaveCount(1);
+  await page.keyboard.press("Escape");
 
   // --- Verify via the explicit opt-in checkbox (picker untouched) -------
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
@@ -449,9 +458,10 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   // Unchecked by default on every render, even for an already-verified
   // item: verification is a per-save action, not persistent form state.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
-  await page
-    .getByLabel("Verify this record for")
-    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await selectAdminOption(
+    page.getByLabel("Verify this record for"),
+    HISTORICAL_VERSION_NAME
+  );
   await page
     .getByLabel(/^Description/)
     .fill("Edited without touching verification.");
@@ -475,9 +485,10 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   );
 
   // --- Verifying against a SELECTED historical version ------------------
-  await page
-    .getByLabel("Verify this record for")
-    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await selectAdminOption(
+    page.getByLabel("Verify this record for"),
+    HISTORICAL_VERSION_NAME
+  );
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/items?success=updated");
@@ -569,12 +580,14 @@ test("deletion is blocked while a recipe produces the item", async ({
   ).toBeVisible();
 
   // The re-rendered confirmation page also blocks statically: the count is
-  // shown, the warning explains the rule, and the delete button is gone.
+  // shown, the warning explains the rule, and the delete action is
+  // disabled (visible, never hidden — the dialog keeps the blocked reason
+  // and the action it explains in view together).
   await expect(page.getByText("Used as a recipe result: 1")).toBeVisible();
   await expect(
     page.getByText("Remove or reassign those recipe references first.")
   ).toBeVisible();
-  await expect(deleteButton).toHaveCount(0);
+  await expect(deleteButton).toBeDisabled();
 
   // The item survived, in the admin record list and on the public site,
   // where the temporary recipe is rendered through the real relation.
@@ -644,7 +657,7 @@ test("deletion is blocked while the item is a recipe ingredient", async ({
   await expect(
     page.getByText("Remove or reassign those recipe references first.")
   ).toBeVisible();
-  await expect(deleteButton).toHaveCount(0);
+  await expect(deleteButton).toBeDisabled();
 
   // The item survived; its public page renders the consuming recipe
   // through the real ingredient relation.

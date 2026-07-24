@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
+import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   PROFESSION_LIST_PATH,
   normalizeProfessionSearchQuery,
@@ -83,14 +84,20 @@ export default async function DeleteProfessionPage({
         </>
       }
     >
-      <div className="confirm-card">
-        <p className="confirm-card-eyebrow">Destructive action</p>
-        <p>
-          You are about to permanently delete{" "}
-          <strong>{profession.name}</strong> ({profession.slug}). This action
-          cannot be undone.
-        </p>
-
+      <DeleteRecordDialog
+        title="Delete Profession"
+        description={
+          <>
+            You are about to permanently delete{" "}
+            <strong>{profession.name}</strong> ({profession.slug}). This
+            action cannot be undone.
+          </>
+        }
+        canDelete={canDelete}
+        formAction={deleteProfessionAction}
+        hiddenFields={{ id: profession.id, slug: profession.slug }}
+        cancelHref={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
+      >
         <p className="text-muted">Linked recipes: {recipeCount}</p>
 
         {!canDelete ? (
@@ -100,26 +107,7 @@ export default async function DeleteProfessionPage({
             recipes first.
           </p>
         ) : null}
-
-        <div className="form-actions">
-          {canDelete ? (
-            <form action={deleteProfessionAction}>
-              <input type="hidden" name="id" value={profession.id} />
-              <input type="hidden" name="slug" value={profession.slug} />
-              <button type="submit" className="btn btn-danger">
-                Delete Permanently
-              </button>
-            </form>
-          ) : null}
-
-          <a
-            href={withProfessionSearchQuery(PROFESSION_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
-      </div>
+      </DeleteRecordDialog>
     </ProfessionWorkspace>
   );
 }

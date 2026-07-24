@@ -146,6 +146,20 @@ select:focus-visible {
     color 0.15s ease;
 }
 
+/* Delete-confirmation dialog's Confirm action while a live dependency
+   blocks deletion (Massive Admin Interaction Completion Pass, Phase 2):
+   the button stays visible rather than disappearing, so the blocked-
+   reason text next to it still explains something concrete on screen —
+   but it must not read as an ordinary clickable danger button. No prior
+   .btn variant persisted a disabled state long enough to need this; the
+   Save button's own disabled moment (mid-submit) swaps its label to
+   "Saving…" instead. */
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .btn-primary {
   border: none;
   background: var(--color-accent);
@@ -481,21 +495,17 @@ select:focus-visible {
   .form-grid-responsive > .admin-editor-actions,
   .form-grid-responsive > .admin-panel,
   .form-grid-responsive > .admin-editor-sections,
-  .form-grid-responsive > .admin-editor-section,
-  .form-grid-responsive > .form-actions {
+  .form-grid-responsive > .admin-editor-section {
     grid-column: 1 / -1;
   }
 
-  /* Grid's default align-items: stretch would otherwise stretch a
-     lone .form-actions cell (e.g. the Game Version create form's own
-     plain single-button row) to match a tall neighboring row —
-     align-items already resets the CROSS-axis stretch grid would
-     apply, but .form-actions is also a flex row whose OWN default
-     align-items: stretch would then stretch the button itself
-     vertically inside it; align-items: start on both keeps every
-     button its natural height regardless of row height. */
-  .form-grid-responsive > .admin-editor-actions,
-  .form-grid-responsive > .form-actions {
+  /* Grid's default align-items: stretch would otherwise stretch a lone
+     actions-row cell to match a tall neighboring row — align-items
+     already resets the CROSS-axis stretch grid would apply, but the row
+     is also a flex row whose OWN default align-items: stretch would then
+     stretch the button itself vertically inside it; align-items: start
+     keeps every button its natural height regardless of row height. */
+  .form-grid-responsive > .admin-editor-actions {
     align-items: start;
   }
 }
@@ -1087,6 +1097,148 @@ textarea.form-input {
   resize: vertical;
 }
 
+/* Shared AdminSelect dropdown (Massive Admin Interaction Completion Pass,
+   Phase 1) — see src/components/admin/admin-select.tsx for the full
+   accessibility/behavior contract. The trigger button reuses .form-input's
+   own sizing/border/background exactly, so a page mixing native inputs
+   and AdminSelects reads as one consistent field family; only the layout
+   (flex, so the value and chevron sit on one row) and cursor differ. */
+.admin-select {
+  position: relative;
+  width: 100%;
+  /* This root renders as a grid item wherever a native <select> used to
+     sit directly inside a .form-field (display: grid) — the same
+     min-width: auto default that .form-field, .admin-workspace-aside, and
+     .admin-panel all already override for the identical reason. */
+  min-width: 0;
+}
+
+.admin-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 11px 14px;
+  font-size: 16px;
+  font-family: inherit;
+  min-height: 44px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.admin-select-trigger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-border) 60%, var(--color-accent));
+}
+
+.admin-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* min-width: 0 overrides the flex item default of min-width: auto — without
+   it, a flex child refuses to shrink below its own text's intrinsic
+   width, so overflow/text-overflow below would never actually engage for
+   a long value (a long Game Version or Category name), and the trigger
+   — along with the whole page — would grow wider than its column instead
+   of truncating. This was a real, measured horizontal-overflow bug, not
+   a defensive guess. */
+.admin-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-select-placeholder {
+  min-width: 0;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-select-chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: transform 0.15s ease;
+}
+
+.admin-select-trigger[aria-expanded="true"] .admin-select-chevron {
+  transform: rotate(180deg);
+}
+
+/* Raised dark surface, thin border, restrained shadow — deliberately the
+   same depth language ContextPanel already uses (--color-surface-raised),
+   never a bright fill. max-height + its own scroll keeps a long option
+   list (Items, Locations) from ever growing the surrounding card.
+   position/top/left/width/bottom are set inline per-open by AdminSelect
+   itself (computed from the trigger's own getBoundingClientRect(), since
+   the panel renders through a portal to document.body — see
+   admin-select.tsx's own module comment for why); this rule supplies only
+   the panel's fixed visual chrome. */
+.admin-select-panel {
+  z-index: 20;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  list-style: none;
+  margin: 0;
+}
+
+.admin-select-option {
+  padding: 9px 12px;
+  border-radius: 6px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.admin-select-option--active {
+  background: var(--color-surface-soft);
+}
+
+.admin-select-option--selected {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.admin-select-option--disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* The real submitted field — visually hidden via the same clip technique
+   .admin-image-remove-checkbox already uses, deliberately never
+   display:none/readonly/disabled (all three are excluded from HTML
+   constraint validation, which would silently defeat `required` and
+   AdminFormGuard's Ctrl+S handler). tabIndex={-1} on the element itself
+   (not CSS) keeps it out of the tab order. */
+.admin-select-proxy {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Shared autosizing textarea (Admin Visual/UX Correction pass, follow-up
    #2) — see src/components/admin/autosize-textarea.tsx for the resize
    logic itself, which reads these two values back via getComputedStyle
@@ -1222,35 +1374,12 @@ input[type="checkbox"] {
   gap: 10px;
 }
 
-/* Submit/cancel (and delete/cancel) button rows. */
-.form-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-/* Delete confirmation surface: unmistakably destructive, never wider
-   than a comfortable reading column. */
-.confirm-card {
-  border: 1px solid var(--color-danger);
-  border-radius: 12px;
-  background: var(--color-surface-soft);
-  padding: 24px;
-  display: grid;
-  gap: 16px;
-  max-width: 560px;
-}
-
-.confirm-card p {
-  margin: 0;
-}
-
-/* Destructive-confirmation status marker (Confirmation Page Polish
-   pass): every .confirm-card's first line, so the page reads as
-   unmistakably destructive at a glance, before the identity sentence
-   below it. Matches .admin-editor-eyebrow's own small-caps treatment,
-   recolored danger red instead of gold — the same eyebrow ROLE, the
-   one color that must never mean "primary/default" on this page. */
+/* Destructive-confirmation status marker: the delete-confirmation
+   dialog's first line (rendered via ConfirmDialog's `eyebrow` prop), so
+   it reads as unmistakably destructive at a glance, before the identity
+   sentence below it. Matches .admin-editor-eyebrow's own small-caps
+   treatment, recolored danger red instead of gold — the same eyebrow
+   ROLE, the one color that must never mean "primary/default" here. */
 .confirm-card-eyebrow {
   margin: 0;
   color: var(--color-danger);
@@ -1839,9 +1968,9 @@ input[type="checkbox"] {
    560px/680px max-width — stays capped at a comfortable line length
    regardless of how wide the surface itself grows. Applied only around
    genuine primary-form content — never around delete confirmations
-   (.confirm-card already carries its own destructive treatment) and
-   never doubled up around content that already lives inside a
-   ContextPanel. */
+   (the DeleteRecordDialog/.admin-modal treatment already carries its own
+   destructive styling) and never doubled up around content that already
+   lives inside a ContextPanel. */
 .admin-editor-surface {
   width: 100%;
   background: var(--color-surface);
@@ -1884,6 +2013,15 @@ input[type="checkbox"] {
   padding: 16px;
   display: grid;
   gap: 12px;
+  /* A grid item's default min-width: auto would otherwise refuse to
+     shrink this panel below its own content's min-content width — latent
+     ever since .admin-workspace-aside's own narrow-tier flex-basis
+     (205px) was introduced, but never triggered until AdminSelect's
+     button+text content (Massive Admin Interaction Completion Pass,
+     Phase 1) needed more min-content width than the native <select> it
+     replaced ever did. Same fix, same reasoning, as .form-field and
+     .admin-workspace-aside's own existing min-width: 0 rules. */
+  min-width: 0;
 }
 
 .admin-panel-title {
@@ -1928,8 +2066,8 @@ input[type="checkbox"] {
 /* ---- Danger zone (Visual Pass sub-slice 9) ----------------------------
    The right-rail panel Delete now lives in, below Timestamps, instead of
    the sticky Save/Cancel bar — a restrained danger-tinted border and
-   heading are enough to mark it destructive without the heavier
-   .confirm-card treatment reserved for the actual confirmation page. */
+   heading are enough to mark it destructive without the heavier modal
+   treatment reserved for the actual confirmation dialog. */
 /* Visual Pass II Section 7: the border tint was softened from 45% to
    30% danger — still clearly a distinct, marked-off panel, just less
    visually loud than every other panel on the page; the delete link

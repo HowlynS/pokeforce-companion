@@ -16,6 +16,7 @@
 // temporary directory and removed afterwards.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -96,9 +97,10 @@ async function createItemWithImage(
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Category", exact: true })
-    .selectOption({ label: "Materials" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Category", exact: true }),
+    "Materials"
+  );
   await page.locator('input[name="image"]').setInputFiles(imageFile);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
 

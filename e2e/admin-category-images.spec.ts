@@ -435,7 +435,7 @@ test("category deletion stays blocked while a linked item exists, even with an i
   await page.goto(`/admin/categories/${CATEGORY.slug}/delete`);
   await expect(
     page.getByRole("button", { name: "Delete Permanently", exact: true })
-  ).toHaveCount(0);
+  ).toBeDisabled();
   await expect(page.getByText("Linked items: 1")).toBeVisible();
   await expect(
     page.getByText(/cannot be deleted because it is assigned to/i)

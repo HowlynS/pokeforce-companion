@@ -8,6 +8,7 @@
 // table never polluting the snapshot.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   deleteE2eTestLocationRecords,
   countE2eTestLocationRecords,
@@ -52,9 +53,10 @@ async function createTempLocation(
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel(/^Page address/).fill(slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Town" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Town"
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
@@ -154,17 +156,16 @@ test("Hierarchy: changing the parent marks dirty, reverting clears it, and the r
     name: "Parent location",
     exact: true,
   });
-  await parentSelect.selectOption({ label: "Test E2E Location Guard Parent" });
+  await selectAdminOption(parentSelect, "Test E2E Location Guard Parent");
   await expect(status(page)).toBeVisible();
 
-  await parentSelect.selectOption({ label: "No parent" });
+  await selectAdminOption(parentSelect, "No parent");
   await expect(status(page)).toHaveCount(0);
 
   // The parent now genuinely has a sub-location (the child, reassigned via
   // the real UI): the read-only Sub-locations table on the PARENT's own
-  // Hierarchy tab must render it without ever being mistaken for dirty
-  // editable state.
-  await parentSelect.selectOption({ label: "Test E2E Location Guard Parent" });
+  // Hierarchy tab must never be mistaken for dirty editable state.
+  await selectAdminOption(parentSelect, "Test E2E Location Guard Parent");
   await page.getByRole("button", { name: "Save Hierarchy", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/locations\?success=updated/);
 

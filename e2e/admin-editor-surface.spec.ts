@@ -15,6 +15,7 @@
 // are the narrowest checks that can catch a regression.
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestAcquisitionRecords,
@@ -225,14 +226,18 @@ test("Recipe's create form uses the wider form-grid variant with readable, align
   const rows = page.locator(".ingredient-row");
   await expect(rows).toHaveCount(5);
 
+  // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
+  // replaced the native <select> here — its trigger button (role
+  // "combobox") is the visible, positioned element; the submitted proxy
+  // field is deliberately off-screen and irrelevant to this layout check.
   const firstRow = rows.first();
-  await expect(firstRow.locator("select")).toBeVisible();
+  await expect(firstRow.getByRole("combobox")).toBeVisible();
   await expect(firstRow.locator('input[type="number"]')).toBeVisible();
 
   // Every ingredient row's select and quantity input line up on the same
   // two-column track (a shared boundary within a small tolerance).
   const [selectBox, qtyBox] = await Promise.all([
-    firstRow.locator("select").boundingBox(),
+    firstRow.getByRole("combobox").boundingBox(),
     firstRow.locator('input[type="number"]').boundingBox(),
   ]);
   expect(selectBox).not.toBeNull();
@@ -294,9 +299,10 @@ test("Location's long description and access-note textareas render with the tall
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Page address/).fill(LOCATION.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: LOCATION.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    LOCATION.type
+  );
   await page.getByLabel(/^Description/).fill(LOCATION.description);
   await page.getByLabel(/^Extra information/).fill(LOCATION.accessNote);
   await expect(page.locator("#location-name-availability")).not.toHaveText(
@@ -342,9 +348,10 @@ test("an Acquisition Source edit form renders inside the same editor surface tre
   await expect(page).toHaveURL("/admin/items?success=created");
 
   await page.goto(`/admin/items/${ITEM.slug}/sources`);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Foraging" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Foraging"
+  );
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
   await expect(page).toHaveURL(
     `/admin/items/${ITEM.slug}/sources?success=created`

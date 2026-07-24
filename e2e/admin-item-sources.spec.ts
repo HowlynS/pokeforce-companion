@@ -11,6 +11,7 @@
 // table's own Verified column.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   countE2eTestAcquisitionRecords,
   deleteE2eTestAcquisitionRecords,
@@ -73,9 +74,10 @@ async function createTemporaryItem(page: Page, data: { name: string; slug: strin
 // Adds a source with only its type set, through the real create form.
 async function addTypeOnlySource(page: Page, itemSlug: string, typeLabel: string) {
   await page.goto(`/admin/items/${itemSlug}/sources`);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: typeLabel });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    typeLabel
+  );
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
   await expect(page).toHaveURL(
     `/admin/items/${itemSlug}/sources?success=created`
@@ -105,9 +107,10 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Page address/).fill(LOCATION.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: LOCATION.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    LOCATION.type
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
@@ -149,9 +152,10 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   await expect(page.getByText("No acquisition sources yet")).toBeVisible();
 
   // --- Create a source with only type + label + quantity (no relations) -
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Foraging" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Foraging"
+  );
   await page.getByLabel(/^Source label/).fill("Seed Merchant");
   await page.getByLabel(/^Quantity/).fill("1-3");
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
@@ -196,15 +200,18 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
     page.getByRole("heading", { level: 1, name: "Edit Acquisition Source" })
   ).toBeVisible();
 
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "NPC or shop" });
-  await page
-    .getByRole("combobox", { name: "Location (optional)", exact: true })
-    .selectOption({ label: LOCATION.name });
-  await page
-    .getByRole("combobox", { name: "Profession (optional)", exact: true })
-    .selectOption({ label: PROFESSION.name });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "NPC or shop"
+  );
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Location (optional)", exact: true }),
+    LOCATION.name
+  );
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Profession (optional)", exact: true }),
+    PROFESSION.name
+  );
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
@@ -418,9 +425,10 @@ test("deleting the item cascades its acquisition sources", async ({ page }) => {
   await createTemporaryItem(page, ITEM);
 
   await page.goto(`/admin/items/${ITEM.slug}/sources`);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Mining" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Mining"
+  );
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
   await expect(page).toHaveURL(
     `/admin/items/${ITEM.slug}/sources?success=created`
@@ -555,9 +563,10 @@ test("submitting an edit with a mismatched itemSlug is rejected without changing
     .evaluate((el, value) => {
       (el as HTMLInputElement).value = value;
     }, ITEM_B.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Mining" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Mining"
+  );
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   // Rejected as a missing source relative to the (tampered) Item B route —

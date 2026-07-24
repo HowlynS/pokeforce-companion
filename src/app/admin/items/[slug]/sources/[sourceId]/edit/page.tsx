@@ -5,6 +5,7 @@ import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
@@ -165,18 +166,15 @@ export default async function EditAcquisitionSourcePage({
           <EditorSection title="Source" icon={SECTION_ICONS.source}>
             <label className="form-field form-field-narrow">
               <span className="form-field-label">Type</span>
-              <select
+              <AdminSelect
                 name="type"
                 required
                 defaultValue={source.type}
-                className="form-input"
-              >
-                {ACQUISITION_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {ACQUISITION_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
+                options={ACQUISITION_TYPES.map((type) => ({
+                  value: type,
+                  label: ACQUISITION_TYPE_LABELS[type],
+                }))}
+              />
             </label>
           </EditorSection>
 
@@ -186,34 +184,32 @@ export default async function EditAcquisitionSourcePage({
           >
             <label className="form-field">
               <span className="form-field-label">Location (optional)</span>
-              <select
+              <AdminSelect
                 name="locationId"
                 defaultValue={source.locationId ?? ""}
-                className="form-input"
-              >
-                <option value="">No location</option>
-                {locations.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "No location" },
+                  ...locations.map((location) => ({
+                    value: location.id,
+                    label: location.name,
+                  })),
+                ]}
+              />
             </label>
 
             <label className="form-field">
               <span className="form-field-label">Profession (optional)</span>
-              <select
+              <AdminSelect
                 name="professionId"
                 defaultValue={source.professionId ?? ""}
-                className="form-input"
-              >
-                <option value="">No profession</option>
-                {professions.map((profession) => (
-                  <option key={profession.id} value={profession.id}>
-                    {profession.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "No profession" },
+                  ...professions.map((profession) => ({
+                    value: profession.id,
+                    label: profession.name,
+                  })),
+                ]}
+              />
             </label>
           </EditorSection>
 

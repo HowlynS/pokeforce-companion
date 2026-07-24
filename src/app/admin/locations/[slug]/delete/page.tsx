@@ -4,6 +4,7 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
+import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   LOCATION_LIST_PATH,
   normalizeLocationSearchQuery,
@@ -87,13 +88,20 @@ export default async function DeleteLocationPage({
         </>
       }
     >
-      <div className="confirm-card">
-        <p className="confirm-card-eyebrow">Destructive action</p>
-        <p>
-          You are about to permanently delete <strong>{location.name}</strong>{" "}
-          ({location.slug}). This action cannot be undone.
-        </p>
-
+      <DeleteRecordDialog
+        title="Delete Location"
+        description={
+          <>
+            You are about to permanently delete{" "}
+            <strong>{location.name}</strong> ({location.slug}). This action
+            cannot be undone.
+          </>
+        }
+        canDelete={canDelete}
+        formAction={deleteLocationAction}
+        hiddenFields={{ id: location.id, slug: location.slug }}
+        cancelHref={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
+      >
         <p className="text-muted">
           Type: {LOCATION_TYPE_LABELS[location.type]}
         </p>
@@ -111,26 +119,7 @@ export default async function DeleteLocationPage({
             sub-locations first.
           </p>
         ) : null}
-
-        <div className="form-actions">
-          {canDelete ? (
-            <form action={deleteLocationAction}>
-              <input type="hidden" name="id" value={location.id} />
-              <input type="hidden" name="slug" value={location.slug} />
-              <button type="submit" className="btn btn-danger">
-                Delete Permanently
-              </button>
-            </form>
-          ) : null}
-
-          <a
-            href={withLocationSearchQuery(LOCATION_LIST_PATH, query)}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </a>
-        </div>
-      </div>
+      </DeleteRecordDialog>
     </LocationWorkspace>
   );
 }

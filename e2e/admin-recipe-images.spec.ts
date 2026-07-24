@@ -19,6 +19,7 @@
 // and removed afterwards.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -123,13 +124,14 @@ async function fillMinimalRecipeForm(
   await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: "Iron Ingot" });
-  await ingredientGroup(page)
-    .getByRole("combobox")
-    .nth(0)
-    .selectOption({ label: "Iron Ore" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    "Iron Ingot"
+  );
+  await selectAdminOption(
+    ingredientGroup(page).getByRole("combobox").nth(0),
+    "Iron Ore"
+  );
   await ingredientGroup(page).getByRole("spinbutton").nth(0).fill("1");
   if (imageFile) {
     await page.locator('input[name="image"]').setInputFiles(imageFile);

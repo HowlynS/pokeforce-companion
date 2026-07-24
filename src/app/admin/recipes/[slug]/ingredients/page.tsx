@@ -4,6 +4,7 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -144,18 +145,17 @@ export default async function RecipeIngredientsPage({
 
                 return (
                   <div key={row} className="ingredient-row">
-                    <select
+                    <AdminSelect
                       name={`ingredientItemId${row}`}
                       defaultValue={existingIngredient?.itemId ?? ""}
-                      className="form-input"
-                    >
-                      <option value="">No ingredient</option>
-                      {items.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: "", label: "No ingredient" },
+                        ...items.map((item) => ({
+                          value: item.id,
+                          label: item.name,
+                        })),
+                      ]}
+                    />
 
                     <input
                       type="number"

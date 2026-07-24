@@ -4,6 +4,7 @@ import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
@@ -158,14 +159,17 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
             >
               <label className="form-field">
                 <span className="form-field-label">Category</span>
-                <select name="categoryId" defaultValue="" className="form-input">
-                  <option value="">No category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                <AdminSelect
+                  name="categoryId"
+                  defaultValue=""
+                  options={[
+                    { value: "", label: "No category" },
+                    ...categories.map((category) => ({
+                      value: category.id,
+                      label: category.name,
+                    })),
+                  ]}
+                />
               </label>
             </EditorSection>
 

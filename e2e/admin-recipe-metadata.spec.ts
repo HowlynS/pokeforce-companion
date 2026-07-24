@@ -13,6 +13,7 @@
 // prefix.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   countE2eTestRecipeRecords,
   deleteE2eTestRecipeRecords,
@@ -52,17 +53,18 @@ async function createTemporaryRecipe(
   await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: data.resultingItem });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    data.resultingItem
+  );
 
   const group = page.getByRole("group", {
     name: "Ingredients (fill at least one row)",
   });
-  await group
-    .getByRole("combobox")
-    .first()
-    .selectOption({ label: data.resultingItem });
+  await selectAdminOption(
+    group.getByRole("combobox").first(),
+    data.resultingItem
+  );
   await group.getByPlaceholder("Qty").first().fill("1");
 
   await page.getByRole("button", { name: "Create Recipe", exact: true }).click();
@@ -104,10 +106,11 @@ test("the tab strip no longer offers a Metadata destination, and General still s
   await expect(
     tabNav(page).getByRole("link", { name: "Metadata" })
   ).toHaveCount(0);
+  // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
+  // replaced the native <select> here — the trigger's own displayed text
+  // shows the selected value directly; there is no <option:checked>.
   await expect(
-    page
-      .getByRole("combobox", { name: "Resulting item", exact: true })
-      .locator("option:checked")
+    page.getByRole("combobox", { name: "Resulting item", exact: true })
   ).toHaveText("Iron Ore");
 });
 

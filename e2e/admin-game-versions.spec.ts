@@ -245,8 +245,8 @@ test("deleting a referenced game version is blocked with clear feedback until th
   // workflows are out of scope for this suite).
   await createVerifiedItemReferencingVersion(BLOCKED_NAME);
 
-  // The confirmation page reports the reference and offers no delete
-  // button at all.
+  // The confirmation dialog reports the reference and disables the delete
+  // action (visible, never hidden).
   await versionRow(page, BLOCKED_NAME)
     .getByRole("link", { name: "Delete", exact: true })
     .click();
@@ -258,7 +258,7 @@ test("deleting a referenced game version is blocked with clear feedback until th
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Delete Permanently", exact: true })
-  ).toHaveCount(0);
+  ).toBeDisabled();
 
   // Once the referencing record is gone, the same flow deletes cleanly.
   await removeVerifiedItemsReferencingVersions();
@@ -311,12 +311,13 @@ test("a deletable current version warns that no version will remain current", as
   // — a historical version is never silently preselected. (The item
   // creation form lives on /admin/items/new since Slice 9B.4.)
   await page.goto("/admin/items/new");
+  // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
+  // replaced the native <select> here — the trigger's own displayed text
+  // shows the placeholder directly; there is no native "value" attribute
+  // or <option:checked> to query anymore.
   const picker = page.getByLabel("Verify this record for");
   await expect(picker).toBeVisible();
-  await expect(picker).toHaveValue("");
-  await expect(picker.locator("option:checked")).toHaveText(
-    "Select a game version…"
-  );
+  await expect(picker).toHaveText("Select a game version…");
 });
 
 // --- Admin Visual/UX Correction pass: table structure, Back to Admin

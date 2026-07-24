@@ -10,6 +10,7 @@
 // ON DELETE RESTRICT).
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   countE2eTestAcquisitionRecords,
   deleteE2eTestAcquisitionRecords,
@@ -70,18 +71,21 @@ async function addSourceThroughForm(
   }
 ) {
   await page.goto(`/admin/items/${itemSlug}/sources`);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: data.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    data.type
+  );
   if (data.locationName) {
-    await page
-      .getByRole("combobox", { name: "Location (optional)", exact: true })
-      .selectOption({ label: data.locationName });
+    await selectAdminOption(
+      page.getByRole("combobox", { name: "Location (optional)", exact: true }),
+      data.locationName
+    );
   }
   if (data.professionName) {
-    await page
-      .getByRole("combobox", { name: "Profession (optional)", exact: true })
-      .selectOption({ label: data.professionName });
+    await selectAdminOption(
+      page.getByRole("combobox", { name: "Profession (optional)", exact: true }),
+      data.professionName
+    );
   }
   if (data.sourceLabel) {
     await page.getByLabel(/^Source label/).fill(data.sourceLabel);
@@ -193,9 +197,10 @@ test("a source's location links to its public location page", async ({
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Page address/).fill(LOCATION.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: LOCATION.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    LOCATION.type
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
@@ -313,16 +318,17 @@ test("a CRAFTING acquisition source coexists with the structured Produced by rec
   await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill(RECIPE.name);
   await page.getByLabel(/^Page address/).fill(RECIPE.slug);
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: ITEM.name });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    ITEM.name
+  );
   const ingredientGroup = page.getByRole("group", {
     name: "Ingredients (fill at least one row)",
   });
-  await ingredientGroup
-    .getByRole("combobox")
-    .first()
-    .selectOption({ label: "Iron Ore" });
+  await selectAdminOption(
+    ingredientGroup.getByRole("combobox").first(),
+    "Iron Ore"
+  );
   await ingredientGroup.getByRole("spinbutton").first().fill("1");
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
@@ -374,9 +380,10 @@ test("a source with a location AND a source label still exposes a working locati
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Page address/).fill(LOCATION.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: LOCATION.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    LOCATION.type
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
@@ -422,9 +429,10 @@ test("a source with a location, profession, quantity, and notes all set still ex
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Page address/).fill(LOCATION.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: LOCATION.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    LOCATION.type
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
@@ -482,9 +490,10 @@ test("multiple distinct sources at the same location remain understandable and b
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(LOCATION.name);
   await page.getByLabel(/^Page address/).fill(LOCATION.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: LOCATION.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    LOCATION.type
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();

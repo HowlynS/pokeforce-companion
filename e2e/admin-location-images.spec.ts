@@ -14,6 +14,7 @@
 // and removed afterwards.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -100,9 +101,10 @@ async function createLocationWithImage(
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Region" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Region"
+  );
   await page.locator('input[name="image"]').setInputFiles(imageFile);
   await page
     .getByRole("button", { name: "Create Location", exact: true })
@@ -245,9 +247,10 @@ test("an unsupported file type is rejected and nothing is written", async ({
     .getByLabel("Name", { exact: true })
     .fill("Test E2E Location Image Invalid");
   await page.getByLabel(/^Page address/).fill("test-e2e-location-image-invalid");
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Region" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Region"
+  );
   // setInputFiles bypasses the accept picker hint (which is not
   // validation), so the submission reaches the server-side type check.
   await page.locator('input[name="image"]').setInputFiles(TEXT_FIXTURE);
@@ -289,9 +292,10 @@ test("an oversized image is rejected and nothing is written", async ({
       .getByLabel("Name", { exact: true })
       .fill("Test E2E Location Image Oversized");
     await page.getByLabel(/^Page address/).fill("test-e2e-location-image-oversized");
-    await page
-      .getByRole("combobox", { name: "Type", exact: true })
-      .selectOption({ label: "Region" });
+    await selectAdminOption(
+      page.getByRole("combobox", { name: "Type", exact: true }),
+      "Region"
+    );
     await page.locator('input[name="image"]').setInputFiles(oversizedPath);
     await page
       .getByRole("button", { name: "Create Location", exact: true })

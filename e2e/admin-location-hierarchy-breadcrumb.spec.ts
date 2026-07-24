@@ -7,6 +7,7 @@
 // deleteE2eTestLocationRecords cleanup.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   countE2eTestLocationRecords,
   deleteE2eTestLocationRecords,
@@ -47,13 +48,15 @@ async function createLocationThroughForm(
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: data.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    data.type
+  );
   if (data.parentName) {
-    await page
-      .getByRole("combobox", { name: "Parent location", exact: true })
-      .selectOption({ label: data.parentName });
+    await selectAdminOption(
+      page.getByRole("combobox", { name: "Parent location", exact: true }),
+      data.parentName
+    );
   }
   await page
     .getByRole("button", { name: "Create Location", exact: true })

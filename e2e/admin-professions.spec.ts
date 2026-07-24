@@ -13,6 +13,7 @@
 // image input stays empty, so no Storage object is written or deleted.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestProfessionRecords,
@@ -458,12 +459,13 @@ test("deletion is blocked while a recipe references the profession", async ({
   ).toBeVisible();
 
   // The re-rendered confirmation page also blocks statically: the count is
-  // shown, the warning explains the rule, and the delete button is gone.
+  // shown, the warning explains the rule, and the delete action is
+  // disabled (visible, never hidden).
   await expect(page.getByText("Linked recipes: 1")).toBeVisible();
   await expect(
     page.getByText("Reassign or remove those recipes first.")
   ).toBeVisible();
-  await expect(deleteButton).toHaveCount(0);
+  await expect(deleteButton).toBeDisabled();
 
   // The profession survived, in the admin list (record-list secondary
   // context now shows "1 recipe") and on the public site, where the
@@ -634,14 +636,18 @@ test("gameplay verification stamps the selected game version and survives normal
   await expect(panelRow(page, "Verification", "Verified for")).toHaveCount(
     0
   );
+  // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
+  // replaced the native <select> here — see admin-items.spec.ts's own
+  // identical fix for why.
   const picker = page.getByLabel("Verify this record for");
+  await expect(picker, "the current version is preselected").toHaveText(
+    `${CURRENT_VERSION_NAME} (current)`
+  );
+  await picker.click();
   await expect(
-    picker.locator("option:checked"),
-    "the current version is preselected"
-  ).toHaveText(`${CURRENT_VERSION_NAME} (current)`);
-  await expect(
-    picker.locator("option", { hasText: HISTORICAL_VERSION_NAME })
+    page.getByRole("option", { name: HISTORICAL_VERSION_NAME, exact: true })
   ).toHaveCount(1);
+  await page.keyboard.press("Escape");
 
   // --- Verify via the explicit opt-in checkbox (picker untouched) -------
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
@@ -676,9 +682,10 @@ test("gameplay verification stamps the selected game version and survives normal
   // profession: verification is a per-save action, not persistent form
   // state.
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
-  await page
-    .getByLabel("Verify this record for")
-    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await selectAdminOption(
+    page.getByLabel("Verify this record for"),
+    HISTORICAL_VERSION_NAME
+  );
   await page
     .getByLabel(/^Description/)
     .fill("Verifies the shared verification panel (edited).");
@@ -699,9 +706,10 @@ test("gameplay verification stamps the selected game version and survives normal
   ).toBe(stampedDateText);
 
   // --- Verifying against a SELECTED historical version -------------------
-  await page
-    .getByLabel("Verify this record for")
-    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await selectAdminOption(
+    page.getByLabel("Verify this record for"),
+    HISTORICAL_VERSION_NAME
+  );
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/professions?success=updated");

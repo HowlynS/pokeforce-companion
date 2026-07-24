@@ -7,6 +7,7 @@ import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { prisma } from "@/lib/db";
@@ -215,18 +216,15 @@ export default async function EditLocationPage({
           >
             <label className="form-field">
               <span className="form-field-label">Type</span>
-              <select
+              <AdminSelect
                 name="type"
                 required
                 defaultValue={location.type}
-                className="form-input"
-              >
-                {LOCATION_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {LOCATION_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
+                options={LOCATION_TYPES.map((type) => ({
+                  value: type,
+                  label: LOCATION_TYPE_LABELS[type],
+                }))}
+              />
             </label>
           </EditorSection>
 

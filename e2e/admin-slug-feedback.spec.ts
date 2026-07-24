@@ -22,6 +22,7 @@
 // like create — manual override remains the one-way escape hatch on both.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   countE2eTestLocationRecords,
   deleteE2eTestLocationRecords,
@@ -91,13 +92,14 @@ const RESOURCES: ResourceCase[] = [
     createButton: "Create Recipe",
     duplicateErrorUrl: "/admin/recipes/new?error=duplicate",
     fillRequiredFields: async (page) => {
-      await page
-        .getByRole("combobox", { name: "Resulting item", exact: true })
-        .selectOption({ label: "Iron Ingot" });
+      await selectAdminOption(
+        page.getByRole("combobox", { name: "Resulting item", exact: true }),
+        "Iron Ingot"
+      );
       const group = page.getByRole("group", {
         name: "Ingredients (fill at least one row)",
       });
-      await group.getByRole("combobox").nth(0).selectOption({ label: "Iron Ore" });
+      await selectAdminOption(group.getByRole("combobox").nth(0), "Iron Ore");
       await group.getByRole("spinbutton").nth(0).fill("1");
     },
   },
@@ -378,9 +380,10 @@ test("Location create/edit: Page address live tracking, manual override, and ava
   // edit half below.
   await nameInput(page).fill(PARENT.name);
   await slugInput(page).fill(PARENT.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Region" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Region"
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
@@ -393,9 +396,10 @@ test("Location create/edit: Page address live tracking, manual override, and ava
     slug: "test-e2e-location-slug-feedback-other",
   };
   await nameInput(page).fill(CHILD.name);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Town" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Town"
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();

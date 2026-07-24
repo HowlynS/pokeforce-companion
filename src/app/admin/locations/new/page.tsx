@@ -5,6 +5,7 @@ import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
@@ -163,28 +164,31 @@ export default async function NewLocationPage({
           >
             <label className="form-field">
               <span className="form-field-label">Type</span>
-              <select name="type" required defaultValue="" className="form-input">
-                <option value="" disabled>
-                  Select a type
-                </option>
-                {LOCATION_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {LOCATION_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
+              <AdminSelect
+                name="type"
+                required
+                defaultValue=""
+                placeholder="Select a type"
+                options={LOCATION_TYPES.map((type) => ({
+                  value: type,
+                  label: LOCATION_TYPE_LABELS[type],
+                }))}
+              />
             </label>
 
             <label className="form-field">
               <span className="form-field-label">Parent location</span>
-              <select name="parentId" defaultValue="" className="form-input">
-                <option value="">No parent</option>
-                {parentOptions.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}
-                  </option>
-                ))}
-              </select>
+              <AdminSelect
+                name="parentId"
+                defaultValue=""
+                options={[
+                  { value: "", label: "No parent" },
+                  ...parentOptions.map((location) => ({
+                    value: location.id,
+                    label: location.name,
+                  })),
+                ]}
+              />
             </label>
           </EditorSection>
 

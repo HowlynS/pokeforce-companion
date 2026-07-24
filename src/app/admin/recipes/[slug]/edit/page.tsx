@@ -7,6 +7,7 @@ import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
@@ -221,18 +222,15 @@ export default async function EditRecipePage({
           <EditorSection title="Output" icon={SECTION_ICONS.output}>
             <label className="form-field">
               <span className="form-field-label">Resulting item</span>
-              <select
+              <AdminSelect
                 name="resultingItemId"
                 required
                 defaultValue={recipe.resultingItemId}
-                className="form-input"
-              >
-                {items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+                options={items.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                }))}
+              />
             </label>
 
             <div className="form-field">
@@ -284,18 +282,17 @@ export default async function EditRecipePage({
           >
             <label className="form-field">
               <span className="form-field-label">Profession</span>
-              <select
+              <AdminSelect
                 name="professionId"
                 defaultValue={recipe.professionId ?? ""}
-                className="form-input"
-              >
-                <option value="">No profession</option>
-                {professions.map((profession) => (
-                  <option key={profession.id} value={profession.id}>
-                    {profession.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "No profession" },
+                  ...professions.map((profession) => ({
+                    value: profession.id,
+                    label: profession.name,
+                  })),
+                ]}
+              />
             </label>
 
             <label className="form-field form-field-narrow">

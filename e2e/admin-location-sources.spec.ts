@@ -17,6 +17,7 @@
 // exhaustive — no new cleanup surface is introduced.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   countE2eTestAcquisitionRecords,
   deleteE2eTestAcquisitionRecords,
@@ -67,9 +68,10 @@ async function createTemporaryLocation(
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: data.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    data.type
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
@@ -100,18 +102,21 @@ async function addSourceThroughForm(
   }
 ) {
   await page.goto(`/admin/items/${itemSlug}/sources`);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: data.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    data.type
+  );
   if (data.locationName) {
-    await page
-      .getByRole("combobox", { name: "Location (optional)", exact: true })
-      .selectOption({ label: data.locationName });
+    await selectAdminOption(
+      page.getByRole("combobox", { name: "Location (optional)", exact: true }),
+      data.locationName
+    );
   }
   if (data.professionName) {
-    await page
-      .getByRole("combobox", { name: "Profession (optional)", exact: true })
-      .selectOption({ label: data.professionName });
+    await selectAdminOption(
+      page.getByRole("combobox", { name: "Profession (optional)", exact: true }),
+      data.professionName
+    );
   }
   if (data.sourceLabel) {
     await page.getByLabel(/^Source label/).fill(data.sourceLabel);

@@ -8,6 +8,7 @@
 // fresh create form's optional fields do not spuriously start dirty.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import { deleteE2eTestAcquisitionRecords } from "./helpers/database-cleanup";
 
 let pageErrors: string[] = [];
@@ -64,9 +65,10 @@ test("create form: a fresh visit is never dirty, filling fields marks dirty, and
   await page.goto(`/admin/items/${itemSlug}/sources`);
   await expect(status(page)).toHaveCount(0);
 
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Mining" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Mining"
+  );
   await expect(status(page)).toBeVisible();
 
   // Cancel on this page is deliberately a same-page link (the create form
@@ -90,9 +92,10 @@ test("edit form: a linked-select change marks dirty, reverting clears it, and Ct
     "test-e2e-acqsrc-item-guard-edit"
   );
   await page.goto(`/admin/items/${itemSlug}/sources`);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Foraging" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Foraging"
+  );
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
   await expect(page).toHaveURL(
     `/admin/items/${itemSlug}/sources?success=created`
@@ -102,9 +105,9 @@ test("edit form: a linked-select change marks dirty, reverting clears it, and Ct
   await expect(status(page)).toHaveCount(0);
 
   const typeSelect = page.getByRole("combobox", { name: "Type", exact: true });
-  await typeSelect.selectOption({ label: "Mining" });
+  await selectAdminOption(typeSelect, "Mining");
   await expect(status(page)).toBeVisible();
-  await typeSelect.selectOption({ label: "Foraging" });
+  await selectAdminOption(typeSelect, "Foraging");
   await expect(status(page)).toHaveCount(0);
 
   await page.getByLabel("Notes (optional)", { exact: true }).fill("Verified by hand.");

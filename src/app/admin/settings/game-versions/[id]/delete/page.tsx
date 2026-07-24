@@ -4,6 +4,7 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { countVerificationReferences } from "@/lib/game-versions";
 import { formatDisplayDate } from "@/lib/format-date";
+import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import { deleteGameVersionAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -66,13 +67,19 @@ export default async function DeleteGameVersionPage({
         </p>
       ) : null}
 
-      <div className="confirm-card">
-        <p className="confirm-card-eyebrow">Destructive action</p>
-        <p>
-          You are about to permanently delete <strong>{version.name}</strong>.
-          This action cannot be undone.
-        </p>
-
+      <DeleteRecordDialog
+        title="Delete Game Version"
+        description={
+          <>
+            You are about to permanently delete{" "}
+            <strong>{version.name}</strong>. This action cannot be undone.
+          </>
+        }
+        canDelete={canDelete}
+        formAction={deleteGameVersionAction}
+        hiddenFields={{ id: version.id }}
+        cancelHref="/admin/settings/game-versions"
+      >
         <p className="text-muted">
           Release date: {formatDisplayDate(version.releaseDate) ?? "None"}
         </p>
@@ -101,22 +108,7 @@ export default async function DeleteGameVersionPage({
             cannot be marked as verified in the meantime.
           </p>
         ) : null}
-
-        <div className="form-actions">
-          {canDelete ? (
-            <form action={deleteGameVersionAction}>
-              <input type="hidden" name="id" value={version.id} />
-              <button type="submit" className="btn btn-danger">
-                Delete Permanently
-              </button>
-            </form>
-          ) : null}
-
-          <a href="/admin/settings/game-versions" className="btn btn-secondary">
-            Cancel
-          </a>
-        </div>
-      </div>
+      </DeleteRecordDialog>
     </>
   );
 }

@@ -6,6 +6,7 @@ import { EditorSection } from "@/components/admin/editor-section";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { AdminSelect } from "@/components/admin/admin-select";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -182,21 +183,16 @@ export default async function NewRecipePage({
             <EditorSection title="Output" icon={SECTION_ICONS.output}>
               <label className="form-field">
                 <span className="form-field-label">Resulting item</span>
-                <select
+                <AdminSelect
                   name="resultingItemId"
                   required
                   defaultValue=""
-                  className="form-input"
-                >
-                  <option value="" disabled>
-                    Select an item
-                  </option>
-                  {items.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select an item"
+                  options={items.map((item) => ({
+                    value: item.id,
+                    label: item.name,
+                  }))}
+                />
               </label>
 
               <div className="form-field">
@@ -248,14 +244,17 @@ export default async function NewRecipePage({
             >
               <label className="form-field">
                 <span className="form-field-label">Profession</span>
-                <select name="professionId" defaultValue="" className="form-input">
-                  <option value="">No profession</option>
-                  {professions.map((profession) => (
-                    <option key={profession.id} value={profession.id}>
-                      {profession.name}
-                    </option>
-                  ))}
-                </select>
+                <AdminSelect
+                  name="professionId"
+                  defaultValue=""
+                  options={[
+                    { value: "", label: "No profession" },
+                    ...professions.map((profession) => ({
+                      value: profession.id,
+                      label: profession.name,
+                    })),
+                  ]}
+                />
               </label>
 
               <label className="form-field form-field-narrow">
@@ -282,18 +281,17 @@ export default async function NewRecipePage({
 
                 {ingredientRows.map((row) => (
                   <div key={row} className="ingredient-row">
-                    <select
+                    <AdminSelect
                       name={`ingredientItemId${row}`}
                       defaultValue=""
-                      className="form-input"
-                    >
-                      <option value="">No ingredient</option>
-                      {items.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: "", label: "No ingredient" },
+                        ...items.map((item) => ({
+                          value: item.id,
+                          label: item.name,
+                        })),
+                      ]}
+                    />
 
                     <input
                       type="number"

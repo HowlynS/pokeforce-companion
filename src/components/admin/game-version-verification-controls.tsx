@@ -20,6 +20,7 @@
 // behavior stays exactly the same uncontrolled, plain HTML submission.
 
 import { useState } from "react";
+import { AdminSelect } from "@/components/admin/admin-select";
 
 export type GameVersionPickerOption = {
   id: string;
@@ -82,22 +83,17 @@ export function GameVersionVerificationControls({
             silently chosen, and submitting the blank value falls back to
             the server-side current-version rule (which then fails with a
             clear message precisely because nothing is current). */}
-        <select
+        <AdminSelect
           name="verifiedGameVersionId"
           defaultValue={currentVersion?.id ?? ""}
-          form={formId}
-          className="form-input"
-          onChange={(event) => setSelectedId(event.target.value)}
-        >
-          {!currentVersion ? (
-            <option value="">Select a game version…</option>
-          ) : null}
-          {gameVersions.map((version) => (
-            <option key={version.id} value={version.id}>
-              {version.isCurrent ? `${version.name} (current)` : version.name}
-            </option>
-          ))}
-        </select>
+          formId={formId}
+          placeholder={!currentVersion ? "Select a game version…" : undefined}
+          onValueChange={setSelectedId}
+          options={gameVersions.map((version) => ({
+            value: version.id,
+            label: version.isCurrent ? `${version.name} (current)` : version.name,
+          }))}
+        />
       </label>
 
       {/* Explicit per-save action, deliberately never pre-checked (even

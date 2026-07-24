@@ -27,6 +27,7 @@
 // is otherwise unchanged.
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestLocationRecords,
@@ -161,13 +162,14 @@ function panelRow(page: Page, panelTitle: string, label: string) {
     .filter({ hasText: new RegExp(`^${label}`) });
 }
 
-// Reads the visible text of a <select>'s currently selected option, for
+// Reads the visible text of an AdminSelect's currently selected value, for
 // prefill assertions where option values (database ids) are unknown.
+// AdminSelect's trigger button's own text content IS the selected label
+// (unlike a native <select>, whose plain textContent would concatenate
+// every <option> rather than just the selected one — the reason this
+// helper originally read `.selectedOptions[0]` instead).
 async function selectedOptionLabel(select: Locator): Promise<string> {
-  return select.evaluate(
-    (el) =>
-      (el as HTMLSelectElement).selectedOptions[0]?.textContent?.trim() ?? ""
-  );
+  return (await select.textContent())?.trim() ?? "";
 }
 
 // Fills the create form on /admin/locations/new (the page must already be
@@ -187,13 +189,15 @@ async function createLocationThroughForm(
 ) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: data.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    data.type
+  );
   if (data.parentName) {
-    await page
-      .getByRole("combobox", { name: "Parent location", exact: true })
-      .selectOption({ label: data.parentName });
+    await selectAdminOption(
+      page.getByRole("combobox", { name: "Parent location", exact: true }),
+      data.parentName
+    );
   }
   if (data.description) {
     await page.getByLabel(/^Description/).fill(data.description);
@@ -437,9 +441,10 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: EDITED.type });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    EDITED.type
+  );
   await page.getByLabel(/^Description/).fill(EDITED.description);
   await page.getByLabel(/^Extra information/).fill(EDITED.accessNote);
   // The verification checkbox must render unchecked by default and stays
@@ -526,14 +531,18 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await expect(panelRow(page, "Verification", "Verified for")).toHaveCount(
     0
   );
+  // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
+  // replaced the native <select> here — see admin-items.spec.ts's own
+  // identical fix for why.
   const picker = page.getByLabel("Verify this record for");
+  await expect(picker, "the current version is preselected").toHaveText(
+    `${CURRENT_VERSION_NAME} (current)`
+  );
+  await picker.click();
   await expect(
-    picker.locator("option:checked"),
-    "the current version is preselected"
-  ).toHaveText(`${CURRENT_VERSION_NAME} (current)`);
-  await expect(
-    picker.locator("option", { hasText: HISTORICAL_VERSION_NAME })
+    page.getByRole("option", { name: HISTORICAL_VERSION_NAME, exact: true })
   ).toHaveCount(1);
+  await page.keyboard.press("Escape");
 
   // --- Verify via the explicit opt-in checkbox (picker untouched) -------
   const verifyCheckbox = page.getByLabel(VERIFICATION_CHECKBOX_LABEL);
@@ -575,9 +584,10 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   // state.
   await page.goto(`/admin/locations/${VERIFY_LOCATION.slug}/edit`);
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
-  await page
-    .getByLabel("Verify this record for")
-    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await selectAdminOption(
+    page.getByLabel("Verify this record for"),
+    HISTORICAL_VERSION_NAME
+  );
   await page
     .getByLabel(/^Description/)
     .fill("Edited without touching verification.");
@@ -603,9 +613,10 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   ).toBe(stampedDateText);
 
   // --- Verifying against a SELECTED historical version -------------------
-  await page
-    .getByLabel("Verify this record for")
-    .selectOption({ label: HISTORICAL_VERSION_NAME });
+  await selectAdminOption(
+    page.getByLabel("Verify this record for"),
+    HISTORICAL_VERSION_NAME
+  );
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL("/admin/locations?success=updated");
@@ -635,9 +646,10 @@ test("creating a location with a duplicate name is rejected server-side", async 
   // must be rejected.
   await page.getByLabel("Name", { exact: true }).fill("  test e2e location duplicate source  ");
   await page.getByLabel(/^Page address/).fill("test-e2e-location-duplicate-attempt");
-  await page
-    .getByRole("combobox", { name: "Type", exact: true })
-    .selectOption({ label: "Route" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Route"
+  );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
@@ -677,9 +689,10 @@ test("assigning a location's own descendant as its parent is rejected server-sid
   // would create a cycle (ancestor -> descendant -> ancestor). Parent
   // assignment lives on the Hierarchy tab since Slice 9F.3.
   await page.goto(`/admin/locations/${CYCLE_ANCESTOR.slug}/hierarchy`);
-  await page
-    .getByRole("combobox", { name: "Parent location", exact: true })
-    .selectOption({ label: CYCLE_DESCENDANT.name });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Parent location", exact: true }),
+    CYCLE_DESCENDANT.name
+  );
   await page
     .getByRole("button", { name: "Save Hierarchy", exact: true })
     .click();
@@ -694,12 +707,16 @@ test("assigning a location's own descendant as its parent is rejected server-sid
     })
   ).toBeVisible();
   // The picker itself still excludes the ancestor from its own choices —
-  // self-parenting was never even offerable.
+  // self-parenting was never even offerable. AdminSelect only renders its
+  // options while open (portaled), so the picker is opened first; Escape
+  // closes it again without changing anything.
+  await page
+    .getByRole("combobox", { name: "Parent location", exact: true })
+    .click();
   await expect(
-    page
-      .getByRole("combobox", { name: "Parent location", exact: true })
-      .locator("option", { hasText: CYCLE_ANCESTOR.name })
+    page.getByRole("option", { name: CYCLE_ANCESTOR.name, exact: true })
   ).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   // The ancestor's parent assignment was never applied.
   await page.goto(`/locations/${CYCLE_ANCESTOR.slug}`);
@@ -759,9 +776,13 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
     exact: true,
   });
   expect(await selectedOptionLabel(parentSelect)).toBe(PARENT_A.name);
+  // Self excluded from its own choices — opened first since AdminSelect
+  // only renders options while open (portaled); Escape closes it again.
+  await parentSelect.click();
   await expect(
-    parentSelect.locator("option", { hasText: SUBJECT.name })
+    page.getByRole("option", { name: SUBJECT.name, exact: true })
   ).toHaveCount(0);
+  await page.keyboard.press("Escape");
   // Relationship-count badge (Phase B sub-slice): direct children + 1 if a
   // parent exists. The subject has a parent and no children of its own:
   // 0 children + 1 = 1.
@@ -789,9 +810,10 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
 
   // --- Reassign to Parent B: only parentId changes ------------------------
   await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
-  await page
-    .getByRole("combobox", { name: "Parent location", exact: true })
-    .selectOption({ label: PARENT_B.name });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Parent location", exact: true }),
+    PARENT_B.name
+  );
   await page
     .getByRole("button", { name: "Save Hierarchy", exact: true })
     .click();
@@ -851,9 +873,10 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   // so Delete Location is no longer offered there — reachability is
   // proven from General instead, where it always unconditionally lives. --
   await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
-  await page
-    .getByRole("combobox", { name: "Parent location", exact: true })
-    .selectOption({ label: "No parent" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Parent location", exact: true }),
+    "No parent"
+  );
   await page
     .getByRole("button", { name: "Save Hierarchy", exact: true })
     .click();
@@ -973,7 +996,7 @@ test("deletion is blocked while a sub-location exists", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Delete Permanently", exact: true })
-  ).toHaveCount(0);
+  ).toBeDisabled();
 
   // The safe workflow: remove the child first, then the parent.
   await page.goto(`/admin/locations/${BLOCKED_CHILD.slug}/delete`);

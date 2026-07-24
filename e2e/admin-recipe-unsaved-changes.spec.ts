@@ -8,6 +8,7 @@
 // re-verified exhaustively here.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import {
   deleteE2eTestRecipeRecords,
   countE2eTestRecipeRecords,
@@ -52,12 +53,14 @@ async function createTempRecipe(
   await page.goto("/admin/recipes/new");
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel(/^Page address/).fill(slug);
-  await page
-    .getByRole("combobox", { name: "Resulting item", exact: true })
-    .selectOption({ label: "Iron Ore" });
-  await page
-    .locator('select[name="ingredientItemId1"]')
-    .selectOption({ label: "Iron Ingot" });
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Resulting item", exact: true }),
+    "Iron Ore"
+  );
+  await selectAdminOption(
+    page.locator(".admin-select:has(input[name=\"ingredientItemId1\"])").getByRole("combobox"),
+    "Iron Ingot"
+  );
   await page.locator('input[name="ingredientQuantity1"]').fill("1");
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })

@@ -9,6 +9,7 @@
 // prisma/seed.ts.
 
 import { expect, test, type Page } from "@playwright/test";
+import { selectAdminOption } from "./helpers/admin-select";
 import { readFixtureCounts } from "./helpers/database-cleanup";
 
 // Visual Pass II Section 4: a valid name (available OR unchanged/current)
@@ -80,16 +81,14 @@ const RESOURCES: ResourceCase[] = [
     // before the action's duplicate check runs; seeded records are only
     // REFERENCED, never modified.
     fillRequiredFields: async (page) => {
-      await page
-        .getByRole("combobox", { name: "Resulting item", exact: true })
-        .selectOption({ label: "Iron Ingot" });
+      await selectAdminOption(
+        page.getByRole("combobox", { name: "Resulting item", exact: true }),
+        "Iron Ingot"
+      );
       const group = page.getByRole("group", {
         name: "Ingredients (fill at least one row)",
       });
-      await group
-        .getByRole("combobox")
-        .nth(0)
-        .selectOption({ label: "Iron Ore" });
+      await selectAdminOption(group.getByRole("combobox").nth(0), "Iron Ore");
       await group.getByRole("spinbutton").nth(0).fill("1");
     },
   },

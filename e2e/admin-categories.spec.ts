@@ -433,12 +433,13 @@ test("deletion is blocked while an item references the category", async ({
   ).toBeVisible();
 
   // The re-rendered confirmation page also blocks statically: the count is
-  // shown, the warning explains the rule, and the delete button is gone.
+  // shown, the warning explains the rule, and the delete action is
+  // disabled (visible, never hidden).
   await expect(page.getByText("Linked items: 1")).toBeVisible();
   await expect(
     page.getByText("Reassign or remove those items first.")
   ).toBeVisible();
-  await expect(deleteButton).toHaveCount(0);
+  await expect(deleteButton).toBeDisabled();
 
   // The category survived, in the admin list (record-list secondary
   // context now shows "1 item") and on the public site, where the

@@ -24,17 +24,41 @@ import { useEffect, useId, useRef } from "react";
 
 type ConfirmDialogProps = {
   open: boolean;
+  /** Small-caps marker rendered above the title (the pre-existing
+      .confirm-card-eyebrow treatment) — only the delete-confirmation
+      dialog sets this ("Destructive action"); the two original callers
+      leave it unset and render no eyebrow at all. */
+  eyebrow?: string;
   title: string;
-  description: string;
+  /** A plain string for the two original callers; the delete-confirmation
+      dialog passes a node so it can bold the record's own name inline. */
+  description: React.ReactNode;
+  /** Extra content rendered between the description and the action row —
+      e.g. the delete-confirmation dialog's own resource-fact lines and
+      blocked-reason text. Absent for the two original callers (the
+      discard-navigation and draft-recovery prompts), which need only a
+      single description sentence. */
+  children?: React.ReactNode;
   /** The destructive/primary-action label (e.g. "Discard changes"). */
   confirmLabel: string;
   /** The secondary-action label (e.g. "Keep editing"). */
   cancelLabel: string;
-  /** "danger" styles the confirm button as destructive; "primary" styles
-      it as the safe/primary accent (used by the recovery prompt, whose
-      confirm action — Restore — is the one to favor and is not
-      destructive). */
-  confirmTone?: "danger" | "primary";
+  /** "danger" (outlined, the existing default) styles a destructive
+      action that itself only LEADS to something destructive (Discard
+      unsaved changes still just navigates away); "danger-solid" is the
+      heavier full-fill treatment this codebase reserves for a button that
+      IS the actual irreversible action (the delete-confirmation dialog's
+      own Confirm, matching the pre-existing .confirm-card page's
+      .btn-danger — never .btn-danger-outline, which stays for links that
+      merely lead TO that page); "primary" styles it as the safe/primary
+      accent (used by the recovery prompt, whose confirm action — Restore
+      — is the one to favor and is not destructive). */
+  confirmTone?: "danger" | "danger-solid" | "primary";
+  /** Disables the confirm action without hiding it — the delete-
+      confirmation dialog uses this while a live dependency still blocks
+      deletion, so the reason (rendered via `children`) stays visible
+      instead of the whole action disappearing. */
+  confirmDisabled?: boolean;
   /** Which action receives initial focus. Defaults to "cancel" (the safe
       default for a discard-navigation prompt); the recovery prompt sets
       "confirm" so focus favors restoring the user's work. */
@@ -45,6 +69,14 @@ type ConfirmDialogProps = {
       passes a distinct handler so dismissing preserves (never deletes) the
       draft. */
   onDismiss?: () => void;
+  /** Renders Cancel as a real, navigable <a href> instead of a button —
+      the delete-confirmation dialog's Cancel genuinely goes to a URL (the
+      record's edit page), unlike the two original callers where Cancel
+      only ever resolves an in-JS pending action. onCancel still fires for
+      Escape/backdrop dismissal; the link itself carries no onClick, so a
+      real click is an ordinary navigation (open in new tab, copy link,
+      etc. all keep working). */
+  cancelHref?: string;
 };
 
 const FOCUSABLE_SELECTOR =
@@ -52,20 +84,24 @@ const FOCUSABLE_SELECTOR =
 
 export function ConfirmDialog({
   open,
+  eyebrow,
   title,
   description,
+  children,
   confirmLabel,
   cancelLabel,
   confirmTone = "danger",
+  confirmDisabled = false,
   initialFocus = "cancel",
   onConfirm,
   onCancel,
   onDismiss,
+  cancelHref,
 }: ConfirmDialogProps) {
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   // The element focused immediately before the dialog opened, restored on
   // close so focus returns to the navigation trigger.
@@ -158,28 +194,45 @@ export function ConfirmDialog({
         className="admin-modal"
         onKeyDown={handleKeyDown}
       >
+        {eyebrow ? (
+          <p className="confirm-card-eyebrow">{eyebrow}</p>
+        ) : null}
         <h2 id={titleId} className="admin-modal-title">
           {title}
         </h2>
         <p id={descriptionId} className="admin-modal-message">
           {description}
         </p>
+        {children}
         <div className="admin-modal-actions">
-          <button
-            ref={cancelButtonRef}
-            type="button"
-            className="btn btn-secondary"
-            onClick={onCancel}
-          >
-            {cancelLabel}
-          </button>
+          {cancelHref ? (
+            <a
+              ref={cancelButtonRef as React.Ref<HTMLAnchorElement>}
+              href={cancelHref}
+              className="btn btn-secondary"
+            >
+              {cancelLabel}
+            </a>
+          ) : (
+            <button
+              ref={cancelButtonRef as React.Ref<HTMLButtonElement>}
+              type="button"
+              className="btn btn-secondary"
+              onClick={onCancel}
+            >
+              {cancelLabel}
+            </button>
+          )}
           <button
             ref={confirmButtonRef}
             type="button"
+            disabled={confirmDisabled}
             className={
-              confirmTone === "danger"
-                ? "btn btn-danger-outline"
-                : "btn btn-primary"
+              confirmTone === "danger-solid"
+                ? "btn btn-danger"
+                : confirmTone === "primary"
+                  ? "btn btn-primary"
+                  : "btn btn-danger-outline"
             }
             onClick={onConfirm}
           >
