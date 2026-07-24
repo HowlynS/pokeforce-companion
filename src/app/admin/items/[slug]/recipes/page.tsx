@@ -13,6 +13,7 @@ import {
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
+import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
 import { ResourceIcon } from "@/components/admin/resource-icon";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
@@ -35,17 +36,27 @@ async function RecipeNameCell({
   slug,
   name,
   image,
+  resultingItemImage,
   professionName,
   requiredLevel,
 }: {
   slug: string;
   name: string;
   image: string | null;
+  /** The recipe's resulting item's own image — the display fallback when
+      this recipe has no custom image of its own (Recipe Image Inheritance
+      follow-up), never a database write. */
+  resultingItemImage: string | null;
   professionName: string | null | undefined;
   requiredLevel: number | null;
 }) {
   const hasDetails = Boolean(professionName) || requiredLevel != null;
-  const imageUrl = await getImagePublicUrl(image);
+  const imageUrl = await getImagePublicUrl(
+    resolveRecipeDisplayImage({
+      recipeImage: image,
+      resultingItemImage,
+    })
+  );
 
   return (
     <td>
@@ -166,6 +177,7 @@ export default async function ItemRecipesPage({
                           slug={ingredient.recipe.slug}
                           name={ingredient.recipe.name}
                           image={ingredient.recipe.image}
+                          resultingItemImage={ingredient.recipe.resultingItem.image}
                           professionName={ingredient.recipe.profession?.name}
                           requiredLevel={ingredient.recipe.requiredLevel}
                         />
@@ -203,6 +215,7 @@ export default async function ItemRecipesPage({
                           slug={recipe.slug}
                           name={recipe.name}
                           image={recipe.image}
+                          resultingItemImage={item.image}
                           professionName={recipe.profession?.name}
                           requiredLevel={recipe.requiredLevel}
                         />

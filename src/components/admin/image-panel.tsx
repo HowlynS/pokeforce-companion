@@ -67,6 +67,26 @@ type ImagePanelProps = {
   formId: string;
   fieldName?: string;
   removeFieldName?: string;
+  /** Optional read-only display fallback shown whenever this record has no
+      image of its own (persisted image absent, or its own removal is
+      pending) — never submitted, never persisted, purely a preview.
+      Undefined (the default, and every non-Recipe caller today) turns this
+      feature off entirely, leaving every existing caller's behavior
+      byte-for-byte unchanged; pass `null` to opt in with "nothing to
+      inherit yet" (e.g. no Resulting Item selected). */
+  inheritedImageUrl?: string | null;
+  /** Alt text for `inheritedImageUrl` when it is the one on screen; falls
+      back to `imageAlt` when omitted. */
+  inheritedImageAlt?: string;
+  /** Shown while the panel is displaying `inheritedImageUrl` (no image of
+      this record's own is currently in effect). Ignored unless
+      `inheritedImageUrl` is provided. */
+  inheritedNote?: string;
+  /** Shown while the panel is displaying this record's OWN persisted image
+      and an inherited fallback is also available — i.e. this record's
+      image is currently overriding the inherited one. Ignored unless
+      `inheritedImageUrl` is provided. */
+  overrideNote?: string;
 };
 
 export function ImagePanel({
@@ -76,6 +96,10 @@ export function ImagePanel({
   formId,
   fieldName = "image",
   removeFieldName = "removeImage",
+  inheritedImageUrl,
+  inheritedImageAlt,
+  inheritedNote,
+  overrideNote,
 }: ImagePanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
@@ -100,7 +124,23 @@ export function ImagePanel({
   // removed (empty) state if Remove is checked; otherwise the persisted
   // image. See the module comment for why a file selected while Remove is
   // also checked still previews (the server alone rejects that combination).
-  const displayImageUrl = previewUrl ?? (removed ? null : imageUrl);
+  //
+  // The optional inherited fallback (Recipe Image Inheritance follow-up)
+  // slots into the SAME precedence one step below the persisted image —
+  // when inheritedImageUrl is undefined (every non-Recipe caller today)
+  // `inheritedFallback` is null and every line below reduces to exactly the
+  // pre-existing behavior.
+  const inheritedFallback = inheritedImageUrl ?? null;
+  const displayImageUrl =
+    previewUrl ?? (removed ? inheritedFallback : imageUrl ?? inheritedFallback);
+
+  // Which source is actually on screen right now, for the optional
+  // explanatory notes below — never used to CHANGE displayImageUrl itself.
+  const hasInheritance = inheritedImageUrl !== undefined;
+  const isShowingInherited =
+    hasInheritance && !previewUrl && (removed || !imageUrl) && inheritedFallback !== null;
+  const isShowingOverride = hasInheritance && !previewUrl && !removed && Boolean(imageUrl);
+  const effectiveAlt = isShowingInherited ? inheritedImageAlt ?? imageAlt : imageAlt;
 
   return (
     <ContextPanel title={title} icon={SECTION_ICONS.image}>
@@ -120,12 +160,24 @@ export function ImagePanel({
           // eslint-disable-next-line @next/next/no-img-element -- admin-only preview; remote next/image configuration is deferred to the public-display slice
           <img
             src={displayImageUrl}
-            alt={imageAlt}
+            alt={effectiveAlt}
             className="admin-image-preview-lg"
           />
         ) : (
           <div className="admin-image-empty-lg">No image uploaded.</div>
         )}
+
+        {isShowingInherited && inheritedNote ? (
+          <p className="admin-image-helper admin-image-inherit-note">
+            {inheritedNote}
+          </p>
+        ) : null}
+
+        {isShowingOverride && overrideNote ? (
+          <p className="admin-image-helper admin-image-inherit-note">
+            {overrideNote}
+          </p>
+        ) : null}
 
         <p className="admin-image-helper">{HELPER_TEXT}</p>
 

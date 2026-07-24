@@ -40,6 +40,75 @@ describe("ImagePanel: initial render with no image", () => {
   });
 });
 
+describe("ImagePanel: inherited image (Recipe Image Inheritance follow-up)", () => {
+  it("shows the inherited image and note when the record has no image of its own", () => {
+    const html = renderToStaticMarkup(
+      <ImagePanel
+        imageUrl={null}
+        formId="recipe-create-form"
+        inheritedImageUrl="https://example.com/copper-ingot.png"
+        inheritedImageAlt="Copper Ingot's resulting item image"
+        inheritedNote="Using the resulting item's image. Upload a Recipe image only to override it."
+        overrideNote="This Recipe uses a custom image override. Removing it will restore the resulting item's image."
+      />
+    );
+    expect(html).toContain('src="https://example.com/copper-ingot.png"');
+    expect(html).toContain('alt="Copper Ingot&#x27;s resulting item image"');
+    expect(html).toContain(
+      "Using the resulting item&#x27;s image. Upload a Recipe image only to override it."
+    );
+    expect(html).not.toContain("custom image override");
+    expect(html).not.toContain("No image uploaded.");
+    // No persisted image, so no remove checkbox — matching the plain
+    // no-image case exactly.
+    expect(html).not.toContain('name="removeImage"');
+  });
+
+  it("shows the record's own persisted image and the override note when both exist", () => {
+    const html = renderToStaticMarkup(
+      <ImagePanel
+        imageUrl="https://example.com/custom-recipe.png"
+        imageAlt="Current image for Smelt Copper"
+        formId="recipe-edit-form"
+        inheritedImageUrl="https://example.com/copper-ingot.png"
+        inheritedNote="Using the resulting item's image. Upload a Recipe image only to override it."
+        overrideNote="This Recipe uses a custom image override. Removing it will restore the resulting item's image."
+      />
+    );
+    expect(html).toContain('src="https://example.com/custom-recipe.png"');
+    expect(html).toContain('alt="Current image for Smelt Copper"');
+    expect(html).toContain("custom image override");
+    expect(html).not.toContain("Upload a Recipe image only to override it.");
+  });
+
+  it("shows the plain empty fallback, with no inheritance note, when neither image exists", () => {
+    const html = renderToStaticMarkup(
+      <ImagePanel
+        imageUrl={null}
+        formId="recipe-create-form"
+        inheritedImageUrl={null}
+        inheritedNote="Using the resulting item's image. Upload a Recipe image only to override it."
+        overrideNote="This Recipe uses a custom image override. Removing it will restore the resulting item's image."
+      />
+    );
+    expect(html).toContain("No image uploaded.");
+    expect(html).not.toContain("admin-image-inherit-note");
+  });
+
+  it("leaves every non-Recipe caller's behavior unchanged when inheritedImageUrl is omitted", () => {
+    const html = renderToStaticMarkup(
+      <ImagePanel
+        imageUrl={null}
+        formId="item-create-form"
+        inheritedNote="This text must never render for Items."
+      />
+    );
+    expect(html).toContain("No image uploaded.");
+    expect(html).not.toContain("This text must never render for Items.");
+    expect(html).not.toContain("admin-image-inherit-note");
+  });
+});
+
 describe("ImagePanel: the file input", () => {
   it("associates with the given form and carries the given field name", () => {
     const html = renderToStaticMarkup(

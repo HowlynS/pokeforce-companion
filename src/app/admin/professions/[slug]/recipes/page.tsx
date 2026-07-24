@@ -13,6 +13,7 @@ import {
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
+import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
 import { ResourceIcon } from "@/components/admin/resource-icon";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
@@ -36,14 +37,24 @@ async function RecipeNameCell({
   slug,
   name,
   image,
+  resultingItemImage,
   requiredLevel,
 }: {
   slug: string;
   name: string;
   image: string | null;
+  /** The recipe's resulting item's own image — the display fallback when
+      this recipe has no custom image of its own (Recipe Image Inheritance
+      follow-up), never a database write. */
+  resultingItemImage: string | null;
   requiredLevel: number | null;
 }) {
-  const imageUrl = await getImagePublicUrl(image);
+  const imageUrl = await getImagePublicUrl(
+    resolveRecipeDisplayImage({
+      recipeImage: image,
+      resultingItemImage,
+    })
+  );
 
   return (
     <td>
@@ -148,6 +159,7 @@ export default async function ProfessionRecipesPage({
                       slug={recipe.slug}
                       name={recipe.name}
                       image={recipe.image}
+                      resultingItemImage={recipe.resultingItem.image}
                       requiredLevel={recipe.requiredLevel}
                     />
                     <td>{recipe.resultingItem.name}</td>

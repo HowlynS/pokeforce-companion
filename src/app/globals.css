@@ -2393,6 +2393,13 @@ input[type="checkbox"] {
   display: block;
 }
 
+/* Recipe Image Inheritance follow-up: restrained accent (not muted, not
+   danger) distinguishing an informative inheritance/override note from the
+   plain helper text above it. */
+.admin-image-inherit-note {
+  color: var(--color-accent);
+}
+
 /* The real file input stays in the DOM and accessible to assistive
    technology, but visually hidden and out of tab order — the visible,
    keyboard-operable trigger is the Choose/Change Image button beside it

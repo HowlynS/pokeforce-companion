@@ -6,6 +6,7 @@ import { ContentGrid } from "@/components/ui/content-grid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { prisma } from "@/lib/db";
 import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
+import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +79,10 @@ export default async function RecipesPage() {
               href={`/recipes/${recipe.slug}`}
               media={
                 <ContentImage
-                  imagePath={recipe.image}
+                  imagePath={resolveRecipeDisplayImage({
+                    recipeImage: recipe.image,
+                    resultingItemImage: recipe.resultingItem.image,
+                  })}
                   alt={`Image of ${recipe.name}`}
                   size="card"
                 />

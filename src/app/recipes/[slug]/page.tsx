@@ -8,6 +8,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
 import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
+import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,10 @@ export default async function RecipeDetailPage({ params }: RecipeDetailPageProps
 
       <section className="detail-hero">
         <ContentImage
-          imagePath={recipe.image}
+          imagePath={resolveRecipeDisplayImage({
+            recipeImage: recipe.image,
+            resultingItemImage: recipe.resultingItem.image,
+          })}
           alt={`Image of ${recipe.name}`}
           size="detail"
         />

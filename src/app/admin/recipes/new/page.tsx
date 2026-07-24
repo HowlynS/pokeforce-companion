@@ -3,10 +3,11 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
-import { ImagePanel } from "@/components/admin/image-panel";
+import { RecipeImagePanel } from "@/components/admin/recipe-image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
+import { RecipeResultingItemSelect } from "@/components/admin/recipe-resulting-item-select";
 import { SearchableAdminSelect } from "@/components/admin/searchable-admin-select";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
@@ -100,6 +101,13 @@ export default async function NewRecipePage({
     toEntitySelectOptions(professions),
   ]);
 
+  // Feeds the Resulting Item select's inherited-image side channel (Recipe
+  // Image Inheritance follow-up) — built from the SAME resolved options
+  // above, never a second image lookup or query.
+  const itemImageById = Object.fromEntries(
+    itemOptions.map((option) => [option.value, option.imageUrl ?? null])
+  );
+
   // Only General makes sense before a record exists — Ingredients and
   // Metadata both describe an existing Recipe's relations and history, so
   // they are omitted here rather than shown as disabled placeholders
@@ -141,7 +149,12 @@ export default async function NewRecipePage({
       }
       aside={
         <>
-          <ImagePanel imageUrl={null} formId={RECIPE_CREATE_FORM_ID} />
+          <RecipeImagePanel
+            imageUrl={null}
+            formId={RECIPE_CREATE_FORM_ID}
+            initialInheritedImageUrl={null}
+            inheritedImageAlt="Resulting item's image"
+          />
 
           {/* No fake existing verification state on create: both fields
               are null, so the panel renders Unverified with no stamp
@@ -189,12 +202,11 @@ export default async function NewRecipePage({
             <EditorSection title="Output" icon={SECTION_ICONS.output}>
               <label className="form-field">
                 <span className="form-field-label">Resulting item</span>
-                <AdminSelect
-                  name="resultingItemId"
-                  required
-                  defaultValue=""
-                  placeholder="Select an item"
+                <RecipeResultingItemSelect
                   options={itemOptions}
+                  defaultValue=""
+                  itemImageById={itemImageById}
+                  placeholder="Select an item"
                 />
               </label>
 

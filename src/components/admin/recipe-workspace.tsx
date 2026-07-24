@@ -14,6 +14,7 @@ import { prisma } from "@/lib/db";
 import { AdminWorkspace } from "@/components/admin/admin-workspace";
 import { RecordList } from "@/components/admin/record-list";
 import { getImagePublicUrl } from "@/lib/storage/images";
+import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
 import {
   RECIPE_CREATE_PATH,
   RECIPE_LIST_PATH,
@@ -72,11 +73,21 @@ export async function RecipeWorkspace({
     orderBy: { name: "asc" },
   });
 
-  // Resolved concurrently — image is already a scalar field on every row
-  // from the query above (include only adds the resultingItem relation),
-  // so this is pure URL construction, never a second database query.
+  // Resolved concurrently — both images are already scalar fields on every
+  // row from the query above (include only adds the resultingItem
+  // relation), so this is pure URL construction, never a second database
+  // query. A recipe with no image of its own displays its resulting item's
+  // image instead (Recipe Image Inheritance follow-up) — display only,
+  // never written back to the Recipe row.
   const imageUrls = await Promise.all(
-    recipes.map((recipe) => getImagePublicUrl(recipe.image))
+    recipes.map((recipe) =>
+      getImagePublicUrl(
+        resolveRecipeDisplayImage({
+          recipeImage: recipe.image,
+          resultingItemImage: recipe.resultingItem.image,
+        })
+      )
+    )
   );
 
   const rows = recipes.map((recipe, index) => ({

@@ -3,11 +3,12 @@ import { requireAdminUser } from "@/lib/auth/require-admin";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
-import { ImagePanel } from "@/components/admin/image-panel";
+import { RecipeImagePanel } from "@/components/admin/recipe-image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
+import { RecipeResultingItemSelect } from "@/components/admin/recipe-resulting-item-select";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
@@ -118,6 +119,15 @@ export default async function EditRecipePage({
     toEntitySelectOptions(professions),
   ]);
 
+  // Feeds the Resulting Item select's inherited-image side channel (Recipe
+  // Image Inheritance follow-up) — built from the SAME resolved options
+  // above, never a second image lookup or query.
+  const itemImageById = Object.fromEntries(
+    itemOptions.map((option) => [option.value, option.imageUrl ?? null])
+  );
+  const initialInheritedImageUrl =
+    itemImageById[recipe.resultingItemId] ?? null;
+
   // Current version first, then newest — the same ordering the
   // settings list uses; feeds the shared verification picker.
   const gameVersions = await prisma.gameVersion.findMany({
@@ -167,10 +177,12 @@ export default async function EditRecipePage({
       }
       aside={
         <>
-          <ImagePanel
+          <RecipeImagePanel
             imageUrl={imageUrl}
             imageAlt={`Current image for ${recipe.name}`}
             formId={RECIPE_EDIT_FORM_ID}
+            initialInheritedImageUrl={initialInheritedImageUrl}
+            inheritedImageAlt={`${recipe.name}'s resulting item image`}
           />
 
           <VerificationPanel
@@ -270,11 +282,10 @@ export default async function EditRecipePage({
           <EditorSection title="Output" icon={SECTION_ICONS.output}>
             <label className="form-field">
               <span className="form-field-label">Resulting item</span>
-              <AdminSelect
-                name="resultingItemId"
-                required
-                defaultValue={recipe.resultingItemId}
+              <RecipeResultingItemSelect
                 options={itemOptions}
+                defaultValue={recipe.resultingItemId}
+                itemImageById={itemImageById}
               />
             </label>
 
