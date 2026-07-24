@@ -7,6 +7,8 @@ import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
 import { EditorSection } from "@/components/admin/editor-section";
 import { prisma } from "@/lib/db";
+import { getImagePublicUrl } from "@/lib/storage/images";
+import { ResourceIcon } from "@/components/admin/resource-icon";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
@@ -17,6 +19,7 @@ import {
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
 import { LOCATION_TYPE_LABELS, type LocationType } from "@/lib/validation/location";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateLocationHierarchyAction } from "../../actions";
 
@@ -41,19 +44,27 @@ type LocationHierarchyPageProps = {
     the EXISTING General edit route — no inline editing, no Hierarchy `q`
     carried onto that link (mirroring the Profession Recipes tab's own
     Recipe-name-cell precedent). */
-function ChildLocationRow({
+async function ChildLocationRow({
   slug,
   name,
   type,
+  image,
 }: {
   slug: string;
   name: string;
   type: LocationType;
+  image: string | null;
 }) {
+  const imageUrl = await getImagePublicUrl(image);
+
   return (
     <tr>
       <td>
-        <a href={`/admin/locations/${slug}/edit`} className="link-accent">
+        <a
+          href={`/admin/locations/${slug}/edit`}
+          className="link-accent admin-table-link-with-icon"
+        >
+          <ResourceIcon imageUrl={imageUrl} size="md" />
           {name}
         </a>
       </td>
@@ -101,9 +112,10 @@ export default async function LocationHierarchyPage({
   // a cleaner picker. Its descendants are NOT filtered from this list (that
   // would need a tree walk just to build the options); choosing one is
   // still rejected server-side by the same cycle guard the submission uses.
-  const parentOptions = allLocations.filter(
+  const parentCandidates = allLocations.filter(
     (candidate) => candidate.id !== location.id
   );
+  const parentOptions = await toEntitySelectOptions(parentCandidates);
 
   const hasChildren = location.children.length > 0;
   const tabs = locationEditorTabs(location.slug, query, "hierarchy", {
@@ -126,6 +138,11 @@ export default async function LocationHierarchyPage({
   // DangerZonePanel.
   return (
     <LocationWorkspace
+      // Admin Polish Pass 2, Part 5: forces a full remount whenever this
+      // location's own updatedAt changes — updateLocationHierarchyAction
+      // already touches this same row (parentId), so a hierarchy save
+      // bumps it naturally, with no extra write needed.
+      key={location.updatedAt.toISOString()}
       rawQuery={q}
       selectedSlug={location.slug}
       recordHref={locationHierarchyHref}
@@ -169,11 +186,8 @@ export default async function LocationHierarchyPage({
               name="parentId"
               defaultValue={location.parentId ?? ""}
               options={[
-                { value: "", label: "No parent" },
-                ...parentOptions.map((candidate) => ({
-                  value: candidate.id,
-                  label: candidate.name,
-                })),
+                { value: "", label: "No parent", imageUrl: null },
+                ...parentOptions,
               ]}
             />
           </label>
@@ -224,6 +238,7 @@ export default async function LocationHierarchyPage({
                     slug={child.slug}
                     name={child.name}
                     type={child.type}
+                    image={child.image}
                   />
                 ))}
               </tbody>

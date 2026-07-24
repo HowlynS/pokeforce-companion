@@ -145,13 +145,13 @@ export async function LocationWorkspace({
           initialQuery={query}
           searchLabel="Search locations"
           createHref={withLocationSearchQuery(LOCATION_CREATE_PATH, query)}
-          createLabel="+ New location"
+          createLabel="+ New"
           rows={rows}
           showImages
           noun={{ singular: "location", plural: "locations" }}
           empty={
             <p>
-              No locations yet. Use &ldquo;+ New location&rdquo; to
+              No locations yet. Use &ldquo;+ New&rdquo; to
               create the first one.
             </p>
           }

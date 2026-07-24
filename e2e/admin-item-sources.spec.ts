@@ -68,10 +68,13 @@ async function createTemporaryItem(page: Page, data: { name: string; slug: strin
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${data.slug}/edit`);
 }
 
 // Adds a source with only its type set, through the real create form.
+// Creation redirects straight to the new source's own editor (Admin
+// Polish Pass 2, Part 2) — the sourceId is database-generated, so the
+// destination is matched by shape rather than an exact id.
 async function addTypeOnlySource(page: Page, itemSlug: string, typeLabel: string) {
   await page.goto(`/admin/items/${itemSlug}/sources`);
   await selectAdminOption(
@@ -80,7 +83,7 @@ async function addTypeOnlySource(page: Page, itemSlug: string, typeLabel: string
   );
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
   await expect(page).toHaveURL(
-    `/admin/items/${itemSlug}/sources?success=created`
+    new RegExp(`/admin/items/${itemSlug}/sources/[^/]+/edit`)
   );
 }
 
@@ -114,7 +117,7 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
 
   await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
@@ -122,7 +125,7 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/professions?success=created");
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
 
   // --- Navigate to the item's Sources page via the real links: the
   // record-list row opens the editor, whose Acquisition Sources tab is a
@@ -160,25 +163,23 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   await page.getByLabel(/^Quantity/).fill("1-3");
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
 
+  // Creation redirects straight to the new source's own editor (Admin
+  // Polish Pass 2, Part 2), inside the same Item workspace — the sourceId
+  // is database-generated, so the destination is matched by shape.
   await expect(page).toHaveURL(
-    `/admin/items/${ITEM.slug}/sources?success=created`
+    new RegExp(`/admin/items/${ITEM.slug}/sources/[^/]+/edit`)
   );
-  await expect(page.getByRole("status")).toHaveText("Acquisition source added.");
+  await expect(page.getByRole("status")).toHaveText("Acquisition source created");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Edit Acquisition Source" })
+  ).toBeVisible();
 
-  const sourceRow = page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name: "Seed Merchant", exact: true }) });
-  await expect(sourceRow).toBeVisible();
+  // The new editor already shows every submitted value.
   await expect(
-    sourceRow.getByRole("cell", { name: "Foraging", exact: true })
-  ).toBeVisible();
-  await expect(
-    sourceRow.getByRole("cell", { name: "1-3", exact: true })
-  ).toBeVisible();
-  // Verified column reads No: the checkbox was never checked.
-  await expect(
-    sourceRow.getByRole("cell", { name: "No", exact: true })
-  ).toBeVisible();
+    page.getByRole("combobox", { name: "Type", exact: true })
+  ).toHaveText("Foraging");
+  await expect(page.getByLabel(/^Source label/)).toHaveValue("Seed Merchant");
+  await expect(page.getByLabel(/^Quantity/)).toHaveValue("1-3");
 
   // Relationship-count badge (Phase B sub-slice): the Acquisition Sources
   // tab's own badge now reflects the one linked source. The badge is
@@ -191,15 +192,8 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   ).toContainText("1");
 
   // --- Edit: change type, link the temporary Location and Profession, ---
-  // --- and verify via the opt-in checkbox --------------------------------
-  await sourceRow.getByRole("link", { name: "Edit" }).click();
-  await expect(page).toHaveURL(
-    new RegExp(`/admin/items/${ITEM.slug}/sources/.+/edit`)
-  );
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Edit Acquisition Source" })
-  ).toBeVisible();
-
+  // --- and verify via the opt-in checkbox — already on this exact
+  // --- source's own editor, so no further navigation is needed ----------
   await selectAdminOption(
     page.getByRole("combobox", { name: "Type", exact: true }),
     "NPC or shop"
@@ -217,61 +211,51 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   await verifyCheckbox.check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL(
-    `/admin/items/${ITEM.slug}/sources?success=updated`
-  );
-  await expect(page.getByRole("status")).toHaveText("Acquisition source updated.");
+  // Save-in-place (Admin Polish Pass 2, Part 1): stays on this exact
+  // source editor rather than returning to the sources list.
+  const sourceEditUrl = page.url();
+  await expect(page).toHaveURL(sourceEditUrl);
+  await expect(page.getByRole("status")).toHaveText("Acquisition source saved");
 
-  const updatedRow = page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name: "Seed Merchant", exact: true }) });
   await expect(
-    updatedRow.getByRole("cell", { name: "NPC or shop", exact: true })
-  ).toBeVisible();
+    page.getByRole("combobox", { name: "Type", exact: true })
+  ).toHaveText("NPC or shop");
   await expect(
-    updatedRow.getByRole("cell", { name: LOCATION.name, exact: true })
-  ).toBeVisible();
+    page.getByRole("combobox", { name: "Location (optional)", exact: true })
+  ).toHaveText(LOCATION.name);
   await expect(
-    updatedRow.getByRole("cell", { name: PROFESSION.name, exact: true })
-  ).toBeVisible();
-  // Verified column now reads Yes.
-  await expect(
-    updatedRow.getByRole("cell", { name: "Yes", exact: true })
-  ).toBeVisible();
+    page.getByRole("combobox", { name: "Profession (optional)", exact: true })
+  ).toHaveText(PROFESSION.name);
 
-  // --- A later NORMAL edit must preserve the verification stamp ----------
-  await updatedRow.getByRole("link", { name: "Edit" }).click();
+  // --- A later NORMAL edit must preserve the verification stamp — still
+  // on this same editor, so no further navigation is needed -------------
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page.getByLabel(/^Quantity/).fill("2-4");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL(
-    `/admin/items/${ITEM.slug}/sources?success=updated`
-  );
-
-  const preservedRow = page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name: "Seed Merchant", exact: true }) });
+  await expect(page).toHaveURL(sourceEditUrl);
+  await expect(page.getByLabel(/^Quantity/)).toHaveValue("2-4");
+  // The stamp survived: the checkbox stays unchecked by default (a normal
+  // save is a no-op on verification), and the panel still shows verified.
+  await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await expect(
-    preservedRow.getByRole("cell", { name: "2-4", exact: true })
-  ).toBeVisible();
-  await expect(
-    preservedRow.getByRole("cell", { name: "Yes", exact: true })
+    page.locator(".admin-status-badge", { hasText: "Verified" })
   ).toBeVisible();
 
-  // --- Delete -------------------------------------------------------------
-  await preservedRow.getByRole("link", { name: "Delete" }).click();
+  // --- Delete: the Danger Zone opens the shared confirmation dialog
+  // directly over this editor (Admin Polish Pass 1, Part 5) ---------------
+  await page.getByRole("button", { name: "Delete Source", exact: true }).click();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Delete Acquisition Source" })
+    page.getByRole("heading", { level: 2, name: "Delete Acquisition Source" })
   ).toBeVisible();
   await expect(page.getByText("Source label: Seed Merchant")).toBeVisible();
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL(
-    `/admin/items/${ITEM.slug}/sources?success=deleted`
-  );
-  await expect(page.getByRole("status")).toHaveText("Acquisition source removed.");
+  // Deletion redirects to the sources list (the parent workspace tab).
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/sources`);
+  await expect(page.getByRole("status")).toHaveText("Acquisition source deleted");
   await expect(page.getByText("No acquisition sources yet")).toBeVisible();
 });
 
@@ -431,7 +415,7 @@ test("deleting the item cascades its acquisition sources", async ({ page }) => {
   );
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
   await expect(page).toHaveURL(
-    `/admin/items/${ITEM.slug}/sources?success=created`
+    new RegExp(`/admin/items/${ITEM.slug}/sources/[^/]+/edit`)
   );
   expect(await countE2eTestAcquisitionRecords()).toBe(2); // item + source
 
@@ -441,7 +425,7 @@ test("deleting the item cascades its acquisition sources", async ({ page }) => {
   await page
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/items?success=deleted");
+  await expect(page).toHaveURL("/admin/items");
 
   expect(await countE2eTestAcquisitionRecords()).toBe(0);
 });
@@ -500,15 +484,13 @@ test("visiting a source's edit or delete page under a DIFFERENT item's slug fail
   await createTemporaryItem(page, ITEM_B);
   await addTypeOnlySource(page, ITEM_A.slug, "Farming");
 
-  // The real Edit link on Item A's own sources page carries Item A's slug
-  // and the source's real id.
-  const editHref = await page
-    .getByRole("link", { name: "Edit", exact: true })
-    .getAttribute("href");
-  expect(editHref).toMatch(
-    new RegExp(`^/admin/items/${ITEM_A.slug}/sources/.+/edit$`)
+  // Creation already landed on this exact source's own editor (Admin
+  // Polish Pass 2, Part 2), so its real id is read straight from the
+  // current URL rather than an "Edit" link's href.
+  expect(page.url()).toMatch(
+    new RegExp(`/admin/items/${ITEM_A.slug}/sources/.+/edit$`)
   );
-  const sourceId = editHref?.split("/sources/")[1]?.split("/edit")[0];
+  const sourceId = page.url().split("/sources/")[1]?.split("/edit")[0];
 
   // The SAME source id, but under Item B's slug — a mismatched route —
   // must be treated exactly like a source that does not exist.
@@ -544,13 +526,9 @@ test("submitting an edit with a mismatched itemSlug is rejected without changing
   await createTemporaryItem(page, ITEM_B);
   await addTypeOnlySource(page, ITEM_A.slug, "Farming");
 
-  // Open the REAL edit page for Item A's source (a legitimate page load,
-  // its hidden itemSlug field correctly reads Item A)...
-  await page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name: "Farming", exact: true }) })
-    .getByRole("link", { name: "Edit" })
-    .click();
+  // Creation already landed on the REAL edit page for Item A's source (a
+  // legitimate page load, its hidden itemSlug field correctly reads Item
+  // A) — no further navigation is needed to reach it.
   await expect(
     page.getByRole("heading", { level: 1, name: "Edit Acquisition Source" })
   ).toBeVisible();
@@ -605,12 +583,15 @@ test("submitting a delete with a mismatched itemSlug is rejected without deletin
   await createTemporaryItem(page, ITEM_B);
   await addTypeOnlySource(page, ITEM_A.slug, "Fishing");
 
-  // Open the REAL delete confirmation page for Item A's source...
-  await page
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name: "Fishing", exact: true }) })
-    .getByRole("link", { name: "Delete" })
-    .click();
+  // Creation already landed on this source's own editor; its real id is
+  // read from the URL to reach the dedicated delete confirmation route
+  // directly (Danger Zone here would open the in-editor dialog instead,
+  // which this test's own hidden-itemSlug tampering scenario is not
+  // exercising).
+  const sourceId = page.url().split("/sources/")[1]?.split("/edit")[0];
+  await page.goto(
+    `/admin/items/${ITEM_A.slug}/sources/${sourceId}/delete`
+  );
   await expect(
     page.getByRole("heading", { level: 1, name: "Delete Acquisition Source" })
   ).toBeVisible();

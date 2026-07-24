@@ -55,19 +55,21 @@ async function createTempCategory(
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/categories?success=created");
+  await expect(page).toHaveURL(`/admin/categories/${slug}/edit`);
   return slug;
 }
 
 test("a meaningful edit marks dirty, reverting clears it, and dirty Cancel prompts before leaving", async ({
   page,
 }) => {
-  const slug = await createTempCategory(
+  await createTempCategory(
     page,
     "Test E2E Category Guard",
     "test-e2e-category-guard"
   );
-  await page.goto(`/admin/categories/${slug}/edit`);
+  // Creation's redirect already landed on this exact editor — a
+  // redundant same-URL re-navigation would race the still-settling
+  // client navigation and can observe stale, pre-mutation content.
   await expect(status(page)).toHaveCount(0);
 
   const nameField = page.getByLabel("Name", { exact: true });
@@ -89,7 +91,6 @@ test("Ctrl+S saves a valid form", async ({ page }) => {
     "Test E2E Category Guard Save",
     "test-e2e-category-guard-save"
   );
-  await page.goto(`/admin/categories/${slug}/edit`);
 
   await page
     .getByLabel("Description (optional)", { exact: true })
@@ -97,18 +98,19 @@ test("Ctrl+S saves a valid form", async ({ page }) => {
   await expect(status(page)).toBeVisible();
 
   await page.keyboard.press("Control+s");
-  await expect(page).toHaveURL(/\/admin\/categories\?success=updated/);
+  // Save-in-place (Admin Polish Pass 2, Part 1): stays on this same
+  // canonical editor rather than returning to the list.
+  await expect(page).toHaveURL(`/admin/categories/${slug}/edit`);
 });
 
 test("restoring an auto-synced Page-address draft keeps Name -> Page address sync active afterward", async ({
   page,
 }) => {
-  const slug = await createTempCategory(
+  await createTempCategory(
     page,
     "Test E2E Category Sync Draft",
     "test-e2e-category-sync-draft"
   );
-  await page.goto(`/admin/categories/${slug}/edit`);
 
   const nameField = page.getByLabel("Name", { exact: true });
   const slugField = page.getByLabel(/^Page address/);

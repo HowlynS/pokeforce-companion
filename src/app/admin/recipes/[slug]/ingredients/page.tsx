@@ -4,7 +4,7 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
-import { AdminSelect } from "@/components/admin/admin-select";
+import { SearchableAdminSelect } from "@/components/admin/searchable-admin-select";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -14,6 +14,7 @@ import {
   withRecipeSearchQuery,
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateRecipeIngredientsAction } from "../../actions";
@@ -81,6 +82,7 @@ export default async function RecipeIngredientsPage({
     { length: RECIPE_INGREDIENT_ROW_COUNT },
     (_, index) => index + 1
   );
+  const itemOptions = await toEntitySelectOptions(items);
 
   const tabs = recipeEditorTabs(recipe.slug, query, "ingredients", {
     ingredients: recipe.ingredients.length,
@@ -98,6 +100,12 @@ export default async function RecipeIngredientsPage({
   // below never affects (that guard only hides THIS tab's own form).
   return (
     <RecipeWorkspace
+      // Admin Polish Pass 2, Part 5: forces a full remount whenever this
+      // recipe's own updatedAt changes — updateRecipeIngredientsAction
+      // deliberately bumps it (see that action's own comment) precisely
+      // so this tab can use the same remount-key mechanism every other
+      // editor tab uses, with no bespoke nonce needed.
+      key={recipe.updatedAt.toISOString()}
       rawQuery={q}
       selectedSlug={recipe.slug}
       recordHref={recipeIngredientsHref}
@@ -145,15 +153,14 @@ export default async function RecipeIngredientsPage({
 
                 return (
                   <div key={row} className="ingredient-row">
-                    <AdminSelect
+                    <SearchableAdminSelect
                       name={`ingredientItemId${row}`}
                       defaultValue={existingIngredient?.itemId ?? ""}
+                      searchPlaceholder="Search items…"
+                      noResultsLabel="No items match your search."
                       options={[
-                        { value: "", label: "No ingredient" },
-                        ...items.map((item) => ({
-                          value: item.id,
-                          label: item.name,
-                        })),
+                        { value: "", label: "No ingredient", imageUrl: null },
+                        ...itemOptions,
                       ]}
                     />
 

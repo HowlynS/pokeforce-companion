@@ -70,7 +70,7 @@ async function createTemporaryCategory(
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/categories?success=created");
+  await expect(page).toHaveURL(`/admin/categories/${data.slug}/edit`);
 }
 
 test("opening the Items tab directly shows the linked items inside the Category workspace", async ({

@@ -32,6 +32,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { SaveShortcutLabel } from "@/components/admin/save-shortcut-label";
 import {
   draftableValues,
   snapshotFormData,
@@ -47,6 +48,11 @@ import {
 } from "@/lib/admin/form-draft";
 import { FORM_CHANGE_EVENT } from "@/lib/admin/form-change-event";
 import { dispatchSlugRestore } from "@/lib/admin/slug-restore-event";
+import {
+  DELETE_DIALOG_STATE_EVENT,
+  dispatchEditorDirtyState,
+  type DeleteDialogStateDetail,
+} from "@/lib/admin/editor-overlay-events";
 
 const DRAFT_DEBOUNCE_MS = 400;
 // Defense-in-depth only. The deterministic path is the shared
@@ -143,6 +149,11 @@ export function AdminFormGuard({
   // modal is open; kept in sync with the state below on every render.
   const pendingNavRef = useRef(false);
   const recoveryOpenRef = useRef(false);
+  // Mirrors the Danger Zone's own in-editor delete dialog (a separate part
+  // of the tree — see editor-overlay-events.ts's own module comment for
+  // why this can't just be lifted state), so Ctrl/Cmd+S is suppressed
+  // while that dialog is open too, exactly like this guard's own modals.
+  const deleteDialogOpenRef = useRef(false);
   // The push-buffer helper, defined inside the mount effect and exposed here
   // so restoreDraft (which makes the form dirty) can arm the buffer.
   const pushSentinelRef = useRef<() => void>(() => {});
@@ -234,6 +245,7 @@ export function AdminFormGuard({
       }
       dirtyRef.current = value;
       setDirty(value);
+      dispatchEditorDirtyState(value);
       if (value) {
         pushSentinel();
       } else {
@@ -468,7 +480,8 @@ export function AdminFormGuard({
       if (
         submittingRef.current ||
         pendingNavRef.current ||
-        recoveryOpenRef.current
+        recoveryOpenRef.current ||
+        deleteDialogOpenRef.current
       ) {
         return; // saving, or a modal is open
       }
@@ -482,10 +495,17 @@ export function AdminFormGuard({
       form.requestSubmit(submitButton ?? undefined);
     };
 
+    const onDeleteDialogState = (event: Event) => {
+      deleteDialogOpenRef.current = (
+        event as CustomEvent<DeleteDialogStateDetail>
+      ).detail.open;
+    };
+
     document.addEventListener("click", onCaptureClick, true);
     window.addEventListener("popstate", onPopState);
     window.addEventListener("beforeunload", onBeforeUnload);
     document.addEventListener("keydown", onKeyDown);
+    document.addEventListener(DELETE_DIALOG_STATE_EVENT, onDeleteDialogState);
 
     return () => {
       document.removeEventListener("input", onDocChange);
@@ -496,6 +516,10 @@ export function AdminFormGuard({
       window.removeEventListener("popstate", onPopState);
       window.removeEventListener("beforeunload", onBeforeUnload);
       document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener(
+        DELETE_DIALOG_STATE_EVENT,
+        onDeleteDialogState
+      );
       if (draftTimerRef.current) {
         clearTimeout(draftTimerRef.current);
       }
@@ -664,6 +688,11 @@ export function AdminFormGuard({
           <Save aria-hidden="true" className="admin-editor-submit-icon" />
           {pending ? savingLabel : submitLabel}
         </button>
+
+        {/* OS-aware save-shortcut hint (Admin Polish Pass 2, Part 4) — one
+            shared component, so every guarded form shows it consistently
+            with no per-page OS-detection code. */}
+        <SaveShortcutLabel />
 
         {/* aria-live alone (no role="status") makes this a live region for
             assistive tech without also claiming the ARIA "status" role —

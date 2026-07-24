@@ -15,18 +15,13 @@ const errorMessages: Record<string, string> = {
     "That location cannot be deleted while sub-locations are still assigned to it.",
 };
 
-const successMessages: Record<string, string> = {
-  created: "Location created.",
-  updated: "Location updated.",
-  updated_image_cleanup:
-    "Location updated, but the previous image file could not be removed from storage and may need manual cleanup in Supabase.",
-  deleted: "Location deleted.",
-  deleted_image_cleanup:
-    "Location deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
-};
-
+// Successful create/update/delete outcomes no longer land here at all
+// (create redirects straight to the new location's own editor, update/
+// hierarchy saves stay on that same editor, and delete's own toast is
+// shown by the shared AdminSuccessToast — Admin Polish Pass 2) — this
+// landing state has no success banner of its own anymore.
 type AdminLocationsPageProps = {
-  searchParams: Promise<{ q?: string; error?: string; success?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function AdminLocationsPage({
@@ -36,9 +31,8 @@ export default async function AdminLocationsPage({
   // admin layout, but also re-runs the check itself rather than assuming it.
   await requireAdminUser();
 
-  const { q, error, success } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
-  const successMessage = success ? successMessages[success] ?? null : null;
 
   // Distinguishes "no locations exist at all" from "locations exist,
   // none selected" for the landing state's own copy — independent of the
@@ -64,12 +58,6 @@ export default async function AdminLocationsPage({
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
               {errorMessage}
-            </p>
-          ) : null}
-
-          {successMessage ? (
-            <p role="status" className="banner banner-success">
-              {successMessage}
             </p>
           ) : null}
         </>

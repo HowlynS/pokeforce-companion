@@ -12,8 +12,9 @@ import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
   PROFESSION_LIST_PATH,
+  describeLinkedRecipes,
   normalizeProfessionSearchQuery,
-  professionDeleteHref,
+  professionCanDelete,
   professionEditorTabs,
   withProfessionSearchQuery,
 } from "@/lib/admin/profession-workspace";
@@ -21,7 +22,7 @@ import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
-import { updateProfessionAction } from "../../actions";
+import { updateProfessionAction, deleteProfessionAction } from "../../actions";
 import { checkProfessionNameAvailability } from "../../name-availability";
 import { checkProfessionSlugAvailability } from "../../slug-availability";
 
@@ -98,6 +99,12 @@ export default async function EditProfessionPage({
     recipes: profession._count.recipes,
   });
 
+  // Feeds the in-editor delete dialog (Admin Polish Pass 1, Part 5) — the
+  // exact same count and rule the dedicated /delete route uses, reusing
+  // the tab-badge query above rather than a second query.
+  const recipeCount = profession._count.recipes;
+  const canDeleteProfession = professionCanDelete(recipeCount);
+
   // The General edit route inside the Profession workspace (Slice 9D.1),
   // now composed from the shared editor primitives (Slice 9D.2): the
   // record list marks this profession selected and keeps the active
@@ -109,6 +116,12 @@ export default async function EditProfessionPage({
   // guard that would ever need to hide the form.
   return (
     <ProfessionWorkspace
+      // Admin Polish Pass 2, Part 5: forces a full remount of the record
+      // list, form, and aside whenever this profession's own updatedAt
+      // actually changes — see the Item General editor's own identical
+      // comment (src/app/admin/items/[slug]/edit/page.tsx) for the full
+      // reasoning.
+      key={profession.updatedAt.toISOString()}
       rawQuery={q}
       selectedSlug={profession.slug}
       editorHeader={
@@ -150,9 +163,29 @@ export default async function EditProfessionPage({
 
           <DangerZonePanel
             resourceLabel="profession"
-            deleteHref={professionDeleteHref(profession.slug, query)}
             deleteLabel="Delete Profession"
-          />
+            dialogTitle="Delete Profession"
+            dialogDescription={
+              <>
+                You are about to permanently delete{" "}
+                <strong>{profession.name}</strong> ({profession.slug}). This
+                action cannot be undone.
+              </>
+            }
+            canDelete={canDeleteProfession}
+            formAction={deleteProfessionAction}
+            hiddenFields={{ id: profession.id, slug: profession.slug }}
+          >
+            <p className="text-muted">Linked recipes: {recipeCount}</p>
+
+            {!canDeleteProfession ? (
+              <p className="text-danger">
+                This profession cannot be deleted because it is assigned to{" "}
+                {describeLinkedRecipes(recipeCount)}. Reassign or remove
+                those recipes first.
+              </p>
+            ) : null}
+          </DangerZonePanel>
         </>
       }
     >

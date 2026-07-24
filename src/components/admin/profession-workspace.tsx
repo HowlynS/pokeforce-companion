@@ -110,13 +110,13 @@ export async function ProfessionWorkspace({
           initialQuery={query}
           searchLabel="Search professions"
           createHref={withProfessionSearchQuery(PROFESSION_CREATE_PATH, query)}
-          createLabel="+ New profession"
+          createLabel="+ New"
           rows={rows}
           showImages
           noun={{ singular: "profession", plural: "professions" }}
           empty={
             <p>
-              No professions yet. Use &ldquo;+ New profession&rdquo; to
+              No professions yet. Use &ldquo;+ New&rdquo; to
               create the first one.
             </p>
           }

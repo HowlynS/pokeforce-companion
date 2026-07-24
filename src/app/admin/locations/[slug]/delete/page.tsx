@@ -7,6 +7,8 @@ import { LocationWorkspace } from "@/components/admin/location-workspace";
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   LOCATION_LIST_PATH,
+  describeLinkedLocations,
+  locationCanDelete,
   normalizeLocationSearchQuery,
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
@@ -18,10 +20,6 @@ type DeleteLocationPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ q?: string; error?: string }>;
 };
-
-function describeLinkedLocations(count: number): string {
-  return count === 1 ? "1 sub-location" : `${count} sub-locations`;
-}
 
 export default async function DeleteLocationPage({
   params,
@@ -48,7 +46,7 @@ export default async function DeleteLocationPage({
   }
 
   const childCount = location._count.children;
-  const canDelete = childCount === 0;
+  const canDelete = locationCanDelete(childCount);
 
   // The delete confirmation inside the Location workspace, mirroring the
   // edit route exactly: the record list marks this location selected and

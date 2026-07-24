@@ -61,7 +61,7 @@ async function createLocationThroughForm(
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${data.slug}/edit`);
 }
 
 test("a root location shows Locations -> Current Location, with no ancestor links", async ({

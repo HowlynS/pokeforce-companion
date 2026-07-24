@@ -74,9 +74,7 @@ test("a very long item name wraps inside the header instead of causing horizonta
   await page.getByLabel("Name", { exact: true }).fill(LONG_NAME);
   await page.getByLabel(/^Page address/).fill(SLUG);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
-
-  await page.goto(`/admin/items/${SLUG}/edit`);
+  await expect(page).toHaveURL(`/admin/items/${SLUG}/edit`);
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await noHorizontalOverflow(page);
@@ -88,36 +86,39 @@ test("a very long item name wraps inside the header instead of causing horizonta
   await noHorizontalOverflow(page);
 });
 
-test("Recipe's Danger zone Delete action keeps its restrained placement, separate from Save/Cancel, but still links to the real delete-confirmation route", async ({
+test("Recipe's Danger zone Delete action keeps its restrained placement, separate from Save/Cancel, and opens the confirmation dialog directly over the editor", async ({
   page,
 }) => {
   // Seeded fixture only — read, never modified.
   await page.goto("/admin/recipes/iron-sword/edit");
 
-  const deleteLink = page.getByRole("link", { name: "Delete Recipe", exact: true });
-  await expect(deleteLink).toBeVisible();
-  await expect(deleteLink).toHaveAttribute(
-    "href",
-    "/admin/recipes/iron-sword/delete"
-  );
+  // Admin Polish Pass 1, Part 5: Delete is now a BUTTON that opens the
+  // shared confirmation dialog in place, never an <a href> to the
+  // dedicated /delete route (that route still exists — see
+  // e2e/admin-recipes.spec.ts and delete-record-dialog.tsx's own module
+  // comment for why — it is just no longer what this button links to).
+  const deleteButton = page.getByRole("button", { name: "Delete Recipe", exact: true });
+  await expect(deleteButton).toBeVisible();
   // Delete moved out of the header and the sticky Save/Cancel bar (Visual
   // Pass sub-slice 9) into the aside's Danger zone panel — solid
   // .btn-danger, matching every other resource's Danger zone button.
-  await expect(deleteLink).toHaveClass(/btn-danger/);
+  await expect(deleteButton).toHaveClass(/btn-danger/);
   await expect(
-    page.locator(".admin-editor-actions").getByRole("link", { name: "Delete Recipe" })
+    page.locator(".admin-editor-actions").getByRole("button", { name: "Delete Recipe" })
   ).toHaveCount(0);
   await expect(
     page
       .locator(".admin-danger-zone")
-      .getByRole("link", { name: "Delete Recipe", exact: true })
+      .getByRole("button", { name: "Delete Recipe", exact: true })
   ).toBeVisible();
 
-  await deleteLink.click();
-  await expect(page).toHaveURL("/admin/recipes/iron-sword/delete");
+  await deleteButton.click();
+  await expect(page).toHaveURL("/admin/recipes/iron-sword/edit");
+  await expect(page.getByRole("dialog")).toBeVisible();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Delete Recipe", exact: true })
+    page.getByRole("heading", { level: 2, name: "Delete Recipe", exact: true })
   ).toBeVisible();
+  await page.keyboard.press("Escape");
 });
 
 test("Items landing (records exist) and Locations landing (zero records) show distinct empty-state copy, each with a working create action", async ({

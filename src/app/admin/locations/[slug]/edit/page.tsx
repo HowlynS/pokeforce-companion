@@ -15,8 +15,9 @@ import { getImagePublicUrl } from "@/lib/storage/images";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
+  describeLinkedLocations,
   hierarchyRelationshipCount,
-  locationDeleteHref,
+  locationCanDelete,
   locationEditorTabs,
   normalizeLocationSearchQuery,
   withLocationSearchQuery,
@@ -24,7 +25,10 @@ import {
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
-import { updateLocationGeneralAction } from "../../actions";
+import {
+  updateLocationGeneralAction,
+  deleteLocationAction,
+} from "../../actions";
 import { checkLocationNameAvailability } from "../../name-availability";
 import { checkLocationSlugAvailability } from "../../slug-availability";
 
@@ -113,6 +117,17 @@ export default async function EditLocationPage({
     acquisitionSources: location._count.acquisitionSources,
   });
 
+  // Feeds the in-editor delete dialog (Admin Polish Pass 1, Part 5) — the
+  // exact same count and rule the dedicated /delete route uses, reusing
+  // the tab-badge query above rather than a second query. The dialog's
+  // fact set is deliberately narrower than the dedicated page's own (no
+  // Parent location line): General never loads the parent relation (see
+  // this page's own module comment), and adding it here purely for a
+  // delete-confirmation caption would cut against that page's explicit
+  // "no parent/children relations" design.
+  const childCount = location._count.children;
+  const canDeleteLocation = locationCanDelete(childCount);
+
   // The General edit route inside the Location workspace (Slice 9F.1),
   // composed from the shared editor primitives (Slice 9F.2). Slice 9F.3
   // moved parent assignment out of General and into the new Hierarchy
@@ -126,6 +141,12 @@ export default async function EditLocationPage({
   // capacity guard that would ever need to hide the form.
   return (
     <LocationWorkspace
+      // Admin Polish Pass 2, Part 5: forces a full remount of the record
+      // list, form, and aside whenever this location's own updatedAt
+      // actually changes — see the Item General editor's own identical
+      // comment (src/app/admin/items/[slug]/edit/page.tsx) for the full
+      // reasoning.
+      key={location.updatedAt.toISOString()}
       rawQuery={q}
       selectedSlug={location.slug}
       editorHeader={
@@ -167,9 +188,33 @@ export default async function EditLocationPage({
 
           <DangerZonePanel
             resourceLabel="location"
-            deleteHref={locationDeleteHref(location.slug, query)}
             deleteLabel="Delete Location"
-          />
+            dialogTitle="Delete Location"
+            dialogDescription={
+              <>
+                You are about to permanently delete{" "}
+                <strong>{location.name}</strong> ({location.slug}). This
+                action cannot be undone.
+              </>
+            }
+            canDelete={canDeleteLocation}
+            formAction={deleteLocationAction}
+            hiddenFields={{ id: location.id, slug: location.slug }}
+          >
+            <p className="text-muted">
+              Type: {LOCATION_TYPE_LABELS[location.type]}
+            </p>
+
+            <p className="text-muted">Sub-locations: {childCount}</p>
+
+            {!canDeleteLocation ? (
+              <p className="text-danger">
+                This location cannot be deleted because it is assigned to{" "}
+                {describeLinkedLocations(childCount)}. Move or remove those
+                sub-locations first.
+              </p>
+            ) : null}
+          </DangerZonePanel>
         </>
       }
     >

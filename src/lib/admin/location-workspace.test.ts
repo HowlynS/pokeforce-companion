@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   LOCATION_CREATE_PATH,
   LOCATION_LIST_PATH,
+  describeLinkedLocations,
   hierarchyRelationshipCount,
+  locationCanDelete,
   locationDeleteHref,
   locationEditHref,
   locationEditorTabs,
@@ -12,6 +14,31 @@ import {
   sortLocationAcquisitionSourcesByType,
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
+
+// Admin Polish Pass 1, Part 5: shared between the dedicated /delete route
+// and the in-editor delete dialog — pinned here so the two surfaces can
+// never silently drift apart.
+describe("locationCanDelete", () => {
+  it("allows deletion when the location has no sub-locations", () => {
+    expect(locationCanDelete(0)).toBe(true);
+  });
+
+  it("blocks deletion when the location has at least one sub-location", () => {
+    expect(locationCanDelete(1)).toBe(false);
+    expect(locationCanDelete(4)).toBe(false);
+  });
+});
+
+describe("describeLinkedLocations", () => {
+  it("uses singular phrasing for exactly one sub-location", () => {
+    expect(describeLinkedLocations(1)).toBe("1 sub-location");
+  });
+
+  it("uses plural phrasing for zero or more than one sub-location", () => {
+    expect(describeLinkedLocations(0)).toBe("0 sub-locations");
+    expect(describeLinkedLocations(5)).toBe("5 sub-locations");
+  });
+});
 
 describe("normalizeLocationSearchQuery", () => {
   it("trims surrounding whitespace", () => {

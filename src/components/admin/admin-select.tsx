@@ -75,11 +75,25 @@ import {
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { dispatchFormChange } from "@/lib/admin/form-change-event";
+import { ResourceIcon } from "@/components/admin/resource-icon";
 
 export type AdminSelectOption = {
   value: string;
   label: string;
   disabled?: boolean;
+  /** Optional resolved image URL for image-enabled entity options (Item,
+      Recipe, Profession, Category, Location, and future entities like
+      Currency/Shop/NPC) — rendered as a compact ResourceIcon beside the
+      label in both the trigger and the option row. Deliberately generic
+      (a plain string | null, never a Prisma type): callers resolve the
+      URL themselves from whatever query already loaded it.
+      Enum/metadata/technical options (Location Type, Game Version,
+      verification state, ...) simply omit this field entirely, so no
+      icon column renders and no layout changes for them. Entity options
+      that DO use icons should still pass `imageUrl: null` for a record
+      with no image (never omit it), so every option in that list keeps
+      the same reserved icon slot and stays aligned. */
+  imageUrl?: string | null;
 };
 
 export type AdminSelectProps = {
@@ -416,12 +430,17 @@ export function AdminSelect({
         }}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span
-          className={
-            selectedOption ? "admin-select-value" : "admin-select-placeholder"
-          }
-        >
-          {selectedOption ? selectedOption.label : (placeholder ?? "")}
+        <span className="admin-select-value-group">
+          {selectedOption && selectedOption.imageUrl !== undefined ? (
+            <ResourceIcon imageUrl={selectedOption.imageUrl} size="sm" />
+          ) : null}
+          <span
+            className={
+              selectedOption ? "admin-select-value" : "admin-select-placeholder"
+            }
+          >
+            {selectedOption ? selectedOption.label : (placeholder ?? "")}
+          </span>
         </span>
         <ChevronDown aria-hidden="true" className="admin-select-chevron" />
       </button>
@@ -468,7 +487,12 @@ export function AdminSelect({
                     triggerRef.current?.focus();
                   }}
                 >
-                  {option.label}
+                  {option.imageUrl !== undefined ? (
+                    <ResourceIcon imageUrl={option.imageUrl} size="sm" />
+                  ) : null}
+                  <span className="admin-select-option-label">
+                    {option.label}
+                  </span>
                 </li>
               ))}
             </ul>,

@@ -50,7 +50,7 @@ async function createTempItem(
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel(/^Page address/).fill(slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${slug}/edit`);
   return slug;
 }
 
@@ -97,11 +97,12 @@ test("edit form: a linked-select change marks dirty, reverting clears it, and Ct
     "Foraging"
   );
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
+  // Redirects straight to the new source's own editor (Admin Polish Pass
+  // 2, Part 2) — the sourceId is database-generated, so the destination
+  // is matched by shape rather than an exact id.
   await expect(page).toHaveURL(
-    `/admin/items/${itemSlug}/sources?success=created`
+    new RegExp(`/admin/items/${itemSlug}/sources/[^/]+/edit`)
   );
-
-  await page.getByRole("link", { name: "Edit", exact: true }).click();
   await expect(status(page)).toHaveCount(0);
 
   const typeSelect = page.getByRole("combobox", { name: "Type", exact: true });
@@ -112,8 +113,9 @@ test("edit form: a linked-select change marks dirty, reverting clears it, and Ct
 
   await page.getByLabel("Notes (optional)", { exact: true }).fill("Verified by hand.");
   await expect(status(page)).toBeVisible();
+  // Save-in-place (Admin Polish Pass 2, Part 1): stays on this exact
+  // source editor URL rather than returning to the sources list.
+  const sourceEditUrl = page.url();
   await page.keyboard.press("Control+s");
-  await expect(page).toHaveURL(
-    `/admin/items/${itemSlug}/sources?success=updated`
-  );
+  await expect(page).toHaveURL(sourceEditUrl);
 });

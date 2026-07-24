@@ -69,7 +69,7 @@ async function createTemporaryItem(
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${data.slug}/edit`);
 }
 
 test("opening the Used in Recipes tab directly shows both relationship directions inside the Item workspace", async ({

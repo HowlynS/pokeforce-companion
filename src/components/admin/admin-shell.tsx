@@ -11,9 +11,11 @@
 // it renders, and every mutation still re-checks authorization itself.
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { UserRound } from "lucide-react";
 import { designTokens } from "@/lib/design-tokens";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminSuccessToast } from "@/components/admin/admin-success-toast";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { signOutAction } from "@/app/admin/actions";
 
@@ -88,7 +90,18 @@ export async function AdminShell({ children }: AdminShellProps) {
             and scroll inside their own wrappers instead of overflowing the
             shell at narrower desktop widths. */}
         <div className="admin-content">
-          <main className="admin-content-inner">{children}</main>
+          <main className="admin-content-inner">
+            {/* Admin Polish Pass 2, Part 3: the shared success toast lives
+                here, once, rather than per-page — every admin route (list,
+                create, edit, delete-confirm) gets flash-message feedback
+                for free. Suspense is required by useSearchParams(); a null
+                fallback is correct since the toast has nothing to show
+                until its own effect reads the URL anyway. */}
+            <Suspense fallback={null}>
+              <AdminSuccessToast />
+            </Suspense>
+            {children}
+          </main>
         </div>
       </div>
 

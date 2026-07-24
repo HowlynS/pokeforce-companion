@@ -13,6 +13,7 @@ import {
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
 import { prisma } from "@/lib/db";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/lib/validation/location";
@@ -67,9 +68,10 @@ export default async function NewLocationPage({
   // list query. A brand-new location has no id yet, so every existing
   // Location is a valid candidate parent (no self/descendant exclusion is
   // needed here, unlike the edit page).
-  const parentOptions = await prisma.location.findMany({
+  const parentLocations = await prisma.location.findMany({
     orderBy: { name: "asc" },
   });
+  const parentOptions = await toEntitySelectOptions(parentLocations);
 
   // Current version first, then newest — the same ordering the settings
   // list uses; feeds the shared verification picker.
@@ -182,11 +184,8 @@ export default async function NewLocationPage({
                 name="parentId"
                 defaultValue=""
                 options={[
-                  { value: "", label: "No parent" },
-                  ...parentOptions.map((location) => ({
-                    value: location.id,
-                    label: location.name,
-                  })),
+                  { value: "", label: "No parent", imageUrl: null },
+                  ...parentOptions,
                 ]}
               />
             </label>

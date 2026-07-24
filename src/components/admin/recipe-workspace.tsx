@@ -100,13 +100,13 @@ export async function RecipeWorkspace({
           initialQuery={query}
           searchLabel="Search recipes"
           createHref={withRecipeSearchQuery(RECIPE_CREATE_PATH, query)}
-          createLabel="+ New recipe"
+          createLabel="+ New"
           rows={rows}
           showImages
           noun={{ singular: "recipe", plural: "recipes" }}
           empty={
             <p>
-              No recipes yet. Use &ldquo;+ New recipe&rdquo; to create the
+              No recipes yet. Use &ldquo;+ New&rdquo; to create the
               first one.
             </p>
           }

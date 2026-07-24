@@ -75,7 +75,7 @@ async function createTemporaryLocation(
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${data.slug}/edit`);
 }
 
 async function createTemporaryItem(
@@ -86,7 +86,7 @@ async function createTemporaryItem(
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${data.slug}/edit`);
 }
 
 async function addSourceThroughForm(
@@ -129,7 +129,7 @@ async function addSourceThroughForm(
   }
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
   await expect(page).toHaveURL(
-    `/admin/items/${itemSlug}/sources?success=created`
+    new RegExp(`/admin/items/${itemSlug}/sources/[^/]+/edit$`)
   );
 }
 

@@ -60,7 +60,7 @@ async function createTemporaryLocation(
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${data.slug}/edit`);
 }
 
 test("visiting the old Metadata route redirects to General, preserving the search query", async ({

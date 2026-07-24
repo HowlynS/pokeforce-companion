@@ -4,6 +4,8 @@ import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import {
+  describeItemRecipeReferences,
+  itemCanDelete,
   itemEditHref,
   normalizeItemSearchQuery,
   withItemSearchQuery,
@@ -17,29 +19,6 @@ type DeleteItemPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ q?: string; error?: string }>;
 };
-
-function describeRecipeReferences(
-  resultCount: number,
-  ingredientCount: number
-): string {
-  const parts: string[] = [];
-
-  if (resultCount > 0) {
-    parts.push(
-      `the result of ${resultCount} ${resultCount === 1 ? "recipe" : "recipes"}`
-    );
-  }
-
-  if (ingredientCount > 0) {
-    parts.push(
-      `an ingredient in ${ingredientCount} ${
-        ingredientCount === 1 ? "recipe" : "recipes"
-      }`
-    );
-  }
-
-  return parts.join(" and ");
-}
 
 export default async function DeleteItemPage({
   params,
@@ -67,7 +46,10 @@ export default async function DeleteItemPage({
 
   const resultCount = item._count.recipesProduced;
   const ingredientCount = item._count.recipeIngredients;
-  const canDelete = resultCount === 0 && ingredientCount === 0;
+  const canDelete = itemCanDelete({
+    recipesProduced: resultCount,
+    recipeIngredients: ingredientCount,
+  });
 
   // Inside the Item workspace (Slice 9B.4): the record list marks the
   // item being deleted; Cancel returns to its edit page and the back link
@@ -98,7 +80,7 @@ export default async function DeleteItemPage({
           {error ? (
             <p role="alert" className="banner banner-error">
               {error === "linked_recipes"
-                ? `This item cannot be deleted because it is used as ${describeRecipeReferences(
+                ? `This item cannot be deleted because it is used as ${describeItemRecipeReferences(
                     resultCount,
                     ingredientCount
                   )}.`
@@ -134,7 +116,7 @@ export default async function DeleteItemPage({
         {!canDelete ? (
           <p className="text-danger">
             This item cannot be deleted because it is used as{" "}
-            {describeRecipeReferences(resultCount, ingredientCount)}. Remove
+            {describeItemRecipeReferences(resultCount, ingredientCount)}. Remove
             or reassign those recipe references first.
           </p>
         ) : null}

@@ -145,8 +145,10 @@ async function createProfessionThroughForm(
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/professions?success=created");
-  await expect(page.getByRole("status")).toHaveText("Profession created.");
+  await expect(page).toHaveURL(
+    `/admin/professions/${data.slug}/edit`
+  );
+  await expect(page.getByRole("status")).toHaveText("Profession created");
   await expect(recordRow(page, data.name)).toBeVisible();
 }
 
@@ -166,7 +168,7 @@ test("authenticated profession admin access uses the saved storage state", async
   // following the Item workspace's Slice 9B.4 and Recipe workspace's
   // Slice 9C.1 precedent).
   await expect(
-    page.getByRole("link", { name: "+ New profession", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Profession", exact: true })
@@ -186,7 +188,7 @@ test("Create profession opens the dedicated creation route", async ({
 }) => {
   await page.goto("/admin/professions");
   await page
-    .getByRole("link", { name: "+ New profession", exact: true })
+    .getByRole("link", { name: "+ New", exact: true })
     .click();
 
   await expect(page).toHaveURL("/admin/professions/new");
@@ -277,7 +279,7 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   ).toBeVisible();
 
   await page
-    .getByRole("link", { name: "+ New profession", exact: true })
+    .getByRole("link", { name: "+ New", exact: true })
     .click();
   await expect(page).toHaveURL("/admin/professions/new");
   await createProfessionThroughForm(page, INITIAL);
@@ -330,8 +332,12 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   await page.getByLabel(/^Description/).fill(EDITED.description);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/professions?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Profession updated.");
+  // The redirect follows the NEW slug (this save also renamed the
+  // profession), never the stale INITIAL.slug.
+  await expect(page).toHaveURL(
+    `/admin/professions/${EDITED.slug}/edit`
+  );
+  await expect(page.getByRole("status")).toHaveText("Profession saved");
   await expect(recordRow(page, EDITED.name)).toBeVisible();
 
   // The slug changed, so the original public route must be gone...
@@ -354,28 +360,30 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   );
 
   // --- Delete -------------------------------------------------------------
-  // Delete is reached from the edit page's sticky EditorActions (the old
-  // table's per-row Delete link is gone).
+  // Delete opens the shared confirmation dialog directly over the edit
+  // page (Admin Polish Pass 1, Part 5) — no route change until the
+  // deletion itself succeeds.
   await page.goto("/admin/professions");
   await recordRow(page, EDITED.name).click();
   await expect(page).toHaveURL(`/admin/professions/${EDITED.slug}/edit`);
   await page
-    .getByRole("link", { name: "Delete Profession", exact: true })
+    .getByRole("button", { name: "Delete Profession", exact: true })
     .click();
-  await expect(page).toHaveURL(`/admin/professions/${EDITED.slug}/delete`);
+  await expect(page).toHaveURL(`/admin/professions/${EDITED.slug}/edit`);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Delete Profession" })
+    page.getByRole("heading", { level: 2, name: "Delete Profession" })
   ).toBeVisible();
   // The confirmation identifies exactly this profession by name and slug.
   await expect(page.getByText(`(${EDITED.slug})`)).toBeVisible();
   await expect(page.getByText("Linked recipes: 0")).toBeVisible();
 
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/professions?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Profession deleted.");
+  await expect(page).toHaveURL("/admin/professions");
+  await expect(page.getByRole("status")).toHaveText("Profession deleted");
   await expect(recordRow(page, EDITED.name)).toHaveCount(0);
 
   // Gone from the public site as well.
@@ -492,8 +500,8 @@ test("deletion is blocked while a recipe references the profession", async ({
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/professions?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Profession deleted.");
+  await expect(page).toHaveURL("/admin/professions");
+  await expect(page.getByRole("status")).toHaveText("Profession deleted");
   await expect(recordRow(page, BLOCKED.name)).toHaveCount(0);
 
   const deletedResponse = await page.goto(`/professions/${BLOCKED.slug}`);
@@ -554,20 +562,24 @@ test("record-list search filters instantly while typing, preserves the query acr
     recordRow(page, "Test E2E Profession Search A")
   ).not.toHaveAttribute("aria-current", "page");
 
-  // The create action, and this edit page's own Cancel/Delete links, keep
-  // the filter context too.
+  // The create action, and this edit page's own Cancel link, keep the
+  // filter context too. Delete opens its confirmation dialog in place
+  // (Admin Polish Pass 1, Part 5) rather than navigating, so the filter
+  // context is preserved trivially — the URL never changes at all.
   await expect(
-    page.getByRole("link", { name: "+ New profession", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toHaveAttribute("href", /\/admin\/professions\/new\?q=/);
   await expect(
     page.getByRole("link", { name: "Cancel", exact: true })
   ).toHaveAttribute("href", /\/admin\/professions\?q=/);
-  await expect(
-    page.getByRole("link", { name: "Delete Profession", exact: true })
-  ).toHaveAttribute(
-    "href",
-    /\/admin\/professions\/test-e2e-profession-search-b\/delete\?q=/
+  await page
+    .getByRole("button", { name: "Delete Profession", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL(
+    /\/admin\/professions\/test-e2e-profession-search-b\/edit\?q=/
   );
+  await page.keyboard.press("Escape");
 
   // --- Filter by Page address (slug) -------------------------------------
   await page.goto("/admin/professions");
@@ -654,12 +666,22 @@ test("gameplay verification stamps the selected game version and survives normal
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/professions?success=updated");
+  await expect(page).toHaveURL(
+    "/admin/professions/test-e2e-profession-verify/edit"
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop.
+  await page.waitForTimeout(500);
 
   // The edit page shows the stamp carrying the preselected current Game
   // Version, resolved and validated server-side, classified as
-  // verified-for-the-current-version by the shared panel.
-  await recordRow(page, "Test E2E Profession Verify").click();
+  // verified-for-the-current-version by the shared panel. Save-in-place
+  // already lands here — a redundant same-record re-navigation right
+  // after would race the still-settling client navigation and can
+  // observe stale, pre-mutation content, so the persisted state is
+  // checked directly.
   await expect(
     page.locator(".admin-status-badge", {
       hasText: "Verified — current version",
@@ -690,9 +712,14 @@ test("gameplay verification stamps the selected game version and survives normal
     .getByLabel(/^Description/)
     .fill("Verifies the shared verification panel (edited).");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/professions?success=updated");
-
-  await recordRow(page, "Test E2E Profession Verify").click();
+  await expect(page).toHaveURL(
+    "/admin/professions/test-e2e-profession-verify/edit"
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop.
+  await page.waitForTimeout(500);
   await expect(
     page.locator(".admin-status-badge", {
       hasText: "Verified — current version",
@@ -712,9 +739,14 @@ test("gameplay verification stamps the selected game version and survives normal
   );
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/professions?success=updated");
-
-  await recordRow(page, "Test E2E Profession Verify").click();
+  await expect(page).toHaveURL(
+    "/admin/professions/test-e2e-profession-verify/edit"
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop.
+  await page.waitForTimeout(500);
   await expect(
     page.locator(".admin-status-badge", { hasText: "Verified — older version" })
   ).toBeVisible();

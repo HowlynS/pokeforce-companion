@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   ITEM_CREATE_PATH,
   ITEM_LIST_PATH,
+  describeItemRecipeReferences,
+  itemCanDelete,
   itemDeleteHref,
   itemEditHref,
   itemEditorTabs,
@@ -184,5 +186,44 @@ describe("itemEditorTabs", () => {
       expect(tabs[1].count).toBe(0);
       expect(tabs[2].count).toBe(0);
     });
+  });
+});
+
+// Admin Polish Pass 1, Part 5: shared between the dedicated /delete route
+// and the in-editor delete dialog — pinned here so the two surfaces can
+// never silently drift apart.
+describe("itemCanDelete", () => {
+  it("allows deletion when the item is neither a recipe result nor an ingredient", () => {
+    expect(itemCanDelete({ recipesProduced: 0, recipeIngredients: 0 })).toBe(true);
+  });
+
+  it("blocks deletion when the item is a recipe result", () => {
+    expect(itemCanDelete({ recipesProduced: 1, recipeIngredients: 0 })).toBe(false);
+  });
+
+  it("blocks deletion when the item is a recipe ingredient", () => {
+    expect(itemCanDelete({ recipesProduced: 0, recipeIngredients: 1 })).toBe(false);
+  });
+
+  it("blocks deletion when the item is both", () => {
+    expect(itemCanDelete({ recipesProduced: 2, recipeIngredients: 3 })).toBe(false);
+  });
+});
+
+describe("describeItemRecipeReferences", () => {
+  it("describes a result-only reference with correct singular/plural", () => {
+    expect(describeItemRecipeReferences(1, 0)).toBe("the result of 1 recipe");
+    expect(describeItemRecipeReferences(2, 0)).toBe("the result of 2 recipes");
+  });
+
+  it("describes an ingredient-only reference with correct singular/plural", () => {
+    expect(describeItemRecipeReferences(0, 1)).toBe("an ingredient in 1 recipe");
+    expect(describeItemRecipeReferences(0, 3)).toBe("an ingredient in 3 recipes");
+  });
+
+  it("joins both kinds of reference with 'and'", () => {
+    expect(describeItemRecipeReferences(1, 1)).toBe(
+      "the result of 1 recipe and an ingredient in 1 recipe"
+    );
   });
 });

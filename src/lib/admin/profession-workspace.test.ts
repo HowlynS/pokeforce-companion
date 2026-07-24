@@ -2,13 +2,40 @@ import { describe, expect, it } from "vitest";
 import {
   PROFESSION_CREATE_PATH,
   PROFESSION_LIST_PATH,
+  describeLinkedRecipes,
   normalizeProfessionSearchQuery,
+  professionCanDelete,
   professionDeleteHref,
   professionEditHref,
   professionEditorTabs,
   professionRecipesHref,
   withProfessionSearchQuery,
 } from "@/lib/admin/profession-workspace";
+
+// Admin Polish Pass 1, Part 5: shared between the dedicated /delete route
+// and the in-editor delete dialog — pinned here so the two surfaces can
+// never silently drift apart.
+describe("professionCanDelete", () => {
+  it("allows deletion when no recipe references the profession", () => {
+    expect(professionCanDelete(0)).toBe(true);
+  });
+
+  it("blocks deletion when at least one recipe references the profession", () => {
+    expect(professionCanDelete(1)).toBe(false);
+    expect(professionCanDelete(4)).toBe(false);
+  });
+});
+
+describe("describeLinkedRecipes", () => {
+  it("uses singular phrasing for exactly one recipe", () => {
+    expect(describeLinkedRecipes(1)).toBe("1 recipe");
+  });
+
+  it("uses plural phrasing for zero or more than one recipe", () => {
+    expect(describeLinkedRecipes(0)).toBe("0 recipes");
+    expect(describeLinkedRecipes(5)).toBe("5 recipes");
+  });
+});
 
 describe("normalizeProfessionSearchQuery", () => {
   it("trims surrounding whitespace", () => {

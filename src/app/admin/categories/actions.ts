@@ -85,8 +85,10 @@ export async function createCategoryAction(formData: FormData) {
     }
   }
 
+  let createdCategory;
+
   try {
-    await prisma.category.create({
+    createdCategory = await prisma.category.create({
       data: { ...parsed.value, image: imagePath },
     });
   } catch (error) {
@@ -103,7 +105,12 @@ export async function createCategoryAction(formData: FormData) {
   revalidatePath("/admin/categories");
   revalidatePath("/categories");
 
-  redirect("/admin/categories?success=created");
+  // Admin Polish Pass 2, Part 2: straight to the new record's own
+  // canonical editor, using the ACTUAL persisted slug from the created
+  // row — never parsed.value.slug reconstructed independently.
+  redirect(
+    `/admin/categories/${createdCategory.slug}/edit?success=category_created`
+  );
 }
 
 export async function updateCategoryAction(formData: FormData) {
@@ -225,10 +232,17 @@ export async function updateCategoryAction(formData: FormData) {
     revalidatePath(`/categories/${parsed.value.slug}`);
   }
 
+  // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
+  // deliberately built from parsed.value.slug (the slug just PERSISTED),
+  // never editPath's own originalSlug: if this very save also renamed the
+  // category, originalSlug's URL would 404 against the now-current row.
+  // Every error redirect above still correctly uses editPath/originalSlug,
+  // since on an error nothing was written and the record's real slug is
+  // still whatever originalSlug says.
   redirect(
     oldImageCleanupFailed
-      ? "/admin/categories?success=updated_image_cleanup"
-      : "/admin/categories?success=updated"
+      ? `/admin/categories/${parsed.value.slug}/edit?success=category_saved_image_cleanup`
+      : `/admin/categories/${parsed.value.slug}/edit?success=category_saved`
   );
 }
 
@@ -286,7 +300,7 @@ export async function deleteCategoryAction(formData: FormData) {
 
   redirect(
     imageCleanupFailed
-      ? "/admin/categories?success=deleted_image_cleanup"
-      : "/admin/categories?success=deleted"
+      ? "/admin/categories?success=category_deleted_image_cleanup"
+      : "/admin/categories?success=category_deleted"
   );
 }

@@ -150,8 +150,8 @@ async function createRecipeWithImage(
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=created");
-  await expect(page.getByRole("status")).toHaveText("Recipe created.");
+  await expect(page).toHaveURL(`/admin/recipes/${data.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Recipe created");
   await expect(recordRow(page, data.name)).toBeVisible();
 }
 
@@ -212,8 +212,8 @@ test("replacing the recipe image stores a new object and removes the old one", a
     .setInputFiles(WEBP_FIXTURE);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Recipe updated.");
+  await expect(page).toHaveURL(`/admin/recipes/${RECIPE.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Recipe saved");
 
   // A different generated path is stored; the new exact object exists and
   // serves WebP; the old exact object is gone (deleted only after the
@@ -229,8 +229,10 @@ test("replacing the recipe image stores a new object and removes the old one", a
   ).toBe(true);
   expect(await recipeImageObjectExists(originalPath as string)).toBe(false);
 
-  // Admin and public rendering now use the replacement image.
-  await page.goto(`/admin/recipes/${RECIPE.slug}/edit`);
+  // Admin rendering now uses the replacement image — already the current
+  // page post-save-in-place, so no redundant same-URL re-navigation
+  // (which would race the still-settling client navigation and can
+  // observe stale, pre-mutation content) is needed to check it.
   await expectRenderedImage(page, `Current image for ${RECIPE.name}`);
   await page.goto(`/recipes/${RECIPE.slug}`);
   await expectRenderedImage(page, `Image of ${RECIPE.name}`);
@@ -261,8 +263,8 @@ test("removing the recipe image clears the row, deletes the object, and restores
   ).toBeVisible();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Recipe updated.");
+  await expect(page).toHaveURL(`/admin/recipes/${RECIPE.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Recipe saved");
 
   // The database image field is null and the exact previous object is gone.
   expect(await readRecipeImagePath(RECIPE.slug)).toBeNull();
@@ -401,20 +403,21 @@ test("deleting the recipe also deletes its stored image object and cascades its 
   // The temporary recipe owns exactly one ingredient row before deletion.
   expect(await countE2eTestRecipeImageIngredientRows()).toBe(1);
 
-  // Real confirmation flow; the plain "Recipe deleted." message also proves
+  // Real confirmation flow; the plain "Recipe deleted" toast also proves
   // the image cleanup succeeded (a failed cleanup uses a distinct message).
-  // Delete is reached from the edit page's toolbar (the old table's
-  // per-row Delete link is gone).
+  // Delete opens the shared dialog directly over the edit page (Admin
+  // Polish Pass 1, Part 5).
   await recordRow(page, RECIPE.name).click();
   await expect(page).toHaveURL(`/admin/recipes/${RECIPE.slug}/edit`);
-  await page.getByRole("link", { name: "Delete Recipe", exact: true }).click();
-  await expect(page).toHaveURL(`/admin/recipes/${RECIPE.slug}/delete`);
+  await page.getByRole("button", { name: "Delete Recipe", exact: true }).click();
+  await expect(page).toHaveURL(`/admin/recipes/${RECIPE.slug}/edit`);
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Recipe deleted.");
+  await expect(page).toHaveURL("/admin/recipes");
+  await expect(page.getByRole("status")).toHaveText("Recipe deleted");
   await expect(recordRow(page, RECIPE.name)).toHaveCount(0);
 
   // The row is gone, its ingredient rows fell to the cascade (seeded

@@ -106,8 +106,8 @@ async function createProfessionWithImage(
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/professions?success=created");
-  await expect(page.getByRole("status")).toHaveText("Profession created.");
+  await expect(page).toHaveURL(`/admin/professions/${data.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Profession created");
   await expect(recordRow(page, data.name)).toBeVisible();
 }
 
@@ -170,8 +170,8 @@ test("replacing the profession image stores a new object and removes the old one
     .setInputFiles(WEBP_FIXTURE);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/professions?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Profession updated.");
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Profession saved");
 
   // A different generated path is stored; the new exact object exists and
   // serves WebP; the old exact object is gone (deleted only after the
@@ -191,8 +191,10 @@ test("replacing the profession image stores a new object and removes the old one
     false
   );
 
-  // Admin and public rendering now use the replacement image.
-  await page.goto(`/admin/professions/${PROFESSION.slug}/edit`);
+  // Admin rendering now uses the replacement image — already the current
+  // page post-save-in-place, so no redundant same-URL re-navigation
+  // (which would race the still-settling client navigation and can
+  // observe stale, pre-mutation content) is needed to check it.
   await expectRenderedImage(page, `Current image for ${PROFESSION.name}`);
   await page.goto(`/professions/${PROFESSION.slug}`);
   await expectRenderedImage(page, `Image of ${PROFESSION.name}`);
@@ -223,8 +225,8 @@ test("removing the profession image clears the row, deletes the object, and rest
   ).toBeVisible();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/professions?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Profession updated.");
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Profession saved");
 
   // The database image field is null and the exact previous object is gone.
   expect(await readProfessionImagePath(PROFESSION.slug)).toBeNull();
@@ -326,24 +328,23 @@ test("deleting the profession also deletes its stored image object", async ({
   expect(await professionImageObjectExists(objectPath as string)).toBe(true);
 
   // Real confirmation flow (no recipes reference the temporary profession,
-  // so deletion is offered); the plain "Profession deleted." message also
+  // so deletion is offered); the plain "Profession deleted" toast also
   // proves the image cleanup succeeded (a failed cleanup uses a distinct
-  // message). Quick switching opens the edit route; Delete is reached
-  // from its toolbar (the old table's per-row Delete link is gone).
+  // message). Quick switching opens the edit route; Delete opens the
+  // shared dialog directly over it (Admin Polish Pass 1, Part 5).
   await recordRow(page, PROFESSION.name).click();
   await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
   await page
-    .getByRole("link", { name: "Delete Profession", exact: true })
+    .getByRole("button", { name: "Delete Profession", exact: true })
     .click();
-  await expect(page).toHaveURL(
-    `/admin/professions/${PROFESSION.slug}/delete`
-  );
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/professions?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Profession deleted.");
+  await expect(page).toHaveURL("/admin/professions");
+  await expect(page.getByRole("status")).toHaveText("Profession deleted");
   await expect(recordRow(page, PROFESSION.name)).toHaveCount(0);
 
   // The row is gone and so is its exact Storage object.

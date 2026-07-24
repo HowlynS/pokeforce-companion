@@ -122,8 +122,8 @@ async function createCategoryWithImage(
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/categories?success=created");
-  await expect(page.getByRole("status")).toHaveText("Category created.");
+  await expect(page).toHaveURL(`/admin/categories/${data.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Category created");
   await expect(recordRow(page, data.name)).toBeVisible();
 }
 
@@ -197,8 +197,8 @@ test("replacing the category image stores a new object and removes the old one",
     .setInputFiles(WEBP_FIXTURE);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/categories?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Category updated.");
+  await expect(page).toHaveURL(`/admin/categories/${CATEGORY.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Category saved");
 
   // A different generated path is stored; the new exact object exists and
   // serves WebP; the old exact object is gone (deleted only after the
@@ -252,8 +252,8 @@ test("removing the category image clears the row, deletes the object, and restor
   ).toBeVisible();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/categories?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Category updated.");
+  await expect(page).toHaveURL(`/admin/categories/${CATEGORY.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Category saved");
 
   // The database image field is null and the exact previous object is gone.
   expect(await readCategoryImagePath(CATEGORY.slug)).toBeNull();
@@ -298,8 +298,8 @@ test("saving without touching the image controls preserves the current image", a
     .fill("Edited without touching the image.");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/categories?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Category updated.");
+  await expect(page).toHaveURL(`/admin/categories/${CATEGORY.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Category saved");
 
   expect(await readCategoryImagePath(CATEGORY.slug)).toBe(originalPath);
   expect(await categoryImageObjectExists(originalPath as string)).toBe(true);
@@ -396,22 +396,23 @@ test("deleting an unlinked category also deletes its stored image object", async
   expect(objectPath !== null).toBe(true);
   expect(await categoryImageObjectExists(objectPath as string)).toBe(true);
 
-  // Real confirmation flow: quick switching opens the edit route; Delete is
-  // reached from its toolbar. The plain "Category deleted." message also
-  // proves the image cleanup succeeded (a failed cleanup uses a distinct
-  // message).
+  // Real confirmation flow: quick switching opens the edit route; Delete
+  // opens the shared dialog directly over it (Admin Polish Pass 1, Part
+  // 5). The plain "Category deleted" toast also proves the image
+  // cleanup succeeded (a failed cleanup uses a distinct message).
   await recordRow(page, CATEGORY.name).click();
   await expect(page).toHaveURL(`/admin/categories/${CATEGORY.slug}/edit`);
   await page
-    .getByRole("link", { name: "Delete Category", exact: true })
+    .getByRole("button", { name: "Delete Category", exact: true })
     .click();
-  await expect(page).toHaveURL(`/admin/categories/${CATEGORY.slug}/delete`);
+  await expect(page).toHaveURL(`/admin/categories/${CATEGORY.slug}/edit`);
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/categories?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Category deleted.");
+  await expect(page).toHaveURL("/admin/categories");
+  await expect(page.getByRole("status")).toHaveText("Category deleted");
   await expect(recordRow(page, CATEGORY.name)).toHaveCount(0);
 
   // The row is gone and so is its exact Storage object.
@@ -465,7 +466,7 @@ test("the record list keeps search, quick switching, selected state, tabs, and t
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/categories?success=created");
+  await expect(page).toHaveURL(`/admin/categories/${CATEGORY_B.slug}/edit`);
 
   // Item-count secondary label still renders beside the thumbnail — both
   // temporary categories have zero linked items.

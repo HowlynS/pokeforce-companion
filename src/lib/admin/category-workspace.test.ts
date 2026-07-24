@@ -2,13 +2,40 @@ import { describe, expect, it } from "vitest";
 import {
   CATEGORY_CREATE_PATH,
   CATEGORY_LIST_PATH,
+  categoryCanDelete,
   categoryDeleteHref,
   categoryEditHref,
   categoryEditorTabs,
   categoryItemsHref,
+  describeLinkedItems,
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
+
+// Admin Polish Pass 1, Part 5: shared between the dedicated /delete route
+// and the in-editor delete dialog — pinned here so the two surfaces can
+// never silently drift apart.
+describe("categoryCanDelete", () => {
+  it("allows deletion when no item references the category", () => {
+    expect(categoryCanDelete(0)).toBe(true);
+  });
+
+  it("blocks deletion when at least one item references the category", () => {
+    expect(categoryCanDelete(1)).toBe(false);
+    expect(categoryCanDelete(4)).toBe(false);
+  });
+});
+
+describe("describeLinkedItems", () => {
+  it("uses singular phrasing for exactly one item", () => {
+    expect(describeLinkedItems(1)).toBe("1 item");
+  });
+
+  it("uses plural phrasing for zero or more than one item", () => {
+    expect(describeLinkedItems(0)).toBe("0 items");
+    expect(describeLinkedItems(5)).toBe("5 items");
+  });
+});
 
 describe("normalizeCategorySearchQuery", () => {
   it("trims surrounding whitespace", () => {

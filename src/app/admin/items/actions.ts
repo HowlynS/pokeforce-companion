@@ -115,10 +115,12 @@ export async function createItemAction(formData: FormData) {
     }
   }
 
+  let createdItem;
+
   try {
     // Without the opt-in stamp both verification fields stay NULL — a newly
     // created item is unverified by default.
-    await prisma.item.create({
+    createdItem = await prisma.item.create({
       data: {
         name: parsed.value.name,
         slug: parsed.value.slug,
@@ -149,7 +151,11 @@ export async function createItemAction(formData: FormData) {
     revalidatePath(`/categories/${categorySlug}`);
   }
 
-  redirect("/admin/items?success=created");
+  // Admin Polish Pass 2, Part 2: straight to the new record's own
+  // canonical editor, using the ACTUAL persisted slug from the created
+  // row — never parsed.value.slug reconstructed independently, since
+  // normalization/uniqueness handling could in principle have altered it.
+  redirect(`/admin/items/${createdItem.slug}/edit?success=item_created`);
 }
 
 export async function updateItemAction(formData: FormData) {
@@ -319,10 +325,17 @@ export async function updateItemAction(formData: FormData) {
     revalidatePath(`/categories/${newCategorySlug}`);
   }
 
+  // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
+  // deliberately built from parsed.value.slug (the slug just PERSISTED),
+  // never editPath's own originalSlug: if this very save also renamed the
+  // item, originalSlug's URL would 404 against the now-current row. Every
+  // error redirect above still correctly uses editPath/originalSlug,
+  // since on an error nothing was written and the record's real slug is
+  // still whatever originalSlug says.
   redirect(
     oldImageCleanupFailed
-      ? "/admin/items?success=updated_image_cleanup"
-      : "/admin/items?success=updated"
+      ? `/admin/items/${parsed.value.slug}/edit?success=item_saved_image_cleanup`
+      : `/admin/items/${parsed.value.slug}/edit?success=item_saved`
   );
 }
 
@@ -398,7 +411,7 @@ export async function deleteItemAction(formData: FormData) {
 
   redirect(
     imageCleanupFailed
-      ? "/admin/items?success=deleted_image_cleanup"
-      : "/admin/items?success=deleted"
+      ? "/admin/items?success=item_deleted_image_cleanup"
+      : "/admin/items?success=item_deleted"
   );
 }

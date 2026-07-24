@@ -6,6 +6,8 @@ import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   CATEGORY_LIST_PATH,
+  categoryCanDelete,
+  describeLinkedItems,
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
@@ -17,10 +19,6 @@ type DeleteCategoryPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ q?: string; error?: string }>;
 };
-
-function describeLinkedItems(count: number): string {
-  return count === 1 ? "1 item" : `${count} items`;
-}
 
 export default async function DeleteCategoryPage({
   params,
@@ -44,7 +42,7 @@ export default async function DeleteCategoryPage({
   }
 
   const itemCount = category._count.items;
-  const canDelete = itemCount === 0;
+  const canDelete = categoryCanDelete(itemCount);
 
   // The delete confirmation inside the Category workspace, following the
   // Item/Recipe/Profession workspaces' navigation-foundation precedent:

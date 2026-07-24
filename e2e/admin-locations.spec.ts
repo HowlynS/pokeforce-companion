@@ -207,8 +207,10 @@ async function createLocationThroughForm(
   }
   await page.getByRole("button", { name: "Create Location", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/locations?success=created");
-  await expect(page.getByRole("status")).toHaveText("Location created.");
+  await expect(page).toHaveURL(
+    `/admin/locations/${data.slug}/edit`
+  );
+  await expect(page.getByRole("status")).toHaveText("Location created");
   await expect(recordRow(page, data.name)).toBeVisible();
 }
 
@@ -228,7 +230,7 @@ test("authenticated location admin access uses the saved storage state", async (
   // following the Item/Recipe/Profession/Category workspaces' own
   // navigation-foundation precedent).
   await expect(
-    page.getByRole("link", { name: "+ New location", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Location", exact: true })
@@ -238,7 +240,7 @@ test("authenticated location admin access uses the saved storage state", async (
 
 test("Create Location opens the dedicated creation route", async ({ page }) => {
   await page.goto("/admin/locations");
-  await page.getByRole("link", { name: "+ New location", exact: true }).click();
+  await page.getByRole("link", { name: "+ New", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/locations/new");
   await expect(
@@ -396,7 +398,7 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
     page.getByRole("heading", { level: 1, name: "Location Management" })
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "+ New location", exact: true }).click();
+  await page.getByRole("link", { name: "+ New", exact: true }).click();
   await expect(page).toHaveURL("/admin/locations/new");
   await createLocationThroughForm(page, INITIAL);
 
@@ -452,8 +454,12 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/locations?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Location updated.");
+  // The redirect follows the NEW slug (this save also renamed the
+  // location), never the stale INITIAL.slug.
+  await expect(page).toHaveURL(
+    `/admin/locations/${EDITED.slug}/edit`
+  );
+  await expect(page.getByRole("status")).toHaveText("Location saved");
   await expect(recordRow(page, EDITED.name)).toBeVisible();
 
   // The slug changed, so the original public route must be gone...
@@ -473,26 +479,28 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
   // --- Delete -------------------------------------------------------------
-  // Delete is reached from the edit page's sticky EditorActions (the old
-  // table's per-row Delete link is gone).
+  // Delete opens the shared confirmation dialog directly over the edit
+  // page (Admin Polish Pass 1, Part 5) — no route change until the
+  // deletion itself succeeds.
   await page.goto("/admin/locations");
   await recordRow(page, EDITED.name).click();
   await expect(page).toHaveURL(`/admin/locations/${EDITED.slug}/edit`);
-  await page.getByRole("link", { name: "Delete Location", exact: true }).click();
-  await expect(page).toHaveURL(`/admin/locations/${EDITED.slug}/delete`);
+  await page.getByRole("button", { name: "Delete Location", exact: true }).click();
+  await expect(page).toHaveURL(`/admin/locations/${EDITED.slug}/edit`);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Delete Location" })
+    page.getByRole("heading", { level: 2, name: "Delete Location" })
   ).toBeVisible();
   // The confirmation identifies exactly this location by name and slug.
   await expect(page.getByText(`(${EDITED.slug})`)).toBeVisible();
   await expect(page.getByText("Sub-locations: 0")).toBeVisible();
 
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/locations?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Location deleted.");
+  await expect(page).toHaveURL("/admin/locations");
+  await expect(page.getByRole("status")).toHaveText("Location deleted");
   await expect(recordRow(page, EDITED.name)).toHaveCount(0);
 
   // Gone from the public site as well.
@@ -549,12 +557,17 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/locations?success=updated");
+  await expect(page).toHaveURL(
+    `/admin/locations/${VERIFY_LOCATION.slug}/edit`
+  );
 
   // The edit page shows the stamp carrying the preselected current Game
   // Version, resolved and validated server-side, classified as
-  // verified-for-the-current-version by the shared panel.
-  await recordRow(page, VERIFY_LOCATION.name).click();
+  // verified-for-the-current-version by the shared panel. Save-in-place
+  // already lands here — a redundant same-record re-navigation right
+  // after would race the still-settling client navigation and can
+  // observe stale, pre-mutation content, so the persisted state is
+  // checked directly.
   await expect(
     page.locator(".admin-status-badge", {
       hasText: "Verified — current version",
@@ -592,7 +605,15 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     .getByLabel(/^Description/)
     .fill("Edited without touching verification.");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/locations?success=updated");
+  await expect(page).toHaveURL(
+    `/admin/locations/${VERIFY_LOCATION.slug}/edit`
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop, since the very next assertion is a fresh
+  // navigation/read that must see the just-committed value.
+  await page.waitForTimeout(500);
 
   await page.goto(`/locations/${VERIFY_LOCATION.slug}`);
   await expect(
@@ -619,9 +640,9 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   );
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/locations?success=updated");
-
-  await recordRow(page, VERIFY_LOCATION.name).click();
+  await expect(page).toHaveURL(
+    `/admin/locations/${VERIFY_LOCATION.slug}/edit`
+  );
   await expect(
     page.locator(".admin-status-badge", { hasText: "Verified — older version" })
   ).toBeVisible();
@@ -757,7 +778,15 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await expect(page).toHaveURL(`/admin/locations/${SUBJECT.slug}/edit`);
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/locations?success=updated");
+  await expect(page).toHaveURL(
+    `/admin/locations/${SUBJECT.slug}/edit`
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop, since the very next assertion is a fresh
+  // navigation/read that must see the just-committed value.
+  await page.waitForTimeout(500);
 
   // Slice 10C: the public page shows the parent via its breadcrumb, not a
   // separate "Parent location" card.
@@ -817,7 +846,15 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await page
     .getByRole("button", { name: "Save Hierarchy", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=updated");
+  await expect(page).toHaveURL(
+    `/admin/locations/${SUBJECT.slug}/hierarchy`
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop, since the very next assertion is a fresh
+  // navigation/read that must see the just-committed value.
+  await page.waitForTimeout(500);
 
   // Parent A no longer lists the subject as a sub-location; Parent B does.
   await page.goto(`/admin/locations/${PARENT_A.slug}/hierarchy`);
@@ -880,7 +917,15 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await page
     .getByRole("button", { name: "Save Hierarchy", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=updated");
+  await expect(page).toHaveURL(
+    `/admin/locations/${SUBJECT.slug}/hierarchy`
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop, since the very next assertion is a fresh
+  // navigation/read that must see the just-committed value.
+  await page.waitForTimeout(500);
 
   await page.goto(`/admin/locations/${PARENT_B.slug}/hierarchy`);
   await expect(page.getByText("No sub-locations yet")).toBeVisible();
@@ -890,14 +935,15 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
 
   await page.goto(`/admin/locations/${SUBJECT.slug}/hierarchy`);
   await expect(
-    page.getByRole("link", { name: "Delete Location", exact: true })
+    page.getByRole("button", { name: "Delete Location", exact: true })
   ).toHaveCount(0);
 
   await page.goto(`/admin/locations/${SUBJECT.slug}/edit`);
   await page
-    .getByRole("link", { name: "Delete Location", exact: true })
+    .getByRole("button", { name: "Delete Location", exact: true })
     .click();
-  await expect(page).toHaveURL(`/admin/locations/${SUBJECT.slug}/delete`);
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL(`/admin/locations/${SUBJECT.slug}/edit`);
 });
 
 test("switching locations while on the Hierarchy tab preserves the tab and q, and General's own tab link preserves q too", async ({
@@ -1003,14 +1049,14 @@ test("deletion is blocked while a sub-location exists", async ({ page }) => {
   await page
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=deleted");
+  await expect(page).toHaveURL("/admin/locations");
 
   await page.goto(`/admin/locations/${BLOCKED_PARENT.slug}/delete`);
   await expect(page.getByText("Sub-locations: 0")).toBeVisible();
   await page
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=deleted");
+  await expect(page).toHaveURL("/admin/locations");
 });
 
 test("a sparse location (no description, no image, no parent) renders without empty optional content", async ({
@@ -1140,31 +1186,33 @@ test("record-list search filters instantly while typing by name, slug, and type 
     recordRow(page, "Test E2E Location Search A")
   ).not.toHaveAttribute("aria-current", "page");
 
-  // The create action, and this edit page's own Cancel/Delete links, keep
-  // the filter context too.
+  // The create action, and this edit page's own Cancel link, keep the
+  // filter context too. Delete opens its confirmation dialog in place
+  // (Admin Polish Pass 1, Part 5) rather than navigating, so the filter
+  // context is preserved trivially — the URL never changes at all, and
+  // the dialog's own Cancel just closes it in place.
   await expect(
-    page.getByRole("link", { name: "+ New location", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toHaveAttribute("href", /\/admin\/locations\/new\?q=/);
   await expect(
     page.getByRole("link", { name: "Cancel", exact: true })
   ).toHaveAttribute("href", /\/admin\/locations\?q=/);
-  await expect(
-    page.getByRole("link", { name: "Delete Location", exact: true })
-  ).toHaveAttribute(
-    "href",
-    /\/admin\/locations\/test-e2e-location-search-b\/delete\?q=/
-  );
 
-  // The delete confirmation page's own Cancel link keeps the query too.
   await page
-    .getByRole("link", { name: "Delete Location", exact: true })
+    .getByRole("button", { name: "Delete Location", exact: true })
     .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page).toHaveURL(
-    /\/admin\/locations\/test-e2e-location-search-b\/delete\?q=/
+    /\/admin\/locations\/test-e2e-location-search-b\/edit\?q=/
   );
-  await expect(
-    page.getByRole("link", { name: "Cancel", exact: true })
-  ).toHaveAttribute("href", /\/admin\/locations\?q=/);
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL(
+    /\/admin\/locations\/test-e2e-location-search-b\/edit\?q=/
+  );
 
   // --- Filter by Page address (slug) -------------------------------------
   await page.goto("/admin/locations");

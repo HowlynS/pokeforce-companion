@@ -53,7 +53,7 @@ async function createTempProfession(
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/professions?success=created");
+  await expect(page).toHaveURL(`/admin/professions/${slug}/edit`);
   return slug;
 }
 
@@ -94,8 +94,9 @@ test("Ctrl+S saves a valid form", async ({ page }) => {
     .fill("Saved via keyboard shortcut.");
   await expect(status(page)).toBeVisible();
 
+  const editUrl = page.url();
   await page.keyboard.press("Control+s");
-  await expect(page).toHaveURL(/\/admin\/professions\?success=updated/);
+  await expect(page).toHaveURL(editUrl);
 });
 
 test("restoring an auto-synced Page-address draft keeps Name -> Page address sync active afterward", async ({

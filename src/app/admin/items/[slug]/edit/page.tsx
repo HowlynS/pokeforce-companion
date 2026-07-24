@@ -13,15 +13,17 @@ import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
-  itemDeleteHref,
+  describeItemRecipeReferences,
+  itemCanDelete,
   itemEditorTabs,
   normalizeItemSearchQuery,
   withItemSearchQuery,
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
-import { updateItemAction } from "../../actions";
+import { updateItemAction, deleteItemAction } from "../../actions";
 import { checkItemNameAvailability } from "../../name-availability";
 import { checkItemSlugAvailability } from "../../slug-availability";
 
@@ -99,6 +101,18 @@ export default async function EditItemPage({
 
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(item.image);
+  const categoryOptions = await toEntitySelectOptions(categories);
+
+  // Feeds the in-editor delete dialog (Admin Polish Pass 1, Part 5) — the
+  // exact same counts and rule the dedicated /delete route uses (see
+  // itemCanDelete's own doc comment), reusing data this page's own tab-
+  // badge query already loads rather than a second query.
+  const resultCount = item._count.recipesProduced;
+  const ingredientCount = item._count.recipeIngredients;
+  const canDeleteItem = itemCanDelete({
+    recipesProduced: resultCount,
+    recipeIngredients: ingredientCount,
+  });
 
   // Current version first, then newest — the same ordering the
   // settings list uses; feeds the shared verification picker.
@@ -126,6 +140,16 @@ export default async function EditItemPage({
   // (Slice 9B.6) — the Acquisition Sources tab replaces it.
   return (
     <ItemWorkspace
+      // Admin Polish Pass 2, Part 5: forces a full remount of the record
+      // list, form, and aside (AdminFormGuard's dirty/draft baseline,
+      // ImagePanel's local preview/removed state, etc.) whenever this
+      // item's own updatedAt actually changes — i.e. exactly once per
+      // successful save-in-place, and never on an unrelated re-render
+      // (a validation-error redirect leaves updatedAt untouched). This is
+      // the same "reset state by changing key" pattern React's own docs
+      // recommend, and avoids adding bespoke reset logic to every
+      // already-complex stateful child individually.
+      key={item.updatedAt.toISOString()}
       rawQuery={q}
       selectedSlug={item.slug}
       editorHeader={
@@ -167,9 +191,41 @@ export default async function EditItemPage({
 
           <DangerZonePanel
             resourceLabel="item"
-            deleteHref={itemDeleteHref(item.slug, query)}
             deleteLabel="Delete item"
-          />
+            dialogTitle="Delete Item"
+            dialogDescription={
+              <>
+                You are about to permanently delete{" "}
+                <strong>{item.name}</strong> ({item.slug}). This action
+                cannot be undone.
+              </>
+            }
+            canDelete={canDeleteItem}
+            formAction={deleteItemAction}
+            hiddenFields={{ id: item.id, slug: item.slug }}
+          >
+            <p className="text-muted">
+              Category:{" "}
+              {categoryOptions.find((option) => option.value === item.categoryId)
+                ?.label ?? "Uncategorized"}
+            </p>
+
+            <p className="text-muted">
+              Used as a recipe result: {resultCount}
+            </p>
+
+            <p className="text-muted">
+              Used as a recipe ingredient: {ingredientCount}
+            </p>
+
+            {!canDeleteItem ? (
+              <p className="text-danger">
+                This item cannot be deleted because it is used as{" "}
+                {describeItemRecipeReferences(resultCount, ingredientCount)}.
+                Remove or reassign those recipe references first.
+              </p>
+            ) : null}
+          </DangerZonePanel>
         </>
       }
     >
@@ -230,11 +286,8 @@ export default async function EditItemPage({
                   name="categoryId"
                   defaultValue={item.categoryId ?? ""}
                   options={[
-                    { value: "", label: "No category" },
-                    ...categories.map((category) => ({
-                      value: category.id,
-                      label: category.name,
-                    })),
+                    { value: "", label: "No category", imageUrl: null },
+                    ...categoryOptions,
                   ]}
                 />
               </label>

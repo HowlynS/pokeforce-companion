@@ -86,7 +86,7 @@ export async function createAcquisitionSourceAction(formData: FormData) {
     redirect(`${sourcesPath}?error=${relationError}`);
   }
 
-  await prisma.acquisitionSource.create({
+  const createdSource = await prisma.acquisitionSource.create({
     data: {
       itemId,
       type: parsed.value.type,
@@ -102,7 +102,12 @@ export async function createAcquisitionSourceAction(formData: FormData) {
   revalidatePath(sourcesPath);
   revalidatePath(`/items/${itemSlug}`);
 
-  redirect(`${sourcesPath}?success=created`);
+  // Admin Polish Pass 2, Part 2: straight to the new source's own
+  // canonical editor inside the same Item workspace, using the ACTUAL
+  // persisted id from the created row.
+  redirect(
+    `${sourcesPath}/${createdSource.id}/edit?success=source_created`
+  );
 }
 
 export async function updateAcquisitionSourceAction(formData: FormData) {
@@ -196,7 +201,10 @@ export async function updateAcquisitionSourceAction(formData: FormData) {
   }
   revalidatePath(`/items/${itemSlug}`);
 
-  redirect(`${sourcesPath}?success=updated`);
+  // Admin Polish Pass 2, Part 1: back to the SAME canonical source editor
+  // URL (never the sources list) so a save keeps the contributor where
+  // they were.
+  redirect(`${editPath ?? sourcesPath}?success=source_saved`);
 }
 
 export async function deleteAcquisitionSourceAction(formData: FormData) {
@@ -243,5 +251,5 @@ export async function deleteAcquisitionSourceAction(formData: FormData) {
   revalidatePath(sourcesPath);
   revalidatePath(`/items/${itemSlug}`);
 
-  redirect(`${sourcesPath}?success=deleted`);
+  redirect(`${sourcesPath}?success=source_deleted`);
 }

@@ -11,7 +11,9 @@ import {
   professionRecipesHref,
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
+import { getImagePublicUrl } from "@/lib/storage/images";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
+import { ResourceIcon } from "@/components/admin/resource-icon";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
@@ -30,18 +32,26 @@ type ProfessionRecipesPageProps = {
  * omitted entirely when absent, never a placeholder dash or an empty cell
  * of its own.
  */
-function RecipeNameCell({
+async function RecipeNameCell({
   slug,
   name,
+  image,
   requiredLevel,
 }: {
   slug: string;
   name: string;
+  image: string | null;
   requiredLevel: number | null;
 }) {
+  const imageUrl = await getImagePublicUrl(image);
+
   return (
     <td>
-      <a href={`/admin/recipes/${slug}/edit`} className="link-accent">
+      <a
+        href={`/admin/recipes/${slug}/edit`}
+        className="link-accent admin-table-link-with-icon"
+      >
+        <ResourceIcon imageUrl={imageUrl} size="md" />
         {name}
       </a>
       {requiredLevel != null ? (
@@ -137,6 +147,7 @@ export default async function ProfessionRecipesPage({
                     <RecipeNameCell
                       slug={recipe.slug}
                       name={recipe.name}
+                      image={recipe.image}
                       requiredLevel={recipe.requiredLevel}
                     />
                     <td>{recipe.resultingItem.name}</td>

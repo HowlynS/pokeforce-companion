@@ -150,3 +150,42 @@ export function itemEditorTabs(
     },
   ];
 }
+
+/**
+ * The Item delete-blocking rule, shared by the dedicated /delete route AND
+ * the in-editor delete dialog (Admin Polish Pass 1, Part 5) — one function
+ * so the two surfaces can never drift apart. An Item cannot be deleted
+ * while any recipe still references it, either as its result or as one of
+ * its ingredients.
+ */
+export function itemCanDelete(counts: {
+  recipesProduced: number;
+  recipeIngredients: number;
+}): boolean {
+  return counts.recipesProduced === 0 && counts.recipeIngredients === 0;
+}
+
+/** The human-readable reason an Item is blocked from deletion — shared by
+    both surfaces for the same reason as itemCanDelete above. */
+export function describeItemRecipeReferences(
+  resultCount: number,
+  ingredientCount: number
+): string {
+  const parts: string[] = [];
+
+  if (resultCount > 0) {
+    parts.push(
+      `the result of ${resultCount} ${resultCount === 1 ? "recipe" : "recipes"}`
+    );
+  }
+
+  if (ingredientCount > 0) {
+    parts.push(
+      `an ingredient in ${ingredientCount} ${
+        ingredientCount === 1 ? "recipe" : "recipes"
+      }`
+    );
+  }
+
+  return parts.join(" and ");
+}

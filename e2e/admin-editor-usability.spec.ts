@@ -363,7 +363,7 @@ test("the verification checkbox stays top-aligned with its label's first line, a
   await expect(checkbox).toBeChecked();
 });
 
-test("sticky EditorActions stays sticky, keeps Save as a real submit control, and Delete keeps its exact route", async ({
+test("sticky EditorActions stays sticky, keeps Save as a real submit control, and Delete opens its dialog in place", async ({
   page,
 }) => {
   await page.goto("/admin/items/iron-ore/edit");
@@ -375,11 +375,14 @@ test("sticky EditorActions stays sticky, keeps Save as a real submit control, an
   const saveButton = page.getByRole("button", { name: "Save Changes", exact: true });
   await expect(saveButton).toHaveAttribute("type", "submit");
 
-  const deleteLink = page.getByRole("link", { name: "Delete item", exact: true });
-  await expect(deleteLink).toHaveAttribute(
-    "href",
-    /\/admin\/items\/iron-ore\/delete/
-  );
+  // Admin Polish Pass 1, Part 5: Delete is a button opening the shared
+  // dialog directly over this editor, never an <a href> to a separate
+  // route (that dedicated route still exists as a fallback — see
+  // delete-record-dialog.tsx's own module comment).
+  await page.getByRole("button", { name: "Delete item", exact: true }).click();
+  await expect(page).toHaveURL("/admin/items/iron-ore/edit");
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
 });
 
 test("at 1440x650, the sticky actions bar never overlaps the context rail, and the last field remains reachable above it", async ({
@@ -460,17 +463,22 @@ test("the Game Version delete confirmation also shows the destructive eyebrow an
   const currentRow = page
     .getByRole("row")
     .filter({ has: page.getByRole("cell", { name: "test-gv-current", exact: true }) });
-  await currentRow.getByRole("link", { name: "Delete", exact: true }).click();
+  // Admin Polish Pass 1, Part 5: Delete opens the shared dialog directly
+  // over this list page, never navigating to a separate route.
+  await currentRow.getByRole("button", { name: "Delete", exact: true }).click();
 
   await expect(page.locator(".confirm-card-eyebrow")).toHaveText(
     "Destructive action"
   );
   // Read-only: this route's own existing dependency-check behavior is
   // already covered by admin-game-versions.spec.ts — this test only
-  // proves the new eyebrow renders here too, and Cancel still returns
-  // to the exact existing route, without depending on (or changing)
-  // whether this specific version happens to be deletable right now.
-  await expect(
-    page.getByRole("link", { name: "Cancel", exact: true })
-  ).toHaveAttribute("href", "/admin/settings/game-versions");
+  // proves the eyebrow renders here too, and Cancel still closes the
+  // dialog in place (never a navigable link here, since there is no
+  // separate route to link to).
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL("/admin/settings/game-versions");
 });

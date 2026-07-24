@@ -104,8 +104,8 @@ async function createItemWithImage(
   await page.locator('input[name="image"]').setInputFiles(imageFile);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?success=created");
-  await expect(page.getByRole("status")).toHaveText("Item created.");
+  await expect(page).toHaveURL(`/admin/items/${data.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Item created");
   await expect(
     page
       .getByRole("navigation", { name: "Items records" })
@@ -166,8 +166,8 @@ test("replacing the image stores a new object and removes the old one", async ({
     .setInputFiles(WEBP_FIXTURE);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Item updated.");
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Item saved");
 
   // A different generated path is stored; the new exact object exists and
   // serves WebP; the old exact object is gone (deleted only after the
@@ -215,8 +215,8 @@ test("removing the image clears the row, deletes the object, and restores the fa
   ).toBeVisible();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Item updated.");
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Item saved");
 
   // The database image field is null and the exact previous object is gone.
   expect(await readItemImagePath(ITEM.slug)).toBeNull();
@@ -308,15 +308,15 @@ test("deleting the item also deletes its stored image object", async ({
 
   // Real confirmation flow, reached through the workspace: the record-list
   // row opens the editor, whose toolbar links to the delete confirmation
-  // (Slice 9B.4). The plain "Item deleted." message also proves the image
+  // (Slice 9B.4). The plain "Item deleted" toast also proves the image
   // cleanup succeeded (a failed cleanup uses a distinct message).
   await page.goto(`/admin/items/${ITEM.slug}/delete`);
   await page
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/items?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Item deleted.");
+  await expect(page).toHaveURL("/admin/items");
+  await expect(page.getByRole("status")).toHaveText("Item deleted");
   await expect(
     page
       .getByRole("navigation", { name: "Items records" })

@@ -5,7 +5,9 @@ import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   PROFESSION_LIST_PATH,
+  describeLinkedRecipes,
   normalizeProfessionSearchQuery,
+  professionCanDelete,
   withProfessionSearchQuery,
 } from "@/lib/admin/profession-workspace";
 import { prisma } from "@/lib/db";
@@ -17,10 +19,6 @@ type DeleteProfessionPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ q?: string; error?: string }>;
 };
-
-function describeLinkedRecipes(count: number): string {
-  return count === 1 ? "1 recipe" : `${count} recipes`;
-}
 
 export default async function DeleteProfessionPage({
   params,
@@ -44,7 +42,7 @@ export default async function DeleteProfessionPage({
   }
 
   const recipeCount = profession._count.recipes;
-  const canDelete = recipeCount === 0;
+  const canDelete = professionCanDelete(recipeCount);
 
   // The delete confirmation inside the Profession workspace (Slice
   // 9D.1, following the Item workspace's Slice 9B.4 and Recipe

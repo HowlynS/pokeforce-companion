@@ -11,7 +11,9 @@ import {
   normalizeItemSearchQuery,
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
+import { getImagePublicUrl } from "@/lib/storage/images";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
+import { ResourceIcon } from "@/components/admin/resource-icon";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
@@ -29,22 +31,29 @@ type ItemRecipesPageProps = {
  * it — is omitted entirely when absent, never a placeholder dash or an
  * empty metadata cell of its own.
  */
-function RecipeNameCell({
+async function RecipeNameCell({
   slug,
   name,
+  image,
   professionName,
   requiredLevel,
 }: {
   slug: string;
   name: string;
+  image: string | null;
   professionName: string | null | undefined;
   requiredLevel: number | null;
 }) {
   const hasDetails = Boolean(professionName) || requiredLevel != null;
+  const imageUrl = await getImagePublicUrl(image);
 
   return (
     <td>
-      <a href={`/admin/recipes/${slug}/edit`} className="link-accent">
+      <a
+        href={`/admin/recipes/${slug}/edit`}
+        className="link-accent admin-table-link-with-icon"
+      >
+        <ResourceIcon imageUrl={imageUrl} size="md" />
         {name}
       </a>
       {hasDetails ? (
@@ -156,6 +165,7 @@ export default async function ItemRecipesPage({
                         <RecipeNameCell
                           slug={ingredient.recipe.slug}
                           name={ingredient.recipe.name}
+                          image={ingredient.recipe.image}
                           professionName={ingredient.recipe.profession?.name}
                           requiredLevel={ingredient.recipe.requiredLevel}
                         />
@@ -192,6 +202,7 @@ export default async function ItemRecipesPage({
                         <RecipeNameCell
                           slug={recipe.slug}
                           name={recipe.name}
+                          image={recipe.image}
                           professionName={recipe.profession?.name}
                           requiredLevel={recipe.requiredLevel}
                         />

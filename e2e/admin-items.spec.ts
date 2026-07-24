@@ -143,8 +143,15 @@ async function createMinimalItemThroughForm(
   await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?success=created");
-  await expect(page.getByRole("status")).toHaveText("Item created.");
+  // The toast's own success param is consumed and stripped from the URL
+  // almost immediately (AdminSuccessToast), so the URL is asserted at its
+  // settled, query-free state; the toast text itself confirms which
+  // outcome actually fired.
+  await expect(page).toHaveURL(`/admin/items/${data.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Item created");
+  // The record list is part of the persistent ItemWorkspace shell, so the
+  // new row is already visible here on the editor itself — no navigation
+  // back to the list is needed.
   await expect(recordRow(page, data.name)).toBeVisible();
 }
 
@@ -174,7 +181,7 @@ test("authenticated item admin access uses the saved storage state", async ({
   // The workspace landing state: the record list with its create link —
   // the embedded creation form is gone from this page (Slice 9B.4).
   await expect(
-    page.getByRole("link", { name: "+ New item", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create item", exact: true })
@@ -196,7 +203,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
 
   // The create form lives on its own page since Slice 9B.4, reached
   // through the record list's create action.
-  await page.getByRole("link", { name: "+ New item", exact: true }).click();
+  await page.getByRole("link", { name: "+ New", exact: true }).click();
   await expect(page).toHaveURL("/admin/items/new");
   await expect(
     page.getByRole("heading", { level: 1, name: "Create item" })
@@ -219,8 +226,8 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page.getByRole("button", { name: "Create item", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?success=created");
-  await expect(page.getByRole("status")).toHaveText("Item created.");
+  await expect(page).toHaveURL(`/admin/items/${INITIAL.slug}/edit`);
+  await expect(page.getByRole("status")).toHaveText("Item created");
 
   // The record list shows the new row with its Category as the secondary
   // context; the remaining submitted fields are asserted on the public
@@ -316,8 +323,12 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByLabel(VERIFICATION_CHECKBOX_LABEL)).not.toBeChecked();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/items?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Item updated.");
+  // The redirect follows the NEW slug (this save also renamed the item),
+  // never the stale INITIAL.slug — the same canonical editor, now saved.
+  await expect(page).toHaveURL(
+    `/admin/items/${EDITED.slug}/edit`
+  );
+  await expect(page.getByRole("status")).toHaveText("Item saved");
 
   // The list reflects the rename and the reassigned Category; the flipped
   // booleans and new base value are asserted on the public page below.
@@ -354,15 +365,16 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(editedCard).toHaveAttribute("href", `/items/${EDITED.slug}`);
 
   // --- Delete -----------------------------------------------------------
-  // The per-row Delete links went with the old table; the confirmation
-  // route is reached from the edit page's toolbar since Slice 9B.4.
+  // Delete opens the shared confirmation dialog directly over the edit
+  // page (Admin Polish Pass 1, Part 5) — no route change until the
+  // deletion itself succeeds.
   await page.goto("/admin/items");
   await recordRow(page, EDITED.name).click();
   await expect(page).toHaveURL(`/admin/items/${EDITED.slug}/edit`);
-  await page.getByRole("link", { name: "Delete item", exact: true }).click();
-  await expect(page).toHaveURL(`/admin/items/${EDITED.slug}/delete`);
+  await page.getByRole("button", { name: "Delete item", exact: true }).click();
+  await expect(page).toHaveURL(`/admin/items/${EDITED.slug}/edit`);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Delete Item" })
+    page.getByRole("heading", { level: 2, name: "Delete Item" })
   ).toBeVisible();
   // The confirmation identifies exactly this item by name, slug, Category,
   // and both recipe-reference counts.
@@ -372,11 +384,12 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText("Used as a recipe ingredient: 0")).toBeVisible();
 
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/items?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Item deleted.");
+  await expect(page).toHaveURL("/admin/items");
+  await expect(page.getByRole("status")).toHaveText("Item deleted");
   await expect(recordRow(page, EDITED.name)).toHaveCount(0);
 
   // Gone from the public site as well.
@@ -429,12 +442,21 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=updated");
+  await expect(page).toHaveURL(
+    `/admin/items/${VERIFY_ITEM.slug}/edit`
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop.
+  await page.waitForTimeout(500);
 
   // The admin edit page shows the stamp carrying the preselected current
   // Game Version, resolved and validated server-side, classified as
-  // verified-for-the-current-version by the shared panel.
-  await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
+  // verified-for-the-current-version by the shared panel. Save-in-place
+  // already lands here — a redundant same-URL page.goto right after would
+  // race the still-settling client navigation and can observe stale,
+  // pre-mutation content, so the persisted state is checked directly.
   await expect(
     page.locator(".admin-status-badge", {
       hasText: "Verified — current version",
@@ -466,12 +488,21 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     .getByLabel(/^Description/)
     .fill("Edited without touching verification.");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=updated");
+  await expect(page).toHaveURL(
+    `/admin/items/${VERIFY_ITEM.slug}/edit`
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop, since the very next assertion is a fresh
+  // navigation/read that must see the just-committed value.
+  await page.waitForTimeout(500);
 
   await page.goto(`/items/${VERIFY_ITEM.slug}`);
   await expect(page.getByText("Edited without touching verification.")).toBeVisible();
 
   await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
+  await page.waitForTimeout(500);
   await expect(
     page.locator(".admin-status-badge", {
       hasText: "Verified — current version",
@@ -491,9 +522,14 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   );
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=updated");
-
-  await page.goto(`/admin/items/${VERIFY_ITEM.slug}/edit`);
+  await expect(page).toHaveURL(
+    `/admin/items/${VERIFY_ITEM.slug}/edit`
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop.
+  await page.waitForTimeout(500);
   await expect(
     page.locator(".admin-status-badge", {
       hasText: "Verified — older version",
@@ -615,8 +651,8 @@ test("deletion is blocked while a recipe produces the item", async ({
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/items?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Item deleted.");
+  await expect(page).toHaveURL("/admin/items");
+  await expect(page.getByRole("status")).toHaveText("Item deleted");
   await expect(recordRow(page, BLOCKED_RESULT.name)).toHaveCount(0);
 
   const deletedResponse = await page.goto(`/items/${BLOCKED_RESULT.slug}`);
@@ -683,8 +719,8 @@ test("deletion is blocked while the item is a recipe ingredient", async ({
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/items?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Item deleted.");
+  await expect(page).toHaveURL("/admin/items");
+  await expect(page.getByRole("status")).toHaveText("Item deleted");
   await expect(recordRow(page, BLOCKED_INGREDIENT.name)).toHaveCount(0);
 
   const deletedResponse = await page.goto(
@@ -750,7 +786,7 @@ test("record-list search filters instantly while typing, preserves the query acr
 
   // The create action keeps the filter context too.
   await expect(
-    page.getByRole("link", { name: "+ New item", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toHaveAttribute("href", /\/admin\/items\/new\?q=/);
 
   // --- Filter by Page address (slug) ------------------------------------

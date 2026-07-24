@@ -56,7 +56,7 @@ async function createTemporaryItem(
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${data.slug}/edit`);
 }
 
 async function createTemporaryLocation(
@@ -73,7 +73,7 @@ async function createTemporaryLocation(
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${data.slug}/edit`);
 }
 
 async function addSourceThroughForm(
@@ -115,8 +115,11 @@ async function addSourceThroughForm(
     await page.getByLabel(/^Notes/).fill(data.notes);
   }
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
+  // Redirects straight to the new source's own editor (Admin Polish Pass
+  // 2, Part 2) — the sourceId is database-generated, so the destination
+  // is matched by shape rather than an exact id.
   await expect(page).toHaveURL(
-    `/admin/items/${itemSlug}/sources?success=created`
+    new RegExp(`/admin/items/${itemSlug}/sources/[^/]+/edit`)
   );
 }
 
@@ -257,7 +260,7 @@ test("optional source label, profession, quantity, and notes render only when po
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/professions?success=created");
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
 
   // One item with every optional field populated...
   await addSourceThroughForm(page, POPULATED_ITEM.slug, {
@@ -347,7 +350,7 @@ test("existing description, hierarchy, and notFound behavior remain intact", asy
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${CHILD.slug}/edit`);
 
   // Parent's own detail page still shows its sub-location.
   await page.goto(`/locations/${PARENT.slug}`);

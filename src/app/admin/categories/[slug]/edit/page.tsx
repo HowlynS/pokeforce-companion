@@ -12,15 +12,16 @@ import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { CategoryWorkspace } from "@/components/admin/category-workspace";
 import {
   CATEGORY_LIST_PATH,
-  categoryDeleteHref,
+  categoryCanDelete,
   categoryEditorTabs,
+  describeLinkedItems,
   normalizeCategorySearchQuery,
   withCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { getImagePublicUrl } from "@/lib/storage/images";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
-import { updateCategoryAction } from "../../actions";
+import { updateCategoryAction, deleteCategoryAction } from "../../actions";
 import { checkCategoryNameAvailability } from "../../name-availability";
 import { checkCategorySlugAvailability } from "../../slug-availability";
 
@@ -81,6 +82,12 @@ export default async function EditCategoryPage({
     items: category._count.items,
   });
 
+  // Feeds the in-editor delete dialog (Admin Polish Pass 1, Part 5) — the
+  // exact same count and rule the dedicated /delete route uses, reusing
+  // the tab-badge query above rather than a second query.
+  const itemCount = category._count.items;
+  const canDeleteCategory = categoryCanDelete(itemCount);
+
   // The General edit route inside the Category workspace, now composed
   // from the shared editor primitives (Slice 9E.2): the record list
   // marks this category selected and keeps the active search applied for
@@ -94,6 +101,12 @@ export default async function EditCategoryPage({
   // form.
   return (
     <CategoryWorkspace
+      // Admin Polish Pass 2, Part 5: forces a full remount of the record
+      // list, form, and aside whenever this category's own updatedAt
+      // actually changes — see the Item General editor's own identical
+      // comment (src/app/admin/items/[slug]/edit/page.tsx) for the full
+      // reasoning.
+      key={category.updatedAt.toISOString()}
       rawQuery={q}
       selectedSlug={category.slug}
       editorHeader={
@@ -128,9 +141,29 @@ export default async function EditCategoryPage({
 
           <DangerZonePanel
             resourceLabel="category"
-            deleteHref={categoryDeleteHref(category.slug, query)}
             deleteLabel="Delete Category"
-          />
+            dialogTitle="Delete Category"
+            dialogDescription={
+              <>
+                You are about to permanently delete{" "}
+                <strong>{category.name}</strong> ({category.slug}). This
+                action cannot be undone.
+              </>
+            }
+            canDelete={canDeleteCategory}
+            formAction={deleteCategoryAction}
+            hiddenFields={{ id: category.id, slug: category.slug }}
+          >
+            <p className="text-muted">Linked items: {itemCount}</p>
+
+            {!canDeleteCategory ? (
+              <p className="text-danger">
+                This category cannot be deleted because it is assigned to{" "}
+                {describeLinkedItems(itemCount)}. Reassign or remove those
+                items first.
+              </p>
+            ) : null}
+          </DangerZonePanel>
         </>
       }
     >

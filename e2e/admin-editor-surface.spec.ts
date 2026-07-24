@@ -311,9 +311,9 @@ test("Location's long description and access-note textareas render with the tall
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
-
-  await page.goto(`/admin/locations/${LOCATION.slug}/edit`);
+  // Creation redirects straight to the new location's own editor (Admin
+  // Polish Pass 2, Part 2) — already here, so no redundant re-navigation.
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
 
   const description = page.getByLabel(/^Description/);
   const accessNote = page.getByLabel(/^Extra information/);
@@ -345,7 +345,7 @@ test("an Acquisition Source edit form renders inside the same editor surface tre
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
 
   await page.goto(`/admin/items/${ITEM.slug}/sources`);
   await selectAdminOption(
@@ -353,11 +353,8 @@ test("an Acquisition Source edit form renders inside the same editor surface tre
     "Foraging"
   );
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
-  await expect(page).toHaveURL(
-    `/admin/items/${ITEM.slug}/sources?success=created`
-  );
-
-  await page.getByRole("link", { name: "Edit", exact: true }).click();
+  // Creation redirects straight to the new source's own editor (Admin
+  // Polish Pass 2, Part 2) — no separate "Edit" link click needed.
   await expect(page).toHaveURL(new RegExp(`/admin/items/${ITEM.slug}/sources/.+/edit`));
 
   const editorSurface = surface(page);

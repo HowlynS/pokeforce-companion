@@ -387,7 +387,7 @@ test("Location create/edit: Page address live tracking, manual override, and ava
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${PARENT.slug}/edit`);
 
   // --- A second Location to exercise "another record's slug is taken" ---
   await page.goto("/admin/locations/new");
@@ -403,7 +403,7 @@ test("Location create/edit: Page address live tracking, manual override, and ava
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${CHILD.slug}/edit`);
 
   // --- Edit: starts on the persisted slug, tracks Name live, another
   // record's slug is taken, manual edit stops sync -------------------------

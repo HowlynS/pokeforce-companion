@@ -63,7 +63,7 @@ test("a location matching by name appears in search results and links to its pub
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
 
   await page.goto(
     `/search?q=${encodeURIComponent("Test E2E Location Search Probe")}`

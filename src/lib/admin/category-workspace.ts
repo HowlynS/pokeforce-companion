@@ -127,3 +127,19 @@ export function categoryEditorTabs(
     },
   ];
 }
+
+/**
+ * The Category delete-blocking rule, shared by the dedicated /delete
+ * route AND the in-editor delete dialog (Admin Polish Pass 1, Part 5) —
+ * one function so the two surfaces can never drift apart. A Category
+ * cannot be deleted while any Item still references it.
+ */
+export function categoryCanDelete(itemCount: number): boolean {
+  return itemCount === 0;
+}
+
+/** The human-readable reason a Category is blocked from deletion — shared
+    by both surfaces for the same reason as categoryCanDelete above. */
+export function describeLinkedItems(count: number): string {
+  return count === 1 ? "1 item" : `${count} items`;
+}

@@ -11,6 +11,8 @@ import {
   normalizeCategorySearchQuery,
 } from "@/lib/admin/category-workspace";
 import { prisma } from "@/lib/db";
+import { getImagePublicUrl } from "@/lib/storage/images";
+import { ResourceIcon } from "@/components/admin/resource-icon";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
@@ -28,18 +30,26 @@ type CategoryItemsPageProps = {
  * item and tradeable are boolean and always meaningful, so they get
  * their own columns instead.
  */
-function ItemNameCell({
+async function ItemNameCell({
   slug,
   name,
+  image,
   baseValue,
 }: {
   slug: string;
   name: string;
+  image: string | null;
   baseValue: number | null;
 }) {
+  const imageUrl = await getImagePublicUrl(image);
+
   return (
     <td>
-      <a href={`/admin/items/${slug}/edit`} className="link-accent">
+      <a
+        href={`/admin/items/${slug}/edit`}
+        className="link-accent admin-table-link-with-icon"
+      >
+        <ResourceIcon imageUrl={imageUrl} size="md" />
         {name}
       </a>
       {baseValue != null ? (
@@ -132,6 +142,7 @@ export default async function CategoryItemsPage({
                     <ItemNameCell
                       slug={item.slug}
                       name={item.name}
+                      image={item.image}
                       baseValue={item.baseValue}
                     />
                     <td>{item.heldItem ? "Yes" : "No"}</td>

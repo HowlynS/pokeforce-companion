@@ -54,7 +54,7 @@ async function createTemporaryProfession(
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/professions?success=created");
+  await expect(page).toHaveURL(`/admin/professions/${data.slug}/edit`);
 }
 
 test("visiting the old Metadata route redirects to General, preserving the search query", async ({

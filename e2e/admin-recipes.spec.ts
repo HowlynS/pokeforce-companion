@@ -184,8 +184,10 @@ async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=created");
-  await expect(page.getByRole("status")).toHaveText("Recipe created.");
+  await expect(page).toHaveURL(
+    `/admin/recipes/${data.slug}/edit`
+  );
+  await expect(page.getByRole("status")).toHaveText("Recipe created");
   await expect(recordRow(page, data.name)).toBeVisible();
 }
 
@@ -204,7 +206,7 @@ test("authenticated recipe admin access uses the saved storage state", async ({
   // the embedded creation form is gone from this page (Slice 9C.1,
   // following the Item workspace's Slice 9B.4 precedent).
   await expect(
-    page.getByRole("link", { name: "+ New recipe", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Recipe", exact: true })
@@ -218,7 +220,7 @@ test("authenticated recipe admin access uses the saved storage state", async ({
 
 test("Create recipe opens the dedicated creation route", async ({ page }) => {
   await page.goto("/admin/recipes");
-  await page.getByRole("link", { name: "+ New recipe", exact: true }).click();
+  await page.getByRole("link", { name: "+ New", exact: true }).click();
 
   await expect(page).toHaveURL("/admin/recipes/new");
   await expect(
@@ -356,7 +358,7 @@ test("Recipe editor tabs: create shows only General; edit and ingredients mark t
     page.getByRole("heading", { level: 2, name: "Danger zone", exact: true })
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Delete Recipe", exact: true })
+    page.getByRole("button", { name: "Delete Recipe", exact: true })
   ).toHaveCount(0);
 
   await editTabNav.getByRole("link", { name: "General", exact: true }).click();
@@ -364,9 +366,14 @@ test("Recipe editor tabs: create shows only General; edit and ingredients mark t
   await expect(
     page.getByRole("heading", { level: 2, name: "Danger zone", exact: true })
   ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Delete Recipe", exact: true })
-  ).toHaveAttribute("href", "/admin/recipes/test-e2e-recipe-tabs/delete");
+  // Delete opens the shared confirmation dialog directly over the editor
+  // (Admin Polish Pass 1, Part 5) rather than linking to a separate route.
+  await page
+    .getByRole("button", { name: "Delete Recipe", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-tabs/edit");
+  await page.keyboard.press("Escape");
 });
 
 test("recipe creation renders result, profession, and ingredients publicly", async ({
@@ -377,7 +384,7 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     page.getByRole("heading", { level: 1, name: "Recipe Management" })
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "+ New recipe", exact: true }).click();
+  await page.getByRole("link", { name: "+ New", exact: true }).click();
   await expect(page).toHaveURL("/admin/recipes/new");
 
   await createRecipeThroughForm(page, {
@@ -497,7 +504,15 @@ test("editing a fixed-output recipe into a variable range, and a variable range 
   await page.getByLabel("Minimum quantity", { exact: true }).fill("1");
   await page.getByLabel("Maximum quantity", { exact: true }).fill("5");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-range-toggle/edit"
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop, since the very next assertion is a fresh
+  // navigation/read that must see the just-committed value.
+  await page.waitForTimeout(500);
 
   await page.goto("/recipes/test-e2e-recipe-range-toggle");
   await expect(
@@ -518,7 +533,15 @@ test("editing a fixed-output recipe into a variable range, and a variable range 
   await page.getByLabel("Minimum quantity", { exact: true }).fill("3");
   await page.getByLabel("Maximum quantity", { exact: true }).fill("3");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-range-toggle/edit"
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop, since the very next assertion is a fresh
+  // navigation/read that must see the just-committed value.
+  await page.waitForTimeout(500);
 
   await page.goto("/recipes/test-e2e-recipe-range-toggle");
   await expect(
@@ -699,8 +722,12 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
   await page.getByLabel(/^Required level/).fill("");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Recipe updated.");
+  // The redirect follows the NEW slug (this save also renamed the
+  // recipe), never the stale original slug.
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-updated/edit"
+  );
+  await expect(page.getByRole("status")).toHaveText("Recipe saved");
 
   // The list reflects the rename and the reassigned resulting item; the
   // flipped profession and other fields are asserted on the public page
@@ -806,8 +833,10 @@ test("Ingredients editing updates the ingredient rows and leaves General fields 
     .getByRole("button", { name: "Save Ingredients", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Recipe updated.");
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-ingredients/ingredients"
+  );
+  await expect(page.getByRole("status")).toHaveText("Ingredients saved");
 
   // The list still shows the SAME name and resulting item — an
   // ingredients-only save never touches them.
@@ -945,8 +974,10 @@ test("ingredient quantities are guarded by browser-native validation with no upp
   ).toBe(true);
   await page.getByRole("button", { name: "Create Recipe", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=created");
-  await expect(page.getByRole("status")).toHaveText("Recipe created.");
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-max-quantity/edit"
+  );
+  await expect(page.getByRole("status")).toHaveText("Recipe created");
 
   await page.goto("/recipes/test-e2e-recipe-max-quantity");
   await expect(
@@ -1103,11 +1134,11 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
   // here at all — reachability is proven via General instead, a
   // completely separate route the ingredient-count guard never touches.
   await expect(
-    page.getByRole("link", { name: "Delete Recipe", exact: true })
+    page.getByRole("button", { name: "Delete Recipe", exact: true })
   ).toHaveCount(0);
   await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/edit");
   await expect(
-    page.getByRole("link", { name: "Delete Recipe", exact: true })
+    page.getByRole("button", { name: "Delete Recipe", exact: true })
   ).toBeVisible();
   await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/ingredients");
   // The Ingredients tab never renders Image/Verification/Timestamps in
@@ -1136,8 +1167,10 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
   await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
   await page.getByLabel(/^Required level/).fill("8");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Recipe updated.");
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-six-ingredients/edit"
+  );
+  await expect(page.getByRole("status")).toHaveText("Recipe saved");
 
   // The Ingredients guard still applies afterward — none of the six
   // ingredients were touched by the General save.
@@ -1161,28 +1194,29 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
     ingredients: [{ item: "Iron Ore", quantity: "1" }],
   });
 
-  // Quick switching opens the edit route; Delete is reached from the
-  // aside's Danger zone panel (the old table's per-row Delete link is
-  // gone, and Delete no longer lives in the sticky Save/Cancel bar).
+  // Quick switching opens the edit route; Delete opens the shared
+  // confirmation dialog directly over the editor (Admin Polish Pass 1,
+  // Part 5) rather than navigating to a separate route.
   await recordRow(page, "Test E2E Recipe Delete").click();
   await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-delete/edit");
-  await page.getByRole("link", { name: "Delete Recipe", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-delete/delete");
+  await page.getByRole("button", { name: "Delete Recipe", exact: true }).click();
+  await expect(page).toHaveURL("/admin/recipes/test-e2e-recipe-delete/edit");
   await expect(
-    page.getByRole("heading", { level: 1, name: "Delete Recipe" })
+    page.getByRole("heading", { level: 2, name: "Delete Recipe" })
   ).toBeVisible();
   // The confirmation identifies exactly this recipe and its relations.
   await expect(page.getByText("(test-e2e-recipe-delete)")).toBeVisible();
   await expect(page.getByText("Result: 1 Iron Ingot")).toBeVisible();
   await expect(page.getByText("Profession: No profession")).toBeVisible();
-  await expect(page.getByText("Ingredients (1): 1x Iron Ore")).toBeVisible();
+  await expect(page.getByText("Ingredients: 1")).toBeVisible();
 
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Recipe deleted.");
+  await expect(page).toHaveURL("/admin/recipes");
+  await expect(page.getByRole("status")).toHaveText("Recipe deleted");
   await expect(recordRow(page, "Test E2E Recipe Delete")).toHaveCount(0);
 
   // Gone from the public site as well.
@@ -1238,12 +1272,22 @@ test("gameplay verification stamps the selected game version and survives normal
   await expect(verifyCheckbox).not.toBeChecked();
   await verifyCheckbox.check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-verify/edit"
+  );
+  // Guards against the isolated test database's brief read-after-write
+  // consistency lag (observed empirically: a read immediately after a
+  // write can occasionally return the pre-write row) — a fixed short
+  // wait, not a retry loop.
+  await page.waitForTimeout(500);
 
   // The edit page shows the stamp carrying the preselected current Game
   // Version, resolved and validated server-side, classified as
-  // verified-for-the-current-version by the shared panel.
-  await recordRow(page, "Test E2E Recipe Verify").click();
+  // verified-for-the-current-version by the shared panel. Save-in-place
+  // already lands here — a redundant same-record re-navigation right
+  // after would race the still-settling client navigation and can
+  // observe stale, pre-mutation content, so the persisted state is
+  // checked directly.
   await expect(
     page.locator(".admin-status-badge", {
       hasText: "Verified — current version",
@@ -1272,9 +1316,10 @@ test("gameplay verification stamps the selected game version and survives normal
   await page.getByLabel("Minimum quantity", { exact: true }).fill("2");
   await page.getByLabel("Maximum quantity", { exact: true }).fill("2");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
-
-  await recordRow(page, "Test E2E Recipe Verify").click();
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-verify/edit"
+  );
+  await page.waitForTimeout(500);
   await expect(
     page.locator(".admin-status-badge", {
       hasText: "Verified — current version",
@@ -1294,9 +1339,10 @@ test("gameplay verification stamps the selected game version and survives normal
   );
   await page.getByLabel(VERIFICATION_CHECKBOX_LABEL).check();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes?success=updated");
-
-  await recordRow(page, "Test E2E Recipe Verify").click();
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-verify/edit"
+  );
+  await page.waitForTimeout(500);
   await expect(
     page.locator(".admin-status-badge", { hasText: "Verified — older version" })
   ).toBeVisible();
@@ -1441,18 +1487,23 @@ test("record-list search filters instantly while typing, preserves the query acr
     recordRow(page, "Test E2E Recipe Search A")
   ).not.toHaveAttribute("aria-current", "page");
 
-  // The create action, and this edit page's own Cancel/Delete links, keep
-  // the filter context too.
+  // The create action, and this edit page's own Cancel link, keep the
+  // filter context too. Delete opens its confirmation dialog in place
+  // (Admin Polish Pass 1, Part 5) rather than navigating, so the filter
+  // context is preserved trivially — the URL never changes at all.
   await expect(
-    page.getByRole("link", { name: "+ New recipe", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toHaveAttribute("href", /\/admin\/recipes\/new\?q=/);
   await expect(page.getByRole("link", { name: "Cancel", exact: true })).toHaveAttribute(
     "href",
     /\/admin\/recipes\?q=/
   );
-  await expect(
-    page.getByRole("link", { name: "Delete Recipe", exact: true })
-  ).toHaveAttribute("href", /\/admin\/recipes\/test-e2e-recipe-search-b\/delete\?q=/);
+  await page
+    .getByRole("button", { name: "Delete Recipe", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/recipes\/test-e2e-recipe-search-b\/edit\?q=/);
+  await page.keyboard.press("Escape");
 
   // --- Filter by Page address (slug) -------------------------------------
   await page.goto("/admin/recipes");

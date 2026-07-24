@@ -196,7 +196,9 @@ test("the Items summary count reflects a real record created and removed through
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Item Dashboard Count");
   await page.getByLabel(/^Page address/).fill("test-e2e-item-dashboard-count");
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(
+    "/admin/items/test-e2e-item-dashboard-count/edit"
+  );
 
   await page.goto("/admin");
   expect(await readItemCount(page)).toBe(baseline + 1);

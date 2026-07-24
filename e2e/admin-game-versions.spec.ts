@@ -213,20 +213,21 @@ test("game version lifecycle: reachable from the dashboard settings link, create
   ).toBeVisible();
 
   // --- Delete the (now historical, unused) version ------------------------
+  // Delete opens the shared confirmation dialog directly over this list
+  // page (Admin Polish Pass 1, Part 5) rather than navigating to the
+  // dedicated /delete route.
   await versionRow(page, EDITED.name)
-    .getByRole("link", { name: "Delete", exact: true })
+    .getByRole("button", { name: "Delete", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { level: 1, name: "Delete Game Version" })
-  ).toBeVisible();
-  await expect(
-    page.getByText("Verified gameplay records referencing this version: 0")
+    page.getByRole("heading", { level: 2, name: "Delete Game Version" })
   ).toBeVisible();
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
   await expect(page).toHaveURL(
-    "/admin/settings/game-versions?success=deleted"
+    "/admin/settings/game-versions"
   );
   await expect(versionRow(page, EDITED.name)).toHaveCount(0);
 });
@@ -245,22 +246,54 @@ test("deleting a referenced game version is blocked with clear feedback until th
   // workflows are out of scope for this suite).
   await createVerifiedItemReferencingVersion(BLOCKED_NAME);
 
-  // The confirmation dialog reports the reference and disables the delete
-  // action (visible, never hidden).
+  // The list page's own in-place dialog (Admin Polish Pass 1, Part 5) is
+  // deliberately the documented FALLBACK design: computing the real
+  // reference count touches five tables per version, which would be a
+  // real, avoidable cost if run for every row on every list view — so
+  // canDelete is optimistically true here, and Confirm is enabled. The
+  // unchanged deleteGameVersionAction re-validates authoritatively on
+  // submit; a genuinely blocked version's own redirect lands on the
+  // dedicated /delete page exactly as it always did, now showing the real
+  // count and reason.
   await versionRow(page, BLOCKED_NAME)
-    .getByRole("link", { name: "Delete", exact: true })
+    .getByRole("button", { name: "Delete", exact: true })
     .click();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Delete Game Version" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("dialog").getByRole("button", { name: "Delete Permanently", exact: true })
+  ).toBeEnabled();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Delete Permanently", exact: true })
+    .click();
+
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/settings/game-versions/[^/]+/delete\\?error=referenced`)
+  );
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Delete Game Version" })
+  ).toBeVisible();
   await expect(
     page.getByText("Verified gameplay records referencing this version: 1")
   ).toBeVisible();
+  // Both the query-param error banner and the dialog's own inline
+  // blocked-reason text match this pattern on the fallback page — assert
+  // the banner specifically by role, and the dialog's own copy by scoping
+  // to it, rather than an ambiguous page-wide text match.
   await expect(
-    page.getByText(/cannot be deleted because 1 verified gameplay record/)
+    page.getByRole("alert").filter({ hasText: "cannot be deleted because 1 verified gameplay record" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("dialog").getByText(/cannot be deleted because 1 verified gameplay record/)
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Delete Permanently", exact: true })
   ).toBeDisabled();
 
-  // Once the referencing record is gone, the same flow deletes cleanly.
+  // Once the referencing record is gone, the same fallback page deletes
+  // cleanly on a fresh load (its own count is always recomputed live).
   await removeVerifiedItemsReferencingVersions();
   await page.reload();
   await expect(
@@ -270,7 +303,7 @@ test("deleting a referenced game version is blocked with clear feedback until th
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
   await expect(page).toHaveURL(
-    "/admin/settings/game-versions?success=deleted"
+    "/admin/settings/game-versions"
   );
   await expect(versionRow(page, BLOCKED_NAME)).toHaveCount(0);
 });
@@ -288,16 +321,17 @@ test("a deletable current version warns that no version will remain current", as
   );
 
   await versionRow(page, DELETABLE_NAME)
-    .getByRole("link", { name: "Delete", exact: true })
+    .getByRole("button", { name: "Delete", exact: true })
     .click();
   await expect(
     page.getByText(/This is the current game version\./)
   ).toBeVisible();
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
   await expect(page).toHaveURL(
-    "/admin/settings/game-versions?success=deleted"
+    "/admin/settings/game-versions"
   );
 
   // No version is current now; afterEach restores the fixture as current
@@ -363,7 +397,7 @@ test("Game Versions table: Set current has its own column, Actions holds only Ed
     createdRow.getByRole("link", { name: "Edit", exact: true })
   ).toBeVisible();
   await expect(
-    createdRow.getByRole("link", { name: "Delete", exact: true })
+    createdRow.getByRole("button", { name: "Delete", exact: true })
   ).toBeVisible();
 
   // Part 8: the redundant "Back to Admin" link is gone — the sidebar
@@ -380,12 +414,13 @@ test("Game Versions table: Set current has its own column, Actions holds only Ed
     page.getByRole("link", { name: "+ New game version" })
   ).toHaveCount(0);
 
-  await createdRow.getByRole("link", { name: "Delete", exact: true }).click();
+  await createdRow.getByRole("button", { name: "Delete", exact: true }).click();
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
   await expect(page).toHaveURL(
-    "/admin/settings/game-versions?success=deleted"
+    "/admin/settings/game-versions"
   );
 });
 

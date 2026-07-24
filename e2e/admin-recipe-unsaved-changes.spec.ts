@@ -65,7 +65,7 @@ async function createTempRecipe(
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/recipes?success=created");
+  await expect(page).toHaveURL(`/admin/recipes/${slug}/edit`);
   return slug;
 }
 
@@ -155,8 +155,9 @@ test("General: Ctrl+S saves a valid form", async ({ page }) => {
     .fill("5");
   await expect(status(page)).toBeVisible();
 
+  const editUrl = page.url();
   await page.keyboard.press("Control+s");
-  await expect(page).toHaveURL(/\/admin\/recipes\?success=updated/);
+  await expect(page).toHaveURL(editUrl);
 });
 
 test("Ingredients: the freshly loaded row is never dirty, a quantity change marks dirty, and reverting to the loaded value clears it", async ({

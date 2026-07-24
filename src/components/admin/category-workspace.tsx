@@ -109,13 +109,13 @@ export async function CategoryWorkspace({
           initialQuery={query}
           searchLabel="Search categories"
           createHref={withCategorySearchQuery(CATEGORY_CREATE_PATH, query)}
-          createLabel="+ New category"
+          createLabel="+ New"
           rows={rows}
           showImages
           noun={{ singular: "category", plural: "categories" }}
           empty={
             <p>
-              No categories yet. Use &ldquo;+ New category&rdquo; to
+              No categories yet. Use &ldquo;+ New&rdquo; to
               create the first one.
             </p>
           }

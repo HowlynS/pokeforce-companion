@@ -139,11 +139,13 @@ export async function createRecipeAction(formData: FormData) {
     }
   }
 
+  let createdRecipe;
+
   try {
     // A single nested create: Prisma performs the Recipe insert and all
     // RecipeIngredient inserts as one atomic operation, so a failure on any
     // ingredient row leaves no partially-created Recipe behind.
-    await prisma.recipe.create({
+    createdRecipe = await prisma.recipe.create({
       data: {
         name: parsed.value.name,
         slug: parsed.value.slug,
@@ -186,7 +188,10 @@ export async function createRecipeAction(formData: FormData) {
     revalidatePath(`/professions/${profession.slug}`);
   }
 
-  redirect("/admin/recipes?success=created");
+  // Admin Polish Pass 2, Part 2: straight to the new record's own
+  // canonical editor, using the ACTUAL persisted slug from the created
+  // row — never parsed.value.slug reconstructed independently.
+  redirect(`/admin/recipes/${createdRecipe.slug}/edit?success=recipe_created`);
 }
 
 // The General editor's own action (Slice 9C.3): every Recipe field EXCEPT
@@ -390,10 +395,17 @@ export async function updateRecipeGeneralAction(formData: FormData) {
     revalidatePath(`/professions/${professionSlug}`);
   }
 
+  // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
+  // deliberately built from parsed.value.slug (the slug just PERSISTED),
+  // never editPath's own originalSlug: if this very save also renamed the
+  // recipe, originalSlug's URL would 404 against the now-current row.
+  // Every error redirect above still correctly uses editPath/originalSlug,
+  // since on an error nothing was written and the record's real slug is
+  // still whatever originalSlug says.
   redirect(
     oldImageCleanupFailed
-      ? "/admin/recipes?success=updated_image_cleanup"
-      : "/admin/recipes?success=updated"
+      ? `/admin/recipes/${parsed.value.slug}/edit?success=recipe_saved_image_cleanup`
+      : `/admin/recipes/${parsed.value.slug}/edit?success=recipe_saved`
   );
 }
 
@@ -468,7 +480,14 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
   try {
     // Delete the existing ingredient rows, then recreate the submitted
     // set, as one atomic transaction — the Recipe is never left with
-    // zero or partially-updated ingredients if any step fails.
+    // zero or partially-updated ingredients if any step fails. The
+    // trailing recipe.update (Admin Polish Pass 2) touches ONLY
+    // updatedAt, in the SAME transaction: ingredients are part of a
+    // recipe's own content, so a change to them should bump the
+    // recipe's own timestamp too, and doing so here — rather than a
+    // second, separate write — is what lets the Ingredients page use
+    // the recipe's own updatedAt as its save-in-place remount key,
+    // exactly like every other editor tab, with no bespoke nonce needed.
     await prisma.$transaction([
       prisma.recipeIngredient.deleteMany({ where: { recipeId: id } }),
       prisma.recipeIngredient.createMany({
@@ -478,6 +497,7 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
           quantity: ingredient.quantity,
         })),
       }),
+      prisma.recipe.update({ where: { id }, data: { updatedAt: new Date() } }),
     ]);
   } catch (error) {
     if (isMissingRecordError(error)) {
@@ -514,7 +534,10 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
     revalidatePath(`/professions/${existingRecipe.profession.slug}`);
   }
 
-  redirect("/admin/recipes?success=updated");
+  // Admin Polish Pass 2, Part 1: back to the SAME canonical Ingredients
+  // tab URL (never the list) so a save keeps the contributor where they
+  // were.
+  redirect(`${ingredientsPath ?? "/admin/recipes"}?success=ingredients_saved`);
 }
 
 export async function deleteRecipeAction(formData: FormData) {
@@ -589,7 +612,7 @@ export async function deleteRecipeAction(formData: FormData) {
 
   redirect(
     imageCleanupFailed
-      ? "/admin/recipes?success=deleted_image_cleanup"
-      : "/admin/recipes?success=deleted"
+      ? "/admin/recipes?success=recipe_deleted_image_cleanup"
+      : "/admin/recipes?success=recipe_deleted"
   );
 }

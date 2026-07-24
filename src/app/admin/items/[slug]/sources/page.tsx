@@ -17,6 +17,7 @@ import {
   normalizeItemSearchQuery,
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import {
   ACQUISITION_TYPES,
   ACQUISITION_TYPE_LABELS,
@@ -39,15 +40,9 @@ const errorMessages: Record<string, string> = {
     "The selected Game Version no longer exists, so gameplay data cannot be marked as verified. Refresh the page and try again.",
 };
 
-const successMessages: Record<string, string> = {
-  created: "Acquisition source added.",
-  updated: "Acquisition source updated.",
-  deleted: "Acquisition source removed.",
-};
-
 type AdminItemSourcesPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string; error?: string; success?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function AdminItemSourcesPage({
@@ -59,9 +54,8 @@ export default async function AdminItemSourcesPage({
   await requireAdminUser();
 
   const { slug } = await params;
-  const { q, error, success } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
-  const successMessage = success ? successMessages[success] ?? null : null;
   const query = normalizeItemSearchQuery(q);
 
   const [item, locations, professions] = await Promise.all([
@@ -92,6 +86,10 @@ export default async function AdminItemSourcesPage({
   const gameVersions = await prisma.gameVersion.findMany({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
+  const [locationOptions, professionOptions] = await Promise.all([
+    toEntitySelectOptions(locations),
+    toEntitySelectOptions(professions),
+  ]);
 
   const tabs = itemEditorTabs(item.slug, query, "sources", {
     acquisitionSources: item.acquisitionSources.length,
@@ -118,12 +116,6 @@ export default async function AdminItemSourcesPage({
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
               {errorMessage}
-            </p>
-          ) : null}
-
-          {successMessage ? (
-            <p role="status" className="banner banner-success">
-              {successMessage}
             </p>
           ) : null}
         </>
@@ -224,11 +216,8 @@ export default async function AdminItemSourcesPage({
                 name="locationId"
                 defaultValue=""
                 options={[
-                  { value: "", label: "No location" },
-                  ...locations.map((location) => ({
-                    value: location.id,
-                    label: location.name,
-                  })),
+                  { value: "", label: "No location", imageUrl: null },
+                  ...locationOptions,
                 ]}
               />
             </label>
@@ -239,11 +228,8 @@ export default async function AdminItemSourcesPage({
                 name="professionId"
                 defaultValue=""
                 options={[
-                  { value: "", label: "No profession" },
-                  ...professions.map((profession) => ({
-                    value: profession.id,
-                    label: profession.name,
-                  })),
+                  { value: "", label: "No profession", imageUrl: null },
+                  ...professionOptions,
                 ]}
               />
             </label>

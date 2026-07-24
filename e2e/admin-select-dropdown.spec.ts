@@ -173,7 +173,9 @@ test("Recipe Ingredients: each row's dropdown is keyboard-operable and isolated 
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/recipes?success=created");
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-dropdown-ingredients/edit"
+  );
 });
 
 test("Location Hierarchy: navigating away while the Parent dropdown is left open shows exactly one discard modal, never a stacked pair", async ({
@@ -191,7 +193,7 @@ test("Location Hierarchy: navigating away while the Parent dropdown is left open
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL("/admin/locations/test-e2e-location-dropdown/edit");
 
   await page.goto("/admin/locations/test-e2e-location-dropdown/hierarchy");
   const parent = page.getByRole("combobox", { name: "Parent location", exact: true });
@@ -221,7 +223,9 @@ test("Location Hierarchy: a genuinely dirty parent selection shows exactly one d
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(
+    "/admin/locations/test-e2e-location-dropdown-parent/edit"
+  );
 
   await page.goto("/admin/locations/new");
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Dropdown Location Child");
@@ -235,7 +239,9 @@ test("Location Hierarchy: a genuinely dirty parent selection shows exactly one d
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(
+    "/admin/locations/test-e2e-location-dropdown-child/edit"
+  );
 
   await page.goto("/admin/locations/test-e2e-location-dropdown-child/hierarchy");
   const parent = page.getByRole("combobox", { name: "Parent location", exact: true });
@@ -266,7 +272,7 @@ test("Acquisition Source create: pointer selection on Type, Location, and Profes
     .getByLabel(/^Page address/)
     .fill("test-e2e-item-dropdown-acqsrc");
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL("/admin/items/test-e2e-item-dropdown-acqsrc/edit");
 
   await page.goto("/admin/items/test-e2e-item-dropdown-acqsrc/sources");
   await selectAdminOption(
@@ -278,6 +284,36 @@ test("Acquisition Source create: pointer selection on Type, Location, and Profes
     .getByRole("button", { name: "Add Source", exact: true })
     .click();
   await expect(page).toHaveURL(
-    "/admin/items/test-e2e-item-dropdown-acqsrc/sources?success=created"
+    /\/admin\/items\/test-e2e-item-dropdown-acqsrc\/sources\/[^/]+\/edit$/
   );
+});
+
+// Admin Polish Pass 1, Part 2 — entity dropdowns (Recipe resulting item,
+// Item Category, Location Parent, Acquisition Source Location/Profession)
+// show a compact icon per option; enum/metadata dropdowns (Location Type,
+// Acquisition Source Type, Game Version) stay text-only. One representative
+// case of each, rather than every dropdown, since the icon-vs-not decision
+// is made once in each page's own options array (see entity-select-options.ts)
+// and AdminSelect's own rendering is already proven generic by
+// admin-select.test.tsx.
+test("entity dropdowns (Recipe resulting item) show a compact icon per option; enum dropdowns (Location Type) stay text-only", async ({
+  page,
+}) => {
+  await page.goto("/admin/recipes/new");
+  const resultingItem = page.getByRole("combobox", {
+    name: "Resulting item",
+    exact: true,
+  });
+  await resultingItem.click();
+  const resultingItemListboxId = await resultingItem.getAttribute("aria-controls");
+  await expect(
+    page.locator(`#${resultingItemListboxId} .resource-icon`).first()
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.goto("/admin/locations/new");
+  const type = page.getByRole("combobox", { name: "Type", exact: true });
+  await type.click();
+  const typeListboxId = await type.getAttribute("aria-controls");
+  await expect(page.locator(`#${typeListboxId} .resource-icon`)).toHaveCount(0);
 });

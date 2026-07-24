@@ -13,18 +13,13 @@ const errorMessages: Record<string, string> = {
   missing_recipe: "That recipe no longer exists.",
 };
 
-const successMessages: Record<string, string> = {
-  created: "Recipe created.",
-  updated: "Recipe updated.",
-  updated_image_cleanup:
-    "Recipe updated, but the previous image file could not be removed from storage and may need manual cleanup in Supabase.",
-  deleted: "Recipe deleted.",
-  deleted_image_cleanup:
-    "Recipe deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
-};
-
+// Successful create/update/delete outcomes no longer land here at all
+// (create redirects straight to the new recipe's own editor, update/
+// ingredients saves stay on that same editor, and delete's own toast is
+// shown by the shared AdminSuccessToast — Admin Polish Pass 2) — this
+// landing state has no success banner of its own anymore.
 type AdminRecipesPageProps = {
-  searchParams: Promise<{ q?: string; error?: string; success?: string }>;
+  searchParams: Promise<{ q?: string; error?: string }>;
 };
 
 export default async function AdminRecipesPage({
@@ -34,9 +29,8 @@ export default async function AdminRecipesPage({
   // admin layout, but also re-runs the check itself rather than assuming it.
   await requireAdminUser();
 
-  const { q, error, success } = await searchParams;
+  const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
-  const successMessage = success ? successMessages[success] ?? null : null;
 
   // Distinguishes "no recipes exist at all" from "recipes exist, none
   // selected" for the landing state's own copy — independent of the
@@ -62,12 +56,6 @@ export default async function AdminRecipesPage({
           {errorMessage ? (
             <p role="alert" className="banner banner-error">
               {errorMessage}
-            </p>
-          ) : null}
-
-          {successMessage ? (
-            <p role="status" className="banner banner-success">
-              {successMessage}
             </p>
           ) : null}
         </>

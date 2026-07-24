@@ -1,14 +1,21 @@
-// Focused E2E coverage for the shared DeleteRecordDialog (Massive Admin
-// Interaction Completion Pass, Phase 2) — behavior that is genuinely
-// cross-cutting across every resource's dedicated /delete route rather
-// than re-proven per resource. Each resource's own admin-<resource>.spec.ts
-// already exercises the CRUD lifecycle and business-logic gating (blocked
-// counts, error redirects, cascades) through this same dialog; this spec
-// adds what those don't: the dialog's own accessibility mechanics (focus,
-// Escape, backdrop, Tab trap) and the interaction with AdminFormGuard when
-// Delete is reached from a genuinely dirty edit form — proving the two
-// prompts are sequential, never stacked, since the /delete route carries
-// no AdminFormGuard of its own.
+// Focused E2E coverage for the shared DeleteRecordDialog as rendered by
+// each resource's DEDICATED /delete route (Massive Admin Interaction
+// Completion Pass, Phase 2) — reached only by direct URL here, exactly as
+// a contributor would if they bookmarked it, followed a stale link, or
+// landed on it via a server action's own blocked/failed-delete redirect
+// (see delete-record-dialog.tsx's own module comment). Since Admin Polish
+// Pass 1, Part 5, the NORMAL in-app path to Delete no longer goes through
+// this route at all — DangerZonePanel opens the same dialog directly over
+// the editor instead, covered separately by
+// e2e/admin-in-editor-delete.spec.ts (including its own proof that a dirty
+// form's discard prompt and the delete dialog are never stacked, which no
+// longer applies here since this route is reached by direct navigation,
+// never a click AdminFormGuard could intercept). This spec covers what
+// only the dedicated route's OWN cancelHref-navigation mode exercises: the
+// dialog's Tab-trap/Escape/backdrop mechanics and Cancel being a real,
+// navigable link — each resource's own admin-<resource>.spec.ts already
+// exercises the CRUD lifecycle and business-logic gating (blocked counts,
+// error redirects, cascades) through this same instance.
 
 import { expect, test } from "@playwright/test";
 import { deleteE2eTestItemRecords } from "./helpers/database-cleanup";
@@ -43,7 +50,7 @@ async function createItem(page: import("@playwright/test").Page) {
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
 }
 
 test("the dialog opens with Cancel focused, traps Tab, and Escape navigates back without deleting", async ({
@@ -105,49 +112,12 @@ test("Cancel is a real link: its href is the exact edit route, reachable without
   );
 });
 
-test("reaching Delete from a dirty edit form shows exactly one dialog at a time — the discard prompt, then (after confirming) the delete dialog — never both at once", async ({
+test("direct navigation to the dedicated route shows the dialog immediately, with no other prompt involved", async ({
   page,
 }) => {
   await createItem(page);
-  await page.goto(`/admin/items/${ITEM.slug}/edit`);
+  await page.goto(`/admin/items/${ITEM.slug}/delete`);
 
-  // Make the form genuinely dirty.
-  const name = page.getByLabel("Name", { exact: true });
-  await name.fill("Test E2E Item Delete Dialog Edited");
-  await expect(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
-
-  // Delete lives in the aside's Danger zone panel, an ordinary link —
-  // AdminFormGuard intercepts it exactly like any other navigation away
-  // from a dirty form.
-  await page.getByRole("link", { name: "Delete item", exact: true }).click();
-
-  const discardDialog = page.getByRole("dialog").filter({
-    has: page.getByRole("heading", { name: "Discard unsaved changes?" }),
-  });
-  await expect(page.getByRole("dialog")).toHaveCount(1);
-  await expect(discardDialog).toBeVisible();
-
-  await page.getByRole("button", { name: "Discard changes", exact: true }).click();
-
-  // The discard prompt is gone and the delete-confirmation dialog has
-  // replaced it — sequentially, never simultaneously — on the route the
-  // server actions' own error redirects target.
-  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/delete`);
-  await expect(page.getByRole("dialog")).toHaveCount(1);
-  await expect(
-    page.getByRole("heading", { level: 2, name: "Delete Item" })
-  ).toBeVisible();
-});
-
-test("clean (non-dirty) navigation to Delete shows the delete dialog immediately, with no discard prompt at all", async ({
-  page,
-}) => {
-  await createItem(page);
-  await page.goto(`/admin/items/${ITEM.slug}/edit`);
-
-  await page.getByRole("link", { name: "Delete item", exact: true }).click();
-
-  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/delete`);
   await expect(page.getByRole("dialog")).toHaveCount(1);
   await expect(
     page.getByRole("heading", { level: 2, name: "Delete Item" })

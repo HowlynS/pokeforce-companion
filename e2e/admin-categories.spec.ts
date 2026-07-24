@@ -118,8 +118,10 @@ async function createCategoryThroughForm(
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/categories?success=created");
-  await expect(page.getByRole("status")).toHaveText("Category created.");
+  await expect(page).toHaveURL(
+    `/admin/categories/${data.slug}/edit`
+  );
+  await expect(page.getByRole("status")).toHaveText("Category created");
   await expect(recordRow(page, data.name)).toBeVisible();
 }
 
@@ -137,7 +139,7 @@ test("authenticated admin access uses the saved storage state", async ({
   // The workspace landing state: the record list with its create link —
   // the embedded creation form is gone from this page.
   await expect(
-    page.getByRole("link", { name: "+ New category", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create Category", exact: true })
@@ -154,7 +156,7 @@ test("Create category opens the dedicated creation route", async ({
 }) => {
   await page.goto("/admin/categories");
   await page
-    .getByRole("link", { name: "+ New category", exact: true })
+    .getByRole("link", { name: "+ New", exact: true })
     .click();
 
   await expect(page).toHaveURL("/admin/categories/new");
@@ -256,7 +258,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   ).toBeVisible();
 
   await page
-    .getByRole("link", { name: "+ New category", exact: true })
+    .getByRole("link", { name: "+ New", exact: true })
     .click();
   await expect(page).toHaveURL("/admin/categories/new");
   await createCategoryThroughForm(page, INITIAL);
@@ -307,8 +309,12 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   await page.getByLabel(/^Description/).fill(EDITED.description);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
-  await expect(page).toHaveURL("/admin/categories?success=updated");
-  await expect(page.getByRole("status")).toHaveText("Category updated.");
+  // The redirect follows the NEW slug (this save also renamed the
+  // category), never the stale INITIAL.slug.
+  await expect(page).toHaveURL(
+    `/admin/categories/${EDITED.slug}/edit`
+  );
+  await expect(page.getByRole("status")).toHaveText("Category saved");
   await expect(recordRow(page, EDITED.name)).toBeVisible();
 
   // The slug changed, so the original public route must be gone...
@@ -331,28 +337,30 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
   );
 
   // --- Delete -------------------------------------------------------------
-  // Delete is reached from the edit page's toolbar (the old table's
-  // per-row Delete link is gone).
+  // Delete opens the shared confirmation dialog directly over the edit
+  // page (Admin Polish Pass 1, Part 5) — no route change until the
+  // deletion itself succeeds.
   await page.goto("/admin/categories");
   await recordRow(page, EDITED.name).click();
   await expect(page).toHaveURL(`/admin/categories/${EDITED.slug}/edit`);
   await page
-    .getByRole("link", { name: "Delete Category", exact: true })
+    .getByRole("button", { name: "Delete Category", exact: true })
     .click();
-  await expect(page).toHaveURL(`/admin/categories/${EDITED.slug}/delete`);
+  await expect(page).toHaveURL(`/admin/categories/${EDITED.slug}/edit`);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Delete Category" })
+    page.getByRole("heading", { level: 2, name: "Delete Category" })
   ).toBeVisible();
   // The confirmation identifies exactly this category by name and slug.
   await expect(page.getByText(`(${EDITED.slug})`)).toBeVisible();
   await expect(page.getByText("Linked items: 0")).toBeVisible();
 
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/categories?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Category deleted.");
+  await expect(page).toHaveURL("/admin/categories");
+  await expect(page.getByRole("status")).toHaveText("Category deleted");
   await expect(recordRow(page, EDITED.name)).toHaveCount(0);
 
   // Gone from the public site as well.
@@ -466,8 +474,8 @@ test("deletion is blocked while an item references the category", async ({
     .getByRole("button", { name: "Delete Permanently", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/categories?success=deleted");
-  await expect(page.getByRole("status")).toHaveText("Category deleted.");
+  await expect(page).toHaveURL("/admin/categories");
+  await expect(page.getByRole("status")).toHaveText("Category deleted");
   await expect(recordRow(page, BLOCKED.name)).toHaveCount(0);
 
   const deletedResponse = await page.goto(`/categories/${BLOCKED.slug}`);
@@ -528,20 +536,22 @@ test("record-list search filters instantly while typing, preserves the query acr
     recordRow(page, "Test E2E Category Search A")
   ).not.toHaveAttribute("aria-current", "page");
 
-  // The create action, and this edit page's own Cancel/Delete links, keep
-  // the filter context too.
+  // The create action, and this edit page's own Cancel link, keep the
+  // filter context too. Delete opens its confirmation dialog in place
+  // (Admin Polish Pass 1, Part 5) rather than navigating, so the filter
+  // context is preserved trivially — the URL never changes at all.
   await expect(
-    page.getByRole("link", { name: "+ New category", exact: true })
+    page.getByRole("link", { name: "+ New", exact: true })
   ).toHaveAttribute("href", /\/admin\/categories\/new\?q=/);
   await expect(
     page.getByRole("link", { name: "Cancel", exact: true })
   ).toHaveAttribute("href", /\/admin\/categories\?q=/);
-  await expect(
-    page.getByRole("link", { name: "Delete Category", exact: true })
-  ).toHaveAttribute(
-    "href",
-    /\/admin\/categories\/test-e2e-category-search-b\/delete\?q=/
-  );
+  await page
+    .getByRole("button", { name: "Delete Category", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/categories\/test-e2e-category-search-b\/edit\?q=/);
+  await page.keyboard.press("Escape");
 
   // --- Filter by Page address (slug) -------------------------------------
   await page.goto("/admin/categories");

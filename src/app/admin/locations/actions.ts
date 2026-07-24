@@ -118,10 +118,12 @@ export async function createLocationAction(formData: FormData) {
     }
   }
 
+  let createdLocation;
+
   try {
     // Without the opt-in stamp both verification fields stay NULL — a
     // newly created location is unverified by default.
-    await prisma.location.create({
+    createdLocation = await prisma.location.create({
       data: {
         name: parsed.value.name,
         slug: parsed.value.slug,
@@ -147,7 +149,12 @@ export async function createLocationAction(formData: FormData) {
   revalidatePath("/admin/locations");
   revalidatePath("/locations");
 
-  redirect("/admin/locations?success=created");
+  // Admin Polish Pass 2, Part 2: straight to the new record's own
+  // canonical editor, using the ACTUAL persisted slug from the created
+  // row — never parsed.value.slug reconstructed independently.
+  redirect(
+    `/admin/locations/${createdLocation.slug}/edit?success=location_created`
+  );
 }
 
 // The General editor's own action (Slice 9F.3): every Location field
@@ -288,10 +295,17 @@ export async function updateLocationGeneralAction(formData: FormData) {
     revalidatePath(`/locations/${parsed.value.slug}`);
   }
 
+  // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
+  // deliberately built from parsed.value.slug (the slug just PERSISTED),
+  // never editPath's own originalSlug: if this very save also renamed the
+  // location, originalSlug's URL would 404 against the now-current row.
+  // Every error redirect above still correctly uses editPath/originalSlug,
+  // since on an error nothing was written and the record's real slug is
+  // still whatever originalSlug says.
   redirect(
     oldImageCleanupFailed
-      ? "/admin/locations?success=updated_image_cleanup"
-      : "/admin/locations?success=updated"
+      ? `/admin/locations/${parsed.value.slug}/edit?success=location_saved_image_cleanup`
+      : `/admin/locations/${parsed.value.slug}/edit?success=location_saved`
   );
 }
 
@@ -375,7 +389,9 @@ export async function updateLocationHierarchyAction(formData: FormData) {
   revalidatePath("/locations");
   revalidatePath(`/locations/${existingLocation.slug}`);
 
-  redirect("/admin/locations?success=updated");
+  // Admin Polish Pass 2, Part 1: back to the SAME canonical Hierarchy tab
+  // URL (never the list) so a save keeps the contributor where they were.
+  redirect(`${hierarchyPath ?? "/admin/locations"}?success=hierarchy_saved`);
 }
 
 export async function deleteLocationAction(formData: FormData) {
@@ -439,7 +455,7 @@ export async function deleteLocationAction(formData: FormData) {
 
   redirect(
     imageCleanupFailed
-      ? "/admin/locations?success=deleted_image_cleanup"
-      : "/admin/locations?success=deleted"
+      ? "/admin/locations?success=location_deleted_image_cleanup"
+      : "/admin/locations?success=location_deleted"
   );
 }

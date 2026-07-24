@@ -7,6 +7,7 @@ import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
+import { SearchableAdminSelect } from "@/components/admin/searchable-admin-select";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -14,6 +15,7 @@ import {
   withRecipeSearchQuery,
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { FieldLabelWithHelp } from "@/components/admin/field-label-with-help";
@@ -93,6 +95,10 @@ export default async function NewRecipePage({
     { length: RECIPE_INGREDIENT_ROW_COUNT },
     (_, index) => index + 1
   );
+  const [itemOptions, professionOptions] = await Promise.all([
+    toEntitySelectOptions(items),
+    toEntitySelectOptions(professions),
+  ]);
 
   // Only General makes sense before a record exists — Ingredients and
   // Metadata both describe an existing Recipe's relations and history, so
@@ -188,10 +194,7 @@ export default async function NewRecipePage({
                   required
                   defaultValue=""
                   placeholder="Select an item"
-                  options={items.map((item) => ({
-                    value: item.id,
-                    label: item.name,
-                  }))}
+                  options={itemOptions}
                 />
               </label>
 
@@ -248,11 +251,8 @@ export default async function NewRecipePage({
                   name="professionId"
                   defaultValue=""
                   options={[
-                    { value: "", label: "No profession" },
-                    ...professions.map((profession) => ({
-                      value: profession.id,
-                      label: profession.name,
-                    })),
+                    { value: "", label: "No profession", imageUrl: null },
+                    ...professionOptions,
                   ]}
                 />
               </label>
@@ -281,15 +281,14 @@ export default async function NewRecipePage({
 
                 {ingredientRows.map((row) => (
                   <div key={row} className="ingredient-row">
-                    <AdminSelect
+                    <SearchableAdminSelect
                       name={`ingredientItemId${row}`}
                       defaultValue=""
+                      searchPlaceholder="Search items…"
+                      noResultsLabel="No items match your search."
                       options={[
-                        { value: "", label: "No ingredient" },
-                        ...items.map((item) => ({
-                          value: item.id,
-                          label: item.name,
-                        })),
+                        { value: "", label: "No ingredient", imageUrl: null },
+                        ...itemOptions,
                       ]}
                     />
 

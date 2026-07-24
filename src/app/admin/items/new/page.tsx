@@ -10,6 +10,7 @@ import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import {
   ITEM_LIST_PATH,
@@ -66,6 +67,7 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
       orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
     }),
   ]);
+  const categoryOptions = await toEntitySelectOptions(categories);
 
   // Only General makes sense before a record exists — Acquisition
   // Sources, Used in Recipes, and Metadata all describe an existing
@@ -163,11 +165,8 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
                   name="categoryId"
                   defaultValue=""
                   options={[
-                    { value: "", label: "No category" },
-                    ...categories.map((category) => ({
-                      value: category.id,
-                      label: category.name,
-                    })),
+                    { value: "", label: "No category", imageUrl: null },
+                    ...categoryOptions,
                   ]}
                 />
               </label>

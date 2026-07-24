@@ -119,6 +119,46 @@ describe("AdminSelect: disabled state", () => {
   });
 });
 
+describe("AdminSelect: optional entity icons (Admin Polish Pass 1)", () => {
+  const ICON_OPTIONS: AdminSelectOption[] = [
+    { value: "iron-ore", label: "Iron Ore", imageUrl: "https://example.com/iron-ore.png" },
+    { value: "copper-ore", label: "Copper Ore", imageUrl: null },
+  ];
+
+  it("shows the selected option's icon in the closed trigger", () => {
+    const html = renderToStaticMarkup(
+      <AdminSelect name="resultingItemId" options={ICON_OPTIONS} defaultValue="iron-ore" />
+    );
+
+    expect(html).toContain("resource-icon");
+    expect(html).toContain('src="https://example.com/iron-ore.png"');
+  });
+
+  it("renders the fallback icon slot in the trigger for a selected option with no image", () => {
+    const html = renderToStaticMarkup(
+      <AdminSelect name="resultingItemId" options={ICON_OPTIONS} defaultValue="copper-ore" />
+    );
+
+    expect(html).toContain("resource-icon-empty");
+    expect(html).not.toContain("<img");
+  });
+
+  it("renders no icon element at all for text-only enum options (imageUrl omitted)", () => {
+    const html = renderSelect({ defaultValue: "gear" });
+
+    expect(html).not.toContain("resource-icon");
+  });
+
+  it("shows no icon in the trigger while unselected (placeholder state), even for an icon-enabled option set", () => {
+    const html = renderToStaticMarkup(
+      <AdminSelect name="resultingItemId" options={ICON_OPTIONS} placeholder="Select an item" />
+    );
+
+    expect(html).not.toContain("resource-icon");
+    expect(html).toContain("Select an item");
+  });
+});
+
 describe("AdminSelect: multiple independent instances", () => {
   it("two instances on the same render never collide on id or submitted name", () => {
     const html = renderToStaticMarkup(

@@ -98,10 +98,12 @@ export async function createProfessionAction(formData: FormData) {
     }
   }
 
+  let createdProfession;
+
   try {
     // Without the opt-in stamp both verification fields stay NULL — a
     // newly created profession is unverified by default.
-    await prisma.profession.create({
+    createdProfession = await prisma.profession.create({
       data: { ...parsed.value, image: imagePath, ...(verification.stamp ?? {}) },
     });
   } catch (error) {
@@ -118,7 +120,12 @@ export async function createProfessionAction(formData: FormData) {
   revalidatePath("/admin/professions");
   revalidatePath("/professions");
 
-  redirect("/admin/professions?success=created");
+  // Admin Polish Pass 2, Part 2: straight to the new record's own
+  // canonical editor, using the ACTUAL persisted slug from the created
+  // row — never parsed.value.slug reconstructed independently.
+  redirect(
+    `/admin/professions/${createdProfession.slug}/edit?success=profession_created`
+  );
 }
 
 export async function updateProfessionAction(formData: FormData) {
@@ -257,10 +264,17 @@ export async function updateProfessionAction(formData: FormData) {
     revalidatePath(`/professions/${parsed.value.slug}`);
   }
 
+  // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
+  // deliberately built from parsed.value.slug (the slug just PERSISTED),
+  // never editPath's own originalSlug: if this very save also renamed the
+  // profession, originalSlug's URL would 404 against the now-current row.
+  // Every error redirect above still correctly uses editPath/originalSlug,
+  // since on an error nothing was written and the record's real slug is
+  // still whatever originalSlug says.
   redirect(
     oldImageCleanupFailed
-      ? "/admin/professions?success=updated_image_cleanup"
-      : "/admin/professions?success=updated"
+      ? `/admin/professions/${parsed.value.slug}/edit?success=profession_saved_image_cleanup`
+      : `/admin/professions/${parsed.value.slug}/edit?success=profession_saved`
   );
 }
 
@@ -321,7 +335,7 @@ export async function deleteProfessionAction(formData: FormData) {
 
   redirect(
     imageCleanupFailed
-      ? "/admin/professions?success=deleted_image_cleanup"
-      : "/admin/professions?success=deleted"
+      ? "/admin/professions?success=profession_deleted_image_cleanup"
+      : "/admin/professions?success=profession_deleted"
   );
 }

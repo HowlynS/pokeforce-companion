@@ -623,22 +623,34 @@ describe("EditorActions", () => {
 });
 
 describe("DangerZonePanel", () => {
-  it("renders a destructive link to the existing delete confirmation route, never a submit button", async () => {
+  // DangerZonePanel opens the shared DeleteRecordDialog in place (Admin
+  // Polish Pass 1, Part 5) rather than linking to the dedicated /delete
+  // route — its own dialog-open state starts false, so a static render
+  // (no effects, no click) shows only the closed trigger button; the
+  // dialog opening, the dirty-state copy, and the Ctrl+S suppression
+  // signal are all interactive behavior covered by
+  // e2e/admin-in-editor-delete.spec.ts instead.
+  it("renders a destructive trigger BUTTON (never a link) in its closed state, with no dialog markup yet", async () => {
     const { DangerZonePanel } = await import("./danger-zone-panel");
     const html = renderToStaticMarkup(
       <DangerZonePanel
         resourceLabel="item"
-        deleteHref="/admin/items/iron-ore/delete"
         deleteLabel="Delete Item"
+        dialogTitle="Delete Item"
+        dialogDescription="You are about to permanently delete Iron Ore."
+        canDelete
+        formAction={() => {}}
+        hiddenFields={{ id: "item-1", slug: "iron-ore" }}
       />
     );
 
     expect(html).toContain("Danger zone");
     expect(html).toContain("admin-danger-zone");
-    expect(html).toContain('href="/admin/items/iron-ore/delete"');
     expect(html).toContain("Delete Item");
     expect(html).toContain("btn-danger");
+    expect(html).toMatch(/<button[^>]*>\s*Delete Item/);
+    expect(html).not.toContain("<a ");
+    expect(html).not.toContain('role="dialog"');
     expect(html).not.toContain("<form");
-    expect(html).not.toContain('type="submit"');
   });
 });

@@ -353,6 +353,17 @@ select:focus-visible {
   color: var(--color-text-muted);
 }
 
+/* Pairs a compact ResourceIcon with the linked name in a relationship
+   table row (Admin Polish Pass 1, Part 6) — the icon sits inline with the
+   text, inside the SAME link, rather than as a separate decorative
+   element beside it, so the whole row's clickable target stays exactly
+   the link it always was. */
+.admin-table-link-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* A column that should only ever be as wide as its own short content
    (a status word, one compact button, an Edit/Delete pair) — e.g. the
    Game Versions table's Current/Set current/Actions columns — rather
@@ -1141,6 +1152,21 @@ textarea.form-input {
   opacity: 0.6;
 }
 
+/* Groups the optional ResourceIcon with the value/placeholder text as ONE
+   flex child (Admin Polish Pass 1) — .admin-select-trigger's own
+   justify-content: space-between only ever separates two things, this
+   group and the chevron; without this wrapper a three-way flex row would
+   spread the icon away from its own label instead of keeping them
+   adjacent. flex: 1 lets it claim the trigger's available width so the
+   inner value span's own truncation still has room to engage. */
+.admin-select-value-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
 /* min-width: 0 overrides the flex item default of min-width: auto — without
    it, a flex child refuses to shrink below its own text's intrinsic
    width, so overflow/text-overflow below would never actually engage for
@@ -1198,11 +1224,84 @@ textarea.form-input {
 }
 
 .admin-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 9px 12px;
   border-radius: 6px;
   color: var(--color-text);
   cursor: pointer;
   font-size: 15px;
+}
+
+/* Long entity names (a verbose Item/Recipe/Location name) wrap onto a
+   second line inside the option row rather than overflowing the panel —
+   the panel's own fixed width (set inline, matching the trigger's width)
+   means wrapping is always safe here, unlike the trigger's own single-
+   line ellipsis treatment where the row height must never grow. */
+.admin-select-option-label {
+  min-width: 0;
+  flex: 1;
+}
+
+/* SearchableAdminSelect's own panel (Admin Polish Pass 1) — the same
+   .admin-select-panel chrome (background/border/shadow), but restructured
+   as a column: the search field must stay pinned at the top while ONLY
+   the option list scrolls beneath it, so .admin-select-panel's own
+   max-height/overflow-y (meant for a plain scrolling <ul>) is overridden
+   here and moved down onto the list specifically. */
+.searchable-admin-select-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.searchable-admin-select-panel > ul {
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.searchable-admin-select-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.searchable-admin-select-search-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.searchable-admin-select-search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+
+.searchable-admin-select-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.searchable-admin-select-no-results {
+  margin: 0;
+  padding: 16px 12px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  text-align: center;
 }
 
 .admin-select-option--active {
@@ -2419,6 +2518,16 @@ input[type="checkbox"] {
   flex-shrink: 0;
 }
 
+/* OS-aware save-shortcut hint (Admin Polish Pass 2, Part 4) — a small,
+   muted label beside Save, matching the restrained tone of the status
+   text next to it rather than competing for attention. */
+.admin-editor-shortcut-hint {
+  align-self: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
 /* Shared admin modal (Opus Pass 2): the ONE surface both the discard and
    the draft-recovery confirmations render through. A dark admin card with
    a restrained yellow-accented border (improving separation from the dimmed
@@ -2466,6 +2575,85 @@ input[type="checkbox"] {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* Shared admin success toast (Admin Polish Pass 2, Part 3). Rendered by
+   AdminShell as the very FIRST child of .admin-content-inner, before the
+   page's own content — deliberately plain document flow, never
+   `position: absolute/fixed`: an overlay positioned by a fixed pixel
+   offset would risk covering a page header tall enough to include the
+   error/eyebrow/tabs stack, exactly what this must never do. Being the
+   first flow child instead guarantees it can never sit on top of
+   anything — it only ever pushes that page's own header down for the
+   few seconds it is visible, then disappears and the page reflows back.
+   `justify-content: center` on the viewport row centers the toast within
+   .admin-content-inner's own width, which already excludes the 232px
+   sidebar column (a sibling, never a parent, of this element) — no JS
+   layout measurement needed. `position: sticky` keeps it reachable near
+   the top of the viewport even if the page itself is already mid-scroll
+   when a toast appears. */
+.admin-toast-viewport {
+  display: flex;
+  justify-content: center;
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  margin-bottom: 20px;
+}
+
+.admin-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-accent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.admin-toast-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-toast-dismiss {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  padding: 0 2px;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-toast-dismiss:hover {
+  color: var(--color-accent);
+}
+
+/* Restrained entrance only, never a celebratory/bouncy motion, and
+   skipped entirely for reduced-motion — the toast simply appears. */
+@media (prefers-reduced-motion: no-preference) {
+  .admin-toast {
+    animation: admin-toast-in 0.18s ease-out;
+  }
+}
+
+@keyframes admin-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ---- Admin record list (Slice 9B.3; accent unified to gold in Slice
@@ -2546,17 +2734,20 @@ input[type="checkbox"] {
 }
 
 /* flex-wrap: wrap is the fix for a genuine, resource-independent overflow:
-   the title (<h2>) and the "+ New X" button are flex items with the
-   default min-width: auto, so neither ever shrinks below its own
-   unwrapped text width — at the narrow-tier record-list floor (~151-185px
-   of available width), a long enough title+button pair (e.g. Locations:
-   "Locations" + "+ New location") together need more room than that and
-   force the row to overflow instead of shrinking. Rather than truncating
-   either the title or the button's own label (both need to stay fully
-   readable — a clipped "+ New locat…" action is a usability regression),
-   the pair drops to two lines when genuinely out of room; each item's own
-   text still never wraps mid-label. Applies identically to every
-   resource's record list — this is not Location-specific. */
+   the title (<h2>) and the "+ New" button are flex items with the default
+   min-width: auto, so neither ever shrinks below its own unwrapped text
+   width — at the narrow-tier record-list floor (~151-185px of available
+   width), a long enough title (e.g. "Professions") plus the button
+   together can still need more room than that and force the row to
+   overflow instead of shrinking (the create button's own label shortened
+   to a uniform "+ New" in Admin Polish Pass 1, Part 7, which made this
+   far less likely to trigger but did not remove the underlying flex
+   overflow this rule guards regardless of label length). Rather than
+   truncating either the title or the button's own label (both need to
+   stay fully readable), the pair drops to two lines when genuinely out of
+   room; each item's own text still never wraps mid-label. Applies
+   identically to every resource's record list — this is not
+   Location-specific. */
 .admin-record-list-header {
   display: flex;
   flex-wrap: wrap;
@@ -2797,6 +2988,55 @@ input[type="checkbox"] {
    explicit dimensions. A decorative thumbnail beside the record's own
    name, so alt is always empty. */
 .admin-record-thumb-img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Shared compact ResourceIcon (Admin Polish Pass 1) — see
+   resource-icon.tsx's own module comment for why this is deliberately
+   smaller/quieter than the record-list row thumbnail above: an inline
+   glyph beside text (an AdminSelect option/trigger, or a relationship
+   table row), never the visual focus of its own row. Subtle border/fill,
+   no shadow, no glow — text stays visually dominant everywhere this is
+   used. */
+.resource-icon {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
+  overflow: hidden;
+}
+
+.resource-icon-sm {
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+}
+
+.resource-icon-md {
+  width: 28px;
+  height: 28px;
+  padding: 3px;
+}
+
+/* Same missing-thumbnail language as .admin-record-thumb-empty — a
+   dashed border and a barely-there fill, so the fixed slot itself is
+   never mistaken for a rendering error. */
+.resource-icon-empty {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface-soft) 45%, transparent);
+}
+
+.resource-icon-img {
   display: block;
   max-width: 100%;
   max-height: 100%;

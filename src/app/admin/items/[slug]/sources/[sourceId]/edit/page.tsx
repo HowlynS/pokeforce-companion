@@ -11,16 +11,19 @@ import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   itemEditorTabs,
-  itemSourceDeleteHref,
   itemSourcesHref,
   normalizeItemSearchQuery,
 } from "@/lib/admin/item-workspace";
 import { prisma } from "@/lib/db";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import {
   ACQUISITION_TYPES,
   ACQUISITION_TYPE_LABELS,
 } from "@/lib/validation/acquisition-source";
-import { updateAcquisitionSourceAction } from "../../actions";
+import {
+  updateAcquisitionSourceAction,
+  deleteAcquisitionSourceAction,
+} from "../../actions";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
@@ -102,6 +105,10 @@ export default async function EditAcquisitionSourcePage({
   const gameVersions = await prisma.gameVersion.findMany({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
+  const [locationOptions, professionOptions] = await Promise.all([
+    toEntitySelectOptions(locations),
+    toEntitySelectOptions(professions),
+  ]);
 
   const tabs = itemEditorTabs(item.slug, query, "sources", {
     acquisitionSources: item._count.acquisitionSources,
@@ -116,6 +123,12 @@ export default async function EditAcquisitionSourcePage({
   // subtitle context underneath.
   return (
     <ItemWorkspace
+      // Admin Polish Pass 2, Part 5: forces a full remount of the record
+      // list, form, and aside whenever this source's own updatedAt
+      // actually changes — see the Item General editor's own identical
+      // comment (src/app/admin/items/[slug]/edit/page.tsx) for the full
+      // reasoning.
+      key={source.updatedAt.toISOString()}
       rawQuery={q}
       selectedSlug={item.slug}
       recordHref={itemSourcesHref}
@@ -147,9 +160,36 @@ export default async function EditAcquisitionSourcePage({
 
           <DangerZonePanel
             resourceLabel="acquisition source"
-            deleteHref={itemSourceDeleteHref(item.slug, source.id, query)}
             deleteLabel="Delete Source"
-          />
+            dialogTitle="Delete Acquisition Source"
+            dialogDescription={
+              <>
+                You are about to permanently delete this{" "}
+                <strong>{ACQUISITION_TYPE_LABELS[source.type]}</strong>{" "}
+                source for <strong>{item.name}</strong>. This action cannot
+                be undone.
+              </>
+            }
+            canDelete
+            formAction={deleteAcquisitionSourceAction}
+            hiddenFields={{ id: source.id, itemSlug: item.slug }}
+          >
+            <p className="text-muted">
+              Source label: {source.sourceLabel ?? "None"}
+            </p>
+            <p className="text-muted">
+              Location:{" "}
+              {locationOptions.find(
+                (option) => option.value === source.locationId
+              )?.label ?? "None"}
+            </p>
+            <p className="text-muted">
+              Profession:{" "}
+              {professionOptions.find(
+                (option) => option.value === source.professionId
+              )?.label ?? "None"}
+            </p>
+          </DangerZonePanel>
         </>
       }
     >
@@ -188,11 +228,8 @@ export default async function EditAcquisitionSourcePage({
                 name="locationId"
                 defaultValue={source.locationId ?? ""}
                 options={[
-                  { value: "", label: "No location" },
-                  ...locations.map((location) => ({
-                    value: location.id,
-                    label: location.name,
-                  })),
+                  { value: "", label: "No location", imageUrl: null },
+                  ...locationOptions,
                 ]}
               />
             </label>
@@ -203,11 +240,8 @@ export default async function EditAcquisitionSourcePage({
                 name="professionId"
                 defaultValue={source.professionId ?? ""}
                 options={[
-                  { value: "", label: "No profession" },
-                  ...professions.map((profession) => ({
-                    value: profession.id,
-                    label: profession.name,
-                  })),
+                  { value: "", label: "No profession", imageUrl: null },
+                  ...professionOptions,
                 ]}
               />
             </label>

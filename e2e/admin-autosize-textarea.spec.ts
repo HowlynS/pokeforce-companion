@@ -176,12 +176,11 @@ test("initial persisted long content sets the correct expanded height on first r
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
   await descriptionField(page).fill(LONG_TEXT);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
-
-  // A completely FRESH navigation to the edit page — no typing, no
-  // interaction with the field at all — must already show the expanded
-  // height derived from the persisted content alone.
-  await page.goto(`/admin/items/${ITEM.slug}/edit`);
+  // Creation redirects straight to the new item's own editor (Admin
+  // Polish Pass 2, Part 2) — a completely fresh render, no typing or
+  // interaction with the field at all — which must already show the
+  // expanded height derived from the persisted content alone.
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
   const height = await heightOf(page);
 
   expect(height).toBeGreaterThan(150);
@@ -201,9 +200,7 @@ test("the submitted form value is exactly what was typed — no value transforma
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
   await descriptionField(page).fill(VERY_LONG_TEXT);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
-
-  await page.goto(`/admin/items/${ITEM.slug}/edit`);
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
   // The exact same text round-trips through persistence and back into
   // the field, byte-for-byte — proves the resize logic never touched
   // the field's actual value.

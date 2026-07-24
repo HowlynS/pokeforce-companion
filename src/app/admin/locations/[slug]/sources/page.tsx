@@ -5,6 +5,8 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { prisma } from "@/lib/db";
+import { getImagePublicUrl } from "@/lib/storage/images";
+import { ResourceIcon } from "@/components/admin/resource-icon";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   hierarchyRelationshipCount,
@@ -37,7 +39,7 @@ type LocationSourcesPageProps = {
  * as a detail line beneath the item name only when present, in ONE
  * wrapper — no placeholder dash, no empty label, no blank cell.
  */
-function SourceRow({
+async function SourceRow({
   source,
 }: {
   source: {
@@ -46,7 +48,7 @@ function SourceRow({
     sourceLabel: string | null;
     quantity: string | null;
     notes: string | null;
-    item: { slug: string; name: string };
+    item: { slug: string; name: string; image: string | null };
     profession: { name: string } | null;
   };
 }) {
@@ -65,13 +67,16 @@ function SourceRow({
     details.push(`Notes: ${source.notes}`);
   }
 
+  const imageUrl = await getImagePublicUrl(source.item.image);
+
   return (
     <tr>
       <td>
         <a
           href={`/admin/items/${source.item.slug}/sources/${source.id}/edit`}
-          className="link-accent"
+          className="link-accent admin-table-link-with-icon"
         >
+          <ResourceIcon imageUrl={imageUrl} size="md" />
           {source.item.name}
         </a>
         {details.length > 0 ? (

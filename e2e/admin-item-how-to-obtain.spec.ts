@@ -55,7 +55,7 @@ async function createTemporaryItem(page: Page, data: { name: string; slug: strin
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${data.slug}/edit`);
 }
 
 async function addSourceThroughForm(
@@ -97,8 +97,11 @@ async function addSourceThroughForm(
     await page.getByLabel(/^Notes/).fill(data.notes);
   }
   await page.getByRole("button", { name: "Add Source", exact: true }).click();
+  // Redirects straight to the new source's own editor (Admin Polish Pass
+  // 2, Part 2) — the sourceId is database-generated, so the destination
+  // is matched by shape rather than an exact id.
   await expect(page).toHaveURL(
-    `/admin/items/${itemSlug}/sources?success=created`
+    new RegExp(`/admin/items/${itemSlug}/sources/[^/]+/edit`)
   );
 }
 
@@ -204,7 +207,7 @@ test("a source's location links to its public location page", async ({
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
 
   await addSourceThroughForm(page, ITEM.slug, {
     type: "Fishing",
@@ -245,7 +248,7 @@ test("optional profession, source label, quantity, and notes render only when po
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/professions?success=created");
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
 
   // One source with every optional field populated...
   await addSourceThroughForm(page, ITEM.slug, {
@@ -333,7 +336,7 @@ test("a CRAFTING acquisition source coexists with the structured Produced by rec
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/recipes?success=created");
+  await expect(page).toHaveURL(`/admin/recipes/${RECIPE.slug}/edit`);
 
   // A supplementary, loosely-known CRAFTING acquisition source.
   await addSourceThroughForm(page, ITEM.slug, {
@@ -387,7 +390,7 @@ test("a source with a location AND a source label still exposes a working locati
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
 
   await addSourceThroughForm(page, ITEM.slug, {
     type: "Fishing",
@@ -436,7 +439,7 @@ test("a source with a location, profession, quantity, and notes all set still ex
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
 
   await page.goto("/admin/professions/new");
   await page.getByLabel("Name", { exact: true }).fill(PROFESSION.name);
@@ -444,7 +447,7 @@ test("a source with a location, profession, quantity, and notes all set still ex
   await page
     .getByRole("button", { name: "Create Profession", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/professions?success=created");
+  await expect(page).toHaveURL(`/admin/professions/${PROFESSION.slug}/edit`);
 
   await addSourceThroughForm(page, ITEM.slug, {
     type: "Cooking",
@@ -497,7 +500,7 @@ test("multiple distinct sources at the same location remain understandable and b
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
 
   // Two distinct sources at the SAME location — same type, different
   // notes. The Item page never dedupes by location (only the Location

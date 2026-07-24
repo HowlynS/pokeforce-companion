@@ -210,7 +210,7 @@ test("a real uploaded image renders a decoded, decorative thumbnail; a seeded it
   );
   await page.locator('input[name="image"]').setInputFiles(PNG_FIXTURE);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${ITEM.slug}/edit`);
 
   // --- Real thumbnail: decoded, decorative (empty alt) ---------------
   const imageRow = recordRow(page, "Items", ITEM.name);
@@ -402,7 +402,7 @@ async function createTestLocation(
   await page
     .getByRole("button", { name: "Create Location", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/locations?success=created");
+  await expect(page).toHaveURL(`/admin/locations/${location.slug}/edit`);
 }
 
 test("the Locations list joins the same image-capable layout, and a Location without an image shows the hidden fallback slot", async ({

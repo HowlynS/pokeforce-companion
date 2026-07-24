@@ -26,8 +26,17 @@
 // action={deleteXAction}> every page already had, with the same hidden
 // id/slug fields — Confirm calls requestSubmit() on it rather than being a
 // submit button itself, since ConfirmDialog's own two actions are plain
-// buttons. Cancel/Escape/backdrop all navigate to the same cancelHref the
-// page's old Cancel link already pointed at.
+// buttons.
+//
+// Two mutually exclusive usage modes (Admin Polish Pass 1, Part 5 added
+// the second):
+//   - cancelHref (the original, still used by every dedicated /delete
+//     page): Cancel/Escape/backdrop navigate to that route. `open`
+//     defaults to true — mounting the page IS opening the dialog.
+//   - onCancel + explicit open (the new in-editor usage, EditorDeleteAction):
+//     Cancel/Escape/backdrop just call onCancel to close the dialog IN
+//     PLACE — no navigation, no route change, the editor form underneath
+//     is untouched. The caller owns the open/closed boolean.
 
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -52,9 +61,16 @@ type DeleteRecordDialogProps = {
   /** The exact hidden fields the existing form already carried (e.g.
       { id, slug } or { id, itemSlug }). */
   hiddenFields: Record<string, string>;
-  /** Where Cancel/Escape/backdrop navigate — the same route the page's own
-      Cancel link already used. */
-  cancelHref: string;
+  /** Where Cancel/Escape/backdrop navigate — the dedicated /delete page's
+      own usage. Omit when passing onCancel instead. */
+  cancelHref?: string;
+  /** Closes the dialog in place instead of navigating — the in-editor
+      usage. Omit when passing cancelHref instead. */
+  onCancel?: () => void;
+  /** Controls whether the dialog renders at all. Defaults to true (the
+      dedicated page's own behavior: mounting the page IS opening it); the
+      in-editor usage passes its own open/closed state explicitly. */
+  open?: boolean;
 };
 
 export function DeleteRecordDialog({
@@ -66,24 +82,32 @@ export function DeleteRecordDialog({
   formAction,
   hiddenFields,
   cancelHref,
+  onCancel,
+  open = true,
 }: DeleteRecordDialogProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
 
   function handleCancel() {
-    router.push(cancelHref);
+    if (onCancel) {
+      onCancel();
+      return;
+    }
+    if (cancelHref) {
+      router.push(cancelHref);
+    }
   }
 
   return (
     <>
       <ConfirmDialog
-        open
+        open={open}
         eyebrow="Destructive action"
         title={title}
         description={description}
         confirmLabel={confirmLabel}
         cancelLabel="Cancel"
-        cancelHref={cancelHref}
+        cancelHref={onCancel ? undefined : cancelHref}
         confirmTone="danger-solid"
         confirmDisabled={!canDelete}
         initialFocus="cancel"

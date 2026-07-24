@@ -13,16 +13,17 @@ import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
   normalizeRecipeSearchQuery,
-  recipeDeleteHref,
   recipeEditorTabs,
   withRecipeSearchQuery,
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
+import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { FieldLabelWithHelp } from "@/components/admin/field-label-with-help";
+import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
-import { updateRecipeGeneralAction } from "../../actions";
+import { updateRecipeGeneralAction, deleteRecipeAction } from "../../actions";
 import { checkRecipeNameAvailability } from "../../name-availability";
 import { checkRecipeSlugAvailability } from "../../slug-availability";
 
@@ -112,6 +113,10 @@ export default async function EditRecipePage({
 
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(recipe.image);
+  const [itemOptions, professionOptions] = await Promise.all([
+    toEntitySelectOptions(items),
+    toEntitySelectOptions(professions),
+  ]);
 
   // Current version first, then newest — the same ordering the
   // settings list uses; feeds the shared verification picker.
@@ -135,6 +140,12 @@ export default async function EditRecipePage({
   // exactly as before.
   return (
     <RecipeWorkspace
+      // Admin Polish Pass 2, Part 5: forces a full remount of the record
+      // list, form, and aside whenever this recipe's own updatedAt
+      // actually changes — see the Item General editor's own identical
+      // comment (src/app/admin/items/[slug]/edit/page.tsx) for the full
+      // reasoning.
+      key={recipe.updatedAt.toISOString()}
       rawQuery={q}
       selectedSlug={recipe.slug}
       editorHeader={
@@ -176,9 +187,46 @@ export default async function EditRecipePage({
 
           <DangerZonePanel
             resourceLabel="recipe"
-            deleteHref={recipeDeleteHref(recipe.slug, query)}
             deleteLabel="Delete Recipe"
-          />
+            dialogTitle="Delete Recipe"
+            dialogDescription={
+              <>
+                You are about to permanently delete{" "}
+                <strong>{recipe.name}</strong> ({recipe.slug}). This action
+                cannot be undone.
+              </>
+            }
+            canDelete
+            formAction={deleteRecipeAction}
+            hiddenFields={{ id: recipe.id, slug: recipe.slug }}
+          >
+            <p className="text-muted">
+              Result:{" "}
+              {formatRecipeQuantityRange(
+                recipe.resultQuantityMin,
+                recipe.resultQuantityMax
+              )}{" "}
+              {itemOptions.find((option) => option.value === recipe.resultingItemId)
+                ?.label ?? "Unknown item"}
+            </p>
+
+            <p className="text-muted">
+              Profession:{" "}
+              {professionOptions.find(
+                (option) => option.value === recipe.professionId
+              )?.label ?? "No profession"}
+            </p>
+
+            <p className="text-muted">
+              Ingredients: {recipe._count.ingredients}
+            </p>
+
+            <p className="text-muted">
+              The resulting item, ingredient items, and profession will not
+              be deleted — only this recipe and its own ingredient list
+              entries.
+            </p>
+          </DangerZonePanel>
         </>
       }
     >
@@ -226,10 +274,7 @@ export default async function EditRecipePage({
                 name="resultingItemId"
                 required
                 defaultValue={recipe.resultingItemId}
-                options={items.map((item) => ({
-                  value: item.id,
-                  label: item.name,
-                }))}
+                options={itemOptions}
               />
             </label>
 
@@ -286,11 +331,8 @@ export default async function EditRecipePage({
                 name="professionId"
                 defaultValue={recipe.professionId ?? ""}
                 options={[
-                  { value: "", label: "No profession" },
-                  ...professions.map((profession) => ({
-                    value: profession.id,
-                    label: profession.name,
-                  })),
+                  { value: "", label: "No profession", imageUrl: null },
+                  ...professionOptions,
                 ]}
               />
             </label>

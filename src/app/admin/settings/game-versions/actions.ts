@@ -137,5 +137,9 @@ export async function deleteGameVersionAction(formData: FormData) {
   revalidatePath(LIST_PATH);
   revalidatePath(confirmPath);
 
-  redirect(`${LIST_PATH}?success=deleted`);
+  // Admin Polish Pass 2, Part 3: the shared success toast's namespaced
+  // code (Game Versions keep their own list-oriented create/update
+  // workflow untouched — only delete migrates, since it's the one
+  // outcome explicitly required to show a toast here).
+  redirect(`${LIST_PATH}?success=game_version_deleted`);
 }

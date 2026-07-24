@@ -47,7 +47,7 @@ async function createTempItem(
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel("Page address", { exact: true }).fill(slug);
   await page.getByRole("button", { name: "Create item", exact: true }).click();
-  await expect(page).toHaveURL("/admin/items?success=created");
+  await expect(page).toHaveURL(`/admin/items/${slug}/edit`);
   return slug;
 }
 
@@ -241,19 +241,19 @@ test("a clean editor leaves with one Back press; a dirty→reverted editor also 
   await expect(page).toHaveURL(/\/admin\/recipes(\?|$)/);
 });
 
-test("after a successful save, browser Back returns to the clean saved record with no modal or data loss, and reaches the previous page without a loop", async ({
+test("after a successful save, the editor stays on the same URL clean and unsaved-changes-free, and Back reaches the previous page within a bounded number of steps", async ({
   page,
 }) => {
-  // NOTE (documented App Router + React 19 limitation): the server action
-  // redirect PUSHES a new list entry, and the dirty-form history buffer
-  // (same URL as the editor) cannot be consumed around the submit without
-  // aborting the server-action POST. So one extra same-URL editor entry can
-  // remain after a save. This is deliberately NOT "fixed" by risking the
-  // save. What this test guarantees is the behavior that actually matters:
-  // Back after save is always SAFE — the editor re-renders clean from the
-  // saved server data (no stale dirty state, no discard modal, no data
-  // loss), and continued Back reaches the previous page in a bounded number
-  // of steps (never a loop).
+  // Save-in-place (Admin Polish Pass 2): a successful save redirects back to
+  // the SAME canonical editor URL (never the list), showing the persisted
+  // server state with dirty state cleared, no discard modal, no data loss.
+  // The server action's redirect still pushes one history entry (same URL
+  // as the pre-save editor) — same documented App Router + React 19
+  // limitation the old list-redirect version of this test described, just
+  // against the editor's own URL instead of the list's. That extra entry is
+  // harmless: Back through it simply re-shows the identical clean editor, so
+  // continued Back still reaches the previous page in a bounded number of
+  // steps (never a loop).
   const slug = await createTempItem(page, "Test E2E Item Saveback", "test-e2e-item-saveback");
   await page.goto("/admin/recipes");
   await page.goto(`/admin/items/${slug}/edit`);
@@ -262,28 +262,14 @@ test("after a successful save, browser Back returns to the clean saved record wi
   await page
     .getByLabel("Description (optional)", { exact: true })
     .fill("Saved description for the back test.");
+  const editUrl = page.url();
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
-  await expect(page).toHaveURL(/\/admin\/items\?success=updated/);
 
-  // Back returns to the editor, re-rendered CLEAN from the saved server data
-  // (never a stale dirty buffer): the editor renders, there is no discard
-  // modal, and the form is clean (no "Unsaved changes"). The saved value is
-  // served by the re-fetched Server Component, so there is no data loss.
-  await page.goBack();
-  await expect(page).toHaveURL(`/admin/items/${slug}/edit`);
-  await expect(
-    page.getByRole("heading", {
-      level: 1,
-      name: "Test E2E Item Saveback",
-      exact: true,
-    })
-  ).toBeVisible();
-  await expect(discardDialog(page)).toHaveCount(0);
+  await expect(page).toHaveURL(editUrl);
   await expect(status(page)).toHaveCount(0);
+  await expect(discardDialog(page)).toHaveCount(0);
 
-  // Continued Back reaches the previous page (Recipes) within a bounded
-  // number of steps — proving no infinite Back/Forward loop.
-  for (let i = 0; i < 3; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     if (/\/admin\/recipes(\?|$)/.test(page.url())) {
       break;
     }
@@ -295,12 +281,16 @@ test("after a successful save, browser Back returns to the clean saved record wi
 test("Forward remains usable after a clean Back out of the editor", async ({
   page,
 }) => {
+  // createTempItem's own create-redirect already lands on this exact edit
+  // URL, pushed as a new history entry on top of the create form it
+  // submitted from (/admin/items/new) — so a clean Back goes straight to
+  // that create form, never the list (creation no longer visits the list
+  // at all under the Pass 2 create-redirect).
   const slug = await createTempItem(page, "Test E2E Item Fwd", "test-e2e-item-fwd");
-  await page.goto(`/admin/items/${slug}/edit`);
 
-  // Clean Back to the list, then Forward returns to the editor.
+  // Clean Back to the create form, then Forward returns to the editor.
   await page.goBack();
-  await expect(page).toHaveURL(/\/admin\/items(\?|$)/);
+  await expect(page).toHaveURL("/admin/items/new");
   await page.goForward();
   await expect(page).toHaveURL(`/admin/items/${slug}/edit`);
   await expect(
@@ -319,8 +309,9 @@ test("Ctrl+S saves a valid form and prevents the browser Save dialog", async ({
     .fill("Saved via keyboard shortcut.");
   await expect(status(page)).toBeVisible();
 
+  const editUrl = page.url();
   await page.keyboard.press("Control+s");
-  await expect(page).toHaveURL(/\/admin\/items\?success=updated/);
+  await expect(page).toHaveURL(editUrl);
 });
 
 test("Ctrl+S is ignored while the discard modal is open", async ({ page }) => {

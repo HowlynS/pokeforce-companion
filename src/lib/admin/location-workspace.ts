@@ -195,3 +195,19 @@ export function locationEditorTabs(
     },
   ];
 }
+
+/**
+ * The Location delete-blocking rule, shared by the dedicated /delete route
+ * AND the in-editor delete dialog (Admin Polish Pass 1, Part 5) — one
+ * function so the two surfaces can never drift apart. A Location cannot be
+ * deleted while any sub-location still references it as its parent.
+ */
+export function locationCanDelete(childCount: number): boolean {
+  return childCount === 0;
+}
+
+/** The human-readable reason a Location is blocked from deletion — shared
+    by both surfaces for the same reason as locationCanDelete above. */
+export function describeLinkedLocations(count: number): string {
+  return count === 1 ? "1 sub-location" : `${count} sub-locations`;
+}

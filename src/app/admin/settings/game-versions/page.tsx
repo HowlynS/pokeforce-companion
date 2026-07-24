@@ -3,12 +3,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DateField } from "@/components/admin/date-field";
 import { EditorSection } from "@/components/admin/editor-section";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { GameVersionDeleteAction } from "@/components/admin/game-version-delete-action";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import {
   createGameVersionAction,
+  deleteGameVersionAction,
   markGameVersionCurrentAction,
 } from "./actions";
 
@@ -23,13 +25,17 @@ const errorMessages: Record<string, string> = {
     "That Game Version cannot be deleted while verified gameplay data still references it.",
 };
 
+// "deleted" is deliberately absent here: deleteGameVersionAction now
+// redirects with the shared toast's own "game_version_deleted" code
+// (Admin Polish Pass 2, Part 3) — Game Versions keep this page's own
+// list-oriented banner only for the create/update/mark-current outcomes
+// that still land here unchanged.
 const successMessages: Record<string, string> = {
   created: "Game Version created.",
   created_current:
     "Game Version created and marked as the current version (it is the first one).",
   updated: "Game Version updated.",
   marked_current: "Current Game Version updated.",
-  deleted: "Game Version deleted.",
 };
 
 type GameVersionSettingsPageProps = {
@@ -135,12 +141,13 @@ export default async function GameVersionSettingsPage({
                         >
                           Edit
                         </a>
-                        <a
-                          href={`/admin/settings/game-versions/${version.id}/delete`}
-                          className="btn btn-danger-outline btn-compact"
-                        >
-                          Delete
-                        </a>
+                        <GameVersionDeleteAction
+                          id={version.id}
+                          name={version.name}
+                          isCurrent={version.isCurrent}
+                          releaseDateLabel={formatReleaseDate(version.releaseDate)}
+                          formAction={deleteGameVersionAction}
+                        />
                       </span>
                     </td>
                   </tr>

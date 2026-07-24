@@ -53,7 +53,7 @@ async function createTemporaryCategory(
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
-  await expect(page).toHaveURL("/admin/categories?success=created");
+  await expect(page).toHaveURL(`/admin/categories/${data.slug}/edit`);
 }
 
 test("visiting the old Metadata route redirects to General, preserving the search query", async ({

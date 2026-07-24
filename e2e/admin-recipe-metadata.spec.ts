@@ -68,7 +68,7 @@ async function createTemporaryRecipe(
   await group.getByPlaceholder("Qty").first().fill("1");
 
   await page.getByRole("button", { name: "Create Recipe", exact: true }).click();
-  await expect(page).toHaveURL("/admin/recipes?success=created");
+  await expect(page).toHaveURL(`/admin/recipes/${data.slug}/edit`);
 }
 
 test("visiting the old Metadata route redirects to General, preserving the search query", async ({

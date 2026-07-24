@@ -99,13 +99,13 @@ export async function ItemWorkspace({
           initialQuery={query}
           searchLabel="Search items"
           createHref={withItemSearchQuery(ITEM_CREATE_PATH, query)}
-          createLabel="+ New item"
+          createLabel="+ New"
           rows={rows}
           showImages
           noun={{ singular: "item", plural: "items" }}
           empty={
             <p>
-              No items yet. Use &ldquo;+ New item&rdquo; to create the
+              No items yet. Use &ldquo;+ New&rdquo; to create the
               first one.
             </p>
           }
