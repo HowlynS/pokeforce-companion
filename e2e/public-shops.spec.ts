@@ -17,7 +17,7 @@ function cardLink(page: Page, name: string) {
 test.beforeAll(async () => {
   await deleteE2eTestShopRecords();
   fixtures = await createE2ePublicShopFixtures();
-  expect(await countE2eTestShopRecords()).toBe(2);
+  expect(await countE2eTestShopRecords()).toBe(3);
 });
 
 test.beforeEach(({ page }) => {
@@ -182,6 +182,134 @@ test("a Shop with no optional content omits Inventory and verification sections"
   await expect(page.getByText("No inventory")).toHaveCount(0);
   await expect(page.getByText("Verification", { exact: true })).toHaveCount(0);
   await expect(page.getByText("No description")).toHaveCount(0);
+});
+
+test("Item acquisition presents every structured purchase and preserves the legacy Shop source", async ({
+  page,
+}) => {
+  await page.goto(`/items/${fixtures.item.slug}`);
+
+  const obtainHeading = page.getByRole("heading", {
+    level: 2,
+    name: "How to obtain",
+    exact: true,
+  });
+  await expect(obtainHeading).toBeVisible();
+  const obtainSection = obtainHeading.locator("..");
+  const purchases = obtainSection.locator(".public-shop-purchase");
+
+  await expect(purchases).toHaveCount(3);
+  await expect(
+    purchases.nth(0).getByRole("link", { name: fixtures.shop.name, exact: true })
+  ).toHaveAttribute("href", `/shops/${fixtures.shop.slug}`);
+  await expect(
+    purchases
+      .nth(0)
+      .getByRole("link", { name: fixtures.location.name, exact: true })
+  ).toHaveAttribute("href", `/locations/${fixtures.location.slug}`);
+  await expect(purchases.nth(0).locator(".currency-price")).toContainText("1,250");
+  await expect(purchases.nth(0).locator(".currency-price")).toHaveAttribute(
+    "aria-label",
+    new RegExp(`1,250 ${fixtures.primaryCurrency.name}`)
+  );
+  await expect(purchases.nth(0)).toContainText("Available after the tutorial.");
+  await expect(purchases.nth(0)).toContainText(
+    "Verified for test-gv-current on 25 Jul 2026"
+  );
+
+  await expect(
+    purchases.nth(1).getByRole("link", { name: fixtures.shop.name, exact: true })
+  ).toBeVisible();
+  await expect(purchases.nth(1).locator(".currency-price")).toContainText(
+    "2,147,483,647"
+  );
+  await expect(purchases.nth(1)).not.toContainText("Verified for");
+  await expect(
+    purchases
+      .nth(2)
+      .getByRole("link", { name: fixtures.secondShop.name, exact: true })
+  ).toHaveAttribute("href", `/shops/${fixtures.secondShop.slug}`);
+  await expect(purchases.nth(2).locator(".currency-price")).toContainText("750");
+
+  // No explicit relationship marks the free-text row as equivalent to a
+  // ShopListing, so the legacy source remains visible instead of being
+  // silently guessed away.
+  await expect(obtainSection.getByText("NPC or shop", { exact: true })).toBeVisible();
+  await expect(obtainSection).toContainText("Legacy Traveling Merchant");
+  await expect(obtainSection).toContainText(
+    "Legacy source retained alongside structured sales."
+  );
+
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 3440, height: 1440 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.reload();
+    const widths = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      content: document.documentElement.scrollWidth,
+    }));
+    expect(widths.content).toBeLessThanOrEqual(widths.viewport);
+  }
+});
+
+test("Location detail summarizes only directly assigned Shops and hides an empty section", async ({
+  page,
+}) => {
+  await page.goto(`/locations/${fixtures.location.slug}`);
+
+  const shopHeading = page.getByRole("heading", {
+    level: 2,
+    name: "Shops",
+    exact: true,
+  });
+  await expect(shopHeading).toBeVisible();
+  const shopSection = shopHeading.locator("..");
+  await expect(cardLink(page, fixtures.shop.name)).toHaveAttribute(
+    "href",
+    `/shops/${fixtures.shop.slug}`
+  );
+  await expect(cardLink(page, fixtures.shop.name)).toContainText(
+    "2 inventory listings"
+  );
+  await expect(cardLink(page, fixtures.shop.name)).toContainText(
+    "A documented public Shop used only by browser tests."
+  );
+  await expect(cardLink(page, fixtures.emptyShop.name)).toContainText(
+    "0 inventory listings"
+  );
+  await expect(shopSection).not.toContainText(fixtures.secondShop.name);
+
+  // The Region owns Beta directly. It must not also aggregate Alpha/Empty
+  // merely because their Location is a descendant.
+  await page.goto(`/locations/${fixtures.region.slug}`);
+  const regionShopSection = page
+    .getByRole("heading", { level: 2, name: "Shops", exact: true })
+    .locator("..");
+  await expect(regionShopSection).toContainText(fixtures.secondShop.name);
+  await expect(regionShopSection).not.toContainText(fixtures.shop.name);
+  await expect(regionShopSection).not.toContainText(fixtures.emptyShop.name);
+
+  await page.goto(`/locations/${fixtures.emptyLocation.slug}`);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Shops", exact: true })
+  ).toHaveCount(0);
+  await expect(page.getByText("No shops")).toHaveCount(0);
+
+  await page.goto(`/locations/${fixtures.location.slug}`);
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 3440, height: 1440 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.reload();
+    const widths = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      content: document.documentElement.scrollWidth,
+    }));
+    expect(widths.content).toBeLessThanOrEqual(widths.viewport);
+  }
 });
 
 test("Shop detail handles an unknown slug as a real 404", async ({ page }) => {

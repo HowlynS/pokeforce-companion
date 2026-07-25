@@ -14,6 +14,7 @@ import {
   loadLocationAncestors,
   type LocationAncestor,
 } from "@/lib/locations/location-hierarchy";
+import { formatInventoryListingCount } from "@/lib/shops/public-shop";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +105,19 @@ export default async function LocationDetailPage({
       // alone is not guaranteed unique.
       children: {
         select: { name: true, slug: true, type: true },
+        orderBy: [{ name: "asc" }, { slug: "asc" }],
+      },
+      // Direct relation only: Shops assigned to descendants are not
+      // aggregated into this Location. Inventory is represented by a
+      // count, keeping this summary bounded and avoiding row-level queries.
+      shops: {
+        select: {
+          name: true,
+          slug: true,
+          description: true,
+          image: true,
+          _count: { select: { listings: true } },
+        },
         orderBy: [{ name: "asc" }, { slug: "asc" }],
       },
       // Only the fields the public "Obtainable Items" section needs —
@@ -204,6 +218,39 @@ export default async function LocationDetailPage({
                 href={`/locations/${child.slug}`}
               />
             ))}
+          </ContentGrid>
+        </section>
+      ) : null}
+
+      {location.shops.length > 0 ? (
+        <section style={{ marginBottom: designTokens.layout.sectionGap }}>
+          <SectionHeading icon={SECTION_ICONS.inventory}>Shops</SectionHeading>
+
+          <ContentGrid>
+            {location.shops.map((shop) => {
+              const listingCount = formatInventoryListingCount(
+                shop._count.listings
+              );
+              const description = shop.description
+                ? `${shop.description} (${listingCount})`
+                : listingCount;
+
+              return (
+                <Card
+                  key={shop.slug}
+                  title={shop.name}
+                  description={description}
+                  href={`/shops/${shop.slug}`}
+                  media={
+                    <ContentImage
+                      imagePath={shop.image}
+                      alt={`Image of ${shop.name}`}
+                      size="card"
+                    />
+                  }
+                />
+              );
+            })}
           </ContentGrid>
         </section>
       ) : null}

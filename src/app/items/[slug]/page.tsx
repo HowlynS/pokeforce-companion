@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
+import { ShopPurchaseCard } from "@/components/content/shop-purchase-card";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -50,6 +51,39 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
           profession: { select: { name: true } },
         },
         orderBy: { createdAt: "asc" },
+      },
+      // ShopListings are the canonical structured sale records. All
+      // purchase context is loaded in this one relation query so rendering
+      // multiple Shops/Currencies never introduces an N+1 query.
+      shopListings: {
+        select: {
+          priceAmount: true,
+          notes: true,
+          verifiedAt: true,
+          verifiedGameVersion: { select: { name: true } },
+          shop: {
+            select: {
+              name: true,
+              slug: true,
+              location: { select: { name: true, slug: true } },
+            },
+          },
+          currency: {
+            select: {
+              name: true,
+              slug: true,
+              symbol: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: [
+          { shop: { name: "asc" } },
+          { shop: { slug: "asc" } },
+          { currency: { name: "asc" } },
+          { currency: { slug: "asc" } },
+          { priceAmount: "asc" },
+        ],
       },
     },
   });
@@ -104,13 +138,42 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
         </div>
       </section>
 
-      {/* Omitted entirely (heading included) when there are no acquisition
-          sources — never a public empty state. Grouped by type so more
-          than one source never repeats the type on every card; the
-          heading makes no claim that the list is complete. */}
-      {acquisitionGroups.length > 0 ? (
+      {/* Structured Shop listings and legacy Acquisition Sources coexist.
+          There is no explicit equivalence relation between a listing and
+          a free-text NPC_OR_SHOP row, so no legacy source is hidden based
+          on a guessed name/location match. The section is omitted only
+          when both canonical and legacy sources are empty. */}
+      {item.shopListings.length > 0 || acquisitionGroups.length > 0 ? (
         <section style={{ marginBottom: designTokens.layout.sectionGap }}>
           <SectionHeading icon={SECTION_ICONS.source}>How to obtain</SectionHeading>
+
+          {item.shopListings.length > 0 ? (
+            <div style={{ marginBottom: "16px" }}>
+              <p
+                style={{
+                  margin: "0 0 8px",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                }}
+              >
+                Shops
+              </p>
+
+              <div className="public-shop-purchases">
+                {item.shopListings.map((listing) => (
+                  <ShopPurchaseCard
+                    key={`${listing.shop.slug}-${listing.currency.slug}`}
+                    shop={listing.shop}
+                    currency={listing.currency}
+                    priceAmount={listing.priceAmount}
+                    notes={listing.notes}
+                    verifiedAt={listing.verifiedAt}
+                    verifiedGameVersion={listing.verifiedGameVersion}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {acquisitionGroups.map((group) => (
             <div key={group.type} style={{ marginBottom: "16px" }}>

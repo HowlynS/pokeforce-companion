@@ -258,8 +258,10 @@ export async function createE2eShopInventoryFixtures(): Promise<{
 
 export async function createE2ePublicShopFixtures(): Promise<{
   shop: { name: string; slug: string };
+  secondShop: { name: string; slug: string };
   emptyShop: { name: string; slug: string };
   location: { name: string; slug: string };
+  emptyLocation: { name: string; slug: string };
   region: { name: string; slug: string };
   item: { name: string; slug: string };
   primaryCurrency: { name: string };
@@ -272,6 +274,10 @@ export async function createE2ePublicShopFixtures(): Promise<{
     name: "Test E2E Public Shop Alpha",
     slug: `${E2E_SHOP_SLUG_PREFIX}-public-alpha`,
   };
+  const secondShop = {
+    name: "Test E2E Public Shop Beta",
+    slug: `${E2E_SHOP_SLUG_PREFIX}-public-beta`,
+  };
   const emptyShop = {
     name: "Test E2E Public Shop Empty",
     slug: `${E2E_SHOP_SLUG_PREFIX}-public-empty`,
@@ -283,6 +289,10 @@ export async function createE2ePublicShopFixtures(): Promise<{
   const region = {
     name: "Test E2E Shop Region",
     slug: `${E2E_SHOP_LOCATION_SLUG_PREFIX}-region`,
+  };
+  const emptyLocation = {
+    name: "Test E2E Shop Empty Location",
+    slug: `${E2E_SHOP_LOCATION_SLUG_PREFIX}-empty`,
   };
 
   await withVerifiedDatabase(async (client) => {
@@ -297,9 +307,18 @@ export async function createE2ePublicShopFixtures(): Promise<{
     await client.query(
       `insert into "Location"
         ("id", "slug", "name", "type", "createdAt", "updatedAt")
-       values ($1, $2, $3, 'REGION', now(), now())
+       values
+        ($1, $2, $3, 'REGION', now(), now()),
+        ($4, $5, $6, 'SPECIAL_AREA', now(), now())
        on conflict ("slug") do update set "name" = excluded."name"`,
-      ["test-e2e-shop-region-id", region.slug, region.name]
+      [
+        "test-e2e-shop-region-id",
+        region.slug,
+        region.name,
+        "test-e2e-shop-empty-location-id",
+        emptyLocation.slug,
+        emptyLocation.name,
+      ]
     );
     await client.query(
       `update "Location"
@@ -314,7 +333,8 @@ export async function createE2ePublicShopFixtures(): Promise<{
          "verifiedAt", "verifiedGameVersionId", "createdAt", "updatedAt")
        values
         ($1, $2, $3, $4, $5, timestamp '2026-07-25 12:00:00+00', $6, now(), now()),
-        ($7, $8, $9, null, $5, null, null, now(), now())`,
+        ($7, $8, $9, null, $5, null, null, now(), now()),
+        ($10, $11, $12, $4, $13, null, null, now(), now())`,
       [
         "test-e2e-shop-public-alpha-id",
         shop.slug,
@@ -325,6 +345,10 @@ export async function createE2ePublicShopFixtures(): Promise<{
         "test-e2e-shop-public-empty-id",
         emptyShop.slug,
         emptyShop.name,
+        "test-e2e-shop-public-beta-id",
+        secondShop.slug,
+        secondShop.name,
+        "test-e2e-shop-region-id",
       ]
     );
 
@@ -334,7 +358,8 @@ export async function createE2ePublicShopFixtures(): Promise<{
          "verifiedAt", "verifiedGameVersionId", "createdAt", "updatedAt")
        values
         ($1, $2, $3, $4, 1250, $5, timestamp '2026-07-25 12:00:00+00', $6, now(), now()),
-        ($7, $2, $3, $8, 2147483647, null, null, null, now(), now())`,
+        ($7, $2, $3, $8, 2147483647, null, null, null, now(), now()),
+        ($9, $10, $3, $4, 750, null, null, null, now(), now())`,
       [
         "test-e2e-shop-public-listing-primary-id",
         "test-e2e-shop-public-alpha-id",
@@ -344,14 +369,35 @@ export async function createE2ePublicShopFixtures(): Promise<{
         verifiedGameVersionId,
         "test-e2e-shop-public-listing-alternate-id",
         inventory.alternateCurrency.id,
+        "test-e2e-shop-public-listing-beta-id",
+        "test-e2e-shop-public-beta-id",
+      ]
+    );
+
+    // A legacy free-text Shop source remains intentionally distinct from
+    // the structured ShopListings. The public Item page must preserve it
+    // because no explicit relation proves that the records are equivalent.
+    await client.query(
+      `insert into "AcquisitionSource"
+        ("id", "itemId", "type", "locationId", "sourceLabel", "notes",
+         "createdAt", "updatedAt")
+       values ($1, $2, 'NPC_OR_SHOP', $3, $4, $5, now(), now())`,
+      [
+        "test-e2e-shop-public-legacy-source-id",
+        inventory.item.id,
+        "test-e2e-shop-location-id",
+        "Legacy Traveling Merchant",
+        "Legacy source retained alongside structured sales.",
       ]
     );
   });
 
   return {
     shop,
+    secondShop,
     emptyShop,
     location,
+    emptyLocation,
     region,
     item: { name: inventory.item.name, slug: E2E_SHOP_ITEM_SLUG_PREFIX },
     primaryCurrency: { name: inventory.primaryCurrency.name },

@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { prisma } from "@/lib/db";
 import { formatPublicVerification } from "@/lib/public-verification";
 import { normalizeSearchQuery } from "@/lib/search/global-search";
+import { formatInventoryListingCount } from "@/lib/shops/public-shop";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +22,6 @@ export const metadata: Metadata = {
 type ShopsPageProps = {
   searchParams: Promise<{ q?: string | string[] }>;
 };
-
-function describeInventoryCount(count: number): string {
-  return count === 1 ? "1 inventory listing" : `${count} inventory listings`;
-}
 
 export default async function ShopsPage({ searchParams }: ShopsPageProps) {
   const { q } = await searchParams;
@@ -104,7 +101,7 @@ export default async function ShopsPage({ searchParams }: ShopsPageProps) {
               const verification = formatPublicVerification(shop);
               const details = [
                 shop.location.name,
-                describeInventoryCount(shop._count.listings),
+                formatInventoryListingCount(shop._count.listings),
                 ...(verification ? [verification] : []),
               ].join(" · ");
               const description = shop.description
