@@ -128,7 +128,7 @@ test("the active destination's icon and label both turn gold; keyboard focus sta
     return { outlineStyle: style.outlineStyle, outlineColor: style.outlineColor };
   });
   expect(outlineStyle).toBe("solid");
-  expect(outlineColor).toBe("rgb(250, 204, 21)");
+  expect(outlineColor).toBe("rgb(195, 154, 75)");
 });
 
 test("the sidebar persists across admin sections and marks the active one", async ({

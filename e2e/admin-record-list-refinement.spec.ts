@@ -42,11 +42,11 @@ import {
 const PNG_FIXTURE = path.join(__dirname, "fixtures", "tiny-valid.png");
 
 // The one gold accent the whole admin surface shares
-// (--color-accent: #facc15), as Chromium resolves it. Matches the
+// (--color-accent: #c39a4b), as Chromium resolves it. Matches the
 // existing pattern in admin-visual-consistency.spec.ts — the only
 // exact-color assertions in this suite are against a flat token value,
 // never an anti-aliased or blended surface.
-const GOLD_ACCENT_RGB = "rgb(250, 204, 21)";
+const GOLD_ACCENT_RGB = "rgb(195, 154, 75)";
 
 // Chromium's computed value for a fully transparent background.
 const TRANSPARENT = "rgba(0, 0, 0, 0)";

@@ -13,7 +13,7 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-const GOLD_ACCENT_RGB = "rgb(250, 204, 21)";
+const GOLD_ACCENT_RGB = "rgb(195, 154, 75)";
 const OLD_PURPLE_ACCENT_RGB = "rgb(139, 92, 246)";
 
 // Browser error hygiene: any uncaught page error fails the test. Serial

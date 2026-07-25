@@ -4,14 +4,14 @@
    focus, button variants) can live in real CSS — inline style objects
    cannot express :hover/:focus-visible. Keep both files in sync. */
 :root {
-  --color-background: #0f172a;
-  --color-surface: #111827;
-  --color-surface-soft: #1f2937;
-  --color-border: #334155;
-  --color-text: #f8fafc;
-  --color-text-muted: #cbd5e1;
-  --color-accent: #facc15;
-  --color-accent-soft: #fde68a;
+  --color-background: #111514;
+  --color-surface: #171b19;
+  --color-surface-soft: #1c201e;
+  --color-border: #3a3528;
+  --color-text: #eee7d8;
+  --color-text-muted: #aaa69c;
+  --color-accent: #c39a4b;
+  --color-accent-soft: #d8b562;
   --color-success: #22c55e;
   --color-warning: #f97316;
   --color-danger: #ef4444;
@@ -1392,7 +1392,7 @@ select:focus-visible {
   color: var(--color-text);
   font-size: 12px;
   line-height: 1.45;
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 .form-input {
@@ -1829,7 +1829,7 @@ input[type="checkbox"] {
 
    The artwork is scenic SIDE FRAMING, not a wallpaper behind the
    application: .admin-content-inner (below) now owns its own fully
-   opaque dark navy background, so this element only needs to remain
+   opaque dark charcoal background, so this element only needs to remain
    visible in the GUTTERS either side of that box — the earlier heavy
    central radial darkening was removed entirely (it existed only to
    protect text that now sits inside an opaque box regardless, and its
@@ -1841,10 +1841,10 @@ input[type="checkbox"] {
    Layered front-to-back — CSS paints the FIRST item in a comma-separated
    background-image list closest to the viewer:
      1. (frontmost) a flat, light, uniform wash — just enough to keep the
-        sunset from feeling disconnected from the dark navy application
+        sunset from feeling disconnected from the dark charcoal application
         beside it, never strong enough to muddy the scenery.
      2. the artwork itself, covering the shell without distortion.
-     3. (backmost) background-color: dark navy fallback/base, and what
+     3. (backmost) background-color: dark charcoal fallback/base, and what
         shows if the image ever fails to load.
 
    background-size: cover on the image layer never distorts (uniform
@@ -1859,8 +1859,9 @@ input[type="checkbox"] {
    (not the document), so a tall scrolled-through form never drags the
    artwork past its own edge and exposes a seam. */
 .admin-shell {
-  /* Visual Pass sub-slice 2: an admin-only charcoal/slate palette,
-     scoped entirely to this one element that wraps every admin route.
+  /* The admin workspace uses a slightly denser version of the shared
+     charcoal palette, scoped entirely to this one element that wraps
+     every admin route.
      Every existing admin component already reads its colors through
      these same custom properties, so overriding them here alone
      reskins the whole admin surface with no component changes — public
@@ -1870,9 +1871,9 @@ input[type="checkbox"] {
      gold identity, the readable danger red, and the existing muted-
      green success/current treatment already match the approved
      direction and remain shared with the public site. */
-  --color-background: #0d1420;
-  --color-surface: #141d29;
-  --color-surface-soft: #1b2633;
+  --color-background: #0f1312;
+  --color-surface: #151917;
+  --color-surface-soft: #1a1e1c;
   /* Admin Editor Section Redesign pass: one more step up the same
      tonal progression above (background -> surface -> surface-soft),
      for EditorSection's own inner cards specifically. --color-surface-
@@ -1885,9 +1886,9 @@ input[type="checkbox"] {
      which read as almost no contrast at all once actually screenshotted
      at real admin viewport sizes. This dedicated, slightly lighter tier
      restores a genuinely visible (still restrained — no new hue, same
-     blue-gray family) card distinction against .admin-editor-surface. */
-  --color-surface-raised: #222f3d;
-  --color-border: #2b3948;
+     charcoal family) card distinction against .admin-editor-surface. */
+  --color-surface-raised: #202421;
+  --color-border: #383328;
   /* Admin UI Corrections pass: the ONE definition of .admin-frame's own
      resolved width, shared with the success toast's fixed-position
      centering math further down (search --admin-frame-width) — a single
@@ -1899,7 +1900,7 @@ input[type="checkbox"] {
   min-height: 100vh;
   background-color: var(--color-background);
   background-image:
-    linear-gradient(rgba(8, 13, 26, 0.2), rgba(8, 13, 26, 0.2)),
+    linear-gradient(rgba(10, 13, 12, 0.2), rgba(10, 13, 12, 0.2)),
     url("/images/admin/admin-shell-background.webp");
   background-repeat: no-repeat, no-repeat;
   background-position: center, center;
@@ -2376,7 +2377,7 @@ input[type="checkbox"] {
    Ultrawide Editor Sizing pass: width: fit-content (capped at 100%) was
    the original rule, but at ultrawide viewports .admin-workspace-main
    can grow to ~1700px while the surface hugged only its form's own
-   ~560-680px content — leaving a large, arbitrary navy gap between the
+   ~560-680px content — leaving a large, arbitrary dark gap between the
    surface's own right edge and the context rail, so the form read as a
    small card stranded inside a huge column. width: 100% instead lets
    the surface's own background/border fill the ENTIRE main-column width
@@ -2907,7 +2908,7 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(2, 6, 23, 0.62);
+  background: rgba(6, 8, 7, 0.62);
 }
 
 .admin-modal {
@@ -2917,7 +2918,7 @@ input[type="checkbox"] {
   border: 1px solid color-mix(in srgb, var(--color-border) 45%, var(--color-accent));
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.6);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
 .admin-modal-title {
@@ -3745,7 +3746,7 @@ input[type="checkbox"] {
 .shop-inventory-row-title {
   max-width: 100%;
   margin: 0;
-  color: var(--color-gold);
+  color: var(--color-accent);
   font-size: 1.125rem;
   line-height: 1.35;
   font-weight: 700;
