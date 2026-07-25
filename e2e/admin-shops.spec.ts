@@ -210,7 +210,8 @@ test("Shop Inventory supports validation, alternative Currencies, verification, 
     await page.setViewportSize(viewport);
     await page.reload();
     const inventoryForm = page.locator("form.shop-inventory-form");
-    const listing = page.locator(".shop-inventory-row:visible").first();
+    const visibleListings = page.locator(".shop-inventory-row:visible");
+    const listing = visibleListings.first();
     const listingTitle = listing.getByRole("heading", {
       name: fixtures.item.name,
       level: 3,
@@ -221,21 +222,33 @@ test("Shop Inventory supports validation, alternative Currencies, verification, 
       const form = document.querySelector<HTMLElement>(
         "form.shop-inventory-form"
       );
-      const card = document.querySelector<HTMLElement>(
-        ".shop-inventory-row:not([hidden])"
+      const list = document.querySelector<HTMLElement>(".shop-inventory-list");
+      const cards = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          ".shop-inventory-row:not([hidden])"
+        )
       );
-      const title = card?.querySelector<HTMLElement>(
+      const title = cards[0]?.querySelector<HTMLElement>(
         ".shop-inventory-row-title"
       );
       const surface = document.querySelector<HTMLElement>(
         ".admin-editor-surface"
       );
-      if (!form || !card || !title || !surface) {
+      if (!form || !list || cards.length !== 2 || !title || !surface) {
         throw new Error("Inventory layout elements were not rendered.");
       }
 
       const formRect = form.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
+      const listRect = list.getBoundingClientRect();
+      const cardRects = cards.map((card) => {
+        const rect = card.getBoundingClientRect();
+        return {
+          top: rect.top,
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+        };
+      });
       const titleRect = title.getBoundingClientRect();
       const surfaceRect = surface.getBoundingClientRect();
       const surfaceStyle = getComputedStyle(surface);
@@ -244,24 +257,48 @@ test("Shop Inventory supports validation, alternative Currencies, verification, 
         viewportWidth: document.documentElement.clientWidth,
         contentWidth: document.documentElement.scrollWidth,
         formWidth: formRect.width,
-        cardWidth: cardRect.width,
+        listLeft: listRect.left,
+        listRight: listRect.right,
+        listWidth: listRect.width,
+        gridColumns: getComputedStyle(list).gridTemplateColumns.split(" "),
+        cards: cardRects,
         surfaceInnerWidth:
           surfaceRect.width -
           Number.parseFloat(surfaceStyle.paddingLeft) -
           Number.parseFloat(surfaceStyle.paddingRight) -
           Number.parseFloat(surfaceStyle.borderLeftWidth) -
           Number.parseFloat(surfaceStyle.borderRightWidth),
-        titleTopInset: titleRect.top - cardRect.top,
-        titleLeftInset: titleRect.left - cardRect.left,
+        titleTopInset: titleRect.top - cardRects[0].top,
+        titleLeftInset: titleRect.left - cardRects[0].left,
       };
     });
 
     await expect(inventoryForm).toBeVisible();
+    await expect(visibleListings).toHaveCount(2);
     expect(layout.contentWidth).toBeLessThanOrEqual(layout.viewportWidth);
-    expect(Math.abs(layout.cardWidth - layout.formWidth)).toBeLessThan(2);
+    expect(Math.abs(layout.listWidth - layout.formWidth)).toBeLessThan(2);
     expect(Math.abs(layout.formWidth - layout.surfaceInnerWidth)).toBeLessThan(2);
     expect(layout.titleTopInset).toBeGreaterThanOrEqual(19);
     expect(layout.titleLeftInset).toBeGreaterThanOrEqual(19);
+
+    if (viewport.width >= 2400) {
+      expect(layout.gridColumns).toHaveLength(2);
+      expect(Math.abs(layout.cards[0].top - layout.cards[1].top)).toBeLessThan(
+        1
+      );
+      expect(layout.cards[1].left).toBeGreaterThan(layout.cards[0].right);
+      expect(Math.abs(layout.cards[0].width - layout.cards[1].width)).toBeLessThan(
+        1
+      );
+      expect(Math.abs(layout.cards[0].left - layout.listLeft)).toBeLessThan(1);
+      expect(Math.abs(layout.cards[1].right - layout.listRight)).toBeLessThan(1);
+    } else {
+      expect(layout.gridColumns).toHaveLength(1);
+      for (const card of layout.cards) {
+        expect(Math.abs(card.left - layout.listLeft)).toBeLessThan(1);
+        expect(Math.abs(card.right - layout.listRight)).toBeLessThan(1);
+      }
+    }
   }
 
   // Structured listings protect the Shop from deletion until Inventory is

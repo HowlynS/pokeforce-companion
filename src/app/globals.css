@@ -3594,6 +3594,13 @@ input[type="checkbox"] {
   flex: 0 0 auto;
 }
 
+.shop-inventory-list {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
 .shop-inventory-row {
   width: 100%;
   min-width: 0;
@@ -3677,6 +3684,12 @@ input[type="checkbox"] {
 
 .shop-inventory-verification .form-field {
   max-width: 420px;
+}
+
+@media (min-width: 2400px) {
+  .shop-inventory-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1699px) {

@@ -175,27 +175,30 @@ export function ShopInventoryEditor({
         </button>
       </div>
 
-      {rows.map((row, index) => {
-        const active = activeKeys.has(row.key);
-        const visible =
-          row.existing || active || (row.key.startsWith("new-") && usedNewKeys.has(row.key));
-        const pendingRemoval = visible && !active;
-        const label =
-          row.initial?.itemName ??
-          `New listing ${Math.max(1, index - listings.length + 1)}`;
+      <div className="shop-inventory-list">
+        {rows.map((row, index) => {
+          const active = activeKeys.has(row.key);
+          const visible =
+            row.existing ||
+            active ||
+            (row.key.startsWith("new-") && usedNewKeys.has(row.key));
+          const pendingRemoval = visible && !active;
+          const label =
+            row.initial?.itemName ??
+            `New listing ${Math.max(1, index - listings.length + 1)}`;
 
-        const headingId = `${row.key}-heading`;
+          const headingId = `${row.key}-heading`;
 
-        return (
-          <section
-            key={row.key}
-            className={
-              "shop-inventory-row" +
-              (pendingRemoval ? " shop-inventory-row--removed" : "")
-            }
-            aria-labelledby={headingId}
-            hidden={!visible}
-          >
+          return (
+            <section
+              key={row.key}
+              className={
+                "shop-inventory-row" +
+                (pendingRemoval ? " shop-inventory-row--removed" : "")
+              }
+              aria-labelledby={headingId}
+              hidden={!visible}
+            >
             <input type="hidden" name="listingRowKey" value={row.key} />
             <input
               type="hidden"
@@ -324,9 +327,10 @@ export function ShopInventoryEditor({
                 </button>
               ) : null}
             </div>
-          </section>
-        );
-      })}
+            </section>
+          );
+        })}
+      </div>
 
       {activeCount === 0 ? (
         <div className="empty-state">
