@@ -36,6 +36,9 @@ model GameVersion {
   verifiedAcquisitionSources AcquisitionSource[]
   verifiedRecipes            Recipe[]
   verifiedProfessions        Profession[]
+  verifiedCurrencies         Currency[]
+  verifiedShops              Shop[]
+  verifiedShopListings       ShopListing[]
   createdAt                  DateTime            @default(now())
   updatedAt                  DateTime            @updatedAt
 }
@@ -65,6 +68,7 @@ model Item {
   recipesProduced       Recipe[]            @relation("RecipeResultItem")
   recipeIngredients     RecipeIngredient[]
   acquisitionSources    AcquisitionSource[]
+  shopListings          ShopListing[]
   // Gameplay-verification metadata: stamped only by the explicit opt-in
   // "Mark gameplay data as verified for the current game version." action;
   // normal edits never touch these fields. The version reference is
@@ -167,6 +171,7 @@ model Location {
   image                 String?
   accessNote            String?
   acquisitionSources    AcquisitionSource[]
+  shops                 Shop[]
   // Gameplay-verification metadata: stamped only by the explicit opt-in
   // "Mark gameplay data as verified for the current game version." action;
   // normal edits never touch these fields. The version reference is
@@ -179,6 +184,73 @@ model Location {
   updatedAt             DateTime            @updatedAt
 
   @@index([parentId])
+  @@index([verifiedGameVersionId])
+}
+
+// A game-native price denomination. Currencies are contextual reference
+// data only: no exchange rates, balances, precision rules, or wallet state.
+model Currency {
+  id                    String        @id @default(cuid())
+  name                  String
+  slug                  String        @unique
+  symbol                String?
+  description           String?
+  image                 String?
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion?  @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  shopListings          ShopListing[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([verifiedGameVersionId])
+}
+
+// A fixed in-game shop. Every Shop belongs to the most specific known
+// Location; inventory is represented by independently verified listings.
+model Shop {
+  id                    String        @id @default(cuid())
+  name                  String
+  slug                  String        @unique
+  description           String?
+  image                 String?
+  locationId            String
+  location              Location      @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion?  @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  listings              ShopListing[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([locationId])
+  @@index([verifiedGameVersionId])
+}
+
+// One fixed sale offer: one Shop sells one Item for one positive integer
+// amount of one Currency. Positive-price validation lives at the action /
+// service boundary, matching the repository's existing schema conventions.
+model ShopListing {
+  id                    String       @id @default(cuid())
+  shopId                String
+  shop                  Shop         @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  itemId                String
+  item                  Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  currencyId            String
+  currency              Currency     @relation(fields: [currencyId], references: [id], onDelete: Restrict)
+  priceAmount           Int
+  notes                 String?
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  // This unique index also serves queries beginning with shopId, so a
+  // separate single-column shopId index would be redundant.
+  @@unique([shopId, itemId, currencyId])
+  @@index([itemId])
+  @@index([currencyId])
   @@index([verifiedGameVersionId])
 }
 

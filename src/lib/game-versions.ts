@@ -288,21 +288,43 @@ export async function setCurrentGameVersion(
 /**
  * How many verification stamps reference this version, across every
  * verifiable model (Item, Location, AcquisitionSource, Recipe,
- * Profession). Category is deliberately absent — it has no verification.
+ * Profession, Currency, Shop, and ShopListing). Category is deliberately
+ * absent because it has no verification.
  */
 export async function countVerificationReferences(
   db: GameDataClient,
   id: string
 ): Promise<number> {
-  const [items, locations, sources, recipes, professions] = await Promise.all([
+  const [
+    items,
+    locations,
+    sources,
+    recipes,
+    professions,
+    currencies,
+    shops,
+    shopListings,
+  ] = await Promise.all([
     db.item.count({ where: { verifiedGameVersionId: id } }),
     db.location.count({ where: { verifiedGameVersionId: id } }),
     db.acquisitionSource.count({ where: { verifiedGameVersionId: id } }),
     db.recipe.count({ where: { verifiedGameVersionId: id } }),
     db.profession.count({ where: { verifiedGameVersionId: id } }),
+    db.currency.count({ where: { verifiedGameVersionId: id } }),
+    db.shop.count({ where: { verifiedGameVersionId: id } }),
+    db.shopListing.count({ where: { verifiedGameVersionId: id } }),
   ]);
 
-  return items + locations + sources + recipes + professions;
+  return (
+    items +
+    locations +
+    sources +
+    recipes +
+    professions +
+    currencies +
+    shops +
+    shopListings
+  );
 }
 
 export type DeleteGameVersionResult =

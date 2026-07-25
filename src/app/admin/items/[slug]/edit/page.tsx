@@ -13,7 +13,7 @@ import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
-  describeItemRecipeReferences,
+  describeItemDeletionReferences,
   itemCanDelete,
   itemEditorTabs,
   normalizeItemSearchQuery,
@@ -88,6 +88,7 @@ export default async function EditItemPage({
             acquisitionSources: true,
             recipesProduced: true,
             recipeIngredients: true,
+            shopListings: true,
           },
         },
       },
@@ -109,9 +110,11 @@ export default async function EditItemPage({
   // badge query already loads rather than a second query.
   const resultCount = item._count.recipesProduced;
   const ingredientCount = item._count.recipeIngredients;
+  const shopListingCount = item._count.shopListings;
   const canDeleteItem = itemCanDelete({
     recipesProduced: resultCount,
     recipeIngredients: ingredientCount,
+    shopListings: shopListingCount,
   });
 
   // Current version first, then newest — the same ordering the
@@ -218,11 +221,18 @@ export default async function EditItemPage({
               Used as a recipe ingredient: {ingredientCount}
             </p>
 
+            <p className="text-muted">
+              Referenced by shop listings: {shopListingCount}
+            </p>
+
             {!canDeleteItem ? (
               <p className="text-danger">
-                This item cannot be deleted because it is used as{" "}
-                {describeItemRecipeReferences(resultCount, ingredientCount)}.
-                Remove or reassign those recipe references first.
+                This item cannot be deleted because it is referenced by{" "}
+                {describeItemDeletionReferences({
+                  recipesProduced: resultCount,
+                  recipeIngredients: ingredientCount,
+                  shopListings: shopListingCount,
+                })}. Remove those references first.
               </p>
             ) : null}
           </DangerZonePanel>

@@ -8,6 +8,7 @@ import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   LOCATION_LIST_PATH,
   describeLinkedLocations,
+  describeLinkedShops,
   locationCanDelete,
   normalizeLocationSearchQuery,
   withLocationSearchQuery,
@@ -37,7 +38,7 @@ export default async function DeleteLocationPage({
     where: { slug },
     include: {
       parent: true,
-      _count: { select: { children: true } },
+      _count: { select: { children: true, shops: true } },
     },
   });
 
@@ -46,7 +47,8 @@ export default async function DeleteLocationPage({
   }
 
   const childCount = location._count.children;
-  const canDelete = locationCanDelete(childCount);
+  const shopCount = location._count.shops;
+  const canDelete = locationCanDelete(childCount, shopCount);
 
   // The delete confirmation inside the Location workspace, mirroring the
   // edit route exactly: the record list marks this location selected and
@@ -76,10 +78,16 @@ export default async function DeleteLocationPage({
 
           {error ? (
             <p role="alert" className="banner banner-error">
-              {error === "linked_locations"
-                ? `This location cannot be deleted because it is assigned to ${describeLinkedLocations(
-                    childCount
-                  )}.`
+              {[
+                "linked_locations",
+                "linked_shops",
+                "linked_dependencies",
+              ].includes(error)
+                ? `This location cannot be deleted while it is referenced by ${
+                    childCount > 0 ? describeLinkedLocations(childCount) : ""
+                  }${childCount > 0 && shopCount > 0 ? " and " : ""}${
+                    shopCount > 0 ? describeLinkedShops(shopCount) : ""
+                  }.`
                 : "Something went wrong."}
             </p>
           ) : null}
@@ -110,11 +118,15 @@ export default async function DeleteLocationPage({
 
         <p className="text-muted">Sub-locations: {childCount}</p>
 
+        <p className="text-muted">Shops: {shopCount}</p>
+
         {!canDelete ? (
           <p className="text-danger">
-            This location cannot be deleted because it is assigned to{" "}
-            {describeLinkedLocations(childCount)}. Move or remove those
-            sub-locations first.
+            This location cannot be deleted while it is referenced by{" "}
+            {childCount > 0 ? describeLinkedLocations(childCount) : null}
+            {childCount > 0 && shopCount > 0 ? " and " : null}
+            {shopCount > 0 ? describeLinkedShops(shopCount) : null}. Move or
+            remove those dependent records first.
           </p>
         ) : null}
       </DeleteRecordDialog>

@@ -4,7 +4,7 @@ import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import {
-  describeItemRecipeReferences,
+  describeItemDeletionReferences,
   itemCanDelete,
   itemEditHref,
   normalizeItemSearchQuery,
@@ -36,7 +36,13 @@ export default async function DeleteItemPage({
     where: { slug },
     include: {
       category: true,
-      _count: { select: { recipesProduced: true, recipeIngredients: true } },
+      _count: {
+        select: {
+          recipesProduced: true,
+          recipeIngredients: true,
+          shopListings: true,
+        },
+      },
     },
   });
 
@@ -46,9 +52,11 @@ export default async function DeleteItemPage({
 
   const resultCount = item._count.recipesProduced;
   const ingredientCount = item._count.recipeIngredients;
+  const shopListingCount = item._count.shopListings;
   const canDelete = itemCanDelete({
     recipesProduced: resultCount,
     recipeIngredients: ingredientCount,
+    shopListings: shopListingCount,
   });
 
   // Inside the Item workspace (Slice 9B.4): the record list marks the
@@ -79,10 +87,17 @@ export default async function DeleteItemPage({
 
           {error ? (
             <p role="alert" className="banner banner-error">
-              {error === "linked_recipes"
-                ? `This item cannot be deleted because it is used as ${describeItemRecipeReferences(
-                    resultCount,
-                    ingredientCount
+              {[
+                "linked_recipes",
+                "linked_shop_listings",
+                "linked_dependencies",
+              ].includes(error)
+                ? `This item cannot be deleted because it is referenced by ${describeItemDeletionReferences(
+                    {
+                      recipesProduced: resultCount,
+                      recipeIngredients: ingredientCount,
+                      shopListings: shopListingCount,
+                    }
                   )}.`
                 : "Something went wrong."}
             </p>
@@ -113,11 +128,18 @@ export default async function DeleteItemPage({
           Used as a recipe ingredient: {ingredientCount}
         </p>
 
+        <p className="text-muted">
+          Referenced by shop listings: {shopListingCount}
+        </p>
+
         {!canDelete ? (
           <p className="text-danger">
-            This item cannot be deleted because it is used as{" "}
-            {describeItemRecipeReferences(resultCount, ingredientCount)}. Remove
-            or reassign those recipe references first.
+            This item cannot be deleted because it is referenced by{" "}
+            {describeItemDeletionReferences({
+              recipesProduced: resultCount,
+              recipeIngredients: ingredientCount,
+              shopListings: shopListingCount,
+            })}. Remove those references first.
           </p>
         ) : null}
       </DeleteRecordDialog>

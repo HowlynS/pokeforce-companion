@@ -356,7 +356,13 @@ export async function deleteItemAction(formData: FormData) {
     where: { id },
     include: {
       category: true,
-      _count: { select: { recipesProduced: true, recipeIngredients: true } },
+      _count: {
+        select: {
+          recipesProduced: true,
+          recipeIngredients: true,
+          shopListings: true,
+        },
+      },
     },
   });
 
@@ -370,6 +376,11 @@ export async function deleteItemAction(formData: FormData) {
   // in others) must be clear before deletion is allowed.
   const resultCount = item._count.recipesProduced;
   const ingredientCount = item._count.recipeIngredients;
+  const shopListingCount = item._count.shopListings;
+
+  if (shopListingCount > 0) {
+    redirect(`${confirmPath}?error=linked_shop_listings`);
+  }
 
   if (resultCount > 0 || ingredientCount > 0) {
     redirect(`${confirmPath}?error=linked_recipes`);
@@ -385,9 +396,9 @@ export async function deleteItemAction(formData: FormData) {
       redirect("/admin/items?error=missing_item");
     }
     if (isForeignKeyError(error)) {
-      // A recipe reference appeared between the count check and the delete
-      // call; treat it the same as a normal blocked deletion.
-      redirect(`${confirmPath}?error=linked_recipes`);
+      // A recipe or ShopListing reference appeared between the count check
+      // and delete call; the database kept the Item intact.
+      redirect(`${confirmPath}?error=linked_dependencies`);
     }
     throw error;
   }

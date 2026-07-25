@@ -156,13 +156,18 @@ export function itemEditorTabs(
  * the in-editor delete dialog (Admin Polish Pass 1, Part 5) — one function
  * so the two surfaces can never drift apart. An Item cannot be deleted
  * while any recipe still references it, either as its result or as one of
- * its ingredients.
+ * its ingredients, or while a ShopListing still sells it.
  */
 export function itemCanDelete(counts: {
   recipesProduced: number;
   recipeIngredients: number;
+  shopListings?: number;
 }): boolean {
-  return counts.recipesProduced === 0 && counts.recipeIngredients === 0;
+  return (
+    counts.recipesProduced === 0 &&
+    counts.recipeIngredients === 0 &&
+    (counts.shopListings ?? 0) === 0
+  );
 }
 
 /** The human-readable reason an Item is blocked from deletion — shared by
@@ -188,4 +193,30 @@ export function describeItemRecipeReferences(
   }
 
   return parts.join(" and ");
+}
+
+export function describeItemShopListingReferences(count: number): string {
+  return count === 1 ? "1 shop listing" : `${count} shop listings`;
+}
+
+export function describeItemDeletionReferences(counts: {
+  recipesProduced: number;
+  recipeIngredients: number;
+  shopListings: number;
+}): string {
+  const references: string[] = [];
+  const recipeReferences = describeItemRecipeReferences(
+    counts.recipesProduced,
+    counts.recipeIngredients
+  );
+
+  if (recipeReferences) {
+    references.push(recipeReferences);
+  }
+
+  if (counts.shopListings > 0) {
+    references.push(describeItemShopListingReferences(counts.shopListings));
+  }
+
+  return references.join(" and ");
 }

@@ -409,7 +409,7 @@ export async function deleteLocationAction(formData: FormData) {
 
   const location = await prisma.location.findUnique({
     where: { id },
-    include: { _count: { select: { children: true } } },
+    include: { _count: { select: { children: true, shops: true } } },
   });
 
   if (!location) {
@@ -424,6 +424,10 @@ export async function deleteLocationAction(formData: FormData) {
     redirect(`${confirmPath}?error=linked_locations`);
   }
 
+  if (location._count.shops > 0) {
+    redirect(`${confirmPath}?error=linked_shops`);
+  }
+
   const locationSlug = location.slug;
 
   try {
@@ -433,9 +437,9 @@ export async function deleteLocationAction(formData: FormData) {
       redirect("/admin/locations?error=missing_location");
     }
     if (isForeignKeyError(error)) {
-      // A child location appeared between the count check and the delete
-      // call; treat it the same as a normal blocked deletion.
-      redirect(`${confirmPath}?error=linked_locations`);
+      // A child Location or Shop appeared between the count check and the
+      // delete call; the database kept this Location intact.
+      redirect(`${confirmPath}?error=linked_dependencies`);
     }
     throw error;
   }

@@ -16,6 +16,7 @@ import { LocationWorkspace } from "@/components/admin/location-workspace";
 import {
   LOCATION_LIST_PATH,
   describeLinkedLocations,
+  describeLinkedShops,
   hierarchyRelationshipCount,
   locationCanDelete,
   locationEditorTabs,
@@ -92,7 +93,13 @@ export default async function EditLocationPage({
     where: { slug },
     include: {
       verifiedGameVersion: true,
-      _count: { select: { children: true, acquisitionSources: true } },
+      _count: {
+        select: {
+          children: true,
+          acquisitionSources: true,
+          shops: true,
+        },
+      },
     },
   });
 
@@ -126,7 +133,8 @@ export default async function EditLocationPage({
   // delete-confirmation caption would cut against that page's explicit
   // "no parent/children relations" design.
   const childCount = location._count.children;
-  const canDeleteLocation = locationCanDelete(childCount);
+  const shopCount = location._count.shops;
+  const canDeleteLocation = locationCanDelete(childCount, shopCount);
 
   // The General edit route inside the Location workspace (Slice 9F.1),
   // composed from the shared editor primitives (Slice 9F.2). Slice 9F.3
@@ -207,11 +215,15 @@ export default async function EditLocationPage({
 
             <p className="text-muted">Sub-locations: {childCount}</p>
 
+            <p className="text-muted">Shops: {shopCount}</p>
+
             {!canDeleteLocation ? (
               <p className="text-danger">
-                This location cannot be deleted because it is assigned to{" "}
-                {describeLinkedLocations(childCount)}. Move or remove those
-                sub-locations first.
+                This location cannot be deleted while it is referenced by{" "}
+                {childCount > 0 ? describeLinkedLocations(childCount) : null}
+                {childCount > 0 && shopCount > 0 ? " and " : null}
+                {shopCount > 0 ? describeLinkedShops(shopCount) : null}. Move
+                or remove those dependent records first.
               </p>
             ) : null}
           </DangerZonePanel>

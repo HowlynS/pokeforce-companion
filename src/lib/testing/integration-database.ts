@@ -26,6 +26,8 @@ export const INTEGRATION_TEST_SLUG_PREFIX = "test-integration-";
 export const RELATIONS_TEST_SLUG_PREFIX = "test-relations-";
 export const LOCATIONS_TEST_SLUG_PREFIX = "test-integration-location-";
 export const ACQUISITION_TEST_SLUG_PREFIX = "test-acquisition-";
+export const SHOP_TEST_SLUG_PREFIX = "test-shop-";
+export const SHOP_TEST_VERSION_NAME_PREFIX = "test-shop-version-";
 // Rows (of every verifiable model) created by the game-version integration
 // suite carry this slug prefix.
 export const GAME_VERSION_ROWS_SLUG_PREFIX = "test-gameversion-";
@@ -211,6 +213,59 @@ export async function deleteAcquisitionTestRecords(): Promise<number> {
   });
 
   return sources.count + items.count + locations.count + professions.count;
+}
+
+/**
+ * Deletes only Milestone 11 Shop-domain integration fixtures. Restrictive
+ * relations require the explicit dependency order below: listings first,
+ * then Shops, then Items/Currencies/Locations, and finally Game Versions.
+ */
+export async function deleteShopTestRecords(): Promise<number> {
+  if (
+    SHOP_TEST_SLUG_PREFIX.length < 5 ||
+    SHOP_TEST_VERSION_NAME_PREFIX.length < 5
+  ) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: a shop-test prefix is suspiciously short."
+    );
+  }
+
+  const prisma = await getVerifiedTestPrisma();
+  const slugPrefix = { startsWith: SHOP_TEST_SLUG_PREFIX };
+
+  const listings = await prisma.shopListing.deleteMany({
+    where: {
+      OR: [
+        { shop: { slug: slugPrefix } },
+        { item: { slug: slugPrefix } },
+        { currency: { slug: slugPrefix } },
+      ],
+    },
+  });
+  const shops = await prisma.shop.deleteMany({
+    where: { slug: slugPrefix },
+  });
+  const items = await prisma.item.deleteMany({
+    where: { slug: slugPrefix },
+  });
+  const currencies = await prisma.currency.deleteMany({
+    where: { slug: slugPrefix },
+  });
+  const locations = await prisma.location.deleteMany({
+    where: { slug: slugPrefix },
+  });
+  const versions = await prisma.gameVersion.deleteMany({
+    where: { name: { startsWith: SHOP_TEST_VERSION_NAME_PREFIX } },
+  });
+
+  return (
+    listings.count +
+    shops.count +
+    items.count +
+    currencies.count +
+    locations.count +
+    versions.count
+  );
 }
 
 /**
