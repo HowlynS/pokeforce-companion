@@ -34,23 +34,24 @@ test.describe("homepage", () => {
     // The page title is the one h1; the shell's brand lockup is a home
     // link (containing the product name and tagline), not a heading.
     await expect(
-      page.getByRole("heading", { level: 1, name: "PokeForce Companion" })
+      page.getByRole("heading", {
+        level: 1,
+        name: "The Guild’s Knowledge. Yours to Use.",
+      })
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Crafting Wiki Companion/ })
+      page.getByRole("link", { name: /Merchants Codex.*PokeForce Companion/ })
     ).toHaveAttribute("href", "/");
     await expect(page.getByRole("main")).toBeVisible();
     await expect(
       page.getByRole("navigation", { name: "Main navigation" })
     ).toBeVisible();
     await expect(page.getByRole("contentinfo")).toContainText(
-      "PokeForce Companion"
+      "Merchants Codex"
     );
   });
 
-  // Slice 10E: Locations became a public resource-card entry point on the
-  // homepage's own grid, matching the existing Items/Recipes/Professions/
-  // Categories cards.
+  // Locations remains one of the five focused landing-page resource cards.
   test("the Locations card is visible and links to /locations", async ({
     page,
   }) => {
@@ -74,7 +75,6 @@ const NAV_TARGETS = [
   { label: "Items", path: "/items", heading: "Items" },
   { label: "Recipes", path: "/recipes", heading: "Recipes" },
   { label: "Professions", path: "/professions", heading: "Professions" },
-  { label: "Categories", path: "/categories", heading: "Categories" },
   { label: "Locations", path: "/locations", heading: "Locations" },
   { label: "Shops", path: "/shops", heading: "Shops" },
 ] as const;

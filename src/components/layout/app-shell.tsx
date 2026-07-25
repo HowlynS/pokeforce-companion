@@ -3,20 +3,34 @@ import { MainNav } from "@/components/layout/main-nav";
 
 type AppShellProps = {
   children: React.ReactNode;
+  landing?: boolean;
 };
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, landing = false }: AppShellProps) {
+  const containerClassName =
+    "public-site-container" +
+    (landing ? " public-site-container--landing" : "");
+
   return (
-    <div className="public-site-shell">
+    <div
+      className={
+        "public-site-shell" +
+        (landing ? " public-site-shell--landing" : "")
+      }
+    >
+      {landing ? (
+        <div className="public-landing-background" aria-hidden="true" />
+      ) : null}
+
       <header className="public-site-header">
-        <div className="public-site-container public-site-header-inner">
+        <div className={`${containerClassName} public-site-header-inner`}>
           {/* This text lockup is deliberately isolated from the shell layout:
               a later approved logo can replace its contents without changing
               the home link, header spacing, or page heading hierarchy. */}
           <Link href="/" className="public-site-brand">
-            <span className="public-site-brand-name">PokeForce Companion</span>
+            <span className="public-site-brand-name">Merchants Codex</span>
             <span className="public-site-brand-description">
-              Crafting Wiki Companion
+              PokeForce Companion
             </span>
           </Link>
 
@@ -24,16 +38,19 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
 
-      <main className="public-site-container public-site-main">{children}</main>
+      <main className={`${containerClassName} public-site-main`}>
+        {children}
+      </main>
 
       <footer className="public-site-footer">
-        <div className="public-site-container public-site-footer-inner">
+        <div className={`${containerClassName} public-site-footer-inner`}>
           <span className="public-site-footer-brand">
-            PokeForce Companion
+            {landing ? "Merchants Codex" : "PokeForce Companion"}
           </span>
           <span>
-            A crafting wiki companion for items, recipes, professions,
-            categories, locations, and shops.
+            {landing
+              ? "A crafting and trading reference for items, recipes, professions, locations, and shops."
+              : "A crafting wiki companion for items, recipes, professions, categories, locations, and shops."}
           </span>
         </div>
       </footer>
