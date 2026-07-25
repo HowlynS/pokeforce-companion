@@ -131,6 +131,11 @@ export const E2E_GAME_VERSION_NAME_PREFIX = "test-e2e-gv-";
 // over the same rows.
 export const E2E_GAME_VERSION_ITEM_SLUG_PREFIX = "test-e2e-gv-item";
 
+// Covers every Currency created by the Milestone 11 admin browser tests.
+// ShopListing rows are removed first so restrictive Currency deletion is
+// respected even when a failed test strands a dependency.
+export const E2E_CURRENCY_SLUG_PREFIX = "test-e2e-currency";
+
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
 ): Promise<T> {
@@ -149,6 +154,39 @@ async function withVerifiedDatabase<T>(
   } finally {
     await client.end();
   }
+}
+
+export async function deleteE2eTestCurrencyRecords(): Promise<number> {
+  if (E2E_CURRENCY_SLUG_PREFIX.length < 5) {
+    throw new Error("Refusing Currency cleanup: prefix is too short.");
+  }
+
+  return withVerifiedDatabase(async (client) => {
+    const listings = await client.query(
+      `delete from "ShopListing"
+       where "currencyId" in (
+         select "id" from "Currency" where "slug" like $1
+       )`,
+      [`${E2E_CURRENCY_SLUG_PREFIX}%`]
+    );
+    const currencies = await client.query(
+      `delete from "Currency" where "slug" like $1`,
+      [`${E2E_CURRENCY_SLUG_PREFIX}%`]
+    );
+    return (listings.rowCount ?? 0) + (currencies.rowCount ?? 0);
+  });
+}
+
+export async function countE2eTestCurrencyRecords(): Promise<number> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query<{ count: string }>(
+      `select count(*)::text as count
+       from "Currency"
+       where "slug" like $1`,
+      [`${E2E_CURRENCY_SLUG_PREFIX}%`]
+    );
+    return Number(result.rows[0]?.count ?? 0);
+  });
 }
 
 // Defense in depth for every Category helper below: a broad delete or a

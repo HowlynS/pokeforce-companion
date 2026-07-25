@@ -57,6 +57,14 @@ export const ADMIN_SUCCESS_MESSAGES = {
   source_deleted: "Acquisition source deleted",
 
   game_version_deleted: "Game version deleted",
+
+  currency_created: "Currency created",
+  currency_saved: "Currency saved",
+  currency_saved_image_cleanup:
+    "Currency saved, but the previous image file could not be removed from storage and may need manual cleanup in Supabase.",
+  currency_deleted: "Currency deleted",
+  currency_deleted_image_cleanup:
+    "Currency deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
 } as const;
 
 export type AdminSuccessCode = keyof typeof ADMIN_SUCCESS_MESSAGES;

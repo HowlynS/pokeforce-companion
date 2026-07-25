@@ -1,5 +1,6 @@
-// The ONE definition of the admin shell's primary navigation: exactly
-// these seven destinations, in this order. Game Versions was promoted
+// The ONE definition of the admin shell's navigation. Game Versions and
+// Currencies are settings-scoped supporting resources after the primary
+// content destinations. Game Versions was promoted
 // from a secondary settings-only destination to a full primary entry
 // (Visual Pass sub-slice 8) — it stays last, after Locations. Acquisition
 // Sources remains deliberately absent (contextual, managed under its
@@ -18,7 +19,8 @@ export type AdminNavIcon =
   | "professions"
   | "categories"
   | "locations"
-  | "gameVersions";
+  | "gameVersions"
+  | "currencies";
 
 export type AdminNavItem = {
   label: string;
@@ -37,6 +39,11 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
     label: "Game Versions",
     href: "/admin/settings/game-versions",
     icon: "gameVersions",
+  },
+  {
+    label: "Currencies",
+    href: "/admin/settings/currencies",
+    icon: "currencies",
   },
 ] as const;
 

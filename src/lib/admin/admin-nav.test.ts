@@ -13,7 +13,7 @@ function activeHrefFor(pathname: string): string | null {
 }
 
 describe("ADMIN_NAV_ITEMS", () => {
-  it("contains exactly the seven approved primary destinations, in order", () => {
+  it("contains the approved destinations in order", () => {
     expect(ADMIN_NAV_ITEMS.map((item) => item.label)).toEqual([
       "Dashboard",
       "Items",
@@ -22,6 +22,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "Categories",
       "Locations",
       "Game Versions",
+      "Currencies",
     ]);
     expect(ADMIN_NAV_ITEMS.map((item) => item.href)).toEqual([
       "/admin",
@@ -31,6 +32,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "/admin/categories",
       "/admin/locations",
       "/admin/settings/game-versions",
+      "/admin/settings/currencies",
     ]);
     expect(ADMIN_NAV_ITEMS.map((item) => item.icon)).toEqual([
       "dashboard",
@@ -40,6 +42,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "categories",
       "locations",
       "gameVersions",
+      "currencies",
     ]);
   });
 
@@ -51,9 +54,10 @@ describe("ADMIN_NAV_ITEMS", () => {
       expect(labels.some((label) => label.includes(excluded))).toBe(false);
     }
     expect(hrefs.some((href) => href.includes("sources"))).toBe(false);
-    // Game Versions is now the ONE approved settings-scoped primary entry.
+    // Supporting resources share the settings route group.
     expect(hrefs.filter((href) => href.includes("settings"))).toEqual([
       "/admin/settings/game-versions",
+      "/admin/settings/currencies",
     ]);
   });
 });
@@ -110,6 +114,13 @@ describe("isAdminNavItemActive", () => {
     );
     expect(activeHrefFor("/admin/settings/game-versions/abc123/delete")).toBe(
       "/admin/settings/game-versions"
+    );
+
+    expect(activeHrefFor("/admin/settings/currencies")).toBe(
+      "/admin/settings/currencies"
+    );
+    expect(activeHrefFor("/admin/settings/currencies/pokeyen/edit")).toBe(
+      "/admin/settings/currencies"
     );
   });
 

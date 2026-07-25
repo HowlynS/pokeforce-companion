@@ -134,3 +134,23 @@ export async function isLocationSlugTaken(
 
   return existing !== null;
 }
+
+/** Currency twin of isItemSlugTaken — identical rule and guarantees. */
+export async function isCurrencySlugTaken(
+  db: GameDataClient,
+  rawSlug: string,
+  excludeId?: string
+): Promise<boolean> {
+  const slug = normalizeRecordSlugCandidate(rawSlug);
+
+  if (slug === "") {
+    return false;
+  }
+
+  const existing = await db.currency.findFirst({
+    where: { slug, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+    select: { id: true },
+  });
+
+  return existing !== null;
+}

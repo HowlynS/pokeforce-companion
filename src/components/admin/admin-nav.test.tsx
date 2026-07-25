@@ -8,7 +8,7 @@
 // every approved destination renders with its label and a decorative
 // icon, aria-current follows the mocked pathname exactly as
 // isAdminNavItemActive (already unit-tested in admin-nav.test.ts)
-// prescribes, and hrefs stay exactly the six approved targets.
+// prescribes, and hrefs stay exactly the approved targets.
 
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -29,6 +29,7 @@ const APPROVED_LABELS = [
   "Categories",
   "Locations",
   "Game Versions",
+  "Currencies",
 ];
 
 const APPROVED_HREFS = [
@@ -39,6 +40,7 @@ const APPROVED_HREFS = [
   "/admin/categories",
   "/admin/locations",
   "/admin/settings/game-versions",
+  "/admin/settings/currencies",
 ];
 
 function renderNav(pathname: string): string {
@@ -60,7 +62,7 @@ function svgTags(html: string): string[] {
 }
 
 describe("AdminNav structure and labels", () => {
-  it("renders exactly the seven approved labels", () => {
+  it("renders exactly the approved labels", () => {
     const html = renderNav("/admin/some-unmatched-route");
 
     for (const label of APPROVED_LABELS) {
@@ -85,11 +87,11 @@ describe("AdminNav structure and labels", () => {
 });
 
 describe("AdminNav decorative icons", () => {
-  it("renders exactly seven decorative, aria-hidden icons, each inside a link", () => {
+  it("renders one decorative, aria-hidden icon inside every link", () => {
     const html = renderNav("/admin/some-unmatched-route");
 
     const svgs = svgTags(html);
-    expect(svgs).toHaveLength(7);
+    expect(svgs).toHaveLength(APPROVED_LABELS.length);
     for (const svg of svgs) {
       expect(svg).toContain('class="lucide');
       expect(svg).toContain("admin-nav-icon");

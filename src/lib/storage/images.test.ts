@@ -116,6 +116,7 @@ describe("generateImageObjectPath", () => {
     ["professions", "image/jpeg", /^professions\/[0-9a-f-]+\.jpg$/],
     ["recipes", "image/webp", /^recipes\/[0-9a-f-]+\.webp$/],
     ["categories", "image/png", /^categories\/[0-9a-f-]+\.png$/],
+    ["currencies", "image/webp", /^currencies\/[0-9a-f-]+\.webp$/],
   ] as const)(
     "builds a %s path with the controlled extension for %s",
     (resourceType, mimeType, expectedPattern) => {
@@ -150,6 +151,7 @@ describe("generateImageObjectPath", () => {
       ["professions", "image/jpeg"],
       ["recipes", "image/webp"],
       ["categories", "image/png"],
+      ["currencies", "image/webp"],
     ] as const) {
       const path = generateImageObjectPath(resourceType, mimeType);
 
@@ -164,6 +166,7 @@ describe("isSafeImageObjectPath", () => {
     "professions/abc-123.jpg",
     "recipes/xyz-789.webp",
     "categories/def-456.png",
+    "currencies/currency-123.webp",
   ])("accepts the generated-shape path %j", (path) => {
     expect(isSafeImageObjectPath(path)).toBe(true);
   });

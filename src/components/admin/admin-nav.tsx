@@ -17,6 +17,7 @@ import {
   History,
   LayoutDashboard,
   MapPinned,
+  Coins,
   Package,
   ScrollText,
   Shapes,
@@ -38,6 +39,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   categories: Shapes,
   locations: MapPinned,
   gameVersions: History,
+  currencies: Coins,
 };
 
 export function AdminNav() {
