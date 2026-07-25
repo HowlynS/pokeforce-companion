@@ -184,13 +184,16 @@ export function ShopInventoryEditor({
           row.initial?.itemName ??
           `New listing ${Math.max(1, index - listings.length + 1)}`;
 
+        const headingId = `${row.key}-heading`;
+
         return (
-          <fieldset
+          <section
             key={row.key}
             className={
               "shop-inventory-row" +
               (pendingRemoval ? " shop-inventory-row--removed" : "")
             }
+            aria-labelledby={headingId}
             hidden={!visible}
           >
             <input type="hidden" name="listingRowKey" value={row.key} />
@@ -212,7 +215,9 @@ export function ShopInventoryEditor({
               }}
             />
 
-            <legend>{label}</legend>
+            <h3 id={headingId} className="shop-inventory-row-title">
+              {label}
+            </h3>
 
             {pendingRemoval ? (
               <div className="shop-inventory-removal-state" role="status">
@@ -319,7 +324,7 @@ export function ShopInventoryEditor({
                 </button>
               ) : null}
             </div>
-          </fieldset>
+          </section>
         );
       })}
 

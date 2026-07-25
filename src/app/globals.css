@@ -3566,8 +3566,10 @@ input[type="checkbox"] {
 }
 
 /* ---- Shop Inventory -------------------------------------------------- */
-.shop-inventory-form.form-grid-responsive {
+.shop-inventory-form.form-grid-wide.form-grid-responsive {
   grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: none;
 }
 
 .shop-inventory-toolbar {
@@ -3593,6 +3595,7 @@ input[type="checkbox"] {
 }
 
 .shop-inventory-row {
+  width: 100%;
   min-width: 0;
   margin: 0;
   padding: 20px;
@@ -3603,17 +3606,30 @@ input[type="checkbox"] {
   gap: 18px;
 }
 
-.shop-inventory-row > legend {
+.shop-inventory-row-title {
   max-width: 100%;
-  padding: 0 8px;
+  margin: 0;
   color: var(--color-gold);
+  font-size: 1.125rem;
+  line-height: 1.35;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
 .shop-inventory-row--removed {
-  border-style: dashed;
-  opacity: 0.72;
+  border-color: color-mix(in srgb, var(--color-border) 50%, var(--color-danger));
+  background: color-mix(
+    in srgb,
+    var(--color-surface-raised) 88%,
+    var(--color-danger)
+  );
+}
+
+.shop-inventory-row--removed > .shop-inventory-row-title,
+.shop-inventory-row--removed > .shop-inventory-row-fields,
+.shop-inventory-row--removed > .form-field,
+.shop-inventory-row--removed > .shop-inventory-row-footer {
+  opacity: 0.68;
 }
 
 .shop-inventory-removal-state {

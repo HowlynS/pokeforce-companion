@@ -140,6 +140,9 @@ test("Shop Inventory supports validation, alternative Currencies, verification, 
   let rows = page.locator(".shop-inventory-row:visible");
   await expect(rows).toHaveCount(1);
   let row = rows.first();
+  await expect(
+    row.getByRole("heading", { name: "New listing 1", level: 3 })
+  ).toBeVisible();
   await selectAdminOption(
     row.getByRole("combobox", { name: "Item", exact: true }),
     fixtures.item.name
@@ -206,11 +209,59 @@ test("Shop Inventory supports validation, alternative Currencies, verification, 
   ]) {
     await page.setViewportSize(viewport);
     await page.reload();
-    const widths = await page.evaluate(() => ({
-      viewport: document.documentElement.clientWidth,
-      content: document.documentElement.scrollWidth,
-    }));
-    expect(widths.content).toBeLessThanOrEqual(widths.viewport);
+    const inventoryForm = page.locator("form.shop-inventory-form");
+    const listing = page.locator(".shop-inventory-row:visible").first();
+    const listingTitle = listing.getByRole("heading", {
+      name: fixtures.item.name,
+      level: 3,
+    });
+    await expect(listingTitle).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const form = document.querySelector<HTMLElement>(
+        "form.shop-inventory-form"
+      );
+      const card = document.querySelector<HTMLElement>(
+        ".shop-inventory-row:not([hidden])"
+      );
+      const title = card?.querySelector<HTMLElement>(
+        ".shop-inventory-row-title"
+      );
+      const surface = document.querySelector<HTMLElement>(
+        ".admin-editor-surface"
+      );
+      if (!form || !card || !title || !surface) {
+        throw new Error("Inventory layout elements were not rendered.");
+      }
+
+      const formRect = form.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      const titleRect = title.getBoundingClientRect();
+      const surfaceRect = surface.getBoundingClientRect();
+      const surfaceStyle = getComputedStyle(surface);
+
+      return {
+        viewportWidth: document.documentElement.clientWidth,
+        contentWidth: document.documentElement.scrollWidth,
+        formWidth: formRect.width,
+        cardWidth: cardRect.width,
+        surfaceInnerWidth:
+          surfaceRect.width -
+          Number.parseFloat(surfaceStyle.paddingLeft) -
+          Number.parseFloat(surfaceStyle.paddingRight) -
+          Number.parseFloat(surfaceStyle.borderLeftWidth) -
+          Number.parseFloat(surfaceStyle.borderRightWidth),
+        titleTopInset: titleRect.top - cardRect.top,
+        titleLeftInset: titleRect.left - cardRect.left,
+      };
+    });
+
+    await expect(inventoryForm).toBeVisible();
+    expect(layout.contentWidth).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(Math.abs(layout.cardWidth - layout.formWidth)).toBeLessThan(2);
+    expect(Math.abs(layout.formWidth - layout.surfaceInnerWidth)).toBeLessThan(2);
+    expect(layout.titleTopInset).toBeGreaterThanOrEqual(19);
+    expect(layout.titleLeftInset).toBeGreaterThanOrEqual(19);
   }
 
   // Structured listings protect the Shop from deletion until Inventory is
@@ -283,12 +334,68 @@ test("Shop Inventory supports validation, alternative Currencies, verification, 
 
   // Existing rows are never deleted immediately: removal is visibly staged,
   // undoable, and only persists with the next save.
+  const activeCardVisual = await rows.nth(0).evaluate((card) => {
+    const rect = card.getBoundingClientRect();
+    const style = getComputedStyle(card);
+    return {
+      x: rect.x,
+      width: rect.width,
+      backgroundColor: style.backgroundColor,
+      borderColor: style.borderColor,
+    };
+  });
   await rows
     .nth(0)
     .getByRole("button", { name: /Remove Test E2E Shop Item/ })
     .click();
-  await expect(rows.nth(0)).toContainText("Pending removal");
-  await rows.nth(0).getByRole("button", { name: "Undo removal" }).click();
+  const removedRow = rows.nth(0);
+  const undoRemoval = removedRow.getByRole("button", { name: "Undo removal" });
+  await expect(removedRow).toContainText("Pending removal");
+  await expect(removedRow).toHaveClass(/shop-inventory-row--removed/);
+  await expect(undoRemoval).toBeVisible();
+  await expect(undoRemoval).toBeEnabled();
+  const removedCardVisual = await removedRow.evaluate((card) => {
+    const rect = card.getBoundingClientRect();
+    const style = getComputedStyle(card);
+    const title = card.querySelector<HTMLElement>(".shop-inventory-row-title");
+    const undo = Array.from(card.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Undo removal")
+    );
+    const removalState = card.querySelector<HTMLElement>(
+      ".shop-inventory-removal-state"
+    );
+    if (!title || !undo || !removalState) {
+      throw new Error("Pending-removal controls were not rendered.");
+    }
+
+    return {
+      x: rect.x,
+      width: rect.width,
+      backgroundColor: style.backgroundColor,
+      borderColor: style.borderColor,
+      cardOpacity: style.opacity,
+      titleOpacity: getComputedStyle(title).opacity,
+      undoOpacity: getComputedStyle(undo).opacity,
+      removalColor: getComputedStyle(removalState).color,
+      dangerColor: getComputedStyle(document.documentElement)
+        .getPropertyValue("--color-danger")
+        .trim(),
+    };
+  });
+  expect(removedCardVisual.backgroundColor).not.toBe(
+    activeCardVisual.backgroundColor
+  );
+  expect(removedCardVisual.borderColor).not.toBe(activeCardVisual.borderColor);
+  expect(Math.abs(removedCardVisual.x - activeCardVisual.x)).toBeLessThan(1);
+  expect(Math.abs(removedCardVisual.width - activeCardVisual.width)).toBeLessThan(
+    1
+  );
+  expect(removedCardVisual.cardOpacity).toBe("1");
+  expect(Number.parseFloat(removedCardVisual.titleOpacity)).toBeLessThan(1);
+  expect(removedCardVisual.undoOpacity).toBe("1");
+  expect(removedCardVisual.removalColor).toBe("rgb(239, 68, 68)");
+  expect(removedCardVisual.dangerColor).toBe("#ef4444");
+  await undoRemoval.click();
   await expect(rows.nth(0)).not.toContainText("Pending removal");
   await rows
     .nth(0)
