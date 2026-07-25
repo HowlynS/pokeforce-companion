@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isShopNameTaken } from "@/lib/admin/record-name";
-import { SHOP_LIST_PATH, shopCanDelete } from "@/lib/admin/shop-workspace";
+import {
+  SHOP_LIST_PATH,
+  shopCanDelete,
+  shopInventoryHref,
+} from "@/lib/admin/shop-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import { resolveVerificationStamp } from "@/lib/game-versions";
@@ -18,6 +22,7 @@ import {
   validateImageFile,
 } from "@/lib/storage/images";
 import { parseShopInput } from "@/lib/validation/shop";
+import { parseShopInventoryInput } from "@/lib/validation/shop-listing";
 
 function getSubmittedImageFile(formData: FormData): File | null {
   const value = formData.get("image");
@@ -38,6 +43,20 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
     );
     return false;
   }
+}
+
+function withInventoryResult(
+  slug: string,
+  query: string,
+  kind: "error" | "success",
+  code: string
+): string {
+  const params = new URLSearchParams();
+  if (query) {
+    params.set("q", query);
+  }
+  params.set(kind, code);
+  return `${shopInventoryHref(slug)}?${params.toString()}`;
 }
 
 export async function createShopAction(formData: FormData) {
@@ -202,6 +221,198 @@ export async function updateShopAction(formData: FormData) {
     cleanupFailed
       ? `${destination}?success=shop_saved_image_cleanup`
       : `${destination}?success=shop_saved`
+  );
+}
+
+export async function updateShopInventoryAction(formData: FormData) {
+  await requireAdminUser();
+
+  const shopId = String(formData.get("shopId") ?? "").trim();
+  const query = String(formData.get("q") ?? "").trim();
+
+  if (!shopId) {
+    redirect(`${SHOP_LIST_PATH}?error=missing_shop`);
+  }
+
+  const shop = await prisma.shop.findUnique({
+    where: { id: shopId },
+    include: {
+      location: { select: { slug: true } },
+      listings: {
+        select: {
+          id: true,
+          item: { select: { slug: true } },
+        },
+      },
+    },
+  });
+  if (!shop) {
+    redirect(`${SHOP_LIST_PATH}?error=missing_shop`);
+  }
+
+  const inventoryPath = shopInventoryHref(shop.slug);
+  const parsed = parseShopInventoryInput(formData);
+  if (!parsed.ok) {
+    redirect(
+      withInventoryResult(shop.slug, query, "error", parsed.error)
+    );
+  }
+
+  const submittedRowKeySet = new Set(parsed.value.rowKeys);
+  const existingById = new Map(
+    shop.listings.map((listing) => [listing.id, listing])
+  );
+
+  // Every existing listing rendered by this Shop must still be represented
+  // by its exact stable key, including staged removals. This prevents a
+  // truncated or cross-Shop form from silently replacing an incomplete set.
+  const existingRowsAreComplete = shop.listings.every((listing) =>
+    submittedRowKeySet.has(`existing-${listing.id}`)
+  );
+  const rowOwnershipIsValid = parsed.value.rows.every((row) => {
+    if (row.key.startsWith("existing-")) {
+      return (
+        row.listingId !== null &&
+        row.key === `existing-${row.listingId}` &&
+        existingById.has(row.listingId)
+      );
+    }
+    return row.listingId === null;
+  });
+
+  if (!existingRowsAreComplete || !rowOwnershipIsValid) {
+    redirect(
+      withInventoryResult(shop.slug, query, "error", "invalid_listing")
+    );
+  }
+
+  const itemIds = [...new Set(parsed.value.rows.map((row) => row.itemId))];
+  const currencyIds = [
+    ...new Set(parsed.value.rows.map((row) => row.currencyId)),
+  ];
+  const [items, currencies] = await Promise.all([
+    prisma.item.findMany({
+      where: { id: { in: itemIds } },
+      select: { id: true, slug: true },
+    }),
+    prisma.currency.findMany({
+      where: { id: { in: currencyIds } },
+      select: { id: true },
+    }),
+  ]);
+
+  if (items.length !== itemIds.length) {
+    redirect(
+      withInventoryResult(shop.slug, query, "error", "invalid_item")
+    );
+  }
+  if (currencies.length !== currencyIds.length) {
+    redirect(
+      withInventoryResult(shop.slug, query, "error", "invalid_currency")
+    );
+  }
+
+  const rowsWithVerification: Array<
+    (typeof parsed.value.rows)[number] & {
+      verification: {
+        verifiedAt: Date;
+        verifiedGameVersionId: string;
+      } | null;
+    }
+  > = [];
+  for (const row of parsed.value.rows) {
+    const verification = await resolveVerificationStamp(
+      prisma,
+      formData,
+      `${row.key}.`
+    );
+    if (verification.failed) {
+      redirect(
+        withInventoryResult(shop.slug, query, "error", verification.error)
+      );
+    }
+    rowsWithVerification.push({ ...row, verification: verification.stamp });
+  }
+
+  const retainedIds = new Set(
+    rowsWithVerification.flatMap((row) =>
+      row.listingId ? [row.listingId] : []
+    )
+  );
+  const removedIds = shop.listings
+    .map((listing) => listing.id)
+    .filter((id) => !retainedIds.has(id));
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (removedIds.length > 0) {
+        await tx.shopListing.deleteMany({
+          where: { shopId: shop.id, id: { in: removedIds } },
+        });
+      }
+
+      for (const row of rowsWithVerification) {
+        const data = {
+          itemId: row.itemId,
+          currencyId: row.currencyId,
+          priceAmount: row.priceAmount,
+          notes: row.notes,
+          ...(row.verification ?? {}),
+        };
+        if (row.listingId) {
+          await tx.shopListing.update({
+            where: { id: row.listingId, shopId: shop.id },
+            data,
+          });
+        } else {
+          await tx.shopListing.create({
+            data: { shopId: shop.id, ...data },
+          });
+        }
+      }
+
+      // Inventory is part of the Shop's authored content. Bumping updatedAt
+      // in the same transaction gives AdminFormGuard a new, authoritative
+      // draft baseline after the save-in-place redirect.
+      await tx.shop.update({
+        where: { id: shop.id },
+        data: { updatedAt: new Date() },
+      });
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      redirect(
+        withInventoryResult(shop.slug, query, "error", "duplicate_listing")
+      );
+    }
+    if (isMissingRecordError(error) || isForeignKeyError(error)) {
+      redirect(
+        withInventoryResult(shop.slug, query, "error", "relation_changed")
+      );
+    }
+    throw error;
+  }
+
+  revalidatePath(SHOP_LIST_PATH);
+  revalidatePath(inventoryPath);
+  revalidatePath(`/shops/${shop.slug}`);
+  revalidatePath(`/locations/${shop.location.slug}`);
+
+  const itemSlugs = new Set([
+    ...shop.listings.map((listing) => listing.item.slug),
+    ...items.map((item) => item.slug),
+  ]);
+  for (const itemSlug of itemSlugs) {
+    revalidatePath(`/items/${itemSlug}`);
+  }
+
+  redirect(
+    withInventoryResult(
+      shop.slug,
+      query,
+      "success",
+      "shop_inventory_saved"
+    )
   );
 }
 

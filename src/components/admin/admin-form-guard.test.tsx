@@ -20,6 +20,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => {} }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";

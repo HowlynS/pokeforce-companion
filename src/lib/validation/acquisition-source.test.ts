@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ACQUISITION_TYPES,
   ACQUISITION_TYPE_LABELS,
+  CREATABLE_ACQUISITION_TYPES,
   buildAcquisitionSourceCard,
   groupAcquisitionSourcesByType,
   groupObtainableItemsByType,
@@ -64,6 +65,14 @@ describe("ACQUISITION_TYPE_LABELS", () => {
 
   it("uses the required display wording for NPC or shop", () => {
     expect(ACQUISITION_TYPE_LABELS.NPC_OR_SHOP).toBe("NPC or shop");
+  });
+
+  it("keeps legacy NPC or shop rows valid but excludes the type from new creation", () => {
+    expect(ACQUISITION_TYPES).toContain("NPC_OR_SHOP");
+    expect(CREATABLE_ACQUISITION_TYPES).not.toContain("NPC_OR_SHOP");
+    expect(CREATABLE_ACQUISITION_TYPES).toHaveLength(
+      ACQUISITION_TYPES.length - 1
+    );
   });
 });
 

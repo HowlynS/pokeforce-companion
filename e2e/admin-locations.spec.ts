@@ -727,6 +727,7 @@ test("assigning a location's own descendant as its parent is rejected server-sid
         "A location cannot be its own parent or one of its own sub-locations.",
     })
   ).toBeVisible();
+  await page.getByRole("button", { name: "Discard draft" }).click();
   // The picker itself still excludes the ancestor from its own choices —
   // self-parenting was never even offerable. AdminSelect only renders its
   // options while open (portaled), so the picker is opened first; Escape

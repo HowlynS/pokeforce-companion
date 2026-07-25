@@ -24,8 +24,8 @@ describe("Shop workspace routes", () => {
     expect(normalizeShopSearchQuery("  supply ")).toBe("supply");
   });
 
-  it("keeps Inventory visible but disabled until its slice", () => {
-    expect(shopEditorTabs("shop", "", "general", 3, false)).toEqual([
+  it("keeps General and Inventory as real routes with the listing count", () => {
+    expect(shopEditorTabs("shop", "", "general", 3)).toEqual([
       {
         label: "General",
         href: "/admin/shops/shop/edit",
@@ -35,7 +35,6 @@ describe("Shop workspace routes", () => {
         label: "Inventory",
         href: "/admin/shops/shop/inventory",
         active: false,
-        disabled: true,
         count: 3,
       },
     ]);

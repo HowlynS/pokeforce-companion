@@ -137,6 +137,8 @@ export const E2E_GAME_VERSION_ITEM_SLUG_PREFIX = "test-e2e-gv-item";
 export const E2E_CURRENCY_SLUG_PREFIX = "test-e2e-currency";
 export const E2E_SHOP_SLUG_PREFIX = "test-e2e-shop";
 export const E2E_SHOP_LOCATION_SLUG_PREFIX = "test-e2e-shop-location";
+export const E2E_SHOP_ITEM_SLUG_PREFIX = "test-e2e-shop-item";
+export const E2E_SHOP_CURRENCY_SLUG_PREFIX = "test-e2e-shop-currency";
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -210,10 +212,56 @@ export async function createE2eShopLocation(): Promise<{
   });
 }
 
+export async function createE2eShopInventoryFixtures(): Promise<{
+  item: { id: string; name: string };
+  primaryCurrency: { id: string; name: string };
+  alternateCurrency: { id: string; name: string };
+}> {
+  await createE2eShopLocation();
+
+  const item = { id: "test-e2e-shop-item-id", name: "Test E2E Shop Item" };
+  const primaryCurrency = {
+    id: "test-e2e-shop-currency-primary-id",
+    name: "Test E2E Shop Pokéyen",
+  };
+  const alternateCurrency = {
+    id: "test-e2e-shop-currency-alternate-id",
+    name: "Test E2E Shop Runes",
+  };
+
+  return withVerifiedDatabase(async (client) => {
+    await client.query(
+      `insert into "Item" ("id", "slug", "name", "createdAt", "updatedAt")
+       values ($1, $2, $3, now(), now())
+       on conflict ("slug") do update set "name" = excluded."name"`,
+      [item.id, E2E_SHOP_ITEM_SLUG_PREFIX, item.name]
+    );
+    await client.query(
+      `insert into "Currency"
+        ("id", "slug", "name", "symbol", "createdAt", "updatedAt")
+       values
+        ($1, $2, $3, '₽', now(), now()),
+        ($4, $5, $6, null, now(), now())
+       on conflict ("slug") do update set "name" = excluded."name"`,
+      [
+        primaryCurrency.id,
+        `${E2E_SHOP_CURRENCY_SLUG_PREFIX}-primary`,
+        primaryCurrency.name,
+        alternateCurrency.id,
+        `${E2E_SHOP_CURRENCY_SLUG_PREFIX}-alternate`,
+        alternateCurrency.name,
+      ]
+    );
+    return { item, primaryCurrency, alternateCurrency };
+  });
+}
+
 export async function deleteE2eTestShopRecords(): Promise<number> {
   if (
     E2E_SHOP_SLUG_PREFIX.length < 5 ||
-    E2E_SHOP_LOCATION_SLUG_PREFIX.length < 5
+    E2E_SHOP_LOCATION_SLUG_PREFIX.length < 5 ||
+    E2E_SHOP_ITEM_SLUG_PREFIX.length < 5 ||
+    E2E_SHOP_CURRENCY_SLUG_PREFIX.length < 5
   ) {
     throw new Error("Refusing Shop cleanup: prefix is too short.");
   }
@@ -234,10 +282,20 @@ export async function deleteE2eTestShopRecords(): Promise<number> {
       `delete from "Location" where "slug" like $1`,
       [`${E2E_SHOP_LOCATION_SLUG_PREFIX}%`]
     );
+    const currencies = await client.query(
+      `delete from "Currency" where "slug" like $1`,
+      [`${E2E_SHOP_CURRENCY_SLUG_PREFIX}%`]
+    );
+    const items = await client.query(
+      `delete from "Item" where "slug" like $1`,
+      [`${E2E_SHOP_ITEM_SLUG_PREFIX}%`]
+    );
     return (
       (listings.rowCount ?? 0) +
       (shops.rowCount ?? 0) +
-      (locations.rowCount ?? 0)
+      (locations.rowCount ?? 0) +
+      (currencies.rowCount ?? 0) +
+      (items.rowCount ?? 0)
     );
   });
 }

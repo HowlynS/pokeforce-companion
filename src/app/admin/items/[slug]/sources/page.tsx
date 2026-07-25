@@ -19,8 +19,8 @@ import {
 import { prisma } from "@/lib/db";
 import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import {
-  ACQUISITION_TYPES,
   ACQUISITION_TYPE_LABELS,
+  CREATABLE_ACQUISITION_TYPES,
 } from "@/lib/validation/acquisition-source";
 import { createAcquisitionSourceAction } from "./actions";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
@@ -30,6 +30,8 @@ export const dynamic = "force-dynamic";
 const errorMessages: Record<string, string> = {
   missing_type: "Select an acquisition type.",
   invalid_type: "Select a valid acquisition type.",
+  shop_source_deprecated:
+    "New Shop sales must be added through a Shop's Inventory. Existing legacy NPC or shop sources remain editable.",
   invalid_location: "Select an existing location, or choose No location.",
   invalid_profession: "Select an existing profession, or choose No profession.",
   missing_item: "That item no longer exists.",
@@ -191,6 +193,13 @@ export default async function AdminItemSourcesPage({
 
         <div className="admin-editor-sections">
           <EditorSection title="Source" icon={SECTION_ICONS.source}>
+            <p className="banner">
+              Shop sales are now managed as structured listings under{" "}
+              <a href="/admin/shops" className="link-accent">
+                Shop Inventory
+              </a>
+              . Existing legacy NPC or shop sources remain available above.
+            </p>
             <label className="form-field form-field-narrow">
               <span className="form-field-label">Type</span>
               <AdminSelect
@@ -198,7 +207,7 @@ export default async function AdminItemSourcesPage({
                 required
                 defaultValue=""
                 placeholder="Select a type"
-                options={ACQUISITION_TYPES.map((type) => ({
+                options={CREATABLE_ACQUISITION_TYPES.map((type) => ({
                   value: type,
                   label: ACQUISITION_TYPE_LABELS[type],
                 }))}

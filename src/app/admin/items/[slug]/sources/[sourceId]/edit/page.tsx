@@ -38,6 +38,8 @@ const SOURCE_EDIT_FORM_ID = "acquisition-source-edit-form";
 const errorMessages: Record<string, string> = {
   missing_type: "Select an acquisition type.",
   invalid_type: "Select a valid acquisition type.",
+  shop_source_deprecated:
+    "New Shop sales must be added through a Shop's Inventory. Existing legacy NPC or shop sources remain editable.",
   invalid_location: "Select an existing location, or choose No location.",
   invalid_profession: "Select an existing profession, or choose No profession.",
   no_current_version:

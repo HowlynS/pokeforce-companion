@@ -112,13 +112,7 @@ export default async function EditShopPage({
           <EditorHeader eyebrow="Shop" title={shop.name} subtitle={shop.slug} />
           <EditorTabs
             label="Shop editor sections"
-            tabs={shopEditorTabs(
-              shop.slug,
-              query,
-              "general",
-              listingCount,
-              false
-            )}
+            tabs={shopEditorTabs(shop.slug, query, "general", listingCount)}
           />
           {errorMessage ? (
             <p role="alert" className="banner banner-error">

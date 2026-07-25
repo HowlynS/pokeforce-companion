@@ -67,6 +67,10 @@ export async function createAcquisitionSourceAction(formData: FormData) {
     redirect(`${sourcesPath}?error=${parsed.error}`);
   }
 
+  if (parsed.value.type === "NPC_OR_SHOP") {
+    redirect(`${sourcesPath}?error=shop_source_deprecated`);
+  }
+
   // The shared helper stamps the server's own clock and the database row
   // marked current when the form supplies no selection, or a
   // server-validated explicitly selected version — a nonexistent or
@@ -148,6 +152,13 @@ export async function updateAcquisitionSourceAction(formData: FormData) {
 
   if (!parsed.ok) {
     redirect(`${editPath ?? sourcesPath}?error=${parsed.error}`);
+  }
+
+  if (
+    parsed.value.type === "NPC_OR_SHOP" &&
+    existing.type !== "NPC_OR_SHOP"
+  ) {
+    redirect(`${editPath ?? sourcesPath}?error=shop_source_deprecated`);
   }
 
   // The shared helper stamps the server's own clock and the database row

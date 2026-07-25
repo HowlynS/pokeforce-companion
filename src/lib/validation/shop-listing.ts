@@ -14,6 +14,25 @@ export type ShopListingParseResult =
   | { ok: true; value: ShopListingInput }
   | { ok: false; error: ShopListingValidationError };
 
+export const MAX_SUBMITTED_SHOP_INVENTORY_ROWS = 100;
+
+export type SubmittedShopInventoryRow = ShopListingInput & {
+  key: string;
+  listingId: string | null;
+};
+
+export type ShopInventoryValidationError =
+  | ShopListingValidationError
+  | "duplicate_listing"
+  | "invalid_inventory";
+
+export type ShopInventoryParseResult =
+  | {
+      ok: true;
+      value: { rowKeys: string[]; rows: SubmittedShopInventoryRow[] };
+    }
+  | { ok: false; error: ShopInventoryValidationError };
+
 export function parseShopListingInput(
   formData: FormData,
   fieldPrefix = ""
@@ -70,4 +89,49 @@ export function hasDuplicateShopListingCombinations(
 ): boolean {
   const keys = listings.map(shopListingCombinationKey);
   return new Set(keys).size !== keys.length;
+}
+
+const SAFE_ROW_KEY = /^(existing|new)-[a-zA-Z0-9_-]+$/;
+
+/**
+ * Parses the dynamic Inventory form without trusting its client-supplied row
+ * keys. Inactive rows are staged removals (or unused blank slots) and are
+ * intentionally omitted from the returned replacement set.
+ */
+export function parseShopInventoryInput(
+  formData: FormData
+): ShopInventoryParseResult {
+  const rowKeys = formData
+    .getAll("listingRowKey")
+    .map((value) => String(value).trim());
+
+  if (
+    rowKeys.length > MAX_SUBMITTED_SHOP_INVENTORY_ROWS ||
+    new Set(rowKeys).size !== rowKeys.length ||
+    rowKeys.some((key) => !SAFE_ROW_KEY.test(key))
+  ) {
+    return { ok: false, error: "invalid_inventory" };
+  }
+
+  const rows: SubmittedShopInventoryRow[] = [];
+  for (const key of rowKeys) {
+    if (formData.get(`${key}.active`) !== "1") {
+      continue;
+    }
+
+    const parsed = parseShopListingInput(formData, `${key}.`);
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    const listingId =
+      String(formData.get(`${key}.listingId`) ?? "").trim() || null;
+    rows.push({ key, listingId, ...parsed.value });
+  }
+
+  if (hasDuplicateShopListingCombinations(rows)) {
+    return { ok: false, error: "duplicate_listing" };
+  }
+
+  return { ok: true, value: { rowKeys, rows } };
 }

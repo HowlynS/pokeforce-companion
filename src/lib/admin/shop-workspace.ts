@@ -35,8 +35,7 @@ export function shopEditorTabs(
   slug: string,
   query: string,
   active: "general" | "inventory",
-  listingCount: number,
-  inventoryEnabled = false
+  listingCount: number
 ): EditorTab[] {
   return [
     {
@@ -48,7 +47,6 @@ export function shopEditorTabs(
       label: "Inventory",
       href: shopInventoryHref(slug, query),
       active: active === "inventory",
-      disabled: !inventoryEnabled,
       count: listingCount,
     },
   ];

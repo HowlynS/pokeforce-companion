@@ -70,6 +70,7 @@ export const ADMIN_SUCCESS_MESSAGES = {
   shop_saved: "Shop saved",
   shop_saved_image_cleanup:
     "Shop saved, but the previous image file could not be removed from storage and may need manual cleanup in Supabase.",
+  shop_inventory_saved: "Shop inventory saved",
   shop_deleted: "Shop deleted",
   shop_deleted_image_cleanup:
     "Shop deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",

@@ -37,11 +37,21 @@ type GameVersionVerificationControlsProps = {
       editor's aside column). Omitted when rendered as a normal form
       descendant, exactly as before. */
   formId?: string;
+  /** Prefixes the two submitted field names for repeated, independently
+      verifiable rows (for example Shop Inventory listings). Existing
+      resource forms omit it and keep the canonical unprefixed names. */
+  fieldPrefix?: string;
+  /** Human-readable noun used by the checkbox copy. */
+  recordNoun?: string;
+  disabled?: boolean;
 };
 
 export function GameVersionVerificationControls({
   gameVersions,
   formId,
+  fieldPrefix = "",
+  recordNoun,
+  disabled = false,
 }: GameVersionVerificationControlsProps) {
   const currentVersion = gameVersions.find((version) => version.isCurrent);
 
@@ -69,14 +79,20 @@ export function GameVersionVerificationControls({
   const selectedVersion = gameVersions.find(
     (version) => version.id === selectedId
   );
-  const checkboxLabel = selectedVersion
-    ? `Mark as verified for ${selectedVersion.name}`
-    : "Mark as verified for the selected version";
+  const checkboxLabel = recordNoun
+    ? selectedVersion
+      ? `Mark this ${recordNoun} as verified for ${selectedVersion.name}`
+      : `Mark this ${recordNoun} as verified for the selected version`
+    : selectedVersion
+      ? `Mark as verified for ${selectedVersion.name}`
+      : "Mark as verified for the selected version";
 
   return (
     <>
       <label className="form-field">
-        <span className="form-field-label">Verify this record for</span>
+        <span className="form-field-label">
+          Verify this {recordNoun ?? "record"} for
+        </span>
         {/* Defaults to the current version when one exists; historical
             versions stay selectable. When nothing is current the explicit
             placeholder stays selected — a historical version is never
@@ -84,9 +100,10 @@ export function GameVersionVerificationControls({
             the server-side current-version rule (which then fails with a
             clear message precisely because nothing is current). */}
         <AdminSelect
-          name="verifiedGameVersionId"
+          name={`${fieldPrefix}verifiedGameVersionId`}
           defaultValue={currentVersion?.id ?? ""}
           formId={formId}
+          disabled={disabled}
           placeholder={!currentVersion ? "Select a game version…" : undefined}
           onValueChange={setSelectedId}
           options={gameVersions.map((version) => ({
@@ -102,7 +119,12 @@ export function GameVersionVerificationControls({
           server-validated selection, and an unchecked box leaves existing
           verification metadata untouched no matter what the picker says. */}
       <label className="form-checkbox-field">
-        <input type="checkbox" name="markVerified" form={formId} />
+        <input
+          type="checkbox"
+          name={`${fieldPrefix}markVerified`}
+          form={formId}
+          disabled={disabled}
+        />
         <span>{checkboxLabel}</span>
       </label>
     </>

@@ -3383,3 +3383,134 @@ input[type="checkbox"] {
     grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
   }
 }
+
+/* ---- Shop Inventory -------------------------------------------------- */
+.shop-inventory-form.form-grid-responsive {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.shop-inventory-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.shop-inventory-toolbar h2,
+.shop-inventory-toolbar p {
+  margin: 0;
+}
+
+.shop-inventory-toolbar .btn,
+.shop-inventory-removal-state .btn,
+.shop-inventory-row-footer > .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.shop-inventory-row {
+  min-width: 0;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  display: grid;
+  gap: 18px;
+}
+
+.shop-inventory-row > legend {
+  max-width: 100%;
+  padding: 0 8px;
+  color: var(--color-gold);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.shop-inventory-row--removed {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.shop-inventory-removal-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--color-danger);
+}
+
+.shop-inventory-row-fields {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) minmax(220px, 1.2fr) minmax(150px, 0.7fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.shop-inventory-row-fields > *,
+.shop-inventory-row-footer > *,
+.shop-inventory-verification {
+  min-width: 0;
+}
+
+.shop-inventory-row textarea {
+  resize: vertical;
+}
+
+.shop-inventory-row-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: end;
+  padding-top: 2px;
+}
+
+.shop-inventory-verification {
+  display: grid;
+  gap: 10px;
+}
+
+.shop-inventory-verification p {
+  margin: 0;
+}
+
+.shop-inventory-verification .form-field {
+  max-width: 420px;
+}
+
+@media (max-width: 1699px) {
+  .shop-inventory-row-fields {
+    grid-template-columns: minmax(220px, 1.5fr) minmax(190px, 1fr);
+  }
+
+  .shop-inventory-row-fields > :last-child {
+    grid-column: 1 / -1;
+    max-width: 240px;
+  }
+}
+
+@media (max-width: 980px) {
+  .shop-inventory-toolbar,
+  .shop-inventory-removal-state {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shop-inventory-row-fields,
+  .shop-inventory-row-footer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shop-inventory-row-fields > :last-child {
+    grid-column: auto;
+    max-width: none;
+  }
+
+  .shop-inventory-row-footer > .btn {
+    justify-self: start;
+  }
+}

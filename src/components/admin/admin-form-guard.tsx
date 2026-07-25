@@ -29,7 +29,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Save } from "lucide-react";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { SaveShortcutLabel } from "@/components/admin/save-shortcut-label";
@@ -129,6 +129,7 @@ export function AdminFormGuard({
 }: AdminFormGuardProps) {
   const { pending } = useFormStatus();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const rootRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -136,6 +137,7 @@ export function AdminFormGuard({
   const excludeRef = useRef<readonly string[]>(excludeFields);
   const draftKeyRef = useRef<string | undefined>(draftKey);
   const serverUpdatedAtRef = useRef<string | null | undefined>(serverUpdatedAt);
+  const successFlashRef = useRef(searchParams.get("success"));
 
   const dirtyRef = useRef(false);
   const submittingRef = useRef(false);
@@ -157,6 +159,7 @@ export function AdminFormGuard({
   // The push-buffer helper, defined inside the mount effect and exposed here
   // so restoreDraft (which makes the form dirty) can arm the buffer.
   const pushSentinelRef = useRef<() => void>(() => {});
+  const flushSubmitDraftRef = useRef<() => void>(() => {});
 
   const [dirty, setDirty] = useState(false);
   const [pendingNav, setPendingNav] = useState<PendingNavigation | null>(null);
@@ -186,6 +189,7 @@ export function AdminFormGuard({
 
     const exclude = excludeRef.current;
     const key = draftKeyRef.current;
+    const mountedPathname = window.location.pathname;
 
     const currentSnapshot = () =>
       snapshotFormData(new FormData(form), { exclude });
@@ -332,6 +336,7 @@ export function AdminFormGuard({
       submittingRef.current = true;
       writeDraftNow(true);
     };
+    flushSubmitDraftRef.current = onSubmit;
 
     // --- Draft recovery on load -----------------------------------------
     if (key) {
@@ -340,7 +345,13 @@ export function AdminFormGuard({
         const errorParam = new URLSearchParams(window.location.search).get(
           "error"
         );
-        if (draft.submittedAt && !errorParam) {
+        if (successFlashRef.current) {
+          // A namespaced success flash is authoritative: the action
+          // completed and redirected here. AdminSuccessToast may already
+          // have removed it from the address bar through history.replaceState,
+          // but useSearchParams retains the render's original value.
+          removeDraft(key);
+        } else if (draft.submittedAt && !errorParam) {
           // The submit that wrote this draft succeeded (we are not on a
           // validation-error reload) — discard silently, no prompt.
           removeDraft(key);
@@ -492,6 +503,7 @@ export function AdminFormGuard({
       const submitButton = form.querySelector<HTMLButtonElement>(
         'button[type="submit"]'
       );
+      onSubmit();
       form.requestSubmit(submitButton ?? undefined);
     };
 
@@ -526,10 +538,24 @@ export function AdminFormGuard({
       if (deferredTimerRef.current) {
         clearTimeout(deferredTimerRef.current);
       }
-      // A successful save unmounts this guard while a submit was in flight
-      // — clear the draft so a later load shows no recovery prompt.
-      if (submittingRef.current && draftKeyRef.current) {
-        removeDraft(draftKeyRef.current);
+      // A create success leaves this draft key behind because it redirects
+      // to a different editor (and therefore a different guard/key). Check
+      // after the router has committed its URL and remove that submitted
+      // draft when navigation reached a different route without an error.
+      // (The success toast may already have consumed its query parameter.)
+      // Validation redirects carry `error`, stay recoverable, and are
+      // deliberately untouched. Same-page edit successes are handled by
+      // the next guard mount above.
+      if (key && submittingRef.current) {
+        setTimeout(() => {
+          const params = new URLSearchParams(window.location.search);
+          if (
+            !params.has("error") &&
+            window.location.pathname !== mountedPathname
+          ) {
+            removeDraft(key);
+          }
+        }, 0);
       }
     };
     // Mount-only: all live values are read through refs inside the closures.
@@ -684,6 +710,12 @@ export function AdminFormGuard({
           type="submit"
           className="btn btn-primary admin-editor-submit"
           disabled={pending}
+          onClick={() => {
+            const form = formRef.current;
+            if (form?.checkValidity()) {
+              flushSubmitDraftRef.current();
+            }
+          }}
         >
           <Save aria-hidden="true" className="admin-editor-submit-icon" />
           {pending ? savingLabel : submitLabel}

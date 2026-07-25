@@ -20,6 +20,13 @@ export const ACQUISITION_TYPES = [
   "OTHER",
 ] as const;
 
+// ShopListing is the canonical structured source for new Shop sales.
+// Preserve NPC_OR_SHOP in the full enum-shaped collection so legacy rows
+// remain readable and editable, but omit it from new-source creation.
+export const CREATABLE_ACQUISITION_TYPES = ACQUISITION_TYPES.filter(
+  (type) => type !== "NPC_OR_SHOP"
+);
+
 export type AcquisitionType = (typeof ACQUISITION_TYPES)[number];
 
 // Admin- and public-facing display labels for each type.

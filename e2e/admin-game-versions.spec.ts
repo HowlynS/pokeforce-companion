@@ -154,6 +154,7 @@ test("game version lifecycle: reachable from the dashboard settings link, create
   await expect(
     page.getByText("A Game Version with that name already exists.")
   ).toBeVisible();
+  await page.getByRole("button", { name: "Discard draft" }).click();
 
   // --- Edit name and release date ----------------------------------------
   await versionRow(page, CREATED.name)

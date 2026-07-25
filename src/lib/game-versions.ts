@@ -94,16 +94,19 @@ export type VerificationStampError =
  */
 export async function resolveVerificationStamp(
   db: GameDataClient,
-  formData: FormData
+  formData: FormData,
+  fieldPrefix = ""
 ): Promise<
   | { stamp: { verifiedAt: Date; verifiedGameVersionId: string } | null; failed: false }
   | { stamp: null; failed: true; error: VerificationStampError }
 > {
-  if (formData.get("markVerified") !== "on") {
+  if (formData.get(`${fieldPrefix}markVerified`) !== "on") {
     return { stamp: null, failed: false };
   }
 
-  const submittedId = String(formData.get("verifiedGameVersionId") ?? "").trim();
+  const submittedId = String(
+    formData.get(`${fieldPrefix}verifiedGameVersionId`) ?? ""
+  ).trim();
 
   if (submittedId) {
     const selected = await db.gameVersion.findUnique({

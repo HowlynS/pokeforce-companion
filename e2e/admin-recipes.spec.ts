@@ -582,6 +582,7 @@ test("a maximum quantity below the minimum is rejected with a useful error, both
   await expect(recordRow(page, "Test E2E Recipe Invalid Range")).toHaveCount(
     0
   );
+  await page.getByRole("button", { name: "Discard draft" }).click();
 
   // --- The same rule is enforced identically on an existing recipe's edit
   // --- form ----------------------------------------------------------------
@@ -897,6 +898,7 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
       .getByRole("alert")
       .filter({ hasText: "Each ingredient row needs both an item and a quantity." })
   ).toBeVisible();
+  await page.getByRole("button", { name: "Discard draft" }).click();
 
   // Quantity entered but no item selected (the redirect re-rendered a
   // fresh form, so every field is filled again).
@@ -917,6 +919,7 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
       .getByRole("alert")
       .filter({ hasText: "Each ingredient row needs both an item and a quantity." })
   ).toBeVisible();
+  await page.getByRole("button", { name: "Discard draft" }).click();
 
   // Neither submission wrote anything.
   expect(await countE2eTestRecipeRecords()).toBe(0);

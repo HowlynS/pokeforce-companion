@@ -153,10 +153,19 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
     page.getByRole("navigation", { name: "Items records" })
   ).toBeVisible();
   await expect(page.getByText("No acquisition sources yet")).toBeVisible();
+  const createType = page.getByRole("combobox", {
+    name: "Type",
+    exact: true,
+  });
+  await createType.click();
+  await expect(
+    page.getByRole("option", { name: "NPC or shop", exact: true })
+  ).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   // --- Create a source with only type + label + quantity (no relations) -
   await selectAdminOption(
-    page.getByRole("combobox", { name: "Type", exact: true }),
+    createType,
     "Foraging"
   );
   await page.getByLabel(/^Source label/).fill("Seed Merchant");
@@ -196,7 +205,7 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
   // --- source's own editor, so no further navigation is needed ----------
   await selectAdminOption(
     page.getByRole("combobox", { name: "Type", exact: true }),
-    "NPC or shop"
+    "Mining"
   );
   await selectAdminOption(
     page.getByRole("combobox", { name: "Location (optional)", exact: true }),
@@ -219,7 +228,7 @@ test("acquisition source create/edit/delete lifecycle through the real admin UI"
 
   await expect(
     page.getByRole("combobox", { name: "Type", exact: true })
-  ).toHaveText("NPC or shop");
+  ).toHaveText("Mining");
   await expect(
     page.getByRole("combobox", { name: "Location (optional)", exact: true })
   ).toHaveText(LOCATION.name);
