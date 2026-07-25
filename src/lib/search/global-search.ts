@@ -1,4 +1,4 @@
-// Global public search across the five game-data resources, through Prisma
+// Global public search across the public game-data resources, through Prisma
 // only. This module never creates a database client itself: the Prisma
 // client is passed in by the caller (the /search page passes the shared
 // client from src/lib/db.ts; integration tests pass the guard-verified test
@@ -96,6 +96,7 @@ export type GlobalSearchResults = {
   // matching (there is no "find a Location by the Items obtainable there"
   // path here, matching the existing scope of every other resource).
   locations: SearchResultEntry[];
+  shops: SearchResultEntry[];
 };
 
 export function emptySearchResults(): GlobalSearchResults {
@@ -105,11 +106,12 @@ export function emptySearchResults(): GlobalSearchResults {
     professions: [],
     categories: [],
     locations: [],
+    shops: [],
   };
 }
 
 /**
- * Runs the five bounded, deterministic (name then slug, ascending) resource
+ * Runs the bounded, deterministic (name then slug, ascending) resource
  * queries for a normalized query string. A blank query short-circuits to
  * empty results without touching the database.
  */
@@ -126,7 +128,7 @@ export async function searchGameData(
   const contains = { contains: query, mode: "insensitive" as const };
   const ordering = [{ name: "asc" as const }, { slug: "asc" as const }];
 
-  const [items, recipes, professions, categories, locations] = await Promise.all([
+  const [items, recipes, professions, categories, locations, shops] = await Promise.all([
     // Direct fields plus the Category relation by NAME. Relation names
     // selected here are internal input for the context line only and are
     // stripped from the returned entries below.
@@ -195,6 +197,23 @@ export async function searchGameData(
       orderBy: ordering,
       take: SEARCH_RESULTS_PER_TYPE,
     }),
+    db.shop.findMany({
+      where: {
+        OR: [
+          { name: contains },
+          { description: contains },
+          { location: { name: contains } },
+        ],
+      },
+      select: {
+        slug: true,
+        name: true,
+        description: true,
+        location: { select: { name: true } },
+      },
+      orderBy: ordering,
+      take: SEARCH_RESULTS_PER_TYPE,
+    }),
   ]);
 
   return {
@@ -233,6 +252,16 @@ export async function searchGameData(
     })),
     categories: categories.map((category) => ({ ...category, context: null })),
     locations: locations.map((location) => ({ ...location, context: null })),
+    shops: shops.map((shop) => ({
+      slug: shop.slug,
+      name: shop.name,
+      description: shop.description,
+      context: buildMatchContext(
+        query,
+        [shop.name, shop.description],
+        [{ label: "Location", value: shop.location.name }]
+      ),
+    })),
   };
 }
 
@@ -243,7 +272,8 @@ export function countSearchResults(results: GlobalSearchResults): number {
     results.recipes.length +
     results.professions.length +
     results.categories.length +
-    results.locations.length
+    results.locations.length +
+    results.shops.length
   );
 }
 
@@ -263,6 +293,7 @@ export function buildSearchSummary(results: GlobalSearchResults): string {
     results.professions,
     results.categories,
     results.locations,
+    results.shops,
   ].filter((group) => group.length > 0).length;
 
   const resultWord = total === 1 ? "result" : "results";

@@ -21,6 +21,7 @@ import {
   ListTree,
   Package,
   PackageOpen,
+  ShoppingBasket,
   ScrollText,
   ShieldCheck,
   Sliders,
@@ -67,6 +68,8 @@ export const SECTION_ICONS = {
   /** Item relationships (Category Items) — the same icon admin-nav.ts
       already uses for the Items destination. */
   items: Package,
+  /** Structured Shop sale rows on public and admin Inventory surfaces. */
+  inventory: ShoppingBasket,
   /** Game Versions — the same icon admin-nav.ts already uses for the
       Game Versions destination. */
   gameVersions: History,

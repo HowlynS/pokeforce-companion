@@ -62,6 +62,7 @@ describe("emptySearchResults", () => {
       professions: [],
       categories: [],
       locations: [],
+      shops: [],
     });
   });
 
@@ -150,8 +151,9 @@ describe("countSearchResults", () => {
       professions: [entry],
       categories: [entry, entry, entry],
       locations: [entry],
+      shops: [entry, entry],
     };
-    expect(countSearchResults(results)).toBe(8);
+    expect(countSearchResults(results)).toBe(10);
   });
 });
 
@@ -165,6 +167,7 @@ describe("buildSearchSummary", () => {
       professions: [],
       categories: [],
       locations: [],
+      shops: [],
     };
     expect(buildSearchSummary(results)).toBe(
       "Showing 6 results across 2 resource types."
@@ -178,6 +181,7 @@ describe("buildSearchSummary", () => {
       professions: [],
       categories: [],
       locations: [],
+      shops: [],
     };
     expect(buildSearchSummary(results)).toBe(
       "Showing 1 result across 1 resource type."
@@ -191,6 +195,7 @@ describe("buildSearchSummary", () => {
       professions: [entry],
       categories: [entry],
       locations: [],
+      shops: [],
     };
     expect(buildSearchSummary(results)).toBe(
       "Showing 3 results across 3 resource types."

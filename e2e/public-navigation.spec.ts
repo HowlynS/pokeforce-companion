@@ -1,5 +1,5 @@
 // Non-destructive browser coverage for the homepage, main navigation, and
-// the four public list pages. Read-only: nothing signs in, no form is
+// every public list page. Read-only: nothing signs in, no form is
 // submitted, and no record, Auth user, or Storage object is touched.
 // Selectors are accessible roles, headings, and link names — never CSS
 // classes. Seeded names/slugs come from prisma/seed.ts.
@@ -57,6 +57,14 @@ test.describe("homepage", () => {
     await expect(card).toBeVisible();
     await expect(card).toHaveAttribute("href", "/locations");
   });
+
+  test("the Shops card is visible and links to /shops", async ({ page }) => {
+    await page.goto("/");
+
+    const card = cardLink(page, "Shops");
+    await expect(card).toBeVisible();
+    await expect(card).toHaveAttribute("href", "/shops");
+  });
 });
 
 const NAV_TARGETS = [
@@ -65,6 +73,7 @@ const NAV_TARGETS = [
   { label: "Professions", path: "/professions", heading: "Professions" },
   { label: "Categories", path: "/categories", heading: "Categories" },
   { label: "Locations", path: "/locations", heading: "Locations" },
+  { label: "Shops", path: "/shops", heading: "Shops" },
 ] as const;
 
 test.describe("main navigation", () => {

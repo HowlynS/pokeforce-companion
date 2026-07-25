@@ -127,6 +127,150 @@ select:focus-visible {
   transform: translateY(-2px);
 }
 
+/* Public Shops: existing dark-card language, with a denser relationship
+   layout for Inventory entries and the same shared focus treatment. */
+.public-resource-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.public-resource-search label {
+  display: grid;
+  flex: 1 1 300px;
+  gap: 6px;
+  color: var(--color-text-muted);
+}
+
+.public-resource-search input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 10px 12px;
+}
+
+.public-results-summary {
+  margin: 0 0 20px;
+  color: var(--color-text-muted);
+}
+
+.public-breadcrumb {
+  margin-bottom: 16px;
+}
+
+.public-breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.public-breadcrumb li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.public-breadcrumb li > span[aria-hidden="true"] {
+  color: var(--color-text-muted);
+}
+
+.public-breadcrumb [aria-current="page"] {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.public-shop-inventory {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: 16px;
+}
+
+.public-shop-listing {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  padding: 20px;
+}
+
+.public-shop-listing-media {
+  display: block;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.public-shop-listing-content {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.public-shop-listing-content h3,
+.public-shop-listing-content p {
+  margin: 0;
+}
+
+.public-shop-listing-content h3 {
+  font-size: 18px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.public-content-link {
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 3px;
+}
+
+.public-content-link:hover {
+  color: var(--color-accent);
+  text-decoration-color: var(--color-accent);
+}
+
+.currency-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--color-accent-soft);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.public-shop-listing-notes {
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.public-verification-stamp {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 620px) {
+  .public-shop-listing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* The button system: one base plus a primary (main action), secondary
    (neutral action), and danger (destructive action) variant. Links may
    carry these classes too, so the base resets text decoration. */

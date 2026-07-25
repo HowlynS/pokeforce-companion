@@ -80,7 +80,7 @@ export function AppShell({ children }: AppShellProps) {
           }}
         >
           PokeForce Companion — a crafting wiki for PokeForce items,
-          recipes, professions, and categories.
+          recipes, professions, locations, and shops.
         </footer>
       </div>
     </div>

@@ -256,6 +256,109 @@ export async function createE2eShopInventoryFixtures(): Promise<{
   });
 }
 
+export async function createE2ePublicShopFixtures(): Promise<{
+  shop: { name: string; slug: string };
+  emptyShop: { name: string; slug: string };
+  location: { name: string; slug: string };
+  region: { name: string; slug: string };
+  item: { name: string; slug: string };
+  primaryCurrency: { name: string };
+  alternateCurrency: { name: string };
+}> {
+  await ensureCurrentGameVersionFixture();
+  const inventory = await createE2eShopInventoryFixtures();
+
+  const shop = {
+    name: "Test E2E Public Shop Alpha",
+    slug: `${E2E_SHOP_SLUG_PREFIX}-public-alpha`,
+  };
+  const emptyShop = {
+    name: "Test E2E Public Shop Empty",
+    slug: `${E2E_SHOP_SLUG_PREFIX}-public-empty`,
+  };
+  const location = {
+    name: "Test E2E Shop Location",
+    slug: E2E_SHOP_LOCATION_SLUG_PREFIX,
+  };
+  const region = {
+    name: "Test E2E Shop Region",
+    slug: `${E2E_SHOP_LOCATION_SLUG_PREFIX}-region`,
+  };
+
+  await withVerifiedDatabase(async (client) => {
+    const version = await client.query<{ id: string }>(
+      `select "id" from "GameVersion" where "isCurrent" = true limit 1`
+    );
+    const verifiedGameVersionId = version.rows[0]?.id;
+    if (!verifiedGameVersionId) {
+      throw new Error("The browser-test current Game Version is missing.");
+    }
+
+    await client.query(
+      `insert into "Location"
+        ("id", "slug", "name", "type", "createdAt", "updatedAt")
+       values ($1, $2, $3, 'REGION', now(), now())
+       on conflict ("slug") do update set "name" = excluded."name"`,
+      ["test-e2e-shop-region-id", region.slug, region.name]
+    );
+    await client.query(
+      `update "Location"
+       set "parentId" = $1, "updatedAt" = now()
+       where "slug" = $2`,
+      ["test-e2e-shop-region-id", location.slug]
+    );
+
+    await client.query(
+      `insert into "Shop"
+        ("id", "slug", "name", "description", "locationId",
+         "verifiedAt", "verifiedGameVersionId", "createdAt", "updatedAt")
+       values
+        ($1, $2, $3, $4, $5, timestamp '2026-07-25 12:00:00+00', $6, now(), now()),
+        ($7, $8, $9, null, $5, null, null, now(), now())`,
+      [
+        "test-e2e-shop-public-alpha-id",
+        shop.slug,
+        shop.name,
+        "A documented public Shop used only by browser tests.",
+        "test-e2e-shop-location-id",
+        verifiedGameVersionId,
+        "test-e2e-shop-public-empty-id",
+        emptyShop.slug,
+        emptyShop.name,
+      ]
+    );
+
+    await client.query(
+      `insert into "ShopListing"
+        ("id", "shopId", "itemId", "currencyId", "priceAmount", "notes",
+         "verifiedAt", "verifiedGameVersionId", "createdAt", "updatedAt")
+       values
+        ($1, $2, $3, $4, 1250, $5, timestamp '2026-07-25 12:00:00+00', $6, now(), now()),
+        ($7, $2, $3, $8, 2147483647, null, null, null, now(), now())`,
+      [
+        "test-e2e-shop-public-listing-primary-id",
+        "test-e2e-shop-public-alpha-id",
+        inventory.item.id,
+        inventory.primaryCurrency.id,
+        "Available after the tutorial.",
+        verifiedGameVersionId,
+        "test-e2e-shop-public-listing-alternate-id",
+        inventory.alternateCurrency.id,
+      ]
+    );
+  });
+
+  return {
+    shop,
+    emptyShop,
+    location,
+    region,
+    item: { name: inventory.item.name, slug: E2E_SHOP_ITEM_SLUG_PREFIX },
+    primaryCurrency: { name: inventory.primaryCurrency.name },
+    alternateCurrency: { name: inventory.alternateCurrency.name },
+  };
+}
+
 export async function deleteE2eTestShopRecords(): Promise<number> {
   if (
     E2E_SHOP_SLUG_PREFIX.length < 5 ||

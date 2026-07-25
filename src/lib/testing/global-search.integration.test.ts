@@ -31,6 +31,7 @@ const RESULT_PROBE_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}search-result-probe`;
 // the Location search path needs its own prefixed fixture, cleaned up the
 // same way as the Recipe probe above.
 const LOCATION_PROBE_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}search-location-probe`;
+const SHOP_PROBE_SLUG = `${INTEGRATION_TEST_SLUG_PREFIX}search-shop-probe`;
 
 // Prefix-scoped cleanup for this file's fixture Recipe. Deletes ONLY
 // Recipes carrying the integration-test slug prefix; seeded recipes can
@@ -65,6 +66,25 @@ async function deleteSearchFixtureLocations(): Promise<number> {
   return result.count;
 }
 
+async function deleteSearchFixtureShops(): Promise<number> {
+  if (INTEGRATION_TEST_SLUG_PREFIX.length < 5) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: the integration-test slug prefix is suspiciously short."
+    );
+  }
+
+  const prisma = await getVerifiedTestPrisma();
+  const listings = await prisma.shopListing.deleteMany({
+    where: {
+      shop: { slug: { startsWith: INTEGRATION_TEST_SLUG_PREFIX } },
+    },
+  });
+  const shops = await prisma.shop.deleteMany({
+    where: { slug: { startsWith: INTEGRATION_TEST_SLUG_PREFIX } },
+  });
+  return listings.count + shops.count;
+}
+
 describe("global search (integration)", () => {
   beforeAll(async () => {
     // First database contact of the file: the guard inside
@@ -72,19 +92,23 @@ describe("global search (integration)", () => {
     // verified test project. Also removes any prefixed leftovers an
     // interrupted earlier run may have stranded.
     await deleteSearchFixtureRecipes();
+    await deleteSearchFixtureShops();
     await deleteSearchFixtureLocations();
   });
 
   afterEach(async () => {
     await deleteSearchFixtureRecipes();
+    await deleteSearchFixtureShops();
     await deleteSearchFixtureLocations();
   });
 
   afterAll(async () => {
     const remainingRecipes = await deleteSearchFixtureRecipes();
+    const remainingShops = await deleteSearchFixtureShops();
     const remainingLocations = await deleteSearchFixtureLocations();
     await disconnectTestPrisma();
     expect(remainingRecipes).toBe(0);
+    expect(remainingShops).toBe(0);
     expect(remainingLocations).toBe(0);
   });
 
@@ -111,6 +135,7 @@ describe("global search (integration)", () => {
     expect(lower.professions).toEqual([]);
     expect(lower.categories).toEqual([]);
     expect(lower.locations).toEqual([]);
+    expect(lower.shops).toEqual([]);
 
     // Case must not change the result set or its order.
     expect(upper).toEqual(lower);
@@ -160,6 +185,7 @@ describe("global search (integration)", () => {
     expect(results.categories[0].context).toBeNull();
     expect(results.recipes).toEqual([]);
     expect(results.locations).toEqual([]);
+    expect(results.shops).toEqual([]);
   });
 
   it("finds recipes through an ingredient item name, case-insensitively", async () => {
@@ -180,6 +206,7 @@ describe("global search (integration)", () => {
     }
     expect(lower.items.map((item) => item.slug)).toEqual(["leather-strap"]);
     expect(lower.locations).toEqual([]);
+    expect(lower.shops).toEqual([]);
     expect(upper).toEqual(lower);
   });
 
@@ -202,6 +229,7 @@ describe("global search (integration)", () => {
     ]);
     expect(results.items).toEqual([]);
     expect(results.locations).toEqual([]);
+    expect(results.shops).toEqual([]);
   });
 
   it("finds a recipe through its resulting item name", async () => {
@@ -233,6 +261,7 @@ describe("global search (integration)", () => {
     expect(results.recipes[0].context).toBe("Result: Whetstone");
     expect(results.items.map((item) => item.slug)).toEqual(["whetstone"]);
     expect(results.locations).toEqual([]);
+    expect(results.shops).toEqual([]);
   });
 
   it("matches inside a word, not only at the start", async () => {
@@ -244,6 +273,7 @@ describe("global search (integration)", () => {
     expect(results.items.map((item) => item.slug)).toEqual(["whetstone"]);
     expect(results.recipes).toEqual([]);
     expect(results.locations).toEqual([]);
+    expect(results.shops).toEqual([]);
   });
 
   it("matches descriptions where the field exists", async () => {
@@ -262,6 +292,7 @@ describe("global search (integration)", () => {
     expect(results.items).toEqual([]);
     expect(results.recipes).toEqual([]);
     expect(results.locations).toEqual([]);
+    expect(results.shops).toEqual([]);
   });
 
   it("finds a location through its own name, case-insensitively", async () => {
@@ -312,6 +343,41 @@ describe("global search (integration)", () => {
     expect(results.locations[0].context).toBeNull();
   });
 
+  it("finds a Shop directly and through its Location name", async () => {
+    const prisma = await getVerifiedTestPrisma();
+
+    const location = await prisma.location.create({
+      data: {
+        slug: LOCATION_PROBE_SLUG,
+        name: "Zzz Integration Search Shop Location",
+        type: "TOWN",
+      },
+    });
+    await prisma.shop.create({
+      data: {
+        slug: SHOP_PROBE_SLUG,
+        name: "Zzz Integration Search Shop Probe",
+        description: "A testing-only fixed inventory.",
+        locationId: location.id,
+      },
+    });
+
+    const direct = await searchGameData(prisma, "search shop probe");
+    expect(direct.shops.map((shop) => shop.slug)).toEqual([SHOP_PROBE_SLUG]);
+    expect(direct.shops[0].context).toBeNull();
+
+    const byLocation = await searchGameData(
+      prisma,
+      "integration search shop location"
+    );
+    expect(byLocation.shops.map((shop) => shop.slug)).toEqual([
+      SHOP_PROBE_SLUG,
+    ]);
+    expect(byLocation.shops[0].context).toBe(
+      "Location: Zzz Integration Search Shop Location"
+    );
+  });
+
   it("returns empty groups when nothing matches", async () => {
     const prisma = await getVerifiedTestPrisma();
 
@@ -323,6 +389,7 @@ describe("global search (integration)", () => {
       professions: [],
       categories: [],
       locations: [],
+      shops: [],
     });
   });
 
@@ -335,6 +402,7 @@ describe("global search (integration)", () => {
       professions: [],
       categories: [],
       locations: [],
+      shops: [],
     });
     expect(await searchGameData(prisma, "   ")).toEqual({
       items: [],
@@ -342,6 +410,7 @@ describe("global search (integration)", () => {
       professions: [],
       categories: [],
       locations: [],
+      shops: [],
     });
   });
 
@@ -367,6 +436,7 @@ describe("global search (integration)", () => {
       results.professions,
       results.categories,
       results.locations,
+      results.shops,
     ]) {
       expect(group.length).toBeLessThanOrEqual(SEARCH_RESULTS_PER_TYPE);
       const names = group.map((entry) => entry.name);
@@ -389,6 +459,7 @@ describe("global search (integration)", () => {
       ...results.professions,
       ...results.categories,
       ...results.locations,
+      ...results.shops,
     ]) {
       expect(Object.keys(entry).sort()).toEqual([
         "context",
