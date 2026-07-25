@@ -43,6 +43,9 @@ test.describe("homepage", () => {
     await expect(
       page.getByRole("navigation", { name: "Main navigation" })
     ).toBeVisible();
+    await expect(page.getByRole("contentinfo")).toContainText(
+      "PokeForce Companion"
+    );
   });
 
   // Slice 10E: Locations became a public resource-card entry point on the
@@ -81,17 +84,172 @@ test.describe("main navigation", () => {
     test(`the ${target.label} link opens ${target.path}`, async ({ page }) => {
       await page.goto("/");
 
-      await page
+      const navLink = page
         .getByRole("navigation", { name: "Main navigation" })
-        .getByRole("link", { name: target.label, exact: true })
-        .click();
+        .getByRole("link", { name: target.label, exact: true });
+      const inactiveWidth = (await navLink.boundingBox())?.width;
+      await navLink.click();
 
       await expect(page).toHaveURL(target.path);
       await expect(
         page.getByRole("heading", { level: 1, name: target.heading, exact: true })
       ).toBeVisible();
+      await expect(navLink).toHaveAttribute("aria-current", "page");
+      const activeWidth = (await navLink.boundingBox())?.width;
+      expect(activeWidth).toBe(inactiveWidth);
     });
   }
+
+  test("detail pages retain their resource-level active state", async ({
+    page,
+  }) => {
+    await page.goto("/items/iron-ore");
+
+    const navigation = page.getByRole("navigation", {
+      name: "Main navigation",
+    });
+    await expect(
+      navigation.getByRole("link", { name: "Items", exact: true })
+    ).toHaveAttribute("aria-current", "page");
+    await expect(navigation.locator('[aria-current="page"]')).toHaveCount(1);
+  });
+
+  test("primary links expose keyboard focus without extra admin resources", async ({
+    page,
+  }) => {
+    await page.goto("/items");
+
+    const navigation = page.getByRole("navigation", {
+      name: "Main navigation",
+    });
+    const itemsLink = navigation.getByRole("link", {
+      name: "Items",
+      exact: true,
+    });
+    await itemsLink.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(itemsLink).toBeFocused();
+    expect(
+      await itemsLink.evaluate((link) => {
+        const style = getComputedStyle(link);
+        return {
+          outlineStyle: style.outlineStyle,
+          outlineWidth: style.outlineWidth,
+        };
+      })
+    ).toEqual({ outlineStyle: "solid", outlineWidth: "2px" });
+
+    for (const excludedLabel of [
+      "Acquisition Sources",
+      "Currencies",
+      "Game Versions",
+    ]) {
+      await expect(
+        navigation.getByRole("link", {
+          name: excludedLabel,
+          exact: true,
+        })
+      ).toHaveCount(0);
+    }
+  });
+});
+
+test.describe("public shell layout", () => {
+  test("list and detail content share a centered bounded container", async ({
+    page,
+  }) => {
+    for (const path of ["/items", "/items/iron-ore"]) {
+      await page.goto(path);
+      await expect(
+        page.locator(".public-site-main").getByRole("heading", { level: 1 })
+      ).toBeVisible();
+
+      for (const viewport of [
+        { width: 1920, height: 1080 },
+        { width: 3440, height: 1440 },
+      ]) {
+        await page.setViewportSize(viewport);
+        await page.reload();
+
+        const layout = await page.evaluate(() => {
+          const header = document.querySelector<HTMLElement>(
+            ".public-site-header-inner"
+          );
+          const main = document.querySelector<HTMLElement>(".public-site-main");
+          const footer = document.querySelector<HTMLElement>(
+            ".public-site-footer-inner"
+          );
+          if (!header || !main || !footer) {
+            throw new Error("Shared public shell elements were not rendered.");
+          }
+
+          const headerRect = header.getBoundingClientRect();
+          const mainRect = main.getBoundingClientRect();
+          const footerRect = footer.getBoundingClientRect();
+          return {
+            viewportWidth: document.documentElement.clientWidth,
+            contentWidth: document.documentElement.scrollWidth,
+            header: {
+              left: headerRect.left,
+              right: headerRect.right,
+              width: headerRect.width,
+            },
+            main: {
+              left: mainRect.left,
+              right: mainRect.right,
+              width: mainRect.width,
+            },
+            footer: {
+              left: footerRect.left,
+              right: footerRect.right,
+              width: footerRect.width,
+            },
+          };
+        });
+
+        expect(layout.contentWidth).toBeLessThanOrEqual(layout.viewportWidth);
+        expect(layout.main.width).toBeLessThanOrEqual(1480);
+        expect(layout.main.width).toBeGreaterThanOrEqual(1400);
+        expect(Math.abs(layout.main.left - layout.header.left)).toBeLessThan(1);
+        expect(Math.abs(layout.main.right - layout.header.right)).toBeLessThan(
+          1
+        );
+        expect(Math.abs(layout.main.left - layout.footer.left)).toBeLessThan(1);
+        expect(Math.abs(layout.main.right - layout.footer.right)).toBeLessThan(
+          1
+        );
+        expect(
+          Math.abs(
+            layout.main.left -
+              (layout.viewportWidth - layout.main.width) / 2
+          )
+        ).toBeLessThan(1);
+      }
+    }
+  });
+
+  test("public resource not-found states retain the public shell", async ({
+    page,
+  }) => {
+    const response = await page.goto("/items/test-missing-public-item");
+
+    expect(response?.status()).toBe(404);
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "This page could not be found.",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Main navigation" })
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("navigation", { name: "Main navigation" })
+        .getByRole("link", { name: "Items", exact: true })
+    ).toHaveAttribute("aria-current", "page");
+  });
 });
 
 // One deterministic seeded record per list page, with its expected detail

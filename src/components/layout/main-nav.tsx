@@ -1,71 +1,58 @@
-﻿import { designTokens } from "@/lib/design-tokens";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
   { label: "Items", href: "/items" },
   { label: "Recipes", href: "/recipes" },
   { label: "Professions", href: "/professions" },
   { label: "Categories", href: "/categories" },
-  // Public resources follow the same stable ordering as the admin navigation.
   { label: "Locations", href: "/locations" },
   { label: "Shops", href: "/shops" },
-];
+] as const;
 
 export function MainNav() {
-  return (
-    <nav
-      aria-label="Main navigation"
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "8px",
-      }}
-    >
-      {navItems.map((item) => (
-        <a
-          key={item.href}
-          href={item.href}
-          className="nav-pill"
-          style={{
-            border: `1px solid ${designTokens.colors.border}`,
-            borderRadius: designTokens.radius.sm,
-            color: designTokens.colors.text,
-            padding: "8px 12px",
-            textDecoration: "none",
-          }}
-        >
-          {item.label}
-        </a>
-      ))}
+  const pathname = usePathname();
 
-      {/* Compact global search: a plain GET form to /search, so it works
-          without client JavaScript and wraps with the nav links on small
-          screens. The full form lives on the /search page itself; the
-          aria-label keeps the two search landmarks distinguishable. */}
+  return (
+    <nav aria-label="Main navigation" className="public-primary-nav">
+      <div className="public-primary-nav-links">
+        {navItems.map((item) => {
+          const active =
+            pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={
+                "public-nav-link" +
+                (active ? " public-nav-link--active" : "")
+              }
+              aria-current={active ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Preserve the existing progressively enhanced GET search. */}
       <form
         action="/search"
         method="get"
         role="search"
         aria-label="Site search"
-        style={{ display: "flex", gap: "8px" }}
+        className="public-site-search"
       >
         <input
           type="search"
           name="q"
           aria-label="Search query"
           placeholder="Search..."
-          style={{
-            border: `1px solid ${designTokens.colors.border}`,
-            borderRadius: designTokens.radius.sm,
-            background: designTokens.colors.surface,
-            color: designTokens.colors.text,
-            padding: "8px 12px",
-            fontSize: "16px",
-            fontFamily: "inherit",
-            width: "140px",
-          }}
+          className="public-site-search-input"
         />
-        {/* Filled accent button: clearly a form control, not another nav
-            link. */}
         <button type="submit" className="btn btn-primary btn-compact">
           Search
         </button>

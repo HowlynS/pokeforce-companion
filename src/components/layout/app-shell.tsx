@@ -1,5 +1,4 @@
-﻿import Link from "next/link";
-import { designTokens } from "@/lib/design-tokens";
+import Link from "next/link";
 import { MainNav } from "@/components/layout/main-nav";
 
 type AppShellProps = {
@@ -8,81 +7,36 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: designTokens.colors.background,
-        color: designTokens.colors.text,
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: designTokens.layout.maxWidth,
-          margin: "0 auto",
-          padding: designTokens.layout.pagePadding,
-        }}
-      >
-        <header
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "24px",
-            padding: "16px 0 32px",
-          }}
-        >
-          {/* Brand lockup, deliberately NOT a heading: each page supplies
-              its own h1 through PageHeader, so the shell must not compete
-              with it. The lockup links home, as visitors expect. */}
-          <Link
-            href="/"
-            style={{
-              display: "block",
-              textDecoration: "none",
-            }}
-          >
-            <p
-              style={{
-                margin: 0,
-                color: designTokens.colors.accent,
-                fontSize: "20px",
-                fontWeight: 700,
-                letterSpacing: "0.04em",
-              }}
-            >
-              PokeForce Companion
-            </p>
-            <p
-              style={{
-                margin: "4px 0 0",
-                color: designTokens.colors.textMuted,
-                fontSize: "14px",
-              }}
-            >
+    <div className="public-site-shell">
+      <header className="public-site-header">
+        <div className="public-site-container public-site-header-inner">
+          {/* This text lockup is deliberately isolated from the shell layout:
+              a later approved logo can replace its contents without changing
+              the home link, header spacing, or page heading hierarchy. */}
+          <Link href="/" className="public-site-brand">
+            <span className="public-site-brand-name">PokeForce Companion</span>
+            <span className="public-site-brand-description">
               Crafting Wiki Companion
-            </p>
+            </span>
           </Link>
 
           <MainNav />
-        </header>
+        </div>
+      </header>
 
-        <main>{children}</main>
+      <main className="public-site-container public-site-main">{children}</main>
 
-        <footer
-          style={{
-            borderTop: `1px solid ${designTokens.colors.border}`,
-            marginTop: "48px",
-            padding: "24px 0 0",
-            color: designTokens.colors.textMuted,
-            fontSize: "14px",
-          }}
-        >
-          PokeForce Companion — a crafting wiki for PokeForce items,
-          recipes, professions, locations, and shops.
-        </footer>
-      </div>
+      <footer className="public-site-footer">
+        <div className="public-site-container public-site-footer-inner">
+          <span className="public-site-footer-brand">
+            PokeForce Companion
+          </span>
+          <span>
+            A crafting wiki companion for items, recipes, professions,
+            categories, locations, and shops.
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

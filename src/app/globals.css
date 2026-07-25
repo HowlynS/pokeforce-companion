@@ -68,17 +68,146 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* Header navigation pills: quiet by default, clearly interactive on
-   hover/focus. */
-.nav-pill {
+/* ---- Shared public site shell ----------------------------------------- */
+.public-site-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.public-site-container {
+  width: 100%;
+  max-width: 1480px;
+  margin-inline: auto;
+  padding-inline: clamp(24px, 3vw, 48px);
+}
+
+.public-site-header {
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-background) 86%, var(--color-surface));
+}
+
+.public-site-header-inner {
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding-block: 24px;
+}
+
+.public-site-brand {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.public-site-brand-name {
+  color: var(--color-accent);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.public-site-brand-description {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.public-primary-nav {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.public-primary-nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.public-nav-link {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--color-text);
+  text-decoration: none;
+  white-space: nowrap;
   transition:
+    background-color 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease;
 }
 
-.nav-pill:hover {
+.public-nav-link:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.public-nav-link--active {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  color: var(--color-accent-soft);
+}
+
+.public-site-search {
+  display: flex;
+  gap: 8px;
+}
+
+.public-site-search-input {
+  width: 160px;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 8px 12px;
+}
+
+.public-site-main {
+  flex: 1 0 auto;
+  min-width: 0;
+  padding-top: 40px;
+}
+
+.public-site-footer {
+  margin-top: 64px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.public-site-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding-block: 24px 32px;
+}
+
+.public-site-footer-brand {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+@media (max-width: 1120px) {
+  .public-site-header-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .public-primary-nav {
+    justify-content: flex-start;
+  }
 }
 
 /* Detail-page hero: the record image and its facts card(s) sit side by
@@ -102,7 +231,7 @@ select:focus-visible {
 /* Public breadcrumb links (Slice 10D): muted and underlined so they read
    as interactive without relying on hover alone; gold on hover only,
    matching the same restrained, hover-only accent every other public
-   interactive element already uses (.nav-pill, .interactive-card). A CSS
+   interactive element already uses (.public-nav-link, .interactive-card). A CSS
    class instead of an inline style object because inline styles cannot
    express :hover. */
 .breadcrumb-link {
@@ -1186,7 +1315,7 @@ select:focus-visible {
    in its circle far more reliably than drawing a circle around ordinary
    text would. Muted grey at rest (circle and i share one currentColor);
    the shared gold accent only on hover, keyboard focus, or while open —
-   the same hover-only accent convention .nav-pill/.interactive-card use,
+   the same hover-only accent convention .public-nav-link/.interactive-card use,
    and deliberately distinct from the always-gold semantic section icons.
    No fill, glow, size change, or layout shift in any state; the standard
    :focus-visible outline (declared globally) supplies the keyboard focus
