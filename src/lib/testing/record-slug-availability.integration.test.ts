@@ -3,7 +3,8 @@
 // REAL isolated Supabase test database (Phase B1, System B) — a brand-new
 // feature, so unlike record-name-availability.integration.test.ts there is
 // no split-by-legacy-precedent between Item and the other four resources;
-// all five live in one table-driven suite. Item/Recipe/Profession/Category
+// the five original resources live in one table-driven suite; Currency and
+// Shop have dedicated Milestone 11 coverage. Item/Recipe/Profession/Category
 // checks are entirely READ-ONLY against the deterministic seed from
 // prisma/seed.ts; Location has no seeded fixture at all, so its own rows
 // are created and torn down here via the existing guard-first

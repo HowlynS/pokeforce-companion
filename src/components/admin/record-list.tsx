@@ -118,10 +118,9 @@ type RecordListProps = {
   /** List-level image-capable mode: every row reserves the same fixed
       64×64 media slot (populated or the missing-image fallback), rather
       than each row deciding its own layout from whether it happens to
-      have an image. All five converted resources (Items, Recipes,
-      Professions, Categories, Locations) now set this; the original
-      text-only row remains supported for any resource without an image
-      field. */
+      have an image. Every current RecordList resource sets this; the
+      original text-only row remains supported for any future resource
+      without an image field. */
   showImages?: boolean;
 };
 

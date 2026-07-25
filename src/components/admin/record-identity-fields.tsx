@@ -1,8 +1,8 @@
 "use client";
 
 // Shared Name + Page address field pair for every slug-based admin
-// resource (Phase B1, System B) — one controller, not five diverging
-// per-resource state machines. Owns the single piece of state the two
+// resource (Phase B1, System B) — one controller instead of diverging
+// per-resource state machines. It owns the single piece of state the two
 // fields must share (the live Name value) and renders RecordNameField
 // (unchanged — Slice 6E's own duplicate-name feedback) beside the new
 // RecordSlugField (auto-generation, manual-override tracking, and its own

@@ -13,7 +13,7 @@
 // Deliberately the FALLBACK design DeleteRecordDialog's own Part 5
 // documentation allows: computing the real "how many verified records
 // reference this version" count (countVerificationReferences) touches
-// five tables per version, and running it for every row on every list
+// multiple tables per version, and running it for every row on every list
 // view (rather than only when a contributor actually opens a delete
 // dialog, as the dedicated page already does) would be a real, avoidable
 // cost. canDelete is optimistically true here; Confirm submits to the

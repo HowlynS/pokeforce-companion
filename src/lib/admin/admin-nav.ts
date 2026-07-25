@@ -1,9 +1,8 @@
 // The ONE definition of the admin shell's navigation. Game Versions and
 // Currencies are settings-scoped supporting resources after the primary
-// content destinations. Game Versions was promoted
-// from a secondary settings-only destination to a full primary entry
-// (Visual Pass sub-slice 8) — it stays last, after Locations. Acquisition
-// Sources remains deliberately absent (contextual, managed under its
+// content destinations. Game Versions remains ahead of Currencies in that
+// supporting-resource group, while Shops is a primary content destination.
+// Acquisition Sources remains deliberately absent (contextual, managed under its
 // owning item), along with any users/roles/audit/route-hub destinations.
 // Pure data plus a pure active-state rule — no React, no environment —
 // so the mapping every admin route depends on is unit-testable.

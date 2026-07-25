@@ -1,7 +1,7 @@
 // Focused E2E coverage for the shortened "+ New" record-list create button
 // (Admin Polish Pass 1, Part 7), checked at a deliberately narrow desktop
 // width — the exact scenario the shortening was meant to help — across
-// all five converted resources, plus a structural check that no full
+// the five original converted resources, plus a structural check that no full
 // editor submit label (e.g. "Create Item") was accidentally shortened too.
 
 import { expect, test } from "@playwright/test";

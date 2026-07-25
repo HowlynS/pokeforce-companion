@@ -133,8 +133,8 @@ export function generateImageObjectPath(
 }
 
 /**
- * True only for paths shaped exactly like our generated ones, inside one of
- * the three supported resource folders. Use this before any destructive
+ * True only for paths shaped exactly like our generated ones, inside one
+ * of the supported resource folders. Use this before any destructive
  * storage operation.
  */
 export function isSafeImageObjectPath(path: string): boolean {

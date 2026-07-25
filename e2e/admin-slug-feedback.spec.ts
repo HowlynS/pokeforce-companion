@@ -1,10 +1,11 @@
 // Authenticated coverage for the Phase B1 (System B) Page-address field —
 // edit-mode synchronization revised in the Admin Visual/UX Correction pass
 // (Part 11) — live auto-generation from Name, manual-override tracking,
-// and live slug-availability feedback — across all five slug-based
+// and live slug-availability feedback — across the five original slug-based
 // resources (Item/Recipe/Profession/Category share one table-driven block
 // against stable seeded fixtures; Location gets its own block since
-// prisma/seed.ts seeds no Location rows at all). Mirrors
+// prisma/seed.ts seeds no Location rows at all). Currency and Shop have
+// dedicated Milestone 11 lifecycle coverage. Mirrors
 // admin-name-feedback.spec.ts's own structure and non-destructive design:
 // no form submission in THIS file ever succeeds for a mutating purpose on
 // the table-driven block (the one submission each resource attempts

@@ -2,8 +2,8 @@
 // filter (Phase B1, System A). RecordList itself (a "use client" component)
 // calls these; keeping the matching/count/URL rules here as plain functions
 // makes them unit-testable without React or next/navigation, and reusable
-// identically across all five converted resources (Items, Recipes,
-// Professions, Categories, Locations) — no per-resource filtering logic.
+// identically across every converted resource — no per-resource filtering
+// logic.
 
 /** The fields every record row is matched against: name and Page address
     always; `searchTerms` is an optional escape hatch for a resource's own

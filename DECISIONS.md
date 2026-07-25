@@ -1915,3 +1915,56 @@ Alternatives considered:
   rejected; `/locations` already exists as the flat index Slice 10C
   added, and the shared `/search` page already covers keyword search for
   every resource.
+
+---
+
+### 2026-07-25 — Milestone 11: structured Shop sales are relational; Currency remains contextual
+
+Decision:
+
+Fixed Shop sales use three focused relational models: `Currency`, `Shop`,
+and `ShopListing`. Every Shop belongs to one required Location. Every
+ShopListing connects one Shop, Item, and Currency to one positive integer
+price, with optional notes and independent Game Version verification.
+`(shopId, itemId, currencyId)` is unique, which rejects an exact duplicate
+while allowing the same Shop and Item to have separate offers in different
+Currencies. ShopListing is the canonical representation for new Shop sales.
+
+All relations that would otherwise destroy authored inventory or
+verification use `ON DELETE RESTRICT`. Price positivity is enforced at the
+server validation/action boundary, backed by Prisma's integer column and
+focused tests. The repository does not otherwise maintain hand-written
+database `CHECK` constraints, so this milestone did not introduce a fragile
+one-off SQL convention solely for price positivity.
+
+Currency remains contextual reference data. It has a name, slug, optional
+symbol/description/image, verification, and timestamps, but no balance,
+wallet, exchange rate, precision, or public list/detail route. The shared
+price formatter is deterministic and always exposes the Currency name to
+assistive technology, even when visible copy uses a compact symbol.
+
+Legacy `NPC_OR_SHOP` Acquisition Sources remain readable and editable but
+cannot be created after this milestone. They are never hidden merely because
+their free text resembles a structured ShopListing; the current schema has
+no explicit equivalence relation, so suppressing such a row would be a
+guess. Item pages therefore present structured Shop purchases alongside any
+legacy source that cannot be proven equivalent.
+
+Public verification remains hidden on the pre-existing Item, Location,
+Recipe, Profession, Category, and Acquisition Source surfaces. Shop and
+ShopListing stamps are the narrow, explicit exception required for public
+Shop inventory and purchase information.
+
+Alternatives considered:
+
+- Reusing `AcquisitionSource` for all Shop prices — rejected; its free-text
+  shape cannot safely represent Currency, exact price, Shop identity,
+  independent listing verification, or duplicate constraints.
+- Adding balances, exchange rates, precision rules, or public Currency
+  pages — rejected; none are needed to display fixed in-game prices.
+- Guessing legacy equivalence from Shop or Location text — rejected; it can
+  silently hide distinct historical data.
+- Adding a manual positive-price `CHECK` constraint — rejected for this
+  milestone because it would establish a database convention used nowhere
+  else in the repository; robust server validation and the integer schema
+  are the approved boundary.

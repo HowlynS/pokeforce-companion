@@ -6,7 +6,7 @@
 // work), and when a slot is absent its column simply does not exist — no
 // reserved empty space.
 //
-// One shared implementation, not five resource-specific shells: a
+// One shared implementation, not resource-specific shells: a
 // resource workspace passes its own content into these slots rather than
 // arranging its own columns. Deliberately NOT a generic layout framework —
 // exactly one header and three body slots, nothing configurable beyond

@@ -2143,6 +2143,117 @@ explicitly instructed in the milestone conversation.
 
 ---
 
+## Milestone 11 - Shops & Currencies
+
+Status: Complete (2026-07-25)
+
+Goal:
+
+Add fixed in-game Shops, contextual Currencies, and independently verified
+Shop inventory without introducing wallets, exchange rates, marketplace
+behavior, or standalone public Currency pages.
+
+### Domain foundation
+
+- [x] Added `Currency`, `Shop`, and `ShopListing` in committed migration
+      `20260725090000_add_shop_currency_domain`
+- [x] Every Shop has one required Location; every listing has one required
+      Shop, Item, Currency, and positive integer price
+- [x] Exact Shop + Item + Currency combinations are unique; the same Shop
+      and Item may be listed in multiple Currencies
+- [x] All Location, Item, Currency, Shop, and Game Version dependencies use
+      restrictive referential actions so deletes cannot silently remove
+      authored inventory or verification
+- [x] Positive-price enforcement uses the server validation boundary plus
+      Prisma's integer column; no one-off manual database `CHECK` convention
+      was introduced
+- [x] The shared formatter provides deterministic comma grouping, optional
+      symbol-first display, a full accessible Currency name, large integer
+      support, and no unrelated real-world currency substitution
+- [x] ShopListings are canonical for structured sales; legacy
+      `NPC_OR_SHOP` Acquisition Sources remain readable/editable and are
+      excluded from new-source creation without any destructive migration
+
+### Currency and Shop administration
+
+- [x] Currency is a supporting settings destination with searchable records,
+      create/edit/delete flows, optional symbol/description/image,
+      verification, timestamps, live name/slug feedback, drafts,
+      dirty-state protection, save in place, success toasts, and
+      dependency-aware deletion
+- [x] Shop is a primary admin destination with searchable records,
+      thumbnails, required searchable Location selection, create/edit/delete
+      flows, image lifecycle, verification, timestamps, drafts,
+      dirty-state protection, save in place, and dependency-aware deletion
+- [x] Shop Inventory supports searchable Item and Currency selectors,
+      positive-integer price validation, optional notes, independent listing
+      verification, add/edit/staged removal, exact-duplicate protection,
+      alternate Currencies, drafts, keyboard-safe interaction, and one
+      transactional save-in-place action
+- [x] Currency and Shop images reuse the established Supabase bucket,
+      MIME/size validation, safe generated object paths, replacement/removal
+      staging, failed-save cleanup, and muted pending-removal preview
+- [x] Item, Location, Currency, Shop, and Game Version deletion surfaces
+      report and enforce the new dependencies
+
+### Public discovery and relationship integration
+
+- [x] Added `/shops` with metadata, search by Shop/description/Location,
+      deterministic ordering, Shop image, Location, inventory count,
+      restrained verification, and no-data/no-match states
+- [x] Added `/shops/[slug]` with metadata/not-found handling, semantic
+      hierarchy breadcrumb, Location link, Shop verification, deterministic
+      inventory, Item links/images, accessible formatted Currency prices,
+      optional notes, independent listing verification, and hide-empty
+      behavior
+- [x] Added Shops to public navigation, the homepage resource grid, footer,
+      and bounded grouped global search
+- [x] Item "How to obtain" now presents every structured Shop purchase with
+      Shop/Location links, Currency presentation, price, notes, and listing
+      verification; multiple Shops and multiple Currencies are ordered
+      deterministically
+- [x] Legacy Acquisition Sources coexist with ShopListings. No legacy row is
+      suppressed because the schema contains no explicit equivalence link
+      and free-text matching would be a guess
+- [x] Location detail pages show summaries only for directly assigned Shops,
+      including image, link, optional description, and inventory count;
+      descendant Shops are not aggregated and empty sections are omitted
+- [x] Currency remains contextual; no public Currency routes, wallet,
+      balance, precision, exchange-rate, or marketplace features were added
+
+### Final Milestone 11 audit
+
+- [x] Feature commits were kept slice-focused and pushed in order:
+      `69de4e4` (domain), `c6197b8` (Currency admin), `6df0089` (Shop
+      admin), `d8e70f6` (Inventory), `76e7c67` (public Shops), and
+      `a6151bf` (Item/Location integration)
+- [x] Schema and migration SQL audited for nullability, defaults, composite
+      uniqueness, supporting indexes, Game Version relations, and
+      restrictive foreign keys; Prisma validation/formatting passed and the
+      isolated test database reported 11 migrations with none pending
+- [x] Authorization, relation ownership, validation, verification,
+      slug behavior, image lifecycle, deletion races, draft/dirty behavior,
+      save-in-place redirects, and legacy coexistence were audited
+- [x] Public queries are relation-loaded without row-level N+1 rendering;
+      Shop list cards load counts rather than full inventories; Shop detail,
+      Item purchase, and Location summary ordering is deterministic
+- [x] Actual visual review completed throughout the milestone at
+      1920×1080 and 3440×1440, covering admin lists/editors/Inventory and
+      public Shop/Item/Location surfaces, long names, large prices, missing
+      images, empty descriptions, alternate Currencies, stable toast/save
+      layouts, and horizontal overflow
+- [x] Final verification matrix observed green: Prisma Client generation;
+      893 unit tests; 190 integration tests passed with 1 intentional skip;
+      9 service tests; 506 E2E tests; environment isolation; lint;
+      TypeScript; production build; and diff checks — 1,598 passing
+      automated tests in total
+
+Nothing remains in Milestone 11. Do not begin Deployment, contributor
+tooling, audit logs, user accounts, public-page redesign, mobile redesign,
+or another milestone until explicitly instructed.
+
+---
+
 ## Deployment (renumbered; previously Milestone 8)
 
 Status: Not started

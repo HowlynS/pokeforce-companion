@@ -249,7 +249,7 @@ test("deleting a referenced game version is blocked with clear feedback until th
 
   // The list page's own in-place dialog (Admin Polish Pass 1, Part 5) is
   // deliberately the documented FALLBACK design: computing the real
-  // reference count touches five tables per version, which would be a
+  // reference count touches multiple tables per version, which would be a
   // real, avoidable cost if run for every row on every list view — so
   // canDelete is optimistically true here, and Confirm is enabled. The
   // unchanged deleteGameVersionAction re-validates authoritatively on

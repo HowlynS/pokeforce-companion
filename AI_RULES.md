@@ -14,6 +14,24 @@ AI tools must not invent features, architecture, database tables, or design syst
 
 The current phase is:
 
+Milestone 11 - Shops & Currencies is complete (finalized 2026-07-25; see MILESTONES.md and DECISIONS.md).
+
+Durable rules established by this milestone:
+
+- `Currency`, `Shop`, and `ShopListing` are relational first-class resources. Every Shop belongs to exactly one Location; every listing connects one Shop, Item, and Currency to one positive integer price.
+- `(shopId, itemId, currencyId)` is unique. The same Shop and Item may have separate listings in different Currencies.
+- ShopListings are canonical for structured Shop sales. Legacy `NPC_OR_SHOP` Acquisition Sources remain readable/editable but cannot be created, and free-text similarity is never enough to hide legacy data.
+- Currency is contextual. There are no public Currency list/detail routes, balances, wallets, exchange rates, or marketplace semantics.
+- Currency admin is settings-scoped. Shop admin is a primary destination with a save-in-place Inventory editor.
+- Public Shops are discoverable through navigation, the homepage, global search, `/shops`, and `/shops/[slug]`. Public Item pages show purchase options; Location pages show only Shops directly assigned to that Location.
+- Prices use the shared deterministic formatter, expose the full Currency name to assistive technology, and never substitute an unrelated real-world currency symbol.
+- Public Shop and ShopListing verification is an explicit Milestone 11 exception. Existing public Item, Location, Recipe, Profession, Category, and Acquisition Source verification remains hidden.
+- Optional Shop inventory, Item purchase, and Location Shop sections obey the established hide-empty rule.
+
+The final verification matrix passed: Prisma validation/formatting, isolated environment guard, 11 committed migrations with none pending, Prisma Client generation, 893 unit tests, 190 integration tests with 1 intentional skip, 9 service tests, 506 E2E tests, lint, TypeScript, production build, and actual desktop review at 1920×1080 and 3440×1440.
+
+Do not begin Deployment, contributor tooling, audit logs, user accounts, public-page redesign, mobile redesign, or any later milestone until explicitly instructed.
+
 Milestone 10 - Route Hubs is complete (finalized 2026-07-21; see MILESTONES.md and DECISIONS.md). Route Hubs turned public Location pages into linked-data hubs centered on hierarchy and acquisition, entirely as a presentation layer over the existing Location and AcquisitionSource models — no Prisma schema change anywhere in the milestone.
 
 Durable rules established by this milestone, to guide future work:

@@ -1,6 +1,8 @@
 # PokeForce Companion
 
-PokeForce Companion is a personal-first companion website for PokeForce, focused on items, recipes, professions, and useful game knowledge.
+PokeForce Companion is a personal-first companion website for PokeForce,
+focused on items, recipes, professions, locations, shops, and useful game
+knowledge.
 
 ## Source of Truth
 
@@ -11,7 +13,7 @@ This project is based on:
 
 ## Current Milestone
 
-Milestone 9 — Admin Workspace & Game Version Management (Complete)
+Milestone 11 — Shops & Currencies (Complete)
 
 ## Development Status
 

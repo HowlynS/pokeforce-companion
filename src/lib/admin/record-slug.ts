@@ -1,10 +1,10 @@
 // The ONE definition per resource of "this Page address is already taken":
 // mirrors src/lib/admin/record-name.ts exactly, but keyed on `slug`
 // instead of `name`, and always an EXACT (never `contains`) match — a
-// Page address is either this value or it is not. All five resources'
+// Page address is either this value or it is not. Every slug-based resource's
 // availability checks (a brand-new feature; there was no live slug check
-// before Phase B1) live in one shared module rather than diverging five
-// ways, since — unlike Name, whose Item variant predates this shared
+// before Phase B1) live in one shared module rather than in separate
+// implementations, since — unlike Name, whose Item variant predates this shared
 // module and stayed split for backward compatibility — nothing here has
 // any existing call site to preserve.
 //
