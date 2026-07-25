@@ -31,7 +31,8 @@ export type ImageResourceType =
   | "professions"
   | "locations"
   | "categories"
-  | "currencies";
+  | "currencies"
+  | "shops";
 
 // Controlled extensions derived from the validated MIME type. The client
 // filename (and its extension) is never used for anything.
@@ -47,7 +48,7 @@ const MIME_EXTENSIONS: Record<AllowedImageMimeType, string> = {
 // empty strings — fails to match. No normalization is applied before the
 // check, so an unsafe path can never be rewritten into an allowed one.
 const SAFE_OBJECT_PATH_PATTERN =
-  /^(items|recipes|professions|locations|categories|currencies)\/[a-z0-9-]+\.(png|jpg|webp)$/;
+  /^(items|recipes|professions|locations|categories|currencies|shops)\/[a-z0-9-]+\.(png|jpg|webp)$/;
 
 export type ImageStorageErrorKind =
   | "validation"

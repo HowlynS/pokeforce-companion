@@ -21,6 +21,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "Professions",
       "Categories",
       "Locations",
+      "Shops",
       "Game Versions",
       "Currencies",
     ]);
@@ -31,6 +32,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "/admin/professions",
       "/admin/categories",
       "/admin/locations",
+      "/admin/shops",
       "/admin/settings/game-versions",
       "/admin/settings/currencies",
     ]);
@@ -41,6 +43,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "professions",
       "categories",
       "locations",
+      "shops",
       "gameVersions",
       "currencies",
     ]);
@@ -102,6 +105,11 @@ describe("isAdminNavItemActive", () => {
     );
     expect(activeHrefFor("/admin/locations/route-1/delete")).toBe(
       "/admin/locations"
+    );
+
+    expect(activeHrefFor("/admin/shops")).toBe("/admin/shops");
+    expect(activeHrefFor("/admin/shops/blackthorn-supply/edit")).toBe(
+      "/admin/shops"
     );
 
     // Game Versions (Visual Pass sub-slice 8): now a primary entry too,

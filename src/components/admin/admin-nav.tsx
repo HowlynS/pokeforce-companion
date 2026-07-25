@@ -21,6 +21,7 @@ import {
   Package,
   ScrollText,
   Shapes,
+  Store,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -38,6 +39,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   professions: Hammer,
   categories: Shapes,
   locations: MapPinned,
+  shops: Store,
   gameVersions: History,
   currencies: Coins,
 };

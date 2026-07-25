@@ -19,6 +19,7 @@ export type AdminNavIcon =
   | "professions"
   | "categories"
   | "locations"
+  | "shops"
   | "gameVersions"
   | "currencies";
 
@@ -35,6 +36,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Professions", href: "/admin/professions", icon: "professions" },
   { label: "Categories", href: "/admin/categories", icon: "categories" },
   { label: "Locations", href: "/admin/locations", icon: "locations" },
+  { label: "Shops", href: "/admin/shops", icon: "shops" },
   {
     label: "Game Versions",
     href: "/admin/settings/game-versions",

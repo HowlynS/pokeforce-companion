@@ -192,3 +192,26 @@ export async function isCurrencyNameTaken(
 
   return existing !== null;
 }
+
+/** Shop twin of isCategoryNameTaken — identical rule and guarantees. */
+export async function isShopNameTaken(
+  db: GameDataClient,
+  rawName: string,
+  excludeId?: string
+): Promise<boolean> {
+  const name = normalizeRecordNameInput(rawName);
+
+  if (name === "") {
+    return false;
+  }
+
+  const existing = await db.shop.findFirst({
+    where: {
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
+    select: { id: true },
+  });
+
+  return existing !== null;
+}

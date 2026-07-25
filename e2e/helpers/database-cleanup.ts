@@ -135,6 +135,8 @@ export const E2E_GAME_VERSION_ITEM_SLUG_PREFIX = "test-e2e-gv-item";
 // ShopListing rows are removed first so restrictive Currency deletion is
 // respected even when a failed test strands a dependency.
 export const E2E_CURRENCY_SLUG_PREFIX = "test-e2e-currency";
+export const E2E_SHOP_SLUG_PREFIX = "test-e2e-shop";
+export const E2E_SHOP_LOCATION_SLUG_PREFIX = "test-e2e-shop-location";
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -184,6 +186,69 @@ export async function countE2eTestCurrencyRecords(): Promise<number> {
        from "Currency"
        where "slug" like $1`,
       [`${E2E_CURRENCY_SLUG_PREFIX}%`]
+    );
+    return Number(result.rows[0]?.count ?? 0);
+  });
+}
+
+export async function createE2eShopLocation(): Promise<{
+  id: string;
+  name: string;
+}> {
+  const id = "test-e2e-shop-location-id";
+  const name = "Test E2E Shop Location";
+
+  return withVerifiedDatabase(async (client) => {
+    await client.query(
+      `insert into "Location"
+        ("id", "slug", "name", "type", "createdAt", "updatedAt")
+       values ($1, $2, $3, 'TOWN', now(), now())
+       on conflict ("slug") do update set "name" = excluded."name"`,
+      [id, E2E_SHOP_LOCATION_SLUG_PREFIX, name]
+    );
+    return { id, name };
+  });
+}
+
+export async function deleteE2eTestShopRecords(): Promise<number> {
+  if (
+    E2E_SHOP_SLUG_PREFIX.length < 5 ||
+    E2E_SHOP_LOCATION_SLUG_PREFIX.length < 5
+  ) {
+    throw new Error("Refusing Shop cleanup: prefix is too short.");
+  }
+
+  return withVerifiedDatabase(async (client) => {
+    const listings = await client.query(
+      `delete from "ShopListing"
+       where "shopId" in (
+         select "id" from "Shop" where "slug" like $1
+       )`,
+      [`${E2E_SHOP_SLUG_PREFIX}%`]
+    );
+    const shops = await client.query(
+      `delete from "Shop" where "slug" like $1`,
+      [`${E2E_SHOP_SLUG_PREFIX}%`]
+    );
+    const locations = await client.query(
+      `delete from "Location" where "slug" like $1`,
+      [`${E2E_SHOP_LOCATION_SLUG_PREFIX}%`]
+    );
+    return (
+      (listings.rowCount ?? 0) +
+      (shops.rowCount ?? 0) +
+      (locations.rowCount ?? 0)
+    );
+  });
+}
+
+export async function countE2eTestShopRecords(): Promise<number> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query<{ count: string }>(
+      `select count(*)::text as count
+       from "Shop"
+       where "slug" like $1`,
+      [`${E2E_SHOP_SLUG_PREFIX}%`]
     );
     return Number(result.rows[0]?.count ?? 0);
   });

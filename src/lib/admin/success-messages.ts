@@ -65,6 +65,14 @@ export const ADMIN_SUCCESS_MESSAGES = {
   currency_deleted: "Currency deleted",
   currency_deleted_image_cleanup:
     "Currency deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
+
+  shop_created: "Shop created",
+  shop_saved: "Shop saved",
+  shop_saved_image_cleanup:
+    "Shop saved, but the previous image file could not be removed from storage and may need manual cleanup in Supabase.",
+  shop_deleted: "Shop deleted",
+  shop_deleted_image_cleanup:
+    "Shop deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
 } as const;
 
 export type AdminSuccessCode = keyof typeof ADMIN_SUCCESS_MESSAGES;

@@ -28,6 +28,7 @@ const APPROVED_LABELS = [
   "Professions",
   "Categories",
   "Locations",
+  "Shops",
   "Game Versions",
   "Currencies",
 ];
@@ -39,6 +40,7 @@ const APPROVED_HREFS = [
   "/admin/professions",
   "/admin/categories",
   "/admin/locations",
+  "/admin/shops",
   "/admin/settings/game-versions",
   "/admin/settings/currencies",
 ];

@@ -83,11 +83,15 @@ export default async function DeleteLocationPage({
                 "linked_shops",
                 "linked_dependencies",
               ].includes(error)
-                ? `This location cannot be deleted while it is referenced by ${
-                    childCount > 0 ? describeLinkedLocations(childCount) : ""
-                  }${childCount > 0 && shopCount > 0 ? " and " : ""}${
-                    shopCount > 0 ? describeLinkedShops(shopCount) : ""
-                  }.`
+                ? shopCount === 0
+                  ? `This location cannot be deleted because it is assigned to ${describeLinkedLocations(
+                      childCount
+                    )}.`
+                  : `This location cannot be deleted while it is referenced by ${
+                      childCount > 0 ? describeLinkedLocations(childCount) : ""
+                    }${childCount > 0 && shopCount > 0 ? " and " : ""}${
+                      describeLinkedShops(shopCount)
+                    }.`
                 : "Something went wrong."}
             </p>
           ) : null}
@@ -122,11 +126,21 @@ export default async function DeleteLocationPage({
 
         {!canDelete ? (
           <p className="text-danger">
-            This location cannot be deleted while it is referenced by{" "}
-            {childCount > 0 ? describeLinkedLocations(childCount) : null}
-            {childCount > 0 && shopCount > 0 ? " and " : null}
-            {shopCount > 0 ? describeLinkedShops(shopCount) : null}. Move or
-            remove those dependent records first.
+            {shopCount === 0 ? (
+              <>
+                This location cannot be deleted because it is assigned to{" "}
+                {describeLinkedLocations(childCount)}. Move or remove those
+                sub-locations first.
+              </>
+            ) : (
+              <>
+                This location cannot be deleted while it is referenced by{" "}
+                {childCount > 0 ? describeLinkedLocations(childCount) : null}
+                {childCount > 0 ? " and " : null}
+                {describeLinkedShops(shopCount)}. Move or remove those dependent
+                records first.
+              </>
+            )}
           </p>
         ) : null}
       </DeleteRecordDialog>

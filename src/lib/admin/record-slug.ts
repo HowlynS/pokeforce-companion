@@ -154,3 +154,23 @@ export async function isCurrencySlugTaken(
 
   return existing !== null;
 }
+
+/** Shop twin of isItemSlugTaken — identical rule and guarantees. */
+export async function isShopSlugTaken(
+  db: GameDataClient,
+  rawSlug: string,
+  excludeId?: string
+): Promise<boolean> {
+  const slug = normalizeRecordSlugCandidate(rawSlug);
+
+  if (slug === "") {
+    return false;
+  }
+
+  const existing = await db.shop.findFirst({
+    where: { slug, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+    select: { id: true },
+  });
+
+  return existing !== null;
+}

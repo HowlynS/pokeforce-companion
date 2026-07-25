@@ -219,11 +219,23 @@ export default async function EditLocationPage({
 
             {!canDeleteLocation ? (
               <p className="text-danger">
-                This location cannot be deleted while it is referenced by{" "}
-                {childCount > 0 ? describeLinkedLocations(childCount) : null}
-                {childCount > 0 && shopCount > 0 ? " and " : null}
-                {shopCount > 0 ? describeLinkedShops(shopCount) : null}. Move
-                or remove those dependent records first.
+                {shopCount === 0 ? (
+                  <>
+                    This location cannot be deleted because it is assigned to{" "}
+                    {describeLinkedLocations(childCount)}. Move or remove those
+                    sub-locations first.
+                  </>
+                ) : (
+                  <>
+                    This location cannot be deleted while it is referenced by{" "}
+                    {childCount > 0
+                      ? describeLinkedLocations(childCount)
+                      : null}
+                    {childCount > 0 ? " and " : null}
+                    {describeLinkedShops(shopCount)}. Move or remove those
+                    dependent records first.
+                  </>
+                )}
               </p>
             ) : null}
           </DangerZonePanel>

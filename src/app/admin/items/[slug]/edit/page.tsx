@@ -14,6 +14,7 @@ import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import {
   describeItemDeletionReferences,
+  describeItemRecipeReferences,
   itemCanDelete,
   itemEditorTabs,
   normalizeItemSearchQuery,
@@ -227,12 +228,22 @@ export default async function EditItemPage({
 
             {!canDeleteItem ? (
               <p className="text-danger">
-                This item cannot be deleted because it is referenced by{" "}
-                {describeItemDeletionReferences({
-                  recipesProduced: resultCount,
-                  recipeIngredients: ingredientCount,
-                  shopListings: shopListingCount,
-                })}. Remove those references first.
+                {shopListingCount === 0 ? (
+                  <>
+                    This item cannot be deleted because it is used as{" "}
+                    {describeItemRecipeReferences(resultCount, ingredientCount)}.
+                    Remove or reassign those recipe references first.
+                  </>
+                ) : (
+                  <>
+                    This item cannot be deleted because it is referenced by{" "}
+                    {describeItemDeletionReferences({
+                      recipesProduced: resultCount,
+                      recipeIngredients: ingredientCount,
+                      shopListings: shopListingCount,
+                    })}. Remove those references first.
+                  </>
+                )}
               </p>
             ) : null}
           </DangerZonePanel>

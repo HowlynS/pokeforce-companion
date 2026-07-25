@@ -5,6 +5,7 @@ import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import {
   describeItemDeletionReferences,
+  describeItemRecipeReferences,
   itemCanDelete,
   itemEditHref,
   normalizeItemSearchQuery,
@@ -92,13 +93,18 @@ export default async function DeleteItemPage({
                 "linked_shop_listings",
                 "linked_dependencies",
               ].includes(error)
-                ? `This item cannot be deleted because it is referenced by ${describeItemDeletionReferences(
-                    {
-                      recipesProduced: resultCount,
-                      recipeIngredients: ingredientCount,
-                      shopListings: shopListingCount,
-                    }
-                  )}.`
+                ? shopListingCount === 0
+                  ? `This item cannot be deleted because it is used as ${describeItemRecipeReferences(
+                      resultCount,
+                      ingredientCount
+                    )}.`
+                  : `This item cannot be deleted because it is referenced by ${describeItemDeletionReferences(
+                      {
+                        recipesProduced: resultCount,
+                        recipeIngredients: ingredientCount,
+                        shopListings: shopListingCount,
+                      }
+                    )}.`
                 : "Something went wrong."}
             </p>
           ) : null}
@@ -134,12 +140,22 @@ export default async function DeleteItemPage({
 
         {!canDelete ? (
           <p className="text-danger">
-            This item cannot be deleted because it is referenced by{" "}
-            {describeItemDeletionReferences({
-              recipesProduced: resultCount,
-              recipeIngredients: ingredientCount,
-              shopListings: shopListingCount,
-            })}. Remove those references first.
+            {shopListingCount === 0 ? (
+              <>
+                This item cannot be deleted because it is used as{" "}
+                {describeItemRecipeReferences(resultCount, ingredientCount)}.
+                Remove or reassign those recipe references first.
+              </>
+            ) : (
+              <>
+                This item cannot be deleted because it is referenced by{" "}
+                {describeItemDeletionReferences({
+                  recipesProduced: resultCount,
+                  recipeIngredients: ingredientCount,
+                  shopListings: shopListingCount,
+                })}. Remove those references first.
+              </>
+            )}
           </p>
         ) : null}
       </DeleteRecordDialog>

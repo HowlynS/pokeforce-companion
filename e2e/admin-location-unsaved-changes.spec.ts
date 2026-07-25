@@ -168,7 +168,10 @@ test("Hierarchy: changing the parent marks dirty, reverting clears it, and the r
   // Hierarchy tab must never be mistaken for dirty editable state.
   await selectAdminOption(parentSelect, "Test E2E Location Guard Parent");
   await page.getByRole("button", { name: "Save Hierarchy", exact: true }).click();
-  await expect(page).toHaveURL(`/admin/locations/${childSlug}/hierarchy`);
+  // The successful action redirects back to this same pathname, so a URL-only
+  // assertion can pass before the server mutation finishes. Wait for the
+  // redirected page's flash message before reading the parent record.
+  await expect(page.getByRole("status")).toHaveText("Hierarchy saved");
 
   await page.goto(`/admin/locations/${parentSlug}/hierarchy`);
   await expect(status(page)).toHaveCount(0);
