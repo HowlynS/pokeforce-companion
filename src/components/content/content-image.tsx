@@ -43,7 +43,12 @@ export async function ContentImage({
           height={displaySize}
         />
       ) : (
-        <span className="public-sprite-fallback">No image available</span>
+        <span
+          className="public-sprite-fallback"
+          aria-label="No image available"
+        >
+          {size === "row" ? "No image" : "No image available"}
+        </span>
       )}
     </span>
   );

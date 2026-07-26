@@ -144,6 +144,8 @@ export const E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX =
 
 const E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH =
   "items/test-e2e-public-item-detail.png";
+const E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH =
+  "recipes/test-e2e-public-recipe-detail.png";
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -1667,6 +1669,135 @@ export async function createE2ePublicItemDetailFixture(
   }
 
   return { item, recipeName };
+}
+
+export async function deleteE2ePublicRecipeDetailFixture(): Promise<void> {
+  await withStorageAdmin(async (admin) => {
+    const { error } = await admin.storage.from(SERVICE_TEST_BUCKET).remove([
+      E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH,
+    ]);
+    if (error) {
+      throw new Error(
+        `Could not remove the public Recipe-detail sprite fixtures (status ${
+          error.statusCode ?? "unknown"
+        }).`
+      );
+    }
+  });
+  await deleteE2ePublicItemDetailFixture();
+}
+
+export async function createE2ePublicRecipeDetailFixture(
+  recipeImageBytes: Buffer
+): Promise<{
+  recipe: { name: string; slug: string };
+  result: { name: string; slug: string };
+  picturedIngredientName: string;
+}> {
+  await deleteE2ePublicRecipeDetailFixture();
+  const itemFixture =
+    await createE2ePublicItemDetailFixture(recipeImageBytes);
+  const recipeName = "Test E2E Azure Forge Recipe";
+
+  try {
+    await withStorageAdmin(async (admin) => {
+      const { error } = await admin.storage
+        .from(SERVICE_TEST_BUCKET)
+        .upload(E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH, recipeImageBytes, {
+          contentType: "image/png",
+          upsert: true,
+        });
+      if (error) {
+        throw new Error(
+          `Could not upload the public Recipe-detail sprite fixtures (status ${
+            error.statusCode ?? "unknown"
+          }).`
+        );
+      }
+    });
+
+    await withVerifiedDatabase(async (client) => {
+      const version = await client.query<{ id: string }>(
+        `select id from "GameVersion" where "isCurrent" = true limit 1`
+      );
+      const gameVersionId = version.rows[0]?.id;
+      if (!gameVersionId) {
+        throw new Error(
+          "The public Recipe-detail fixture requires a current Game Version."
+        );
+      }
+
+      await client.query("begin");
+      try {
+        await client.query(
+          `update "Recipe"
+           set image = $1,
+               name = $4,
+               "resultQuantityMin" = 2,
+               "resultQuantityMax" = 4,
+               "verifiedAt" = timestamp '2026-07-25 12:00:00+00',
+               "verifiedGameVersionId" = $2,
+               "updatedAt" = now()
+           where slug = $3`,
+          [
+            E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH,
+            gameVersionId,
+            `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-recipe`,
+            recipeName,
+          ]
+        );
+        await client.query(
+          `update "Item"
+           set image = $1, "updatedAt" = now()
+           where slug = $2`,
+          [
+            E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH,
+            `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-result`,
+          ]
+        );
+
+        const extraIngredientSlugs = [
+          "charcoal",
+          "iron-ore",
+          "leather-strap",
+        ];
+        for (const [index, ingredientSlug] of extraIngredientSlugs.entries()) {
+          await client.query(
+            `insert into "RecipeIngredient"
+              ("id", "recipeId", "itemId", quantity)
+             select $1, $2, id, $3
+             from "Item"
+             where slug = $4`,
+            [
+              `test-e2e-public-recipe-detail-ingredient-${index + 1}`,
+              "test-e2e-public-item-detail-recipe-id",
+              index + 1,
+              ingredientSlug,
+            ]
+          );
+        }
+        await client.query("commit");
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      }
+    });
+  } catch (error) {
+    await deleteE2ePublicRecipeDetailFixture();
+    throw error;
+  }
+
+  return {
+    recipe: {
+      name: recipeName,
+      slug: `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-recipe`,
+    },
+    result: {
+      name: itemFixture.recipeName,
+      slug: `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-result`,
+    },
+    picturedIngredientName: itemFixture.item.name,
+  };
 }
 
 async function storageObjectExists(

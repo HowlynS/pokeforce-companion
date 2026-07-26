@@ -139,7 +139,9 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               {item.category ? (
                 <p className="item-category-label">{item.category.name}</p>
               ) : null}
-              <h1 id="item-title">{item.name}</h1>
+              <h1 id="item-title" className="public-resource-title">
+                {item.name}
+              </h1>
               {item.description ? (
                 <p className="item-description">{item.description}</p>
               ) : null}

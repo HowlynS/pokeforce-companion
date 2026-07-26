@@ -132,7 +132,7 @@ test.describe("public detail pages", () => {
     await expect(recipeRow).toContainText(
       `Requires 2 × ${itemFixture.item.name}`
     );
-    await expect(recipeRow.getByText("No image available")).toBeVisible();
+    await expect(recipeRow.getByText("No image", { exact: true })).toBeVisible();
     await expect(
       recipeRow.locator(".public-sprite-stage--row")
     ).toHaveCSS("width", "52px");
@@ -224,16 +224,20 @@ test.describe("public detail pages", () => {
       page.getByRole("heading", { level: 1, name: "Iron Sword", exact: true })
     ).toBeVisible();
 
-    const resultCard = cardLink(page, "Result: Iron Sword");
-    await expect(resultCard).toBeVisible();
-    await expect(resultCard).toHaveAttribute("href", "/items/iron-sword");
+    const resultRow = page.locator(".recipe-result-row");
+    await expect(resultRow).toBeVisible();
+    await expect(resultRow).toHaveAttribute("href", "/items/iron-sword");
 
     await expect(
       page.getByRole("heading", { level: 2, name: "Ingredients" })
     ).toBeVisible();
-    const ironIngot = cardLink(page, "Iron Ingot");
+    const ironIngot = page.locator(".recipe-ingredient-row").filter({
+      hasText: "Iron Ingot",
+    });
     await expect(ironIngot).toHaveAttribute("href", "/items/iron-ingot");
-    const leatherStrap = cardLink(page, "Leather Strap");
+    const leatherStrap = page.locator(".recipe-ingredient-row").filter({
+      hasText: "Leather Strap",
+    });
     await expect(leatherStrap).toHaveAttribute("href", "/items/leather-strap");
   });
 
@@ -276,7 +280,7 @@ test.describe("relational navigation journeys", () => {
     await cardLink(page, "Iron Sword").click();
     await expect(page).toHaveURL("/recipes/iron-sword");
 
-    await cardLink(page, "Result: Iron Sword").click();
+    await page.locator(".recipe-result-row").click();
     await expect(page).toHaveURL("/items/iron-sword");
     await expect(
       page.getByRole("heading", { level: 1, name: "Iron Sword", exact: true })

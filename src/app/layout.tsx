@@ -1,5 +1,5 @@
 ﻿import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { DM_Serif_Display, Manrope } from "next/font/google";
 import "./globals.css";
 
 // Site-wide interface typeface (Visual Pass sub-slice 1): a restrained
@@ -15,6 +15,13 @@ const manrope = Manrope({
   display: "swap",
 });
 
+const dmSerifDisplay = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-resource-title",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "PokeForce Companion",
   description: "A crafting wiki companion for PokeForce.",
@@ -26,7 +33,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={manrope.variable}>
+    <html
+      lang="en"
+      className={`${manrope.variable} ${dmSerifDisplay.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
