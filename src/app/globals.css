@@ -811,7 +811,7 @@ select:focus-visible {
 
 .public-sprite-stage--hero {
   --sprite-stage-size: 240px;
-  --sprite-image-size: 128px;
+  --sprite-image-size: 192px;
   border-color: color-mix(in srgb, var(--color-border) 82%, #5e88a6);
   border-radius: 14px;
   background:

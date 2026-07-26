@@ -11,7 +11,7 @@ type ContentImageProps = {
 const DISPLAY_SIZES = {
   card: 96,
   detail: 160,
-  hero: 128,
+  hero: 192,
   row: 48,
 } as const;
 
