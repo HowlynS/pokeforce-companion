@@ -4,12 +4,18 @@ import { MainNav } from "@/components/layout/main-nav";
 type AppShellProps = {
   children: React.ReactNode;
   landing?: boolean;
+  wide?: boolean;
 };
 
-export function AppShell({ children, landing = false }: AppShellProps) {
+export function AppShell({
+  children,
+  landing = false,
+  wide = false,
+}: AppShellProps) {
   const containerClassName =
     "public-site-container" +
-    (landing ? " public-site-container--landing" : "");
+    (landing ? " public-site-container--landing" : "") +
+    (wide ? " public-site-container--wide" : "");
 
   return (
     <div

@@ -86,7 +86,7 @@ export type AcquisitionSourceForDisplay = {
   quantity: string | null;
   notes: string | null;
   location: { name: string; slug: string } | null;
-  profession: { name: string } | null;
+  profession: { name: string; slug?: string } | null;
 };
 
 export type AcquisitionSourceGroup = {

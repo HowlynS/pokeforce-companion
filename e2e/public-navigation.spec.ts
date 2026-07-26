@@ -209,8 +209,10 @@ test.describe("public shell layout", () => {
         });
 
         expect(layout.contentWidth).toBeLessThanOrEqual(layout.viewportWidth);
-        expect(layout.main.width).toBeLessThanOrEqual(1480);
-        expect(layout.main.width).toBeGreaterThanOrEqual(1400);
+        const expectedWidth = path.startsWith("/items/")
+          ? Math.min(layout.viewportWidth, 1720)
+          : Math.min(layout.viewportWidth, 1480);
+        expect(Math.abs(layout.main.width - expectedWidth)).toBeLessThan(1);
         expect(Math.abs(layout.main.left - layout.header.left)).toBeLessThan(1);
         expect(Math.abs(layout.main.right - layout.header.right)).toBeLessThan(
           1

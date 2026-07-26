@@ -196,7 +196,7 @@ test("Item acquisition presents every structured purchase and preserves the lega
   });
   await expect(obtainHeading).toBeVisible();
   const obtainSection = obtainHeading.locator("..");
-  const purchases = obtainSection.locator(".public-shop-purchase");
+  const purchases = obtainSection.locator(".item-shop-row");
 
   await expect(purchases).toHaveCount(3);
   await expect(
@@ -213,9 +213,6 @@ test("Item acquisition presents every structured purchase and preserves the lega
     new RegExp(`1,250 ${fixtures.primaryCurrency.name}`)
   );
   await expect(purchases.nth(0)).toContainText("Available after the tutorial.");
-  await expect(purchases.nth(0)).toContainText(
-    "Verified for test-gv-current on 25 Jul 2026"
-  );
 
   await expect(
     purchases.nth(1).getByRole("link", { name: fixtures.shop.name, exact: true })

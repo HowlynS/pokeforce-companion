@@ -1,29 +1,24 @@
 import Image from "next/image";
-import { designTokens } from "@/lib/design-tokens";
 import { getImagePublicUrl } from "@/lib/storage/images";
 
 type ContentImageProps = {
   /** Storage object path from a trusted database record (never a URL). */
   imagePath: string | null;
   alt: string;
-  size?: "card" | "detail";
+  size?: "card" | "detail" | "hero" | "row";
 };
 
-const CANVAS_SIZES = {
+const DISPLAY_SIZES = {
   card: 96,
   detail: 160,
+  hero: 128,
+  row: 48,
 } as const;
 
 /**
- * Fixed square display canvas (96×96 for cards, 160×160 for detail pages).
- * The image is display-resized only — the stored object is untouched —
- * scaled up or down to fit the square via object-fit: contain, so a
- * non-square source is centered without cropping or distortion, using the
- * browser's normal image rendering.
- *
- * Records without an image render a compact muted pill instead of a
- * full-size empty canvas, so the missing-image state stays quiet inside
- * cards and detail pages.
+ * Shared public sprite stage. Stored objects and URL resolution remain
+ * untouched; the browser scales transparent sprites with nearest-neighbor
+ * rendering inside controlled, integer-friendly display bounds.
  */
 export async function ContentImage({
   imagePath,
@@ -31,54 +26,25 @@ export async function ContentImage({
   size = "card",
 }: ContentImageProps) {
   const imageUrl = await getImagePublicUrl(imagePath);
-  const canvasSize = CANVAS_SIZES[size];
-
-  if (!imageUrl) {
-    return (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          border: `1px solid ${designTokens.colors.border}`,
-          borderRadius: designTokens.radius.sm,
-          background: designTokens.colors.surfaceSoft,
-          color: designTokens.colors.textMuted,
-          padding: "4px 10px",
-          fontSize: "13px",
-          lineHeight: 1.4,
-        }}
-      >
-        No image available
-      </span>
-    );
-  }
+  const displaySize = DISPLAY_SIZES[size];
 
   return (
-    <div
-      style={{
-        width: `${canvasSize}px`,
-        height: `${canvasSize}px`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: `1px solid ${designTokens.colors.border}`,
-        borderRadius: designTokens.radius.sm,
-        background: designTokens.colors.surfaceSoft,
-        padding: "4px",
-        overflow: "hidden",
-      }}
+    <span
+      className={`public-sprite-stage public-sprite-stage--${size}${
+        imageUrl ? "" : " public-sprite-stage--empty"
+      }`}
     >
-      <Image
-        src={imageUrl}
-        alt={alt}
-        width={canvasSize}
-        height={canvasSize}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-        }}
-      />
-    </div>
+      {imageUrl ? (
+        <Image
+          className="public-sprite-image"
+          src={imageUrl}
+          alt={alt}
+          width={displaySize}
+          height={displaySize}
+        />
+      ) : (
+        <span className="public-sprite-fallback">No image available</span>
+      )}
+    </span>
   );
 }

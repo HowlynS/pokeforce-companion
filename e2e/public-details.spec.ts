@@ -6,6 +6,23 @@
 //   Category "Materials" holds Iron Ore; no seeded record has an image.
 
 import { expect, test, type Page } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+import {
+  createE2ePublicItemDetailFixture,
+  deleteE2ePublicItemDetailFixture,
+} from "./helpers/database-cleanup";
+
+const PNG_FIXTURE = path.join(__dirname, "fixtures", "tiny-valid.png");
+const SCREENSHOT_DIRECTORY = path.join(
+  process.cwd(),
+  "test-results",
+  "item-detail-visuals"
+);
+
+let itemFixture: Awaited<
+  ReturnType<typeof createE2ePublicItemDetailFixture>
+>;
 
 // Browser error hygiene (Group 9): any uncaught page error fails the test.
 // Serial single-worker execution makes this module-level state safe.
@@ -16,8 +33,19 @@ test.beforeEach(({ page }) => {
   page.on("pageerror", (error) => pageErrors.push(error.message));
 });
 
+test.beforeAll(async () => {
+  fs.mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  itemFixture = await createE2ePublicItemDetailFixture(
+    fs.readFileSync(PNG_FIXTURE)
+  );
+});
+
 test.afterEach(() => {
   expect(pageErrors, "no uncaught page errors are allowed").toEqual([]);
+});
+
+test.afterAll(async () => {
+  await deleteE2ePublicItemDetailFixture();
 });
 
 // The card component renders its title as an h3 inside the card link.
@@ -28,21 +56,163 @@ function cardLink(page: Page, name: string) {
 }
 
 test.describe("public detail pages", () => {
-  test("item detail shows details and the producing recipe", async ({ page }) => {
-    await page.goto("/items/iron-sword");
+  test("item detail matches the approved information hierarchy", async ({
+    page,
+  }) => {
+    await page.goto(`/items/${itemFixture.item.slug}`);
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "Iron Sword", exact: true })
+      page.getByRole("heading", {
+        level: 1,
+        name: itemFixture.item.name,
+        exact: true,
+      })
     ).toBeVisible();
-    // Relational facts rendered as text in the Details card.
-    await expect(page.getByText("Category: Gear")).toBeVisible();
+    await expect(
+      page.getByText(
+        "A dense mineral sample used to verify the public Item detail presentation.",
+        { exact: true }
+      )
+    ).toBeVisible();
+
+    const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
+    await expect(
+      breadcrumb.getByRole("link", { name: "Home", exact: true })
+    ).toHaveAttribute("href", "/");
+    await expect(
+      breadcrumb.getByRole("link", { name: "Items", exact: true })
+    ).toHaveAttribute("href", "/items");
+    await expect(
+      breadcrumb.getByText(itemFixture.item.name, { exact: true })
+    ).toHaveAttribute("aria-current", "page");
+
+    const heroImage = page.getByRole("img", {
+      name: `Image of ${itemFixture.item.name}`,
+      exact: true,
+    });
+    await expect(heroImage).toHaveCount(1);
+    await expect(heroImage).toBeVisible();
+    await expect(heroImage).toHaveCSS("image-rendering", "pixelated");
+    const heroStage = page.locator(".public-sprite-stage--hero");
+    await expect(heroStage).toHaveCount(1);
+    const heroBounds = await heroStage.boundingBox();
+    const imageBounds = await heroImage.boundingBox();
+    expect(heroBounds).not.toBeNull();
+    expect(imageBounds).not.toBeNull();
+    expect(imageBounds!.width).toBeLessThan(heroBounds!.width);
+    expect(imageBounds!.height).toBeLessThan(heroBounds!.height);
+
+    await expect(page.getByText("Materials", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Held item").first()).toBeVisible();
+    await expect(page.getByText("No", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Item details", exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Verification", exact: true })
+    ).toBeVisible();
+    await expect(page.getByText("Verified", { exact: true })).toBeVisible();
 
     await expect(
-      page.getByRole("heading", { level: 2, name: "Produced by" })
+      page.getByRole("heading", { level: 2, name: "How to obtain" })
     ).toBeVisible();
-    const producingRecipe = cardLink(page, "Iron Sword");
-    await expect(producingRecipe).toBeVisible();
-    await expect(producingRecipe).toHaveAttribute("href", "/recipes/iron-sword");
+    await expect(page.getByText("Azure mineral deposit")).toBeVisible();
+
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Used in recipes" })
+    ).toBeVisible();
+    const recipeRow = page.locator(".item-recipe-row").filter({
+      hasText: itemFixture.recipeName,
+    });
+    await expect(recipeRow).toHaveAttribute(
+      "href",
+      `/recipes/${itemFixture.item.slug}-recipe`
+    );
+    await expect(recipeRow).toContainText("Smithing");
+    await expect(recipeRow).toContainText(
+      `Requires 2 × ${itemFixture.item.name}`
+    );
+    await expect(recipeRow.getByText("No image available")).toBeVisible();
+    await expect(
+      recipeRow.locator(".public-sprite-stage--row")
+    ).toHaveCSS("width", "52px");
+
+    const atmosphere = page.locator(".resource-atmosphere--item");
+    expect(
+      await atmosphere.evaluate(
+        (element) => getComputedStyle(element, "::before").backgroundImage
+      )
+    ).toContain("radial-gradient");
+    await expect(page.locator(".item-sidebar .resource-atmosphere")).toHaveCount(
+      0
+    );
+
+    await atmosphere.evaluate((element) => {
+      (element as HTMLElement).style.setProperty(
+        "--resource-atmosphere-image",
+        "none"
+      );
+    });
+    expect(
+      await atmosphere.evaluate(
+        (element) => getComputedStyle(element, "::before").backgroundImage
+      )
+    ).toBe("none");
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: itemFixture.item.name,
+        exact: true,
+      })
+    ).toBeVisible();
+    await atmosphere.evaluate((element) => {
+      (element as HTMLElement).style.removeProperty(
+        "--resource-atmosphere-image"
+      );
+    });
+
+    await expect(page.getByText("Quick Links", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Additional information", exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Notes", exact: true })
+    ).toHaveCount(0);
+    await expect(page.getByText("Tradeable:", { exact: false })).toHaveCount(0);
+    await expect(page.getByText("Base value:", { exact: false })).toHaveCount(0);
+
+    for (const viewport of [
+      { width: 1920, height: 1080 },
+      { width: 3440, height: 1440 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.reload();
+      const widths = await page.evaluate(() => ({
+        viewport: document.documentElement.clientWidth,
+        content: document.documentElement.scrollWidth,
+      }));
+      expect(widths.content).toBeLessThanOrEqual(widths.viewport);
+      await page.screenshot({
+        path: path.join(
+          SCREENSHOT_DIRECTORY,
+          `item-populated-${viewport.width}x${viewport.height}.png`
+        ),
+        fullPage: true,
+      });
+    }
+
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto("/items/wood");
+    await expect(page.locator(".public-sprite-stage--hero")).toContainText(
+      "No image available"
+    );
+    await page.screenshot({
+      path: path.join(
+        SCREENSHOT_DIRECTORY,
+        "item-no-image-1920x1080.png"
+      ),
+      fullPage: true,
+    });
   });
 
   test("recipe detail links the resulting item and its ingredients", async ({

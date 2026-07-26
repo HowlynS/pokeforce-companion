@@ -1,19 +1,16 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
-import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
-import { ShopPurchaseCard } from "@/components/content/shop-purchase-card";
-import { Card } from "@/components/ui/card";
-import { ContentGrid } from "@/components/ui/content-grid";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { designTokens } from "@/lib/design-tokens";
+import { CurrencyPrice } from "@/components/content/currency-price";
 import { prisma } from "@/lib/db";
+import { formatDisplayDate } from "@/lib/format-date";
+import { formatPublicVerification } from "@/lib/public-verification";
+import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
 import {
-  buildAcquisitionSourceCard,
+  ACQUISITION_TYPE_LABELS,
   groupAcquisitionSourcesByType,
 } from "@/lib/validation/acquisition-source";
-import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
-import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -23,23 +20,35 @@ type ItemDetailPageProps = {
 
 export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
   const { slug } = await params;
-
   const item = await prisma.item.findUnique({
     where: { slug },
-    include: {
-      category: true,
-      recipesProduced: {
-        orderBy: { name: "asc" },
-      },
+    select: {
+      name: true,
+      description: true,
+      image: true,
+      heldItem: true,
+      updatedAt: true,
+      verifiedAt: true,
+      verifiedGameVersion: { select: { name: true } },
+      category: { select: { name: true } },
       recipeIngredients: {
-        include: { recipe: true },
+        select: {
+          id: true,
+          quantity: true,
+          recipe: {
+            select: {
+              slug: true,
+              name: true,
+              image: true,
+              profession: { select: { name: true } },
+              resultingItem: {
+                select: { name: true, image: true },
+              },
+            },
+          },
+        },
         orderBy: { recipe: { name: "asc" } },
       },
-      // Only the fields the public "How to obtain" section needs — never
-      // verification/Game Version fields, and never a database id beyond
-      // the source's own (used only as this list's React key, never
-      // rendered). Matches the same restrained shape the Location page's
-      // own "Obtainable Items" query uses (Slice 10A).
       acquisitionSources: {
         select: {
           id: true,
@@ -48,19 +57,15 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
           quantity: true,
           notes: true,
           location: { select: { name: true, slug: true } },
-          profession: { select: { name: true } },
+          profession: { select: { name: true, slug: true } },
         },
         orderBy: { createdAt: "asc" },
       },
-      // ShopListings are the canonical structured sale records. All
-      // purchase context is loaded in this one relation query so rendering
-      // multiple Shops/Currencies never introduces an N+1 query.
       shopListings: {
         select: {
+          id: true,
           priceAmount: true,
           notes: true,
-          verifiedAt: true,
-          verifiedGameVersion: { select: { name: true } },
           shop: {
             select: {
               name: true,
@@ -69,19 +74,12 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
             },
           },
           currency: {
-            select: {
-              name: true,
-              slug: true,
-              symbol: true,
-              image: true,
-            },
+            select: { name: true, symbol: true, image: true },
           },
         },
         orderBy: [
           { shop: { name: "asc" } },
-          { shop: { slug: "asc" } },
           { currency: { name: "asc" } },
-          { currency: { slug: "asc" } },
           { priceAmount: "asc" },
         ],
       },
@@ -92,158 +90,242 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     notFound();
   }
 
-  // Grouped by type (enum order), any type with zero sources omitted
-  // entirely — the whole section below is skipped when there are none at
-  // all. Neither the grouping nor its order implies priority or
-  // completeness; it is simply a stable way to present more than one
-  // source without repeating the type on every card.
-  const acquisitionGroups = groupAcquisitionSourcesByType(item.acquisitionSources);
-
-  // Only meaningful metadata is shown: unset optional fields are omitted
-  // rather than rendered as placeholder values. The two booleans are
-  // required fields, so Yes/No is always a real answer.
-  const details: string[] = [];
-
-  if (item.category) {
-    details.push(`Category: ${item.category.name}`);
-  }
-
-  details.push(`Tradeable: ${item.tradeable ? "Yes" : "No"}`);
-  details.push(`Held item: ${item.heldItem ? "Yes" : "No"}`);
-
-  if (item.baseValue !== null) {
-    details.push(`Base value: ${item.baseValue}`);
-  }
+  const acquisitionGroups = groupAcquisitionSourcesByType(
+    item.acquisitionSources
+  );
+  const verification = formatPublicVerification(item);
+  const updatedAt = formatDisplayDate(item.updatedAt);
+  const hasAcquisition =
+    item.shopListings.length > 0 || acquisitionGroups.length > 0;
 
   return (
-    <AppShell>
-      <PageHeader
-        title={item.name}
-        description={item.description ?? undefined}
-      />
+    <AppShell wide>
+      <article className="item-detail-page">
+        <nav aria-label="Breadcrumb" className="public-breadcrumb item-breadcrumb">
+          <ol>
+            <li>
+              <Link href="/" className="breadcrumb-link">
+                Home
+              </Link>
+            </li>
+            <li>
+              <span aria-hidden="true">/</span>
+              <Link href="/items" className="breadcrumb-link">
+                Items
+              </Link>
+            </li>
+            <li>
+              <span aria-hidden="true">/</span>
+              <span aria-current="page">{item.name}</span>
+            </li>
+          </ol>
+        </nav>
 
-      <section className="detail-hero">
-        <ContentImage
-          imagePath={item.image}
-          alt={`Image of ${item.name}`}
-          size="detail"
-        />
+        <div className="item-content-grid">
+          <div className="item-main-column">
+            <section
+              className="item-identity-panel resource-atmosphere resource-atmosphere--item"
+              aria-labelledby="item-title"
+            >
+            <div className="item-identity-stage">
+              <ContentImage
+                imagePath={item.image}
+                alt={`Image of ${item.name}`}
+                size="hero"
+              />
+            </div>
 
-        <div className="detail-hero-facts">
-          <Card title="Details" description={details.join(" · ")} />
+            <div className="item-identity-copy">
+              {item.category ? (
+                <p className="item-category-label">{item.category.name}</p>
+              ) : null}
+              <h1 id="item-title">{item.name}</h1>
+              {item.description ? (
+                <p className="item-description">{item.description}</p>
+              ) : null}
+              <dl className="item-fact-strip">
+                <div>
+                  <dt>Held item</dt>
+                  <dd>{item.heldItem ? "Yes" : "No"}</dd>
+                </div>
+              </dl>
+            </div>
+            </section>
 
-          {/* Verification metadata is deliberately NOT rendered here:
-              since Slice 9A, Game Version and verification information is
-              admin-only and never appears on public pages. */}
-        </div>
-      </section>
+            {hasAcquisition || item.recipeIngredients.length > 0 ? (
+              <div className="item-lower-grid">
+            {hasAcquisition ? (
+              <section className="item-panel item-obtain-panel">
+                <h2>How to obtain</h2>
 
-      {/* Structured Shop listings and legacy Acquisition Sources coexist.
-          There is no explicit equivalence relation between a listing and
-          a free-text NPC_OR_SHOP row, so no legacy source is hidden based
-          on a guessed name/location match. The section is omitted only
-          when both canonical and legacy sources are empty. */}
-      {item.shopListings.length > 0 || acquisitionGroups.length > 0 ? (
-        <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-          <SectionHeading icon={SECTION_ICONS.source}>How to obtain</SectionHeading>
+                {item.shopListings.length > 0 ? (
+                  <div className="item-source-group">
+                    <h3>Shops</h3>
+                    <div className="item-source-rows">
+                      {item.shopListings.map((listing) => (
+                        <article
+                          className="item-acquisition-row item-shop-row"
+                          key={listing.id}
+                        >
+                          <div className="item-row-primary">
+                            <Link
+                              href={`/shops/${listing.shop.slug}`}
+                              className="public-content-link"
+                            >
+                              {listing.shop.name}
+                            </Link>
+                            <Link
+                              href={`/locations/${listing.shop.location.slug}`}
+                              className="item-row-context public-content-link"
+                            >
+                              {listing.shop.location.name}
+                            </Link>
+                          </div>
+                          <CurrencyPrice
+                            amount={listing.priceAmount}
+                            currency={listing.currency}
+                            className="item-shop-price"
+                          />
+                          {listing.notes ? (
+                            <p className="item-row-notes">{listing.notes}</p>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
-          {item.shopListings.length > 0 ? (
-            <div style={{ marginBottom: "16px" }}>
-              <p
-                style={{
-                  margin: "0 0 8px",
-                  fontWeight: 700,
-                  fontSize: "16px",
-                }}
-              >
-                Shops
-              </p>
-
-              <div className="public-shop-purchases">
-                {item.shopListings.map((listing) => (
-                  <ShopPurchaseCard
-                    key={`${listing.shop.slug}-${listing.currency.slug}`}
-                    shop={listing.shop}
-                    currency={listing.currency}
-                    priceAmount={listing.priceAmount}
-                    notes={listing.notes}
-                    verifiedAt={listing.verifiedAt}
-                    verifiedGameVersion={listing.verifiedGameVersion}
-                  />
+                {acquisitionGroups.map((group) => (
+                  <div className="item-source-group" key={group.type}>
+                    <h3>{group.label}</h3>
+                    <div className="item-source-rows">
+                      {group.sources.map((source) => {
+                        const title =
+                          source.sourceLabel ??
+                          source.location?.name ??
+                          source.profession?.name ??
+                          ACQUISITION_TYPE_LABELS[source.type];
+                        return (
+                          <article className="item-acquisition-row" key={source.id}>
+                            <div className="item-row-primary">
+                              <strong>{title}</strong>
+                              {source.location &&
+                              title !== source.location.name ? (
+                                <Link
+                                  href={`/locations/${source.location.slug}`}
+                                  className="item-row-context public-content-link"
+                                >
+                                  {source.location.name}
+                                </Link>
+                              ) : source.location ? (
+                                <Link
+                                  href={`/locations/${source.location.slug}`}
+                                  className="item-row-context public-content-link"
+                                >
+                                  View location
+                                </Link>
+                              ) : null}
+                              {source.profession?.slug &&
+                              title !== source.profession.name ? (
+                                <Link
+                                  href={`/professions/${source.profession.slug}`}
+                                  className="item-row-context public-content-link"
+                                >
+                                  {source.profession.name}
+                                </Link>
+                              ) : null}
+                            </div>
+                            {source.quantity ? (
+                              <span className="item-source-quantity">
+                                Quantity: {source.quantity}
+                              </span>
+                            ) : null}
+                            {source.notes ? (
+                              <p className="item-row-notes">{source.notes}</p>
+                            ) : null}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
+              </section>
+            ) : null}
+
+            {item.recipeIngredients.length > 0 ? (
+              <section className="item-panel item-recipes-panel">
+                <h2>Used in recipes</h2>
+                <div className="item-recipe-rows">
+                  {item.recipeIngredients.map((ingredient) => (
+                    <Link
+                      className="item-recipe-row"
+                      href={`/recipes/${ingredient.recipe.slug}`}
+                      key={ingredient.id}
+                    >
+                      <span className="item-recipe-thumbnail">
+                        <ContentImage
+                          imagePath={resolveRecipeDisplayImage({
+                            recipeImage: ingredient.recipe.image,
+                            resultingItemImage:
+                              ingredient.recipe.resultingItem.image,
+                          })}
+                          alt={`Image of ${ingredient.recipe.name}`}
+                          size="row"
+                        />
+                      </span>
+                      <span className="item-recipe-copy">
+                        <strong>{ingredient.recipe.name}</strong>
+                        {ingredient.recipe.profession ? (
+                          <span>{ingredient.recipe.profession.name}</span>
+                        ) : null}
+                        <span>
+                          Requires {ingredient.quantity} × {item.name}
+                        </span>
+                      </span>
+                      <span className="item-recipe-affordance" aria-hidden="true">
+                        →
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
-          {acquisitionGroups.map((group) => (
-            <div key={group.type} style={{ marginBottom: "16px" }}>
-              <p
-                style={{
-                  margin: "0 0 8px",
-                  fontWeight: 700,
-                  fontSize: "16px",
-                }}
-              >
-                {group.label}
+          <aside className="item-sidebar" aria-label="Item information">
+            <section className="item-panel item-sidebar-panel">
+              <h2>Item details</h2>
+              <dl className="item-detail-list">
+                {item.category ? (
+                  <div>
+                    <dt>Category</dt>
+                    <dd>{item.category.name}</dd>
+                  </div>
+                ) : null}
+                {updatedAt ? (
+                  <div>
+                    <dt>Last updated</dt>
+                    <dd>{updatedAt}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </section>
+
+            <section className="item-panel item-sidebar-panel">
+              <h2>Verification</h2>
+              <p className="item-verification-state">
+                {verification ? "Verified" : "Unverified"}
               </p>
-
-              <ContentGrid>
-                {group.sources.map((source) => {
-                  const card = buildAcquisitionSourceCard(source);
-                  return (
-                    <Card
-                      key={source.id}
-                      title={card.title}
-                      description={card.description}
-                      href={card.href}
-                    />
-                  );
-                })}
-              </ContentGrid>
-            </div>
-          ))}
-        </section>
-      ) : null}
-
-      {/* Omitted entirely (heading included) when no recipe produces this
-          item — public detail pages never render empty optional sections. */}
-      {item.recipesProduced.length > 0 ? (
-        <section style={{ marginBottom: designTokens.layout.sectionGap }}>
-          <SectionHeading icon={SECTION_ICONS.recipes}>Produced by</SectionHeading>
-
-          <ContentGrid>
-            {item.recipesProduced.map((recipe) => (
-              <Card
-                key={recipe.id}
-                title={recipe.name}
-                description={`${formatRecipeProduces(recipe.resultQuantityMin, recipe.resultQuantityMax)} per craft.`}
-                href={`/recipes/${recipe.slug}`}
-              />
-            ))}
-          </ContentGrid>
-        </section>
-      ) : null}
-
-      {/* Omitted entirely (heading included) when no recipe uses this item
-          as an ingredient — never a public empty state. */}
-      {item.recipeIngredients.length > 0 ? (
-        <section>
-          <SectionHeading icon={SECTION_ICONS.ingredients}>
-            Used as an ingredient in
-          </SectionHeading>
-
-          <ContentGrid>
-            {item.recipeIngredients.map((ingredient) => (
-              <Card
-                key={ingredient.id}
-                title={ingredient.recipe.name}
-                description={`${ingredient.quantity}x required.`}
-                href={`/recipes/${ingredient.recipe.slug}`}
-              />
-            ))}
-          </ContentGrid>
-        </section>
-      ) : null}
+              <p className="item-verification-copy">
+                {verification ??
+                  "This item’s gameplay information has not been verified for a Game Version."}
+              </p>
+            </section>
+          </aside>
+        </div>
+      </article>
     </AppShell>
   );
 }

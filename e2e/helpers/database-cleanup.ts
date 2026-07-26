@@ -139,6 +139,11 @@ export const E2E_SHOP_SLUG_PREFIX = "test-e2e-shop";
 export const E2E_SHOP_LOCATION_SLUG_PREFIX = "test-e2e-shop-location";
 export const E2E_SHOP_ITEM_SLUG_PREFIX = "test-e2e-shop-item";
 export const E2E_SHOP_CURRENCY_SLUG_PREFIX = "test-e2e-shop-currency";
+export const E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX =
+  "test-e2e-public-item-detail";
+
+const E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH =
+  "items/test-e2e-public-item-detail.png";
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -1486,6 +1491,182 @@ async function withStorageAdmin<T>(
   } finally {
     await signOutServiceClient(admin);
   }
+}
+
+export async function deleteE2ePublicItemDetailFixture(): Promise<void> {
+  await withStorageAdmin(async (admin) => {
+    const { error } = await admin.storage
+      .from(SERVICE_TEST_BUCKET)
+      .remove([E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH]);
+    if (error) {
+      throw new Error(
+        `Could not remove the public Item-detail sprite fixture (status ${
+          error.statusCode ?? "unknown"
+        }).`
+      );
+    }
+  });
+
+  await withVerifiedDatabase(async (client) => {
+    await client.query("begin");
+    try {
+      await client.query(
+        `delete from "AcquisitionSource"
+         where "itemId" in (
+           select id from "Item" where slug like $1
+         )`,
+        [`${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}%`]
+      );
+      await client.query(
+        `delete from "RecipeIngredient"
+         where "recipeId" in (
+           select id from "Recipe" where slug like $1
+         )
+         or "itemId" in (
+           select id from "Item" where slug like $1
+         )`,
+        [`${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}%`]
+      );
+      await client.query(
+        `delete from "Recipe" where slug like $1`,
+        [`${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}%`]
+      );
+      await client.query(
+        `delete from "Item" where slug like $1`,
+        [`${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}%`]
+      );
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    }
+  });
+}
+
+export async function createE2ePublicItemDetailFixture(
+  imageBytes: Buffer
+): Promise<{ item: { name: string; slug: string }; recipeName: string }> {
+  await deleteE2ePublicItemDetailFixture();
+  await ensureCurrentGameVersionFixture();
+
+  await withStorageAdmin(async (admin) => {
+    const { error } = await admin.storage
+      .from(SERVICE_TEST_BUCKET)
+      .upload(E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH, imageBytes, {
+        contentType: "image/png",
+        upsert: true,
+      });
+    if (error) {
+      throw new Error(
+        `Could not upload the public Item-detail sprite fixture (status ${
+          error.statusCode ?? "unknown"
+        }).`
+      );
+    }
+  });
+
+  const item = {
+    name: "Test E2E Azure Ore",
+    slug: E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX,
+  };
+  const resultSlug = `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-result`;
+  const recipeName = "Test E2E Azure Ingot";
+
+  try {
+    await withVerifiedDatabase(async (client) => {
+      const relations = await client.query<{
+        categoryId: string;
+        professionId: string;
+        gameVersionId: string;
+      }>(
+        `select
+           (select id from "Category" where slug = 'materials') as "categoryId",
+           (select id from "Profession" where slug = 'smithing') as "professionId",
+           (select id from "GameVersion" where "isCurrent" = true limit 1)
+             as "gameVersionId"`
+      );
+      const relation = relations.rows[0];
+      if (
+        !relation?.categoryId ||
+        !relation.professionId ||
+        !relation.gameVersionId
+      ) {
+        throw new Error(
+          "The public Item-detail fixture requires seeded Materials, Smithing, and current Game Version records."
+        );
+      }
+
+      await client.query("begin");
+      try {
+        await client.query(
+          `insert into "Item"
+            ("id", "slug", "name", "description", "image", "categoryId",
+             "verifiedAt", "verifiedGameVersionId", "createdAt", "updatedAt")
+           values
+            ($1, $2, $3, $4, $5, $6,
+             timestamp '2026-07-25 12:00:00+00', $7, now(), now()),
+            ($8, $9, $10, null, null, $6, null, null, now(), now())`,
+          [
+            "test-e2e-public-item-detail-id",
+            item.slug,
+            item.name,
+            "A dense mineral sample used to verify the public Item detail presentation.",
+            E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH,
+            relation.categoryId,
+            relation.gameVersionId,
+            "test-e2e-public-item-detail-result-id",
+            resultSlug,
+            recipeName,
+          ]
+        );
+        await client.query(
+          `insert into "Recipe"
+            ("id", "slug", "name", "resultingItemId", "professionId",
+             "resultQuantityMin", "resultQuantityMax", "createdAt", "updatedAt")
+           values ($1, $2, $3, $4, $5, 1, 1, now(), now())`,
+          [
+            "test-e2e-public-item-detail-recipe-id",
+            `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-recipe`,
+            recipeName,
+            "test-e2e-public-item-detail-result-id",
+            relation.professionId,
+          ]
+        );
+        await client.query(
+          `insert into "RecipeIngredient"
+            ("id", "recipeId", "itemId", "quantity")
+           values ($1, $2, $3, 2)`,
+          [
+            "test-e2e-public-item-detail-ingredient-id",
+            "test-e2e-public-item-detail-recipe-id",
+            "test-e2e-public-item-detail-id",
+          ]
+        );
+        await client.query(
+          `insert into "AcquisitionSource"
+            ("id", "itemId", "type", "sourceLabel", "quantity", "notes",
+             "createdAt", "updatedAt")
+           values ($1, $2, 'MINING', $3, $4, $5, now(), now())`,
+          [
+            "test-e2e-public-item-detail-source-id",
+            "test-e2e-public-item-detail-id",
+            "Azure mineral deposit",
+            "1-2",
+            "Found in documented mining areas.",
+          ]
+        );
+        await client.query("commit");
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      }
+    });
+  } catch (error) {
+    await deleteE2ePublicItemDetailFixture();
+    throw error;
+  }
+
+  return { item, recipeName };
 }
 
 async function storageObjectExists(
