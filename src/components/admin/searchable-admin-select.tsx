@@ -64,6 +64,9 @@ export type SearchableAdminSelectProps = {
   formId?: string;
   id?: string;
   className?: string;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
+  autoFocus?: boolean;
   /** Placeholder text for the internal search field (e.g. "Search
       items…"). */
   searchPlaceholder?: string;
@@ -112,6 +115,9 @@ export function SearchableAdminSelect({
   formId,
   id,
   className,
+  ariaInvalid,
+  ariaDescribedBy,
+  autoFocus = false,
   searchPlaceholder = "Search…",
   noResultsLabel = "No results match your search.",
 }: SearchableAdminSelectProps) {
@@ -168,6 +174,12 @@ export function SearchableAdminSelect({
     }
     dispatchFormChange(proxyRef.current);
   }, [currentValue]);
+
+  useEffect(() => {
+    if (autoFocus) {
+      triggerRef.current?.focus();
+    }
+  }, [autoFocus]);
 
   useEffect(() => {
     if (!open) {
@@ -341,6 +353,8 @@ export function SearchableAdminSelect({
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}
         aria-activedescendant={activeId}
+        aria-invalid={ariaInvalid || undefined}
+        aria-describedby={ariaDescribedBy}
         disabled={disabled}
         onClick={() => {
           if (open) {

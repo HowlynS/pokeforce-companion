@@ -10,7 +10,6 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import {
-  RECIPE_INGREDIENT_ROW_COUNT,
   parseRecipeGeneralInput,
   parseRecipeIngredientsInput,
   parseRecipeInput,
@@ -445,17 +444,6 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
 
   if (!existingRecipe) {
     redirect("/admin/recipes?error=missing_recipe");
-  }
-
-  // Defense in depth: the Ingredients form is only ever rendered for a
-  // recipe within editor capacity. A request that somehow reaches this
-  // action for an over-capacity recipe must never truncate it down to
-  // the form's fixed row count — the same guarantee the page's own
-  // safety state provides, enforced again here against direct tampering.
-  if (existingRecipe.ingredients.length > RECIPE_INGREDIENT_ROW_COUNT) {
-    redirect(
-      `${ingredientsPath ?? "/admin/recipes"}?error=too_many_ingredients`
-    );
   }
 
   const parsed = parseRecipeIngredientsInput(formData);

@@ -4,7 +4,7 @@ import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { EditorSection } from "@/components/admin/editor-section";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
-import { SearchableAdminSelect } from "@/components/admin/searchable-admin-select";
+import { RecipeIngredientEditor } from "@/components/admin/recipe-ingredient-editor";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -15,7 +15,6 @@ import {
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
 import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
-import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateRecipeIngredientsAction } from "../../actions";
 
@@ -33,11 +32,8 @@ const errorMessages: Record<string, string> = {
   relation_changed:
     "One of the selected ingredient items no longer exists. Please review your selections and try again.",
   missing_recipe: "That recipe no longer exists.",
-  // Defense in depth only — the form below is never rendered for a
-  // recipe already over capacity, so a normal admin can never trigger
-  // this through the real UI.
   too_many_ingredients:
-    "This recipe currently has more ingredients than this form supports, so it cannot be saved from here.",
+    "A Recipe cannot contain more than 50 ingredients.",
 };
 
 type IngredientsPageProps = {
@@ -75,13 +71,6 @@ export default async function RecipeIngredientsPage({
     notFound();
   }
 
-  const tooManyIngredients =
-    recipe.ingredients.length > RECIPE_INGREDIENT_ROW_COUNT;
-
-  const ingredientRows = Array.from(
-    { length: RECIPE_INGREDIENT_ROW_COUNT },
-    (_, index) => index + 1
-  );
   const itemOptions = await toEntitySelectOptions(items);
 
   const tabs = recipeEditorTabs(recipe.slug, query, "ingredients", {
@@ -127,16 +116,7 @@ export default async function RecipeIngredientsPage({
         </>
       }
     >
-      {tooManyIngredients ? (
-        <p role="alert" className="banner banner-error" style={{ margin: 0 }}>
-          This recipe has {recipe.ingredients.length} ingredients, but this
-          form currently supports only {RECIPE_INGREDIENT_ROW_COUNT}. Editing
-          is unavailable until the form supports more ingredient rows, so
-          none of this recipe&apos;s data is at risk of being dropped.
-          General fields remain editable from the General tab.
-        </p>
-      ) : (
-        <div className="admin-editor-surface">
+      <div className="admin-editor-surface">
         <form
           action={updateRecipeIngredientsAction}
           className="form-grid form-grid-wide form-grid-responsive"
@@ -148,34 +128,12 @@ export default async function RecipeIngredientsPage({
             <fieldset className="form-fieldset">
               <legend>Ingredients (fill at least one row)</legend>
 
-              {ingredientRows.map((row) => {
-                const existingIngredient = recipe.ingredients[row - 1];
-
-                return (
-                  <div key={row} className="ingredient-row">
-                    <SearchableAdminSelect
-                      name={`ingredientItemId${row}`}
-                      defaultValue={existingIngredient?.itemId ?? ""}
-                      searchPlaceholder="Search items…"
-                      noResultsLabel="No items match your search."
-                      options={[
-                        { value: "", label: "No ingredient", imageUrl: null },
-                        ...itemOptions,
-                      ]}
-                    />
-
-                    <input
-                      type="number"
-                      name={`ingredientQuantity${row}`}
-                      min={1}
-                      step={1}
-                      placeholder="Qty"
-                      defaultValue={existingIngredient?.quantity ?? ""}
-                      className="form-input"
-                    />
-                  </div>
-                );
-              })}
+              <RecipeIngredientEditor
+                options={itemOptions}
+                initialIngredients={recipe.ingredients}
+                draftKey={`recipe:edit:${recipe.id}:recipe-ingredients-form`}
+                serverError={error}
+              />
             </fieldset>
           </EditorSection>
 
@@ -193,8 +151,7 @@ export default async function RecipeIngredientsPage({
             serverUpdatedAt={recipe.updatedAt.toISOString()}
           />
         </form>
-        </div>
-      )}
+      </div>
     </RecipeWorkspace>
   );
 }

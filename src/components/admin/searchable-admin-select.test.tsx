@@ -55,6 +55,17 @@ describe("SearchableAdminSelect: closed-state rendering", () => {
     const html = render({ defaultValue: "copper-ore" });
     expect(html).toContain("resource-icon-empty");
   });
+
+  it("connects a duplicate selector to its inline error", () => {
+    const html = render({
+      ariaInvalid: true,
+      ariaDescribedBy: "ingredient-duplicate-error",
+    });
+
+    expect(html).toMatch(
+      /<button[^>]*aria-invalid="true"[^>]*aria-describedby="ingredient-duplicate-error"/
+    );
+  });
 });
 
 describe("SearchableAdminSelect: the submitted proxy field", () => {

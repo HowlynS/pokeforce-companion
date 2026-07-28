@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  RECIPE_INGREDIENT_ROW_COUNT,
+  RECIPE_INGREDIENT_MAX_ROWS,
   normalizeSlug,
   parseRecipeGeneralInput,
   parseRecipeIngredientsInput,
@@ -387,8 +387,8 @@ describe("parseRecipeInput", () => {
       }
     });
 
-    it("only reads the fixed number of ingredient rows", () => {
-      const beyondCapacityRow = RECIPE_INGREDIENT_ROW_COUNT + 1;
+    it("accepts dynamic rows beyond the old five-row ceiling", () => {
+      const beyondCapacityRow = 6;
       const result = parseRecipeInput(
         formDataFrom({
           ...validRecipeEntries(),
@@ -401,8 +401,32 @@ describe("parseRecipeInput", () => {
       if (result.ok) {
         expect(result.value.ingredients).toEqual([
           { itemId: "item-a", quantity: 2 },
+          { itemId: "item-extra", quantity: 9 },
         ]);
       }
+    });
+
+    it("rejects more than the 50-row safety cap", () => {
+      const entries: Record<string, string> = {
+        name: "Large Recipe",
+        resultingItemId: "item-result",
+        resultQuantityMin: "1",
+        resultQuantityMax: "1",
+        experienceReward: "0",
+        ingredientRowIds: Array.from(
+          { length: RECIPE_INGREDIENT_MAX_ROWS + 1 },
+          (_, index) => String(index + 1)
+        ).join(","),
+      };
+      for (let row = 1; row <= RECIPE_INGREDIENT_MAX_ROWS + 1; row++) {
+        entries[`ingredientItemId${row}`] = `item-${row}`;
+        entries[`ingredientQuantity${row}`] = "1";
+      }
+
+      expect(parseRecipeInput(formDataFrom(entries))).toEqual({
+        ok: false,
+        error: "too_many_ingredients",
+      });
     });
   });
 });

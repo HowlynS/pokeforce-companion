@@ -8,7 +8,7 @@ import { VerificationPanel } from "@/components/admin/verification-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
 import { RecipeResultingItemSelect } from "@/components/admin/recipe-resulting-item-select";
-import { SearchableAdminSelect } from "@/components/admin/searchable-admin-select";
+import { RecipeIngredientEditor } from "@/components/admin/recipe-ingredient-editor";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import {
   RECIPE_LIST_PATH,
@@ -17,7 +17,6 @@ import {
 } from "@/lib/admin/recipe-workspace";
 import { prisma } from "@/lib/db";
 import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
-import { RECIPE_INGREDIENT_ROW_COUNT } from "@/lib/validation/recipe";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { FieldLabelWithHelp } from "@/components/admin/field-label-with-help";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
@@ -95,10 +94,6 @@ export default async function NewRecipePage({
     }),
   ]);
 
-  const ingredientRows = Array.from(
-    { length: RECIPE_INGREDIENT_ROW_COUNT },
-    (_, index) => index + 1
-  );
   const [itemOptions, professionOptions] = await Promise.all([
     toEntitySelectOptions(items),
     toEntitySelectOptions(professions),
@@ -325,29 +320,11 @@ export default async function NewRecipePage({
               <fieldset className="form-fieldset">
                 <legend>Ingredients (fill at least one row)</legend>
 
-                {ingredientRows.map((row) => (
-                  <div key={row} className="ingredient-row">
-                    <SearchableAdminSelect
-                      name={`ingredientItemId${row}`}
-                      defaultValue=""
-                      searchPlaceholder="Search items…"
-                      noResultsLabel="No items match your search."
-                      options={[
-                        { value: "", label: "No ingredient", imageUrl: null },
-                        ...itemOptions,
-                      ]}
-                    />
-
-                    <input
-                      type="number"
-                      name={`ingredientQuantity${row}`}
-                      min={1}
-                      step={1}
-                      placeholder="Qty"
-                      className="form-input"
-                    />
-                  </div>
-                ))}
+                <RecipeIngredientEditor
+                  options={itemOptions}
+                  draftKey="recipe:new:recipe-create-form"
+                  serverError={error}
+                />
               </fieldset>
             </EditorSection>
           </div>

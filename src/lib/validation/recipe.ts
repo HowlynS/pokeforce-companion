@@ -6,7 +6,7 @@ import { SLUG_PATTERN, normalizeSlug } from "@/lib/slug";
 // auto-generation preview.
 export { normalizeSlug };
 
-const INGREDIENT_ROW_COUNT = 5;
+const INGREDIENT_MAX_ROWS = 50;
 
 export type RecipeIngredientInput = {
   itemId: string;
@@ -47,7 +47,8 @@ export type RecipeValidationError =
   | "no_ingredients"
   | "incomplete_ingredient"
   | "invalid_quantity"
-  | "duplicate_ingredient";
+  | "duplicate_ingredient"
+  | "too_many_ingredients";
 
 export type RecipeParseResult =
   | { ok: true; value: RecipeInput }
@@ -71,8 +72,25 @@ type IngredientRowsResult =
 
 function parseIngredientRows(formData: FormData): IngredientRowsResult {
   const ingredients: RecipeIngredientInput[] = [];
+  const declaredRows = String(formData.get("ingredientRowIds") ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => /^\d+$/.test(value));
+  const discoveredRows = Array.from(formData.keys())
+    .map(
+      (name) =>
+        /^(?:ingredientItemId|ingredientQuantity)(\d+)$/.exec(name)?.[1]
+    )
+    .filter((value): value is string => Boolean(value));
+  const rows = Array.from(
+    new Set(declaredRows.length > 0 ? declaredRows : discoveredRows)
+  );
 
-  for (let row = 1; row <= INGREDIENT_ROW_COUNT; row++) {
+  if (rows.length > INGREDIENT_MAX_ROWS) {
+    return { ok: false, error: "too_many_ingredients" };
+  }
+
+  for (const row of rows) {
     const itemId = String(formData.get(`ingredientItemId${row}`) ?? "").trim();
     const rawQuantity = String(
       formData.get(`ingredientQuantity${row}`) ?? ""
@@ -267,4 +285,4 @@ export function parseRecipeInput(formData: FormData): RecipeParseResult {
   };
 }
 
-export const RECIPE_INGREDIENT_ROW_COUNT = INGREDIENT_ROW_COUNT;
+export const RECIPE_INGREDIENT_MAX_ROWS = INGREDIENT_MAX_ROWS;

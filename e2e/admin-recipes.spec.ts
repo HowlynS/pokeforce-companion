@@ -42,6 +42,11 @@ const SCREENSHOT_DIRECTORY = path.join(
   "test-results",
   "recipe-class-domain-correction"
 );
+const WORKFLOW_SCREENSHOT_DIRECTORY = path.join(
+  process.cwd(),
+  "test-results",
+  "admin-form-workflow-pass"
+);
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -64,6 +69,7 @@ test.afterEach(async () => {
 
 test.beforeAll(async () => {
   fs.mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  fs.mkdirSync(WORKFLOW_SCREENSHOT_DIRECTORY, { recursive: true });
   // Remove stale rows from interrupted earlier runs; the guard inside the
   // helper throws here if the environment is not the verified test project.
   await deleteE2eTestRecipeRecords();
@@ -113,10 +119,9 @@ function panelRow(page: Page, panelTitle: string, label: string) {
     .filter({ hasText: new RegExp(`^${label}`) });
 }
 
-// The five fixed ingredient rows live inside one fieldset; its legend
-// gives the group its accessible name. The selects and quantity inputs
-// inside it carry no individual labels, so they are addressed by role and
-// position within the group.
+// Dynamic ingredient rows live inside one fieldset; its legend gives the
+// group its accessible name. The selects and quantity inputs inside it
+// carry no individual labels, so they are addressed by role and position.
 function ingredientGroup(page: Page) {
   return page.getByRole("group", {
     name: "Ingredients (fill at least one row)",
@@ -191,6 +196,11 @@ async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
     await page.getByLabel("EXP reward", { exact: true }).fill(data.experienceReward);
   }
   for (const [index, ingredient] of data.ingredients.entries()) {
+    while ((await ingredientGroup(page).getByRole("combobox").count()) <= index) {
+      await page
+        .getByRole("button", { name: "+ Ingredient", exact: true })
+        .click();
+    }
     await selectAdminOption(ingredientSelect(page, index), ingredient.item);
     await ingredientQuantity(page, index).fill(ingredient.quantity);
   }
@@ -815,18 +825,12 @@ test("Ingredients editing updates the ingredient rows and leaves General fields 
       .getByRole("link", { name: "Ingredients", exact: true })
   ).toContainText("2");
 
-  // Ingredient rows prefill in item-name order: Charcoal, then Iron Ore,
-  // then three untouched empty rows.
+  // Ingredient rows prefill in item-name order with no forced empty rows.
   expect(await selectedOptionLabel(ingredientSelect(page, 0))).toBe("Charcoal");
   await expect(ingredientQuantity(page, 0)).toHaveValue("1");
   expect(await selectedOptionLabel(ingredientSelect(page, 1))).toBe("Iron Ore");
   await expect(ingredientQuantity(page, 1)).toHaveValue("2");
-  for (const row of [2, 3, 4]) {
-    expect(await selectedOptionLabel(ingredientSelect(page, row))).toBe(
-      "No ingredient"
-    );
-    await expect(ingredientQuantity(page, row)).toHaveValue("");
-  }
+  await expect(ingredientGroup(page).getByRole("combobox")).toHaveCount(2);
 
   // --- Replace both ingredient rows; every other field untouched --------
   await selectAdminOption(ingredientSelect(page, 0), "Wood");
@@ -901,16 +905,22 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
       .getByRole("alert")
       .filter({ hasText: "Each ingredient row needs both an item and a quantity." })
   ).toBeVisible();
-  await page.getByRole("button", { name: "Discard draft" }).click();
-
-  // Quantity entered but no item selected (the redirect re-rendered a
-  // fresh form, so every field is filled again).
-  await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Incomplete");
-  await page.getByLabel(/^Page address/).fill("test-e2e-recipe-incomplete");
-  await selectAdminOption(
-    page.getByRole("combobox", { name: "Resulting item", exact: true }),
-    "Iron Ingot"
+  await expect(
+    page.getByRole("dialog", { name: "Restore unsaved draft?" })
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
+    "Test E2E Recipe Incomplete"
   );
+  await expect(ingredientSelect(page, 0)).toHaveText("Iron Ore");
+  await expect(ingredientQuantity(page, 0)).toHaveAttribute(
+    "aria-invalid",
+    "true"
+  );
+  await expect(ingredientQuantity(page, 0)).toBeFocused();
+
+  // Resolve that error in the opposite direction: quantity entered but no
+  // Item selected. The same restored row and all General fields remain.
+  await selectAdminOption(ingredientSelect(page, 0), "No ingredient");
   await ingredientQuantity(page, 0).fill("2");
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
@@ -922,7 +932,11 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
       .getByRole("alert")
       .filter({ hasText: "Each ingredient row needs both an item and a quantity." })
   ).toBeVisible();
-  await page.getByRole("button", { name: "Discard draft" }).click();
+  await expect(ingredientSelect(page, 0)).toHaveAttribute(
+    "aria-invalid",
+    "true"
+  );
+  await expect(ingredientSelect(page, 0)).toBeFocused();
 
   // Neither submission wrote anything.
   expect(await countE2eTestRecipeRecords()).toBe(0);
@@ -991,9 +1005,10 @@ test("ingredient quantities are guarded by browser-native validation with no upp
   ).toBeVisible();
 });
 
-test("selecting the same ingredient twice is rejected server-side", async ({
+test("duplicate ingredients are rejected live, focus the later row, and clear when resolved", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 1000, height: 900 });
   await page.goto("/admin/recipes/new");
 
   await page.getByLabel("Name", { exact: true }).fill("Test E2E Recipe Duplicate");
@@ -1004,22 +1019,50 @@ test("selecting the same ingredient twice is rejected server-side", async ({
   );
   await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   await ingredientQuantity(page, 0).fill("1");
+  await page
+    .getByRole("button", { name: "+ Ingredient", exact: true })
+    .click();
   await selectAdminOption(ingredientSelect(page, 1), "Iron Ore");
   await ingredientQuantity(page, 1).fill("2");
+  const duplicateError = page.getByText(
+    "This item is already used as an ingredient.",
+    { exact: true }
+  );
+  await expect(duplicateError).toBeVisible();
+  await expect(ingredientSelect(page, 1)).toHaveAttribute(
+    "aria-invalid",
+    "true"
+  );
+  await page.screenshot({
+    path: path.join(
+      WORKFLOW_SCREENSHOT_DIRECTORY,
+      "recipe-live-duplicate-ingredient-1000x900.png"
+    ),
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();
 
-  await expect(page).toHaveURL("/admin/recipes/new?error=duplicate_ingredient");
-  await expect(
-    page
-      .getByRole("alert")
-      .filter({ hasText: "Each ingredient can only be added once." })
-  ).toBeVisible();
+  await expect(page).toHaveURL("/admin/recipes/new");
+  await expect(ingredientSelect(page, 1)).toBeFocused();
 
   // No Recipe and no partial RecipeIngredient rows were written.
   expect(await countE2eTestRecipeRecords()).toBe(0);
   expect((await readFixtureCounts()).recipeIngredients).toBe(15);
+
+  await selectAdminOption(ingredientSelect(page, 1), "Copper Ore");
+  await expect(duplicateError).toHaveCount(0);
+  await expect(ingredientSelect(page, 1)).not.toHaveAttribute(
+    "aria-invalid",
+    "true"
+  );
+  await page
+    .getByRole("button", { name: "Create Recipe", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-duplicate-ingredient/edit"
+  );
 });
 
 test("Ingredients editing rejects invalid submissions exactly like creation, with no General field touched", async ({
@@ -1037,6 +1080,10 @@ test("Ingredients editing rejects invalid submissions exactly like creation, wit
     "/admin/recipes/test-e2e-recipe-ingredients-invalid/ingredients"
   );
 
+  await page
+    .getByRole("button", { name: "+ Ingredient", exact: true })
+    .click();
+
   // A duplicate ingredient item is rejected server-side, exactly like the
   // create form — the same shared parser, reached through a different
   // action.
@@ -1047,13 +1094,14 @@ test("Ingredients editing rejects invalid submissions exactly like creation, wit
     .click();
 
   await expect(page).toHaveURL(
-    "/admin/recipes/test-e2e-recipe-ingredients-invalid/ingredients?error=duplicate_ingredient"
+    "/admin/recipes/test-e2e-recipe-ingredients-invalid/ingredients"
   );
   await expect(
-    page
-      .getByRole("alert")
-      .filter({ hasText: "Each ingredient can only be added once." })
+    page.getByText("This item is already used as an ingredient.", {
+      exact: true,
+    })
   ).toBeVisible();
+  await expect(ingredientSelect(page, 1)).toBeFocused();
 
   // The rejected submission changed nothing: the original single
   // ingredient survives, and the recipe's own name is untouched.
@@ -1070,13 +1118,34 @@ test("Ingredients editing rejects invalid submissions exactly like creation, wit
   ).toBeVisible();
 });
 
-test("the form supports exactly five ingredient rows and guards larger recipes", async ({
+test("ingredient rows grow beyond five, load all saved rows, and stop only at 50", async ({
   page,
 }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/admin/recipes/new");
 
-  // All five fixed rows accept unique items with valid quantities.
-  await expect(ingredientGroup(page).getByRole("combobox")).toHaveCount(5);
+  await expect(ingredientGroup(page).getByRole("combobox")).toHaveCount(1);
+  const addIngredient = page.getByRole("button", {
+    name: "+ Ingredient",
+    exact: true,
+  });
+  for (let index = 1; index < 50; index += 1) {
+    await addIngredient.click();
+  }
+  await expect(ingredientGroup(page).getByRole("combobox")).toHaveCount(50);
+  await expect(addIngredient).toHaveCount(0);
+  await expect(
+    page.getByText("Maximum of 50 ingredients reached.", { exact: true })
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Discard unsaved changes?" })
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/recipes");
+  await page.goto("/admin/recipes/new");
   await createRecipeThroughForm(page, {
     name: "Test E2E Recipe Five",
     slug: "test-e2e-recipe-five",
@@ -1130,20 +1199,41 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
   await createTemporaryRecipeWithSixIngredients();
   await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/ingredients");
   await expect(
-    page.getByRole("alert").filter({
-      hasText:
-        "This recipe has 6 ingredients, but this form currently supports only 5.",
-    })
-  ).toBeVisible();
-  await expect(
-    page.getByText(/none of this recipe's data is at risk of being dropped/)
-  ).toBeVisible();
-  await expect(
     page.getByRole("button", { name: "Save Ingredients", exact: true })
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
-    page.getByRole("group", { name: "Ingredients (fill at least one row)" })
-  ).toHaveCount(0);
+    ingredientGroup(page).getByRole("combobox")
+  ).toHaveCount(6);
+  await page.screenshot({
+    path: path.join(
+      WORKFLOW_SCREENSHOT_DIRECTORY,
+      "recipe-editor-six-ingredients-1920x1080.png"
+    ),
+    fullPage: true,
+  });
+  expect(await selectedOptionLabel(ingredientSelect(page, 1))).toBe(
+    "Copper Ore"
+  );
+  expect(await selectedOptionLabel(ingredientSelect(page, 2))).toBe(
+    "Herb Leaf"
+  );
+  await page.getByRole("button", { name: "Remove ingredient row 2" }).click();
+  await expect(ingredientGroup(page).getByRole("combobox")).toHaveCount(5);
+  expect(await selectedOptionLabel(ingredientSelect(page, 1))).toBe(
+    "Herb Leaf"
+  );
+  await page
+    .getByRole("button", { name: "+ Ingredient", exact: true })
+    .click();
+  await selectAdminOption(ingredientSelect(page, 5), "Copper Ore");
+  await ingredientQuantity(page, 5).fill("2");
+  await page
+    .getByRole("button", { name: "Save Ingredients", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-six-ingredients/ingredients"
+  );
+  await expect(page.getByRole("status")).toHaveText("Ingredients saved");
   // Deletion must never depend on the Ingredients form being renderable.
   // Danger Zone was removed from the Ingredients tab entirely (Visual
   // Pass II Section 7: General tab only), so Delete Recipe never appears
@@ -1181,7 +1271,7 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
     page.getByText(/currently has more ingredients|ingredients, but/)
   ).toHaveCount(0);
   await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
-  await page.getByLabel(/^Required level/).fill("8");
+  await page.getByLabel(/^Required profession level/).fill("8");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL(
     "/admin/recipes/test-e2e-recipe-six-ingredients/edit"
@@ -1192,11 +1282,8 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
   // ingredients were touched by the General save.
   await page.goto("/admin/recipes/test-e2e-recipe-six-ingredients/ingredients");
   await expect(
-    page.getByRole("alert").filter({
-      hasText:
-        "This recipe has 6 ingredients, but this form currently supports only 5.",
-    })
-  ).toBeVisible();
+    ingredientGroup(page).getByRole("combobox")
+  ).toHaveCount(6);
 });
 
 test("recipe deletion removes the recipe and cascades its ingredient rows", async ({
