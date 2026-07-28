@@ -40,14 +40,15 @@ test.afterAll(async () => {
   expect(remaining).toBe(0);
 });
 
-// The public card renders its title as an h3 inside the card link (or a
-// plain h3 inside a non-link <article> when the card has no href).
 function cardTitle(page: Page, name: string) {
-  return page.getByRole("heading", { level: 3, name, exact: true });
+  return page.locator(".item-acquisition-row strong").filter({ hasText: name });
 }
 
 function cardLink(page: Page, name: string) {
-  return page.getByRole("link").filter({ has: cardTitle(page, name) });
+  return page
+    .locator(".item-acquisition-row")
+    .filter({ hasText: name })
+    .locator('a[href^="/locations/"]');
 }
 
 async function createTemporaryItem(page: Page, data: { name: string; slug: string }) {
@@ -265,12 +266,10 @@ test("optional profession, source label, quantity, and notes render only when po
 
   const populatedCard = cardTitle(page, "Camp Kitchen");
   await expect(populatedCard).toBeVisible();
-  await expect(
-    page.getByText(`Profession: ${PROFESSION.name}`)
-  ).toBeVisible();
+  await expect(page.getByText(PROFESSION.name, { exact: true })).toBeVisible();
   await expect(page.getByText("Quantity: 1-2")).toBeVisible();
   await expect(
-    page.getByText("Notes: Requires a lit campfire.")
+    page.getByText("Requires a lit campfire.")
   ).toBeVisible();
 
   // The sparse Event-type source falls back to the type label as its own
@@ -302,7 +301,7 @@ test("acquisition sources are never described as an exhaustive list", async ({
   ).toHaveCount(0);
 });
 
-test("a CRAFTING acquisition source coexists with the structured Produced by recipe section", async ({
+test("a CRAFTING acquisition source remains distinct from canonical Recipe browsing", async ({
   page,
 }) => {
   const ITEM = {
@@ -346,12 +345,8 @@ test("a CRAFTING acquisition source coexists with the structured Produced by rec
 
   await page.goto(`/items/${ITEM.slug}`);
 
-  // Both sections are present and distinct.
-  await expect(
-    page.getByRole("heading", { level: 2, name: "Produced by", exact: true })
-  ).toBeVisible();
-  await expect(cardLink(page, RECIPE.name)).toBeVisible();
-
+  // The supplementary acquisition source remains visible. Result-owned
+  // Recipe browsing is handled by the canonical Recipes catalogue.
   await expect(
     page.getByRole("heading", { level: 2, name: "How to obtain", exact: true })
   ).toBeVisible();
@@ -360,7 +355,7 @@ test("a CRAFTING acquisition source coexists with the structured Produced by rec
   // was set), so a plain text search would be ambiguous between them.
   await expect(cardTitle(page, "Crafting")).toBeVisible();
   await expect(
-    page.getByText("Notes: Also craftable at any workbench.")
+    page.getByText("Also craftable at any workbench.")
   ).toBeVisible();
 });
 
@@ -408,7 +403,7 @@ test("a source with a location AND a source label still exposes a working locati
     "href",
     `/locations/${LOCATION.slug}`
   );
-  await expect(page.getByText("Source: Old Pier")).toBeVisible();
+  await expect(page.getByText("Old Pier", { exact: true })).toBeVisible();
 });
 
 test("a source with a location, profession, quantity, and notes all set still exposes a working location link", async ({
@@ -464,9 +459,9 @@ test("a source with a location, profession, quantity, and notes all set still ex
     "href",
     `/locations/${LOCATION.slug}`
   );
-  await expect(page.getByText(`Profession: ${PROFESSION.name}`)).toBeVisible();
+  await expect(page.getByText(PROFESSION.name, { exact: true })).toBeVisible();
   await expect(page.getByText("Quantity: 1-2")).toBeVisible();
-  await expect(page.getByText("Notes: Best at dawn.")).toBeVisible();
+  await expect(page.getByText("Best at dawn.")).toBeVisible();
 
   // Keyboard reachability: the location link is a real, focusable anchor
   // that navigates on Enter, not merely mouse-clickable.
@@ -518,9 +513,10 @@ test("multiple distinct sources at the same location remain understandable and b
   });
 
   await page.goto(`/items/${ITEM.slug}`);
-  const locationCards = page.getByRole("link").filter({
-    has: cardTitle(page, LOCATION.name),
-  });
+  const locationCards = page
+    .locator(".item-acquisition-row")
+    .filter({ hasText: LOCATION.name })
+    .locator('a[href^="/locations/"]');
   await expect(locationCards).toHaveCount(2);
   for (const card of await locationCards.all()) {
     await expect(card).toHaveAttribute("href", `/locations/${LOCATION.slug}`);
@@ -545,6 +541,7 @@ test("no game version or verification information appears in the how to obtain s
   await expect(
     page.getByRole("heading", { level: 2, name: "How to obtain", exact: true })
   ).toBeVisible();
-  await expect(page.getByText(/verified/i)).toHaveCount(0);
-  await expect(page.getByText(/game version/i)).toHaveCount(0);
+  const obtainPanel = page.locator(".item-obtain-panel");
+  await expect(obtainPanel.getByText(/verified/i)).toHaveCount(0);
+  await expect(obtainPanel.getByText(/game version/i)).toHaveCount(0);
 });

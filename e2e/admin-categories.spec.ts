@@ -72,7 +72,7 @@ test.afterAll(async () => {
 function cardLink(page: Page, name: string) {
   return page
     .getByRole("link")
-    .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
 // One row of the shared Category record list, located by its exact
@@ -449,9 +449,8 @@ test("deletion is blocked while an item references the category", async ({
   ).toBeVisible();
   await expect(deleteButton).toBeDisabled();
 
-  // The category survived, in the admin list (record-list secondary
-  // context now shows "1 item") and on the public site, where the
-  // temporary item is rendered through the real relation.
+  // The category survived, in the admin list and on the public site, where
+  // its contextual summary links to the canonical filtered Items catalogue.
   await page.goto("/admin/categories");
   const blockedRow = recordRow(page, BLOCKED.name);
   await expect(blockedRow).toBeVisible();
@@ -460,9 +459,13 @@ test("deletion is blocked while an item references the category", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: BLOCKED.name, exact: true })
   ).toBeVisible();
+  await expect(page.getByText("Items: 1", { exact: true })).toBeVisible();
   await expect(
-    cardLink(page, "Test E2E Category Relation Item")
-  ).toBeVisible();
+    page.getByRole("link", {
+      name: `Browse ${BLOCKED.name} items`,
+      exact: true,
+    })
+  ).toHaveAttribute("href", `/items?category=${BLOCKED.slug}`);
 
   // Safely remove ONLY the temporary Item row, then delete the category
   // through the real confirmation flow.

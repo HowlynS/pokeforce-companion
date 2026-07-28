@@ -71,12 +71,10 @@ test.afterAll(async () => {
   expect(remaining).toBe(0);
 });
 
-// The public recipe/ingredient card renders its title as an h3 inside the
-// card link.
 function cardLink(page: Page, name: string) {
   return page
     .getByRole("link")
-    .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
 // One row of the shared Recipe record list (Slice 9C.1), located by its
@@ -409,17 +407,15 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   await expect(createdRow).toBeVisible();
   await expect(createdRow.getByText("Iron Ingot", { exact: true })).toBeVisible();
 
-  // Public list card appears with the full summary (ingredients are
-  // rendered in item-name order: Charcoal before Iron Ore).
+  // Public list card appears with its result-focused accessible summary.
   await page.goto("/recipes");
   const createdCard = cardLink(page, "Test E2E Recipe");
   await expect(createdCard).toBeVisible();
   await expect(createdCard).toHaveAttribute("href", "/recipes/test-e2e-recipe");
-  await expect(
-    createdCard.getByText(
-      "Produces 2 Iron Ingot (Components) · Profession: Smithing · Required level: 3 · Requires: 1x Charcoal, 2x Iron Ore"
-    )
-  ).toBeVisible();
+  await expect(createdCard).toHaveAttribute(
+    "aria-label",
+    "Test E2E Recipe, produces ×2 Iron Ingot, category Components"
+  );
 
   // Public detail page shows the name, resulting item, profession, both
   // ingredients with quantities, and the no-image fallback.
@@ -428,20 +424,20 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     page.getByRole("heading", { level: 1, name: "Test E2E Recipe", exact: true })
   ).toBeVisible();
   await expect(
-    cardLink(page, "Result: Iron Ingot").getByText(
-      "Produces 2 Iron Ingot (Components)."
-    )
+    cardLink(page, "Iron Ingot").getByText("Produces × 2", { exact: true })
   ).toBeVisible();
   await expect(
-    page.getByText("Profession: Smithing · Required level: 3")
+    page.locator(".item-detail-list").getByText("Smithing", { exact: true })
   ).toBeVisible();
   await expect(
-    cardLink(page, "Charcoal").getByText("1x required.")
+    cardLink(page, "Charcoal").getByText("× 1", { exact: true })
   ).toBeVisible();
   await expect(
-    cardLink(page, "Iron Ore").getByText("2x required.")
+    cardLink(page, "Iron Ore").getByText("× 2", { exact: true })
   ).toBeVisible();
-  await expect(page.getByText("No image available")).toBeVisible();
+  await expect(
+    page.locator(".recipe-identity-stage").getByText("No image available")
+  ).toBeVisible();
 });
 
 test("creating a variable-output recipe (min 1, max 4) displays the range publicly, never a redundant 1-1", async ({
@@ -459,9 +455,7 @@ test("creating a variable-output recipe (min 1, max 4) displays the range public
 
   await page.goto("/recipes/test-e2e-recipe-variable-output");
   await expect(
-    cardLink(page, "Result: Iron Ingot").getByText(
-      "Produces 1–4 Iron Ingot (Components)."
-    )
+    cardLink(page, "Iron Ingot").getByText("Produces × 1–4", { exact: true })
   ).toBeVisible();
   // The en-dash range renders — never a hyphen, and never a redundant
   // "1-1" (this recipe's own min/max genuinely differ).
@@ -516,9 +510,7 @@ test("editing a fixed-output recipe into a variable range, and a variable range 
 
   await page.goto("/recipes/test-e2e-recipe-range-toggle");
   await expect(
-    cardLink(page, "Result: Iron Ingot").getByText(
-      "Produces 1–5 Iron Ingot (Components)."
-    )
+    cardLink(page, "Iron Ingot").getByText("Produces × 1–5", { exact: true })
   ).toBeVisible();
 
   // --- Variable -> fixed ---------------------------------------------------
@@ -545,9 +537,7 @@ test("editing a fixed-output recipe into a variable range, and a variable range 
 
   await page.goto("/recipes/test-e2e-recipe-range-toggle");
   await expect(
-    cardLink(page, "Result: Iron Ingot").getByText(
-      "Produces 3 Iron Ingot (Components)."
-    )
+    cardLink(page, "Iron Ingot").getByText("Produces × 3", { exact: true })
   ).toBeVisible();
 });
 
@@ -636,9 +626,7 @@ test("the seeded Stamina Brew recipe's migrated variable range loads correctly i
 
   await page.goto("/recipes/stamina-brew");
   await expect(
-    cardLink(page, "Result: Stamina Brew").getByText(
-      "Produces 1–4 Stamina Brew (Consumables)."
-    )
+    cardLink(page, "Stamina Brew").getByText("Produces × 1–4", { exact: true })
   ).toBeVisible();
 });
 
@@ -755,18 +743,17 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
     })
   ).toBeVisible();
   await expect(
-    cardLink(page, "Result: Copper Ingot").getByText(
-      "Produces 3 Copper Ingot (Components)."
-    )
+    cardLink(page, "Copper Ingot").getByText("Produces × 3", { exact: true })
   ).toBeVisible();
-  // No profession and no required level: the details card shows only the
-  // no-profession fallback.
-  await expect(page.getByText("Profession: None", { exact: true })).toBeVisible();
+  // Empty optional Profession context remains hidden.
   await expect(
-    cardLink(page, "Charcoal").getByText("1x required.")
+    page.locator(".item-detail-list").getByText("Profession", { exact: true })
+  ).toHaveCount(0);
+  await expect(
+    cardLink(page, "Charcoal").getByText("× 1", { exact: true })
   ).toBeVisible();
   await expect(
-    cardLink(page, "Iron Ore").getByText("2x required.")
+    cardLink(page, "Iron Ore").getByText("× 2", { exact: true })
   ).toBeVisible();
 });
 
@@ -859,18 +846,18 @@ test("Ingredients editing updates the ingredient rows and leaves General fields 
   // ...and every General field (result, profession, required level) is
   // byte-for-byte the same as before...
   await expect(
-    cardLink(page, "Result: Iron Ingot").getByText(
-      "Produces 1 Iron Ingot (Components)."
-    )
+    cardLink(page, "Iron Ingot").getByText("Produces × 1", { exact: true })
   ).toBeVisible();
   await expect(
-    page.getByText("Profession: Smithing · Required level: 3")
+    page.locator(".item-detail-list").getByText("Smithing", { exact: true })
   ).toBeVisible();
   // ...but the ingredients are fully replaced.
   await expect(
-    cardLink(page, "Spring Water").getByText("5x required.")
+    cardLink(page, "Spring Water").getByText("× 5", { exact: true })
   ).toBeVisible();
-  await expect(cardLink(page, "Wood").getByText("4x required.")).toBeVisible();
+  await expect(
+    cardLink(page, "Wood").getByText("× 4", { exact: true })
+  ).toBeVisible();
   await expect(cardLink(page, "Charcoal")).toHaveCount(0);
   await expect(cardLink(page, "Iron Ore")).toHaveCount(0);
 });
@@ -984,7 +971,7 @@ test("ingredient quantities are guarded by browser-native validation with no upp
 
   await page.goto("/recipes/test-e2e-recipe-max-quantity");
   await expect(
-    cardLink(page, "Iron Ore").getByText("9999x required.")
+    cardLink(page, "Iron Ore").getByText("× 9999", { exact: true })
   ).toBeVisible();
 });
 
@@ -1063,7 +1050,7 @@ test("Ingredients editing rejects invalid submissions exactly like creation, wit
     })
   ).toBeVisible();
   await expect(
-    cardLink(page, "Iron Ore").getByText("1x required.")
+    cardLink(page, "Iron Ore").getByText("× 1", { exact: true })
   ).toBeVisible();
 });
 
@@ -1089,11 +1076,21 @@ test("the form supports exactly five ingredient rows and guards larger recipes",
 
   // All five ingredients render publicly...
   await page.goto("/recipes/test-e2e-recipe-five");
-  await expect(cardLink(page, "Charcoal").getByText("1x required.")).toBeVisible();
-  await expect(cardLink(page, "Copper Ore").getByText("2x required.")).toBeVisible();
-  await expect(cardLink(page, "Herb Leaf").getByText("3x required.")).toBeVisible();
-  await expect(cardLink(page, "Iron Ore").getByText("4x required.")).toBeVisible();
-  await expect(cardLink(page, "Wood").getByText("5x required.")).toBeVisible();
+  await expect(
+    cardLink(page, "Charcoal").getByText("× 1", { exact: true })
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Copper Ore").getByText("× 2", { exact: true })
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Herb Leaf").getByText("× 3", { exact: true })
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Iron Ore").getByText("× 4", { exact: true })
+  ).toBeVisible();
+  await expect(
+    cardLink(page, "Wood").getByText("× 5", { exact: true })
+  ).toBeVisible();
 
   // ...and the Ingredients tab prefills all five rows (item-name order).
   await page.goto("/admin/recipes/test-e2e-recipe-five/ingredients");

@@ -199,11 +199,16 @@ test("selecting a resulting item with an image inherits it immediately, and savi
       detailImage.evaluate((el) => (el as HTMLImageElement).naturalWidth)
     )
     .toBeGreaterThan(0);
-  await expect(page.getByText("No image available")).toHaveCount(0);
+  await expect(
+    page.locator(".recipe-result-image-stage").getByRole("img", {
+      name: `Image of ${ITEM.name}`,
+      exact: true,
+    })
+  ).toBeVisible();
 
   await page.goto("/recipes");
   const listImage = page.getByRole("img", {
-    name: `Image of ${RECIPE.name}`,
+    name: `Image of ${ITEM.name}`,
     exact: true,
   });
   await listImage.scrollIntoViewIfNeeded();

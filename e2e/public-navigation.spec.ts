@@ -19,12 +19,21 @@ test.afterEach(() => {
   expect(pageErrors, "no uncaught page errors are allowed").toEqual([]);
 });
 
-// The card component renders its title as an h3 inside the card link, so a
-// card is located by its exact heading — stable against styling changes.
+// General resource cards expose an h3; RecipeOutputCard uses a contextual
+// link name because its visual title is a strong inside a multi-control card.
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function cardLink(page: Page, name: string) {
-  return page
+  const headingCard = page
     .getByRole("link")
     .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+  const recipeOutputCard = page.getByRole("link", {
+    name: new RegExp(`^${escapeRegExp(name)}, produces `),
+  });
+
+  return headingCard.or(recipeOutputCard);
 }
 
 test.describe("homepage", () => {
@@ -348,11 +357,18 @@ test.describe("profession coverage (Slice 8B)", () => {
     // entirely rather than showing a placeholder.
     await expect(page.getByText("No description available")).toHaveCount(0);
     await expect(page.getByText("No image available")).toBeVisible();
-    // No recipes either: the entire Recipes section (heading and empty
-    // state alike) is omitted; the Details card still says "Recipes: 0".
-    await expect(page.getByText("Recipes: 0")).toBeVisible();
+    // No recipes either: the entire optional relationship section (heading
+    // and empty state alike) is omitted; the factual hero count remains.
+    const recipeCount = page
+      .locator(".profession-hero-counts > div")
+      .filter({ hasText: "Recipes" });
+    await expect(recipeCount).toContainText("0");
     await expect(
-      page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
+      page.getByRole("heading", {
+        level: 2,
+        name: "Recipes",
+        exact: true,
+      })
     ).toHaveCount(0);
     await expect(page.getByText("No recipes yet")).toHaveCount(0);
   });

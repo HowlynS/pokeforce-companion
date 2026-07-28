@@ -2,7 +2,7 @@
 
 type CardProps = {
   title: string;
-  description: string;
+  description: React.ReactNode;
   href?: string;
   media?: React.ReactNode;
 };

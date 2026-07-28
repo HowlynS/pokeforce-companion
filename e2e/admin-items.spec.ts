@@ -117,7 +117,7 @@ test.afterAll(async () => {
 function cardLink(page: Page, name: string) {
   return page
     .getByRole("link")
-    .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
 // One row of the shared Item record list (Slice 9B.4), located by its
@@ -247,9 +247,9 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
   await expect(
-    page.getByText(
-      `Category: ${INITIAL.category} · Tradeable: Yes · Held item: No · Base value: ${INITIAL.baseValue}`
-    )
+    page.locator(".item-detail-list").getByText(INITIAL.category, {
+      exact: true,
+    })
   ).toBeVisible();
   // A newly created, never-verified item must not render a verification
   // line (both metadata fields are NULL).
@@ -269,7 +269,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText("Not used in any recipes")).toHaveCount(0);
 
   // Public list card appears and points at the detail route.
-  await page.goto("/items");
+  await page.goto("/items?category=materials");
   const createdCard = cardLink(page, INITIAL.name);
   await expect(createdCard).toBeVisible();
   await expect(createdCard).toHaveAttribute("href", `/items/${INITIAL.slug}`);
@@ -350,16 +350,16 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   ).toBeVisible();
   await expect(page.getByText(EDITED.description)).toBeVisible();
   await expect(
-    page.getByText(
-      `Category: ${EDITED.category} · Tradeable: No · Held item: Yes · Base value: ${EDITED.baseValue}`
-    )
+    page.locator(".item-detail-list").getByText(EDITED.category, {
+      exact: true,
+    })
   ).toBeVisible();
   // The normal edit above never touched the verification checkbox, so the
   // item must still render as unverified.
   await page.goto(`/admin/items/${EDITED.slug}/edit`);
   await expect(verificationRow(page, "Verified for")).toHaveCount(0);
 
-  await page.goto("/items");
+  await page.goto("/items?category=tools");
   const editedCard = cardLink(page, EDITED.name);
   await expect(editedCard).toBeVisible();
   await expect(editedCard).toHaveAttribute("href", `/items/${EDITED.slug}`);
@@ -396,7 +396,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
   const deletedResponse = await page.goto(`/items/${EDITED.slug}`);
   expect(deletedResponse?.status()).toBe(404);
 
-  await page.goto("/items");
+  await page.goto("/items?category=tools");
   await expect(cardLink(page, EDITED.name)).toHaveCount(0);
 });
 
@@ -467,11 +467,11 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   );
   const stampedDateText = await verificationRow(page, "Verified on").textContent();
 
-  // Verification is admin-only since Slice 9A: the PUBLIC page must not
-  // render it even for a verified item.
+  // The public detail's factual Verification panel exposes the stamped
+  // Game Version without exposing admin controls.
   await page.goto(`/items/${VERIFY_ITEM.slug}`);
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
-  await expect(page.getByText(CURRENT_VERSION_NAME)).toHaveCount(0);
+  await expect(page.getByText(CURRENT_VERSION_NAME)).toBeVisible();
 
   // --- A NORMAL edit, even one that moves the picker, must not alter the
   // stamp: the picker only ever proposes a version, and nothing is written
@@ -539,10 +539,10 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     HISTORICAL_VERSION_NAME
   );
 
-  // The historical stamp stays admin-only on the public page too.
+  // The factual public Verification panel exposes the selected version.
   await page.goto(`/items/${VERIFY_ITEM.slug}`);
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
-  await expect(page.getByText(HISTORICAL_VERSION_NAME)).toHaveCount(0);
+  await expect(page.getByText(HISTORICAL_VERSION_NAME)).toBeVisible();
 });
 
 test("creating an item with a seeded name is rejected server-side", async ({
@@ -625,8 +625,8 @@ test("deletion is blocked while a recipe produces the item", async ({
   ).toBeVisible();
   await expect(deleteButton).toBeDisabled();
 
-  // The item survived, in the admin record list and on the public site,
-  // where the temporary recipe is rendered through the real relation.
+  // The item survived in the admin record list and on its public detail
+  // page. Result-owned Recipe browsing remains canonical on /recipes.
   await page.goto("/admin/items");
   await expect(recordRow(page, BLOCKED_RESULT.name)).toBeVisible();
   await page.goto(`/items/${BLOCKED_RESULT.slug}`);
@@ -638,8 +638,8 @@ test("deletion is blocked while a recipe produces the item", async ({
     })
   ).toBeVisible();
   await expect(
-    cardLink(page, "Test E2E Item Relation Producing Recipe")
-  ).toBeVisible();
+    page.getByRole("heading", { level: 2, name: "Used in recipes" })
+  ).toHaveCount(0);
 
   // Safely remove ONLY the temporary Recipe, then delete the item through
   // the real confirmation flow.

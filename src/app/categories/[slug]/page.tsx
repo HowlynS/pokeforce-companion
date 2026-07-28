@@ -1,12 +1,11 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ContentImage } from "@/components/content/content-image";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { ContentImage } from "@/components/content/content-image";
 import { Card } from "@/components/ui/card";
-import { ContentGrid } from "@/components/ui/content-grid";
-import { SectionHeading } from "@/components/ui/section-heading";
+import { cataloguePageHref } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
-import { SECTION_ICONS } from "@/lib/admin/section-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -14,19 +13,17 @@ type CategoryDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-function buildItemCardDescription(item: { tradeable: boolean }): string {
-  return `Tradeable: ${item.tradeable ? "Yes" : "No"}`;
-}
-
-export default async function CategoryDetailPage({ params }: CategoryDetailPageProps) {
+export default async function CategoryDetailPage({
+  params,
+}: CategoryDetailPageProps) {
   const { slug } = await params;
-
   const category = await prisma.category.findUnique({
     where: { slug },
-    include: {
-      items: {
-        orderBy: { name: "asc" },
-      },
+    select: {
+      name: true,
+      description: true,
+      image: true,
+      _count: { select: { items: true } },
     },
   });
 
@@ -41,7 +38,7 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
         description={category.description ?? undefined}
       />
 
-      <section className="detail-hero">
+      <section className="detail-hero category-detail-summary">
         <ContentImage
           imagePath={category.image}
           alt={`Image of ${category.name}`}
@@ -51,30 +48,18 @@ export default async function CategoryDetailPage({ params }: CategoryDetailPageP
         <div className="detail-hero-facts">
           <Card
             title="Details"
-            description={`Items: ${category.items.length}`}
+            description={`Items: ${category._count.items}`}
           />
+          {category._count.items > 0 ? (
+            <Link
+              className="category-browse-link"
+              href={cataloguePageHref("/items", 1, { category: slug })}
+            >
+              Browse {category.name} items
+            </Link>
+          ) : null}
         </div>
       </section>
-
-      {/* Omitted entirely (heading included) when the category holds no
-          items — public detail pages never render empty optional sections.
-          The Details card above still states "Items: 0". */}
-      {category.items.length > 0 ? (
-        <section>
-          <SectionHeading icon={SECTION_ICONS.items}>Items</SectionHeading>
-
-          <ContentGrid>
-            {category.items.map((item) => (
-              <Card
-                key={item.id}
-                title={item.name}
-                description={buildItemCardDescription(item)}
-                href={`/items/${item.slug}`}
-              />
-            ))}
-          </ContentGrid>
-        </section>
-      ) : null}
     </AppShell>
   );
 }

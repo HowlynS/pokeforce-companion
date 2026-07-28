@@ -1,12 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import {
   createE2ePublicRecipeDetailFixture,
   deleteE2ePublicRecipeDetailFixture,
+  readE2ePublicRecipeDetailFixtureState,
 } from "./helpers/database-cleanup";
+import { readValidatedProfessionSpriteBytes } from "./helpers/profession-sprite-fixtures";
 
-const PNG_FIXTURE = path.join(__dirname, "fixtures", "tiny-valid.png");
+const PROFESSION_SPRITE_DIRECTORY = path.join(
+  __dirname,
+  "fixtures",
+  "profession-sprites"
+);
 const SCREENSHOT_DIRECTORY = path.join(
   process.cwd(),
   "test-results",
@@ -16,10 +22,35 @@ const SCREENSHOT_DIRECTORY = path.join(
 let fixture: Awaited<ReturnType<typeof createE2ePublicRecipeDetailFixture>>;
 let pageErrors: string[] = [];
 
+async function expectSquare(locator: Locator) {
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  expect(Math.abs((box?.width ?? 0) - (box?.height ?? 0))).toBeLessThanOrEqual(1);
+}
+
+async function expectYieldOverlap(
+  stage: Locator,
+  yieldBadge: Locator
+) {
+  const stageBox = await stage.boundingBox();
+  const badgeBox = await yieldBadge.boundingBox();
+  expect(stageBox).not.toBeNull();
+  expect(badgeBox).not.toBeNull();
+  expect(badgeBox!.x).toBeLessThan(stageBox!.x + stageBox!.width / 2);
+  expect(badgeBox!.y).toBeLessThan(stageBox!.y + stageBox!.height);
+  expect(badgeBox!.y + badgeBox!.height).toBeGreaterThan(
+    stageBox!.y + stageBox!.height
+  );
+}
+
 test.beforeAll(async () => {
   fs.mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  const spriteBytes = readValidatedProfessionSpriteBytes(
+    PROFESSION_SPRITE_DIRECTORY
+  );
   fixture = await createE2ePublicRecipeDetailFixture(
-    fs.readFileSync(PNG_FIXTURE)
+    spriteBytes.kilnkeeperCrucible,
+    [spriteBytes.restorativePrimer, spriteBytes.captureWeave]
   );
 });
 
@@ -34,6 +65,12 @@ test.afterEach(() => {
 
 test.afterAll(async () => {
   await deleteE2ePublicRecipeDetailFixture();
+  expect(await readE2ePublicRecipeDetailFixtureState()).toEqual({
+    items: 0,
+    recipes: 0,
+    recipeIngredients: 0,
+    storageObjects: 0,
+  });
 });
 
 test("populated Recipe uses the shared detail composition and real relationships", async ({
@@ -61,7 +98,9 @@ test("populated Recipe uses the shared detail composition and real relationships
   ).toHaveAttribute("aria-current", "page");
 
   await expect(page.getByText("Smithing", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("× 2–4", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".recipe-fact-strip").getByText("× 2–4", { exact: true })
+  ).toBeVisible();
 
   const heroImage = page.getByRole("img", {
     name: `Image of ${fixture.recipe.name}`,
@@ -104,8 +143,8 @@ test("populated Recipe uses the shared detail composition and real relationships
   await expect(ingredientRows).toHaveCount(4);
   await expect(ingredientRows.first()).toHaveJSProperty("tagName", "A");
   await expect(
-    ingredientRows.first().locator(".item-recipe-affordance")
-  ).toHaveAttribute("aria-hidden", "true");
+    ingredientRows.locator(".item-recipe-affordance")
+  ).toHaveCount(0);
   const picturedIngredient = ingredientRows.filter({
     hasText: fixture.picturedIngredientName,
   });
@@ -122,26 +161,47 @@ test("populated Recipe uses the shared detail composition and real relationships
   await picturedIngredient.focus();
   await expect(picturedIngredient).toBeFocused();
   await expect(picturedIngredient).not.toHaveCSS("outline-style", "none");
+  const fallbackIngredient = ingredientRows.filter({
+    hasText: "Test E2E Tempering Dust",
+  });
+  await expect(
+    fallbackIngredient.locator(".public-sprite-stage--empty")
+  ).toHaveCount(1);
+  await expect(fallbackIngredient.locator("img")).toHaveCount(0);
 
   const resultRow = page.locator(".recipe-result-row");
   await expect(resultRow).toHaveJSProperty("tagName", "A");
   await expect(resultRow).toHaveAttribute("href", `/items/${fixture.result.slug}`);
   await expect(resultRow).toContainText(fixture.result.name);
   await expect(resultRow).toContainText("Produces × 2–4");
-  await expect(resultRow.locator(".public-sprite-stage")).toHaveCount(0);
+  const resultStage = resultRow.locator(".public-sprite-stage--card");
+  const resultYield = resultRow.locator(".recipe-result-yield");
+  await expect(resultStage).toHaveCount(1);
+  await expect(resultYield).toHaveText("× 2–4");
+  await expect(resultYield).toHaveAttribute("aria-hidden", "true");
   await expect(
     resultRow.getByRole("img", {
       name: `Image of ${fixture.result.name}`,
       exact: true,
     })
-  ).toHaveCount(0);
-  await expect(resultRow.locator(".item-recipe-affordance")).toHaveAttribute(
-    "aria-hidden",
-    "true"
+  ).toHaveCSS("image-rendering", "pixelated");
+  await expectSquare(resultStage);
+  await expectYieldOverlap(resultStage, resultYield);
+  await expect(resultRow.locator(".item-recipe-affordance")).toHaveCount(0);
+  const resultRowBox = await resultRow.boundingBox();
+  const resultCopyBox = await resultRow.locator(".item-recipe-copy").boundingBox();
+  expect(resultRowBox).not.toBeNull();
+  expect(resultCopyBox).not.toBeNull();
+  expect(resultCopyBox!.x + resultCopyBox!.width).toBeGreaterThan(
+    resultRowBox!.x + resultRowBox!.width - 12
   );
   await resultRow.focus();
   await expect(resultRow).toBeFocused();
   await expect(resultRow).not.toHaveCSS("outline-style", "none");
+  await resultRow.click();
+  await expect(page).toHaveURL(`/items/${fixture.result.slug}`);
+  await page.goBack();
+  await expect(page.locator(".recipe-result-row")).toBeVisible();
 
   await expect(
     page.getByRole("heading", {
@@ -193,10 +253,59 @@ test("populated Recipe uses the shared detail composition and real relationships
 
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.reload();
+  const ingredientsPanel = page.locator(".recipe-ingredients-panel");
+  const resultPanel = page.locator(".recipe-result-panel");
+  const ingredientsBox = await ingredientsPanel.boundingBox();
+  const resultBox = await resultPanel.boundingBox();
+  expect(ingredientsBox).not.toBeNull();
+  expect(resultBox).not.toBeNull();
+  expect(Math.abs(ingredientsBox!.y - resultBox!.y)).toBeLessThanOrEqual(1);
+  expect(ingredientsBox!.width / resultBox!.width).toBeGreaterThan(1.4);
+  expect(ingredientsBox!.width / resultBox!.width).toBeLessThan(1.6);
+  expect(resultBox!.height).toBeLessThan(ingredientsBox!.height);
   await page.screenshot({
     path: path.join(
       SCREENSHOT_DIRECTORY,
       "recipe-several-ingredients-1920x1080.png"
+    ),
+    fullPage: true,
+  });
+  await page.locator(".recipe-result-panel").screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipe-genuine-result-close.png"
+    ),
+  });
+  await page.locator(".recipe-result-row").screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipe-crafted-result-arrow-removed-close.png"
+    ),
+  });
+  await page.locator(".recipe-ingredient-row").first().screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipe-ingredient-arrow-removed-close.png"
+    ),
+  });
+
+  await page.setViewportSize({ width: 1000, height: 1000 });
+  await page.reload();
+  const intermediateIngredients = await page
+    .locator(".recipe-ingredients-panel")
+    .boundingBox();
+  const intermediateResult = await page
+    .locator(".recipe-result-panel")
+    .boundingBox();
+  expect(intermediateIngredients).not.toBeNull();
+  expect(intermediateResult).not.toBeNull();
+  expect(
+    Math.abs(intermediateIngredients!.y - intermediateResult!.y)
+  ).toBeLessThanOrEqual(1);
+  await page.screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipe-populated-intermediate-1000x1000.png"
     ),
     fullPage: true,
   });
@@ -210,6 +319,20 @@ test("populated Recipe uses the shared detail composition and real relationships
         document.documentElement.clientWidth
     )
   ).toBe(false);
+  const mobileIngredients = await page
+    .locator(".recipe-ingredients-panel")
+    .boundingBox();
+  const mobileResult = await page.locator(".recipe-result-panel").boundingBox();
+  expect(mobileIngredients).not.toBeNull();
+  expect(mobileResult).not.toBeNull();
+  expect(mobileResult!.y).toBeGreaterThan(
+    mobileIngredients!.y + mobileIngredients!.height
+  );
+  await expectSquare(page.locator(".recipe-result-row .public-sprite-stage--card"));
+  await expectYieldOverlap(
+    page.locator(".recipe-result-row .public-sprite-stage--card"),
+    page.locator(".recipe-result-yield")
+  );
   await page.screenshot({
     path: path.join(
       SCREENSHOT_DIRECTORY,
@@ -230,12 +353,27 @@ test("sparse and no-image Recipes preserve hide-empty behavior", async ({
   await expect(
     page.locator(".item-sidebar-panel").getByText("Profession", { exact: true })
   ).toHaveCount(0);
+  await expect(page.locator(".recipe-ingredient-row")).toHaveCount(1);
   await expect(page.locator(".public-sprite-stage--hero")).toContainText(
     "No image available"
   );
+  const sparseResultStage = page.locator(
+    ".recipe-result-row .public-sprite-stage--card"
+  );
+  const sparseYield = page.locator(".recipe-result-yield");
+  await expect(sparseResultStage).toContainText("No image available");
+  await expect(sparseResultStage.locator(".public-sprite-fallback")).toHaveAttribute(
+    "aria-label",
+    "No image available"
+  );
+  await expectSquare(sparseResultStage);
+  await expectYieldOverlap(sparseResultStage, sparseYield);
   await page.screenshot({
     path: path.join(SCREENSHOT_DIRECTORY, "recipe-sparse-1920x1080.png"),
     fullPage: true,
+  });
+  await page.locator(".recipe-result-panel").screenshot({
+    path: path.join(SCREENSHOT_DIRECTORY, "recipe-no-image-result-close.png"),
   });
 
   await page.goto("/recipes/iron-sword");

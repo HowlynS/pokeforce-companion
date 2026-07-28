@@ -141,11 +141,62 @@ export const E2E_SHOP_ITEM_SLUG_PREFIX = "test-e2e-shop-item";
 export const E2E_SHOP_CURRENCY_SLUG_PREFIX = "test-e2e-shop-currency";
 export const E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX =
   "test-e2e-public-item-detail";
+export const E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX =
+  "test-e2e-public-profession-detail";
 
 const E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH =
   "items/test-e2e-public-item-detail.png";
 const E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH =
   "recipes/test-e2e-public-recipe-detail.png";
+const E2E_PUBLIC_RECIPE_DETAIL_INGREDIENT_IMAGE_PATHS = [
+  "items/test-e2e-public-item-detail-ingredient-primer.png",
+  "items/test-e2e-public-item-detail-ingredient-weave.png",
+] as const;
+const E2E_PUBLIC_PROFESSION_DETAIL_IMAGE_PATH =
+  "professions/test-e2e-public-profession-detail.png";
+export const E2E_PUBLIC_PROFESSION_SPRITE_KEYS = [
+  "celestineRelayCore",
+  "kilnkeeperCrucible",
+  "courierTensionSpool",
+  "restorativePrimer",
+  "aetherglassTonic",
+  "captureWeave",
+  "gigatonPressCollar",
+  "duskworkLens",
+] as const;
+export type E2EPublicProfessionSpriteKey =
+  (typeof E2E_PUBLIC_PROFESSION_SPRITE_KEYS)[number];
+export type E2EPublicProfessionSpriteBytes = Record<
+  E2EPublicProfessionSpriteKey,
+  Buffer
+>;
+const E2E_PUBLIC_PROFESSION_SPRITE_PATHS: Record<
+  E2EPublicProfessionSpriteKey,
+  string
+> = {
+  celestineRelayCore:
+    "items/test-e2e-public-profession-detail-celestine-relay-core.png",
+  kilnkeeperCrucible:
+    "items/test-e2e-public-profession-detail-kilnkeeper-crucible.png",
+  courierTensionSpool:
+    "items/test-e2e-public-profession-detail-courier-tension-spool.png",
+  restorativePrimer:
+    "items/test-e2e-public-profession-detail-restorative-primer.png",
+  aetherglassTonic:
+    "items/test-e2e-public-profession-detail-aetherglass-tonic.png",
+  captureWeave:
+    "items/test-e2e-public-profession-detail-capture-weave.png",
+  gigatonPressCollar:
+    "items/test-e2e-public-profession-detail-gigaton-press-collar.png",
+  duskworkLens:
+    "items/test-e2e-public-profession-detail-duskwork-lens.png",
+};
+const E2E_PUBLIC_PROFESSION_STORAGE_PATHS = [
+  E2E_PUBLIC_PROFESSION_DETAIL_IMAGE_PATH,
+  ...E2E_PUBLIC_PROFESSION_SPRITE_KEYS.map(
+    (key) => E2E_PUBLIC_PROFESSION_SPRITE_PATHS[key]
+  ),
+];
 
 async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
@@ -1675,6 +1726,7 @@ export async function deleteE2ePublicRecipeDetailFixture(): Promise<void> {
   await withStorageAdmin(async (admin) => {
     const { error } = await admin.storage.from(SERVICE_TEST_BUCKET).remove([
       E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH,
+      ...E2E_PUBLIC_RECIPE_DETAIL_INGREDIENT_IMAGE_PATHS,
     ]);
     if (error) {
       throw new Error(
@@ -1688,7 +1740,8 @@ export async function deleteE2ePublicRecipeDetailFixture(): Promise<void> {
 }
 
 export async function createE2ePublicRecipeDetailFixture(
-  recipeImageBytes: Buffer
+  recipeImageBytes: Buffer,
+  ingredientImageBytes: readonly Buffer[] = []
 ): Promise<{
   recipe: { name: string; slug: string };
   result: { name: string; slug: string };
@@ -1701,29 +1754,49 @@ export async function createE2ePublicRecipeDetailFixture(
 
   try {
     await withStorageAdmin(async (admin) => {
-      const { error } = await admin.storage
-        .from(SERVICE_TEST_BUCKET)
-        .upload(E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH, recipeImageBytes, {
-          contentType: "image/png",
-          upsert: true,
-        });
-      if (error) {
-        throw new Error(
-          `Could not upload the public Recipe-detail sprite fixtures (status ${
-            error.statusCode ?? "unknown"
-          }).`
-        );
+      const uploads = [
+        {
+          path: E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH,
+          bytes: recipeImageBytes,
+        },
+        ...E2E_PUBLIC_RECIPE_DETAIL_INGREDIENT_IMAGE_PATHS.map(
+          (objectPath, index) => ({
+            path: objectPath,
+            bytes: ingredientImageBytes[index] ?? recipeImageBytes,
+          })
+        ),
+      ];
+      for (const upload of uploads) {
+        const { error } = await admin.storage
+          .from(SERVICE_TEST_BUCKET)
+          .upload(upload.path, upload.bytes, {
+            contentType: "image/png",
+            upsert: true,
+          });
+        if (error) {
+          throw new Error(
+            `Could not upload the public Recipe-detail sprite fixtures (status ${
+              error.statusCode ?? "unknown"
+            }).`
+          );
+        }
       }
     });
 
     await withVerifiedDatabase(async (client) => {
-      const version = await client.query<{ id: string }>(
-        `select id from "GameVersion" where "isCurrent" = true limit 1`
+      const relations = await client.query<{
+        gameVersionId: string;
+        categoryId: string;
+      }>(
+        `select
+          (select id from "GameVersion" where "isCurrent" = true limit 1)
+            as "gameVersionId",
+          (select id from "Category" where slug = 'materials') as "categoryId"`
       );
-      const gameVersionId = version.rows[0]?.id;
-      if (!gameVersionId) {
+      const relation = relations.rows[0];
+      if (!relation?.gameVersionId || !relation.categoryId) {
         throw new Error(
-          "The public Recipe-detail fixture requires a current Game Version."
+          "The public Recipe-detail fixture requires Materials and a current Game Version."
         );
       }
 
@@ -1741,7 +1814,7 @@ export async function createE2ePublicRecipeDetailFixture(
            where slug = $3`,
           [
             E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH,
-            gameVersionId,
+            relation.gameVersionId,
             `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-recipe`,
             recipeName,
           ]
@@ -1756,23 +1829,47 @@ export async function createE2ePublicRecipeDetailFixture(
           ]
         );
 
-        const extraIngredientSlugs = [
-          "charcoal",
-          "iron-ore",
-          "leather-strap",
+        const extraIngredients = [
+          {
+            key: "restorative-primer",
+            name: "Test E2E Restorative Primer",
+            image: E2E_PUBLIC_RECIPE_DETAIL_INGREDIENT_IMAGE_PATHS[0],
+          },
+          {
+            key: "capture-weave",
+            name: "Test E2E Capture Weave",
+            image: E2E_PUBLIC_RECIPE_DETAIL_INGREDIENT_IMAGE_PATHS[1],
+          },
+          {
+            key: "tempering-dust",
+            name: "Test E2E Tempering Dust",
+            image: null,
+          },
         ];
-        for (const [index, ingredientSlug] of extraIngredientSlugs.entries()) {
+        for (const [index, ingredient] of extraIngredients.entries()) {
+          const itemId = `test-e2e-public-item-detail-extra-${index + 1}-id`;
+          await client.query(
+            `insert into "Item"
+              ("id", "slug", "name", "image", "categoryId", "createdAt",
+               "updatedAt")
+             values ($1, $2, $3, $4, $5, now(), now())`,
+            [
+              itemId,
+              `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-extra-${ingredient.key}`,
+              ingredient.name,
+              ingredient.image,
+              relation.categoryId,
+            ]
+          );
           await client.query(
             `insert into "RecipeIngredient"
               ("id", "recipeId", "itemId", quantity)
-             select $1, $2, id, $3
-             from "Item"
-             where slug = $4`,
+             values ($1, $2, $3, $4)`,
             [
               `test-e2e-public-recipe-detail-ingredient-${index + 1}`,
               "test-e2e-public-item-detail-recipe-id",
+              itemId,
               index + 1,
-              ingredientSlug,
             ]
           );
         }
@@ -1797,6 +1894,835 @@ export async function createE2ePublicRecipeDetailFixture(
       slug: `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-result`,
     },
     picturedIngredientName: itemFixture.item.name,
+  };
+}
+
+export async function readE2ePublicRecipeDetailFixtureState(): Promise<{
+  items: number;
+  recipes: number;
+  recipeIngredients: number;
+  storageObjects: number;
+}> {
+  const databaseState = await withVerifiedDatabase(async (client) => {
+    const result = await client.query<{
+      items: string;
+      recipes: string;
+      recipeIngredients: string;
+    }>(
+      `select
+        (select count(*)::text from "Item" where slug like $1) as "items",
+        (select count(*)::text from "Recipe" where slug like $1) as "recipes",
+        (select count(*)::text from "RecipeIngredient"
+         where "recipeId" in (
+           select id from "Recipe" where slug like $1
+         )) as "recipeIngredients"`,
+      [`${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}%`]
+    );
+    const row = result.rows[0];
+    return {
+      items: Number(row?.items ?? 0),
+      recipes: Number(row?.recipes ?? 0),
+      recipeIngredients: Number(row?.recipeIngredients ?? 0),
+    };
+  });
+
+  const expectedPaths = [
+    E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH,
+    E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH,
+    ...E2E_PUBLIC_RECIPE_DETAIL_INGREDIENT_IMAGE_PATHS,
+  ];
+  const storageObjects = await withStorageAdmin(async (admin) => {
+    let count = 0;
+    for (const objectPath of expectedPaths) {
+      const [folder, ...nameParts] = objectPath.split("/");
+      const name = nameParts.join("/");
+      const { data, error } = await admin.storage
+        .from(SERVICE_TEST_BUCKET)
+        .list(folder, { limit: 1000, search: name });
+      if (error) {
+        throw new Error(
+          `Could not verify public Recipe-detail fixture cleanup (status ${
+            error.statusCode ?? "unknown"
+          }).`
+        );
+      }
+      if ((data ?? []).some((object) => object.name === name)) {
+        count += 1;
+      }
+    }
+    return count;
+  });
+
+  return { ...databaseState, storageObjects };
+}
+
+export async function deleteE2ePublicProfessionDetailFixture(): Promise<void> {
+  await withStorageAdmin(async (admin) => {
+    const { error } = await admin.storage
+      .from(SERVICE_TEST_BUCKET)
+      .remove(E2E_PUBLIC_PROFESSION_STORAGE_PATHS);
+    if (error) {
+      throw new Error(
+        `Could not remove the public Profession-detail sprite fixture (status ${
+          error.statusCode ?? "unknown"
+        }).`
+      );
+    }
+  });
+
+  await withVerifiedDatabase(async (client) => {
+    await client.query("begin");
+    try {
+      await client.query(
+        `delete from "RecipeIngredient"
+         where "recipeId" in (
+           select id from "Recipe" where slug like $1
+         )`,
+        [`${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}%`]
+      );
+      await client.query(
+        `delete from "Recipe" where slug like $1`,
+        [`${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}%`]
+      );
+      await client.query(
+        `delete from "Item" where slug like $1`,
+        [`${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-result-%`]
+      );
+      await client.query(
+        `delete from "Item" where slug like $1`,
+        [`${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-ingredient-%`]
+      );
+      await client.query(
+        `delete from "Profession" where slug like $1`,
+        [`${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}%`]
+      );
+      await client.query(
+        `delete from "Category" where slug = $1`,
+        [`${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-empty-category`]
+      );
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    }
+  });
+}
+
+export async function readE2ePublicProfessionDetailFixtureState(): Promise<{
+  professions: number;
+  recipes: number;
+  items: number;
+  recipeIngredients: number;
+  storageObjects: number;
+}> {
+  const databaseState = await withVerifiedDatabase(async (client) => {
+    const result = await client.query<{
+      professions: string;
+      recipes: string;
+      items: string;
+      recipeIngredients: string;
+    }>(
+      `select
+         (select count(*)::text from "Profession" where slug like $1)
+           as professions,
+         (select count(*)::text from "Recipe" where slug like $1)
+           as recipes,
+         (select count(*)::text from "Item"
+          where slug like $2 or slug like $3)
+           as items,
+         (select count(*)::text from "RecipeIngredient"
+          where "recipeId" in (
+            select id from "Recipe" where slug like $1
+          )) as "recipeIngredients"`,
+      [
+        `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}%`,
+        `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-result-%`,
+        `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-ingredient-%`,
+      ]
+    );
+    const row = result.rows[0];
+    return {
+      professions: Number(row?.professions ?? 0),
+      recipes: Number(row?.recipes ?? 0),
+      items: Number(row?.items ?? 0),
+      recipeIngredients: Number(row?.recipeIngredients ?? 0),
+    };
+  });
+
+  const storageObjects = await withStorageAdmin(async (admin) => {
+    let count = 0;
+    for (const folder of ["items", "professions"] as const) {
+      const expectedPaths = new Set(
+        E2E_PUBLIC_PROFESSION_STORAGE_PATHS.filter((objectPath) =>
+          objectPath.startsWith(`${folder}/`)
+        )
+      );
+      const { data, error } = await admin.storage
+        .from(SERVICE_TEST_BUCKET)
+        .list(folder, {
+          limit: 1000,
+          search: "test-e2e-public-profession-detail",
+        });
+      if (error) {
+        throw new Error(
+          `Could not inspect public Profession-detail sprite fixtures (status ${
+            error.statusCode ?? "unknown"
+          }).`
+        );
+      }
+      count += (data ?? []).filter((object) =>
+        expectedPaths.has(`${folder}/${object.name}`)
+      ).length;
+    }
+    return count;
+  });
+
+  return { ...databaseState, storageObjects };
+}
+
+export async function createE2ePublicProfessionDetailFixture(
+  professionImageBytes: Buffer,
+  spriteBytes: E2EPublicProfessionSpriteBytes
+): Promise<{
+  outputCategory: { name: string; slug: string };
+  emptyCategory: { name: string; slug: string };
+  profession: { name: string; slug: string; description: string };
+  sparseProfession: { name: string; slug: string };
+  recipes: Array<{
+    name: string;
+    slug: string;
+    resultQuantityMin: number;
+    resultQuantityMax: number;
+    result: {
+      name: string;
+      slug: string;
+      spriteKey: E2EPublicProfessionSpriteKey | null;
+    };
+    ingredients: Array<{
+      name: string;
+      slug: string;
+      quantity: number;
+      spriteKey: E2EPublicProfessionSpriteKey | null;
+      isCraftedResult: boolean;
+    }>;
+  }>;
+  spriteItems: Array<{
+    spriteKey: E2EPublicProfessionSpriteKey;
+    item: { name: string; slug: string };
+    role: "result" | "ingredient" | "result-and-ingredient";
+  }>;
+  sparseRecipe: {
+    name: string;
+    slug: string;
+    result: { name: string; slug: string };
+  };
+  consumerOnlyRecipe: {
+    name: string;
+    slug: string;
+    result: { name: string; slug: string };
+  };
+}> {
+  await deleteE2ePublicProfessionDetailFixture();
+  await ensureCurrentGameVersionFixture();
+
+  const profession = {
+    name: "Test E2E Artisan Forging",
+    slug: E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX,
+    description:
+      "A documented crafting discipline used to verify the public Profession detail presentation.",
+  };
+  const sparseProfession = {
+    name: "Test E2E Field Craft",
+    slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-sparse`,
+  };
+  const outputCategory = { name: "Tools", slug: "tools" };
+  const emptyCategory = {
+    name: "Test E2E Empty Output Category",
+    slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-empty-category`,
+  };
+  const ingredientDefinitions = [
+    {
+      key: "restorative-primer",
+      name: "Test E2E Restorative Primer",
+      spriteKey: "restorativePrimer" as const,
+    },
+    {
+      key: "aetherglass-tonic",
+      name: "Test E2E Aetherglass Tonic",
+      spriteKey: "aetherglassTonic" as const,
+    },
+    {
+      key: "capture-weave",
+      name: "Test E2E Capture Weave",
+      spriteKey: "captureWeave" as const,
+    },
+    {
+      key: "gigaton-press-collar",
+      name: "Test E2E Gigaton Press Collar",
+      spriteKey: "gigatonPressCollar" as const,
+    },
+    {
+      key: "duskwork-lens",
+      name: "Test E2E Duskwork Lens",
+      spriteKey: "duskworkLens" as const,
+    },
+    {
+      key: "tempering-dust",
+      name: "Test E2E Tempering Dust",
+      spriteKey: null,
+    },
+    {
+      key: "binding-wax",
+      name: "Test E2E Binding Wax",
+      spriteKey: "restorativePrimer" as const,
+    },
+    {
+      key: "rivet-blank",
+      name: "Test E2E Rivet Blank",
+      spriteKey: "gigatonPressCollar" as const,
+    },
+    {
+      key: "glass-blank",
+      name: "Test E2E Glass Blank",
+      spriteKey: "duskworkLens" as const,
+    },
+  ].map((ingredient) => ({
+    ...ingredient,
+    name: `A ${ingredient.name}`,
+    id: `test-e2e-public-profession-detail-ingredient-${ingredient.key}-id`,
+    slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-ingredient-${ingredient.key}`,
+  }));
+  const recipeDefinitions = [
+    {
+      name: "Test E2E Celestine Relay Tempering",
+      key: "celestine-relay-tempering",
+      resultName: "Test E2E Celestine Relay Core",
+      resultSpriteKey: "celestineRelayCore" as const,
+      resultQuantityMin: 2,
+      resultQuantityMax: 4,
+      ingredients: [{ itemKey: "restorative-primer", quantity: 1 }],
+    },
+    {
+      name:
+        "Test E2E Crucible Firing with Reinforced Merchant-Safe Glaze",
+      key: "kilnkeeper-crucible-firing",
+      resultName: "Test E2E Kilnkeeper Crucible",
+      resultSpriteKey: "kilnkeeperCrucible" as const,
+      resultQuantityMin: 3,
+      resultQuantityMax: 3,
+      ingredients: [
+        { itemKey: "aetherglass-tonic", quantity: 2 },
+        { itemKey: "capture-weave", quantity: 1 },
+        { itemKey: "tempering-dust", quantity: 4 },
+      ],
+    },
+    {
+      name: "Test E2E Dense Ninefold Gearwork Assembly",
+      key: "dense-ninefold-gearwork",
+      resultName: "Test E2E Courier Tension Spool",
+      resultSpriteKey: "courierTensionSpool" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "result:celestine-relay-tempering", quantity: 2 },
+        { itemKey: "restorative-primer", quantity: 3 },
+        { itemKey: "aetherglass-tonic", quantity: 1 },
+        { itemKey: "capture-weave", quantity: 5 },
+        { itemKey: "gigaton-press-collar", quantity: 1 },
+        { itemKey: "duskwork-lens", quantity: 2 },
+        { itemKey: "tempering-dust", quantity: 6 },
+        { itemKey: "binding-wax", quantity: 4 },
+        { itemKey: "rivet-blank", quantity: 8 },
+      ],
+    },
+    {
+      name: "Test E2E Etched Ledger Clasp",
+      key: "etched-ledger-clasp",
+      resultName: "Test E2E Etched Ledger Clasp",
+      resultSpriteKey: null,
+      resultQuantityMin: 2,
+      resultQuantityMax: 2,
+      ingredients: [
+        { itemKey: "restorative-primer", quantity: 2 },
+        { itemKey: "gigaton-press-collar", quantity: 3 },
+        { itemKey: "binding-wax", quantity: 1 },
+        { itemKey: "rivet-blank", quantity: 4 },
+      ],
+    },
+    {
+      name: "Test E2E Field Surveyor's Dusk Gauge Calibration",
+      key: "field-dusk-gauge",
+      resultName: "Test E2E Field Surveyor's Dusk Gauge",
+      resultSpriteKey: "duskworkLens" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "duskwork-lens", quantity: 1 },
+        { itemKey: "aetherglass-tonic", quantity: 2 },
+        { itemKey: "capture-weave", quantity: 3 },
+        { itemKey: "restorative-primer", quantity: 4 },
+        { itemKey: "glass-blank", quantity: 2 },
+        { itemKey: "result:celestine-relay-tempering", quantity: 1 },
+      ],
+    },
+    {
+      name: "Test E2E Gilded Wardweave Parcel Binding",
+      key: "gilded-wardweave-binding",
+      resultName: "Test E2E Gilded Wardweave Binding",
+      resultSpriteKey: "captureWeave" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "capture-weave", quantity: 2 },
+        { itemKey: "binding-wax", quantity: 5 },
+        { itemKey: "rivet-blank", quantity: 6 },
+      ],
+    },
+    {
+      name: "Test E2E Hardened Harbor Seal",
+      key: "hardened-harbor-seal",
+      resultName: "Test E2E Hardened Harbor Seal",
+      resultSpriteKey: "gigatonPressCollar" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "gigaton-press-collar", quantity: 2 },
+        { itemKey: "binding-wax", quantity: 3 },
+      ],
+    },
+    {
+      name: "Test E2E Insulated Market Plate",
+      key: "insulated-market-plate",
+      resultName: "Test E2E Insulated Market Plate",
+      resultSpriteKey: "aetherglassTonic" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "aetherglass-tonic", quantity: 4 },
+        { itemKey: "tempering-dust", quantity: 2 },
+      ],
+    },
+    {
+      name: "Test E2E Joiner's Pin",
+      key: "joiners-pin",
+      resultName: "Test E2E Joiner's Pin",
+      resultSpriteKey: "restorativePrimer" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "rivet-blank", quantity: 3 },
+        { itemKey: "restorative-primer", quantity: 2 },
+      ],
+    },
+    {
+      name: "Test E2E Keystone Merchant Clamp",
+      key: "keystone-merchant-clamp",
+      resultName: "Test E2E Keystone Merchant Clamp",
+      resultSpriteKey: "kilnkeeperCrucible" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "gigaton-press-collar", quantity: 4 },
+        { itemKey: "capture-weave", quantity: 2 },
+      ],
+    },
+    {
+      name: "Test E2E Lightweight Loom Brace",
+      key: "lightweight-loom-brace",
+      resultName: "Test E2E Lightweight Loom Brace",
+      resultSpriteKey: "courierTensionSpool" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "capture-weave", quantity: 3 },
+        { itemKey: "binding-wax", quantity: 2 },
+      ],
+    },
+    {
+      name: "Test E2E Masterwork Counter Rivet",
+      key: "masterwork-counter-rivet",
+      resultName: "Test E2E Masterwork Counter Rivet",
+      resultSpriteKey: "celestineRelayCore" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "rivet-blank", quantity: 5 },
+        { itemKey: "tempering-dust", quantity: 2 },
+      ],
+    },
+    {
+      name: "Test E2E Utility Exchange Plate",
+      key: "utility-exchange-plate",
+      resultName: "Test E2E Utility Exchange Plate",
+      resultSpriteKey: "duskworkLens" as const,
+      resultQuantityMin: 1,
+      resultQuantityMax: 1,
+      ingredients: [
+        { itemKey: "glass-blank", quantity: 2 },
+        { itemKey: "duskwork-lens", quantity: 3 },
+      ],
+    },
+  ].map((recipe) => ({
+    ...recipe,
+    name: `A ${recipe.name}`,
+    resultName: `A ${recipe.resultName}`,
+  }));
+  const resultDefinitions = recipeDefinitions.map((recipe) => ({
+    key: `result:${recipe.key}`,
+    id: `test-e2e-public-profession-detail-result-${recipe.key}-id`,
+    name: recipe.resultName,
+    slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-result-${recipe.key}`,
+    spriteKey: recipe.resultSpriteKey,
+  }));
+  const itemDefinitions = new Map(
+    [...ingredientDefinitions, ...resultDefinitions].map((item) => [
+      item.key,
+      item,
+    ])
+  );
+  const recipes = recipeDefinitions.map((recipe) => {
+    const result = itemDefinitions.get(`result:${recipe.key}`);
+    if (!result) {
+      throw new Error(`Missing result fixture definition for ${recipe.key}.`);
+    }
+
+    return {
+      name: recipe.name,
+      slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-${recipe.key}`,
+      resultQuantityMin: recipe.resultQuantityMin,
+      resultQuantityMax: recipe.resultQuantityMax,
+      result: {
+        name: result.name,
+        slug: result.slug,
+        spriteKey: result.spriteKey,
+      },
+      ingredients: recipe.ingredients.map((ingredient) => {
+        const item = itemDefinitions.get(ingredient.itemKey);
+        if (!item) {
+          throw new Error(
+            `Missing ingredient fixture definition for ${ingredient.itemKey}.`
+          );
+        }
+        return {
+          name: item.name,
+          slug: item.slug,
+          quantity: ingredient.quantity,
+          spriteKey: item.spriteKey,
+          isCraftedResult: ingredient.itemKey.startsWith("result:"),
+        };
+      }),
+    };
+  });
+  const spriteItems = [
+    {
+      spriteKey: "celestineRelayCore" as const,
+      item: recipes[0].result,
+      role: "result-and-ingredient" as const,
+    },
+    {
+      spriteKey: "kilnkeeperCrucible" as const,
+      item: recipes[1].result,
+      role: "result" as const,
+    },
+    {
+      spriteKey: "courierTensionSpool" as const,
+      item: recipes[2].result,
+      role: "result" as const,
+    },
+    ...ingredientDefinitions
+      .filter(
+        (
+          ingredient
+        ): ingredient is typeof ingredient & {
+          spriteKey: E2EPublicProfessionSpriteKey;
+        } => ingredient.spriteKey !== null
+      )
+      .map((ingredient) => ({
+        spriteKey: ingredient.spriteKey,
+        item: { name: ingredient.name, slug: ingredient.slug },
+        role: "ingredient" as const,
+      })),
+  ];
+  const sparseRecipe = {
+    name: "A Test E2E Field Repair Kit",
+    slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-sparse-recipe`,
+    result: {
+      name: "A Test E2E Field Repair Kit",
+      slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-result-sparse`,
+    },
+    ingredients: [],
+  };
+  const consumerOnlyRecipe = {
+    name: "A Test E2E Consumer-Only Tool Use",
+    slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-consumer-only`,
+    result: {
+      name: "A Test E2E Consumer-Only Gear Result",
+      slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-result-consumer-only`,
+    },
+  };
+
+  try {
+    await withStorageAdmin(async (admin) => {
+      const uploads = [
+        {
+          path: E2E_PUBLIC_PROFESSION_DETAIL_IMAGE_PATH,
+          bytes: professionImageBytes,
+        },
+        ...E2E_PUBLIC_PROFESSION_SPRITE_KEYS.map((spriteKey) => ({
+          path: E2E_PUBLIC_PROFESSION_SPRITE_PATHS[spriteKey],
+          bytes: spriteBytes[spriteKey],
+        })),
+      ];
+      for (const upload of uploads) {
+        const { error } = await admin.storage
+          .from(SERVICE_TEST_BUCKET)
+          .upload(upload.path, upload.bytes, {
+            contentType: "image/png",
+            upsert: true,
+          });
+        if (error) {
+          throw new Error(
+            `Could not upload a public Profession-detail sprite fixture (status ${
+              error.statusCode ?? "unknown"
+            }).`
+          );
+        }
+      }
+    });
+
+    await withVerifiedDatabase(async (client) => {
+      const relations = await client.query<{
+        categoryId: string;
+        consumerCategoryId: string;
+        gameVersionId: string;
+      }>(
+        `select
+           (select id from "Category" where slug = 'tools') as "categoryId",
+           (select id from "Category" where slug = 'gear')
+             as "consumerCategoryId",
+           (select id from "GameVersion" where "isCurrent" = true limit 1)
+             as "gameVersionId"`
+      );
+      const relation = relations.rows[0];
+      if (
+        !relation?.categoryId ||
+        !relation.consumerCategoryId ||
+        !relation.gameVersionId
+      ) {
+        throw new Error(
+          "The public Profession-detail fixture requires seeded Tools and Gear categories and a current Game Version."
+        );
+      }
+
+      await client.query("begin");
+      try {
+        await client.query(
+          `insert into "Category"
+            ("id", "slug", "name", "createdAt", "updatedAt")
+           values ($1, $2, $3, now(), now())`,
+          [
+            "test-e2e-public-profession-detail-empty-category-id",
+            emptyCategory.slug,
+            emptyCategory.name,
+          ]
+        );
+        await client.query(
+          `insert into "Profession"
+            ("id", "slug", "name", "description", "image", "verifiedAt",
+             "verifiedGameVersionId", "createdAt", "updatedAt")
+           values
+            ($1, $2, $3, $4, $5, timestamp '2026-07-25 12:00:00+00',
+             $6, now(), timestamp '2026-07-25 12:00:00+00'),
+            ($7, $8, $9, null, null, null, null, now(),
+             timestamp '2026-07-24 12:00:00+00')`,
+          [
+            "test-e2e-public-profession-detail-id",
+            profession.slug,
+            profession.name,
+            profession.description,
+            E2E_PUBLIC_PROFESSION_DETAIL_IMAGE_PATH,
+            relation.gameVersionId,
+            "test-e2e-public-profession-detail-sparse-id",
+            sparseProfession.slug,
+            sparseProfession.name,
+          ]
+        );
+
+        for (const ingredient of ingredientDefinitions) {
+          await client.query(
+            `insert into "Item"
+              ("id", "slug", "name", "image", "categoryId", "createdAt",
+               "updatedAt")
+             values ($1, $2, $3, $4, $5, now(), now())`,
+            [
+              ingredient.id,
+              ingredient.slug,
+              ingredient.name,
+              ingredient.spriteKey
+                ? E2E_PUBLIC_PROFESSION_SPRITE_PATHS[ingredient.spriteKey]
+                : null,
+              relation.categoryId,
+            ]
+          );
+        }
+
+        for (const result of resultDefinitions) {
+          await client.query(
+            `insert into "Item"
+              ("id", "slug", "name", "image", "categoryId", "createdAt",
+               "updatedAt")
+             values ($1, $2, $3, $4, $5, now(), now())`,
+            [
+              result.id,
+              result.slug,
+              result.name,
+              result.spriteKey
+                ? E2E_PUBLIC_PROFESSION_SPRITE_PATHS[result.spriteKey]
+                : null,
+              relation.categoryId,
+            ]
+          );
+        }
+
+        for (const [index, recipe] of recipeDefinitions.entries()) {
+          const recipeId = `test-e2e-public-profession-detail-recipe-${recipe.key}-id`;
+          const result = itemDefinitions.get(`result:${recipe.key}`);
+          if (!result) {
+            throw new Error(
+              `Missing result fixture definition for ${recipe.key}.`
+            );
+          }
+
+          await client.query(
+            `insert into "Recipe"
+              ("id", "slug", "name", "image", "resultingItemId",
+               "resultQuantityMin", "resultQuantityMax", "professionId",
+               "createdAt", "updatedAt")
+             values ($1, $2, $3, $4, $5, $6, $7, $8, now(), now())`,
+            [
+              recipeId,
+              `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-${recipe.key}`,
+              recipe.name,
+              null,
+              result.id,
+              recipe.resultQuantityMin,
+              recipe.resultQuantityMax,
+              "test-e2e-public-profession-detail-id",
+            ]
+          );
+
+          for (const [ingredientIndex, ingredient] of recipe.ingredients.entries()) {
+            const item = itemDefinitions.get(ingredient.itemKey);
+            if (!item) {
+              throw new Error(
+                `Missing ingredient fixture definition for ${ingredient.itemKey}.`
+              );
+            }
+            await client.query(
+              `insert into "RecipeIngredient"
+                ("id", "recipeId", "itemId", "quantity")
+               values ($1, $2, $3, $4)`,
+              [
+                `test-e2e-public-profession-detail-recipe-${index + 1}-ingredient-${ingredientIndex + 1}-id`,
+                recipeId,
+                item.id,
+                ingredient.quantity,
+              ]
+            );
+          }
+        }
+
+        const consumerOnlyResultId =
+          "test-e2e-public-profession-detail-result-consumer-only-id";
+        const consumerOnlyRecipeId =
+          "test-e2e-public-profession-detail-recipe-consumer-only-id";
+        await client.query(
+          `insert into "Item"
+            ("id", "slug", "name", "image", "categoryId", "createdAt",
+             "updatedAt")
+           values ($1, $2, $3, $4, $5, now(), now())`,
+          [
+            consumerOnlyResultId,
+            consumerOnlyRecipe.result.slug,
+            consumerOnlyRecipe.result.name,
+            E2E_PUBLIC_PROFESSION_SPRITE_PATHS.captureWeave,
+            relation.consumerCategoryId,
+          ]
+        );
+        await client.query(
+          `insert into "Recipe"
+            ("id", "slug", "name", "image", "resultingItemId",
+             "resultQuantityMin", "resultQuantityMax", "professionId",
+             "createdAt", "updatedAt")
+           values ($1, $2, $3, null, $4, 1, 1, null, now(), now())`,
+          [
+            consumerOnlyRecipeId,
+            consumerOnlyRecipe.slug,
+            consumerOnlyRecipe.name,
+            consumerOnlyResultId,
+          ]
+        );
+        await client.query(
+          `insert into "RecipeIngredient"
+            ("id", "recipeId", "itemId", "quantity")
+           values ($1, $2, $3, 7)`,
+          [
+            "test-e2e-public-profession-detail-consumer-only-ingredient-id",
+            consumerOnlyRecipeId,
+            ingredientDefinitions[0].id,
+          ]
+        );
+
+        const sparseResultId =
+          "test-e2e-public-profession-detail-result-sparse-id";
+        await client.query(
+          `insert into "Item"
+            ("id", "slug", "name", "image", "categoryId", "createdAt",
+             "updatedAt")
+           values ($1, $2, $3, $4, $5, now(), now())`,
+          [
+            sparseResultId,
+            sparseRecipe.result.slug,
+            sparseRecipe.result.name,
+            E2E_PUBLIC_PROFESSION_SPRITE_PATHS.duskworkLens,
+            relation.categoryId,
+          ]
+        );
+        await client.query(
+          `insert into "Recipe"
+            ("id", "slug", "name", "image", "resultingItemId",
+             "resultQuantityMin", "resultQuantityMax", "professionId",
+             "createdAt", "updatedAt")
+           values ($1, $2, $3, null, $4, 1, 1, $5, now(), now())`,
+          [
+            "test-e2e-public-profession-detail-recipe-sparse-id",
+            sparseRecipe.slug,
+            sparseRecipe.name,
+            sparseResultId,
+            "test-e2e-public-profession-detail-sparse-id",
+          ]
+        );
+
+        await client.query("commit");
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      }
+    });
+  } catch (error) {
+    await deleteE2ePublicProfessionDetailFixture();
+    throw error;
+  }
+
+  return {
+    outputCategory,
+    emptyCategory,
+    profession,
+    sparseProfession,
+    recipes,
+    spriteItems,
+    sparseRecipe,
+    consumerOnlyRecipe,
   };
 }
 

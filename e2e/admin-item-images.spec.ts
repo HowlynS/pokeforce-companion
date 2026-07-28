@@ -141,7 +141,7 @@ test("creating an item with a valid PNG stores, serves, and renders it", async (
   await expect(page.getByText("No image available")).toHaveCount(0);
 
   // Public list card renders the image as well.
-  await page.goto("/items");
+  await page.goto("/items?category=materials");
   await expectRenderedImage(page, `Image of ${ITEM.name}`);
 });
 

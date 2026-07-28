@@ -82,6 +82,22 @@ same focused commit.
 - Factual verification metadata.
 - Hide empty optional sections universally.
 
+### Public resource responsibilities
+
+- Recipes index is the canonical full Recipe catalogue: approved result-focused
+  cards, twelve-Recipe pagination, and a server-rendered Profession filter
+  through `Recipe.profession`.
+- Items index is the canonical full Item catalogue: deterministic pagination
+  and a server-rendered Item Category filter through `Item.category`.
+- Profession detail explains a discipline with its compact neutral identity
+  hero, factual Recipe/result counts, at most three compact Recipe preview
+  rows, a browse-all filtered Recipes link, and inline Verification.
+- Category detail describes and counts an Item type, then links to the
+  canonical filtered Items index. It does not duplicate Item or Recipe grids.
+- Do not reuse full Recipe cards for explanatory or contextual lists.
+- Profession remains atmosphere-free unless a future atmosphere is explicitly
+  approved.
+
 ## ContentImage
 
 - Use the shared component.
@@ -89,17 +105,26 @@ same focused commit.
 - A `32×32` sprite may display at `192×192` inside a `240×240` hero stage.
 - Never distort an image to fill the stage.
 - Keep public fallbacks quiet and row fallbacks fixed-size/aligned.
-- Do not duplicate a Recipe result thumbnail already used as the hero.
+- Recipe detail retains a compact square Crafted Result image or fallback with
+  an overlapping yield badge. It may repeat the hero image because the hero
+  identifies the page while the result stage identifies the exact output and
+  anchors its quantity. Add no further duplicate imagery beyond those two
+  intentional uses.
 - Do not publish pre-release PokeForce visuals without permission.
+- Deterministic screenshots should favor validated genuine sprite fixtures
+  while retaining deliberate fallbacks; preserve fixture bytes and never
+  alter production seed content.
 
 ## Linked Rows
 
 - The full row is one semantic link.
-- The arrow is decorative, `aria-hidden`, and not focusable.
+- Any retained arrow is decorative, `aria-hidden`, and not focusable.
 - Show visible focus around the full row.
 - Do not introduce hover/focus layout shift.
 - Preserve thumbnail/title/metadata/quantity/action alignment.
 - Long names must not collapse quantity or action placement.
+- Recipe-detail Ingredient and Crafted-result rows omit decorative trailing
+  arrows; full-row link semantics plus hover/focus treatment carry navigation.
 
 ## Content Rules
 

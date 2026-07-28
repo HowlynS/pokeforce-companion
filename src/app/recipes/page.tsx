@@ -1,66 +1,63 @@
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
-import { ContentImage } from "@/components/content/content-image";
-import { Card } from "@/components/ui/card";
-import { ContentGrid } from "@/components/ui/content-grid";
+import { PublicFilterNav } from "@/components/content/public-filter-nav";
+import { RecipeOutputCatalogue } from "@/components/content/recipe-output-catalogue";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  cataloguePageHref,
+  readCatalogueQueryValue,
+} from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
-import { formatRecipeProduces } from "@/lib/recipes/recipe-quantity";
-import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
+import {
+  RECIPE_OUTPUT_PAGE_SIZE,
+  recipeOutputCardSelect,
+  resolveRecipeOutputPage,
+} from "@/lib/recipes/recipe-output-catalogue";
 
 export const dynamic = "force-dynamic";
 
-function buildRecipeDescription(recipe: {
-  resultingItem: { name: string; category: { name: string } | null };
-  resultQuantityMin: number;
-  resultQuantityMax: number;
-  profession: { name: string } | null;
-  requiredLevel: number | null;
-  ingredients: { quantity: number; item: { name: string } }[];
-}): string {
-  // Only meaningful metadata makes it onto the card: unset optional fields
-  // are omitted rather than rendered as placeholder values.
-  const resultCategory = recipe.resultingItem.category
-    ? ` (${recipe.resultingItem.category.name})`
-    : "";
+type RecipesPageProps = {
+  searchParams: Promise<{
+    page?: string | string[];
+    profession?: string | string[];
+  }>;
+};
 
-  const details = [
-    `${formatRecipeProduces(recipe.resultQuantityMin, recipe.resultQuantityMax)} ${recipe.resultingItem.name}${resultCategory}`,
-  ];
-
-  if (recipe.profession) {
-    details.push(`Profession: ${recipe.profession.name}`);
-  }
-
-  if (recipe.requiredLevel !== null) {
-    details.push(`Required level: ${recipe.requiredLevel}`);
-  }
-
-  if (recipe.ingredients.length > 0) {
-    const ingredientList = recipe.ingredients
-      .map((ingredient) => `${ingredient.quantity}x ${ingredient.item.name}`)
-      .join(", ");
-
-    details.push(`Requires: ${ingredientList}`);
-  }
-
-  return details.join(" · ");
-}
-
-export default async function RecipesPage() {
-  const recipes = await prisma.recipe.findMany({
-    include: {
-      resultingItem: {
-        include: { category: true },
-      },
-      profession: true,
-      ingredients: {
-        include: { item: true },
-        orderBy: { item: { name: "asc" } },
-      },
-    },
-    orderBy: { name: "asc" },
+export default async function RecipesPage({ searchParams }: RecipesPageProps) {
+  const { page: rawPage, profession: rawProfession } = await searchParams;
+  const professionSlug = readCatalogueQueryValue(rawProfession);
+  const professions = await prisma.profession.findMany({
+    where: { recipes: { some: {} } },
+    select: { id: true, name: true, slug: true },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
   });
+  const selectedProfession = professionSlug
+    ? professions.find((profession) => profession.slug === professionSlug)
+    : undefined;
+
+  if (professionSlug && !selectedProfession) {
+    redirect("/recipes");
+  }
+
+  const recipeWhere = selectedProfession
+    ? { profession: { slug: selectedProfession.slug } }
+    : undefined;
+  const recipeCount = await prisma.recipe.count({ where: recipeWhere });
+  const { currentPage, pageCount, skip } = resolveRecipeOutputPage(
+    rawPage,
+    recipeCount
+  );
+  const recipes =
+    recipeCount > 0
+      ? await prisma.recipe.findMany({
+          where: recipeWhere,
+          select: recipeOutputCardSelect,
+          orderBy: [{ name: "asc" }, { id: "asc" }],
+          skip,
+          take: RECIPE_OUTPUT_PAGE_SIZE,
+        })
+      : [];
 
   return (
     <AppShell>
@@ -69,27 +66,31 @@ export default async function RecipesPage() {
         description="Explore crafting recipes and the ingredients they require."
       />
 
-      {recipes.length > 0 ? (
-        <ContentGrid>
-          {recipes.map((recipe) => (
-            <Card
-              key={recipe.id}
-              title={recipe.name}
-              description={buildRecipeDescription(recipe)}
-              href={`/recipes/${recipe.slug}`}
-              media={
-                <ContentImage
-                  imagePath={resolveRecipeDisplayImage({
-                    recipeImage: recipe.image,
-                    resultingItemImage: recipe.resultingItem.image,
-                  })}
-                  alt={`Image of ${recipe.name}`}
-                  size="card"
-                />
-              }
-            />
-          ))}
-        </ContentGrid>
+      <PublicFilterNav
+        label="Filter Recipes by Profession"
+        options={[
+          { label: "All", href: "/recipes", active: !selectedProfession },
+          ...professions.map((profession) => ({
+            label: profession.name,
+            href: cataloguePageHref("/recipes", 1, {
+              profession: profession.slug,
+            }),
+            active: profession.slug === selectedProfession?.slug,
+          })),
+        ]}
+      />
+
+      {recipeCount > 0 ? (
+        <RecipeOutputCatalogue
+          recipes={recipes}
+          totalRecipeCount={recipeCount}
+          basePath="/recipes"
+          currentPage={currentPage}
+          pageCount={pageCount}
+          paginationLabel="Recipes pagination"
+          ariaLabel="Recipe catalogue"
+          query={{ profession: selectedProfession?.slug }}
+        />
       ) : (
         <EmptyState
           title="No recipes yet"

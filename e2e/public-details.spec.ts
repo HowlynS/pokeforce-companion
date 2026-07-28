@@ -48,11 +48,21 @@ test.afterAll(async () => {
   await deleteE2ePublicItemDetailFixture();
 });
 
-// The card component renders its title as an h3 inside the card link.
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// General resource cards expose an h3; RecipeOutputCard uses a contextual
+// link name because its visual title is a strong inside a multi-control card.
 function cardLink(page: Page, name: string) {
-  return page
+  const headingCard = page
     .getByRole("link")
     .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+  const recipeOutputCard = page.getByRole("link", {
+    name: new RegExp(`^${escapeRegExp(name)}, produces `),
+  });
+
+  return headingCard.or(recipeOutputCard);
 }
 
 test.describe("public detail pages", () => {
@@ -248,12 +258,18 @@ test.describe("public detail pages", () => {
       page.getByRole("heading", { level: 1, name: "Smithing", exact: true })
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
+      page.getByRole("heading", {
+        level: 2,
+        name: "Recipes",
+        exact: true,
+      })
     ).toBeVisible();
 
-    const recipeCard = cardLink(page, "Iron Ingot");
-    await expect(recipeCard).toBeVisible();
-    await expect(recipeCard).toHaveAttribute("href", "/recipes/iron-ingot");
+    const recipeLink = page.locator(".profession-recipe-preview-row").filter({
+      hasText: "Iron Ingot",
+    });
+    await expect(recipeLink).toBeVisible();
+    await expect(recipeLink).toHaveAttribute("href", "/recipes/iron-ingot");
   });
 
   test("category detail links its items", async ({ page }) => {
@@ -262,13 +278,14 @@ test.describe("public detail pages", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Materials", exact: true })
     ).toBeVisible();
+    await expect(page.getByText(/^Items: \d+$/)).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "Items", exact: true })
-    ).toBeVisible();
-
-    const itemCard = cardLink(page, "Iron Ore");
-    await expect(itemCard).toBeVisible();
-    await expect(itemCard).toHaveAttribute("href", "/items/iron-ore");
+      page.getByRole("link", {
+        name: "Browse Materials items",
+        exact: true,
+      })
+    ).toHaveAttribute("href", "/items?category=materials");
+    await expect(cardLink(page, "Iron Ore")).toHaveCount(0);
   });
 });
 
@@ -292,6 +309,10 @@ test.describe("relational navigation journeys", () => {
     await cardLink(page, "Materials").click();
     await expect(page).toHaveURL("/categories/materials");
 
+    await page
+      .getByRole("link", { name: "Browse Materials items", exact: true })
+      .click();
+    await expect(page).toHaveURL("/items?category=materials");
     await cardLink(page, "Iron Ore").click();
     await expect(page).toHaveURL("/items/iron-ore");
     await expect(
@@ -301,10 +322,13 @@ test.describe("relational navigation journeys", () => {
 
   test("profession detail -> recipe detail", async ({ page }) => {
     await page.goto("/professions/smithing");
-    await cardLink(page, "Iron Sword").click();
-    await expect(page).toHaveURL("/recipes/iron-sword");
+    await page
+      .locator(".profession-recipe-preview-row")
+      .filter({ hasText: "Iron Ingot" })
+      .click();
+    await expect(page).toHaveURL("/recipes/iron-ingot");
     await expect(
-      page.getByRole("heading", { level: 1, name: "Iron Sword", exact: true })
+      page.getByRole("heading", { level: 1, name: "Iron Ingot", exact: true })
     ).toBeVisible();
   });
 });

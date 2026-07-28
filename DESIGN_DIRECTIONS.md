@@ -150,6 +150,25 @@ The shared detail-page composition is:
 Item pages use the accepted cool-blue atmosphere. Recipe pages use the accepted
 warm-amber atmosphere.
 
+Public collection and context pages have distinct responsibilities:
+
+- `/recipes` is the canonical full Recipe catalogue. It uses the approved
+  result-focused Recipe cards, deterministic twelve-Recipe pagination, and a
+  server-rendered Profession filter backed only by `Recipe.profession`.
+- `/items` is the canonical full Item catalogue. It uses deterministic
+  pagination and a server-rendered Item Category filter backed only by
+  `Item.category`.
+- Profession detail explains a crafting discipline. Its compact neutral hero
+  keeps factual Recipe and unique-result totals, while an optional compact
+  three-Recipe preview links to the canonical filtered Recipes index.
+- Item Category detail describes and counts an Item type, then links to the
+  canonical filtered Items index. It does not reproduce an Item grid or infer
+  a Recipe catalogue from resulting Item Category.
+- Full Recipe output cards belong to canonical collection contexts, not
+  explanatory or contextual detail lists.
+- Profession verification remains a restrained factual strip, and Profession
+  remains atmosphere-free.
+
 Only render facts present in the current schema and query. Do not invent
 descriptions, rarity, weight, buy or sell price, crafting time, crafting
 difficulty, station, required level, notes, or any other property.
@@ -165,20 +184,32 @@ Current hero behavior supports a `32×32` sprite displayed at `192×192` within 
 fallbacks should be quiet and intentional, while row fallbacks remain
 fixed-size and preserve alignment.
 
-Do not add decorative generated-looking icons. Do not repeat a Recipe result
-thumbnail when the same image is already the Recipe hero. Real PokeForce visual
-assets and map screenshots must not be published until permission or the
-game's 1.0 release permits publication.
+Do not add decorative generated-looking icons. Recipe detail retains a compact
+square Crafted Result image or fallback with an overlapping yield badge. That
+image may intentionally repeat the Recipe hero because the hero identifies the
+page while the Crafted Result stage identifies the exact output and anchors its
+quantity. Do not add further duplicate imagery beyond those two uses. Real
+PokeForce visual assets and map screenshots must not be published until
+permission or the game's 1.0 release permits publication.
+
+Deterministic visual fixtures should prefer validated genuine sprite coverage
+while retaining deliberate no-image examples. Fixture use must preserve source
+bytes, transparency, aspect ratio, and crisp rendering and must never alter
+production seed content.
 
 ### Relationship rows
 
-The full row is the single semantic link target. Arrow glyphs are decorative,
-not separate focus targets. Visible keyboard focus belongs around the complete
-linked row.
+The full row is the single semantic link target. Where arrow glyphs are
+retained, they are decorative and not separate focus targets. Visible keyboard
+focus belongs around the complete linked row.
 
 Hover and focus must not cause layout shift. Preserve thumbnail, title,
-supporting metadata, quantity, and arrow alignment; long names must not
-collapse quantity or action alignment.
+supporting metadata, quantity, and row alignment; long names must not collapse
+quantity or action alignment.
+
+Linked Ingredient and Crafted-result rows on Recipe detail do not need
+decorative trailing arrows: the complete row already communicates navigation
+through link semantics, hover, and focus treatment.
 
 ## Content Integrity
 

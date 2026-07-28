@@ -69,10 +69,6 @@ export default async function RecipeDetailPage({
   );
   const verification = formatPublicVerification(recipe);
   const updatedAt = formatDisplayDate(recipe.updatedAt);
-  const showResultThumbnail =
-    recipe.image !== null &&
-    recipe.resultingItem.image !== null &&
-    recipe.image !== recipe.resultingItem.image;
 
   return (
     <AppShell wide>
@@ -163,12 +159,6 @@ export default async function RecipeDetailPage({
                         <strong className="recipe-ingredient-quantity">
                           × {ingredient.quantity}
                         </strong>
-                        <span
-                          className="item-recipe-affordance"
-                          aria-hidden="true"
-                        >
-                          →
-                        </span>
                       </Link>
                     ))}
                   </div>
@@ -181,27 +171,22 @@ export default async function RecipeDetailPage({
                   className="item-recipe-row recipe-result-row"
                   href={`/items/${recipe.resultingItem.slug}`}
                 >
-                  {showResultThumbnail ? (
-                    <span className="item-recipe-thumbnail">
-                      <ContentImage
-                        imagePath={recipe.resultingItem.image}
-                        alt={`Image of ${recipe.resultingItem.name}`}
-                        size="row"
-                      />
+                  <span className="recipe-result-image-stage">
+                    <ContentImage
+                      imagePath={recipe.resultingItem.image}
+                      alt={`Image of ${recipe.resultingItem.name}`}
+                      size="card"
+                    />
+                    <span className="recipe-result-yield" aria-hidden="true">
+                      × {resultQuantity}
                     </span>
-                  ) : null}
+                  </span>
                   <span className="item-recipe-copy">
                     <strong>{recipe.resultingItem.name}</strong>
                     {recipe.resultingItem.category ? (
                       <span>{recipe.resultingItem.category.name}</span>
                     ) : null}
                     <span>Produces × {resultQuantity}</span>
-                  </span>
-                  <span
-                    className="item-recipe-affordance"
-                    aria-hidden="true"
-                  >
-                    →
                   </span>
                 </Link>
               </section>

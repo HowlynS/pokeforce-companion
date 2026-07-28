@@ -98,7 +98,7 @@ test.afterAll(async () => {
 function cardLink(page: Page, name: string) {
   return page
     .getByRole("link")
-    .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+    .filter({ has: page.getByText(name, { exact: true }) });
 }
 
 // One row of the shared Profession record list (Slice 9D.1), located by
@@ -285,16 +285,17 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   await createProfessionThroughForm(page, INITIAL);
 
   // Public detail page renders the new profession with the no-image
-  // fallback. It has no recipes, so the entire Recipes section (heading
-  // and empty state alike) is omitted; the Details card still says
-  // "Recipes: 0".
+  // fallback. It has no recipes, so the optional preview is omitted while
+  // the compact hero retains its factual zero totals.
   await page.goto(`/professions/${INITIAL.slug}`);
   await expect(
     page.getByRole("heading", { level: 1, name: INITIAL.name, exact: true })
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
   await expect(page.getByText("No image available")).toBeVisible();
-  await expect(page.getByText("Recipes: 0")).toBeVisible();
+  await expect(
+    page.locator(".profession-hero-counts").getByText("0", { exact: true })
+  ).toHaveCount(2);
   await expect(
     page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
   ).toHaveCount(0);

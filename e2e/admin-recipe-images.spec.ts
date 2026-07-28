@@ -182,11 +182,19 @@ test("creating a recipe with a valid PNG stores, serves, and renders it", async 
   // Public detail page renders the image instead of the fallback.
   await page.goto(`/recipes/${RECIPE.slug}`);
   await expectRenderedImage(page, `Image of ${RECIPE.name}`);
-  await expect(page.getByText("No image available")).toHaveCount(0);
+  await expect(
+    page.locator(".recipe-identity-stage").getByText("No image available")
+  ).toHaveCount(0);
 
-  // Public list card renders the image as well.
+  // The result-focused public list card remains tied to the resulting Item,
+  // not the Recipe's identity image.
   await page.goto("/recipes");
-  await expectRenderedImage(page, `Image of ${RECIPE.name}`);
+  const recipeCard = page
+    .locator(".recipe-output-card")
+    .filter({ hasText: RECIPE.name });
+  await expect(
+    recipeCard.locator(".recipe-output-image-stage .public-sprite-stage--empty")
+  ).toBeVisible();
 });
 
 test("replacing the recipe image stores a new object and removes the old one", async ({
@@ -270,9 +278,15 @@ test("removing the recipe image clears the row, deletes the object, and restores
   expect(await readRecipeImagePath(RECIPE.slug)).toBeNull();
   expect(await recipeImageObjectExists(objectPath as string)).toBe(false);
 
-  // The public detail page shows the no-image fallback again.
+  // The public detail page shows matching square fallbacks in the hero and
+  // Crafted Result stages.
   await page.goto(`/recipes/${RECIPE.slug}`);
-  await expect(page.getByText("No image available")).toBeVisible();
+  await expect(
+    page.locator(".recipe-identity-stage").getByText("No image available")
+  ).toBeVisible();
+  await expect(
+    page.locator(".recipe-result-image-stage").getByText("No image available")
+  ).toBeVisible();
   await expect(
     page.getByRole("img", { name: `Image of ${RECIPE.name}`, exact: true })
   ).toHaveCount(0);
