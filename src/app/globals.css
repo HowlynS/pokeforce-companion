@@ -2236,6 +2236,21 @@ select:focus-visible {
   .recipe-output-ingredient-disclosure {
     gap: 6px;
   }
+
+  /* Four visible chips can reach the card's right edge on mobile. Anchor
+     later-chip tooltips to that chip's right edge so their absolute box
+     stays inside the viewport without clipping or changing layout. */
+  .recipe-output-ingredient:nth-child(n + 3) .recipe-output-tooltip {
+    right: 0;
+    left: auto;
+    transform: translateY(-3px);
+  }
+
+  .recipe-output-ingredient:nth-child(n + 3):hover .recipe-output-tooltip,
+  .recipe-output-ingredient:nth-child(n + 3):focus-visible
+    .recipe-output-tooltip {
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 520px) {

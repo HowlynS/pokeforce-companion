@@ -62,13 +62,25 @@ test.afterAll(async () => {
 
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          document.documentElement.scrollWidth <=
-          document.documentElement.clientWidth
-      )
-    )
+    .poll(async () => {
+      const metrics = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        widest: Array.from(document.querySelectorAll<HTMLElement>("body *"))
+          .map((element) => {
+            const rect = element.getBoundingClientRect();
+            return {
+              className: element.className,
+              right: Math.round(rect.right),
+              width: Math.round(rect.width),
+            };
+          })
+          .filter((entry) => entry.right > document.documentElement.clientWidth)
+          .sort((a, b) => b.right - a.right)
+          .slice(0, 3),
+      }));
+      return metrics.scrollWidth <= metrics.clientWidth ? true : metrics;
+    })
     .toBe(true);
 }
 
@@ -174,7 +186,7 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     ),
   });
   const visibleIngredients = denseCard.locator(".recipe-output-ingredient");
-  await expect(visibleIngredients).toHaveCount(3);
+  await expect(visibleIngredients).toHaveCount(4);
 
   const thirdIngredient = visibleIngredients.nth(2);
   const thirdTooltip = thirdIngredient.getByRole("tooltip");

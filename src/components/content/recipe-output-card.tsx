@@ -8,7 +8,7 @@ type RecipeOutputCardProps = {
   recipe: RecipeOutputCardValue;
 };
 
-const INGREDIENT_PREVIEW_COUNT = 3;
+const INGREDIENT_PREVIEW_COUNT = 4;
 
 /**
  * Compact collection card for pages whose information shape is genuinely

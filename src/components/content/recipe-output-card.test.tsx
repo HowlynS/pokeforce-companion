@@ -24,7 +24,7 @@ const recipe: RecipeOutputCardValue = {
     image: null,
     category: { name: "Tools" },
   },
-  ingredients: [1, 2, 3, 4].map((number) => ({
+  ingredients: [1, 2, 3, 4, 5].map((number) => ({
     id: `ingredient-${number}`,
     quantity: number,
     item: {
@@ -36,7 +36,7 @@ const recipe: RecipeOutputCardValue = {
 };
 
 describe("RecipeOutputCard", () => {
-  it("renders three ingredient links and a contextual disclosure by default", () => {
+  it("renders four ingredient links and discloses the fifth", () => {
     const html = renderToStaticMarkup(<RecipeOutputCard recipe={recipe} />);
 
     expect(html).toContain('href="/recipes/dense-recipe"');
@@ -44,14 +44,15 @@ describe("RecipeOutputCard", () => {
       'aria-label="Dense Recipe, produces ×2–4 Dense Result, category Tools, Smithing level 25"'
     );
     expect(html).toContain("×2–4");
-    expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(3);
-    expect(html).toContain("+1 more");
+    expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(4);
     expect(html).toContain("Smithing");
     expect(html).toContain("Level 25");
+    expect(html).toContain("+1 more");
+    expect(html).toContain("Ingredient 4");
     expect(html).toContain(
       'aria-label="Show 1 more ingredients for Dense Recipe"'
     );
-    expect(html).not.toContain("Ingredient 4");
+    expect(html).not.toContain("Ingredient 5");
   });
 
   it("hides profession-level metadata when no required level is set", () => {
