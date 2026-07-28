@@ -105,6 +105,7 @@ describe("structured rich descriptions", () => {
     "file:///tmp/bad",
     "http://example.com",
     "//example.com",
+    "/admin/items",
   ])("rejects unsafe or unsupported link destination %s", (href) => {
     expect(isSafeRichTextHref(href)).toBe(false);
     expect(() =>

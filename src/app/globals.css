@@ -3716,6 +3716,322 @@ textarea.form-input.admin-autosize-textarea {
   resize: none;
 }
 
+/* Shared structured-description editor. The editor stays in the same
+   charcoal input family as native admin controls, while its authored
+   typography mirrors the safe public renderer closely enough that formatting
+   is visible in place. The toolbar wraps by group, not by individual glyph,
+   so narrow admin widths remain readable without horizontal overflow. */
+.rich-description-field {
+  grid-column: 1 / -1;
+}
+
+.rich-description-editor {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.rich-description-editor:hover {
+  border-color: color-mix(in srgb, var(--color-border) 60%, var(--color-accent));
+}
+
+.rich-description-editor:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+.rich-description-editor[data-invalid="true"] {
+  border-color: var(--color-danger);
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 6%,
+    var(--color-surface)
+  );
+}
+
+.rich-description-editor[data-invalid="true"]:focus-within {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger) 22%, transparent);
+}
+
+.rich-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
+}
+
+.rich-editor-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding-right: 10px;
+  border-right: 1px solid var(--color-border);
+}
+
+.rich-editor-toolbar-group:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.rich-editor-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.rich-editor-toolbar-button:hover:not(:disabled),
+.rich-editor-toolbar-button:focus-visible {
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+}
+
+.rich-editor-toolbar-button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 13%, var(--color-surface));
+  color: var(--color-accent);
+}
+
+.rich-editor-toolbar-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.rich-editor-toolbar-button svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.8;
+}
+
+.rich-editor-content {
+  position: relative;
+  z-index: 1;
+  min-height: 11rem;
+  max-height: 34rem;
+  overflow-y: auto;
+  padding: 18px;
+  color: var(--color-text);
+  font-size: 16px;
+  line-height: 1.65;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.rich-editor-content > :first-child {
+  margin-top: 0;
+}
+
+.rich-editor-content > :last-child {
+  margin-bottom: 0;
+}
+
+.rich-editor-content p {
+  margin: 0 0 0.9em;
+}
+
+.rich-editor-content h2,
+.rich-editor-content h3 {
+  color: var(--color-text);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.rich-editor-content h2 {
+  margin: 1.35em 0 0.55em;
+  font-size: 23px;
+}
+
+.rich-editor-content h3 {
+  margin: 1.2em 0 0.5em;
+  font-size: 19px;
+}
+
+.rich-editor-content ul {
+  margin: 0.8em 0 1em;
+  padding-left: 1.5rem;
+  list-style: disc;
+}
+
+.rich-editor-content li + li {
+  margin-top: 0.35em;
+}
+
+.rich-editor-content a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.rich-editor-placeholder {
+  position: absolute;
+  z-index: 0;
+  top: 64px;
+  left: 18px;
+  right: 18px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+.form-field-error {
+  min-height: auto;
+  color: var(--color-danger);
+}
+
+.rich-link-dialog {
+  max-width: 620px;
+  max-height: min(760px, calc(100vh - 48px));
+  overflow-y: auto;
+}
+
+.rich-link-search-control {
+  position: relative;
+  display: block;
+}
+
+.rich-link-search-control > svg {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 14px;
+  width: 17px;
+  height: 17px;
+  color: var(--color-text-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.rich-link-search-control .form-input {
+  width: 100%;
+  padding-left: 42px;
+}
+
+.rich-link-results {
+  display: grid;
+  gap: 4px;
+  min-height: 52px;
+  max-height: 220px;
+  margin: 12px 0 20px;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-soft);
+}
+
+.rich-link-status {
+  align-self: center;
+  margin: 0;
+  padding: 12px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.rich-link-result {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rich-link-result:hover,
+.rich-link-result:focus-visible {
+  border-color: var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.rich-link-result[data-selected="true"] {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  color: var(--color-accent);
+}
+
+.rich-link-result-name {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.rich-link-result-meta {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.rich-link-dialog-actions {
+  margin-top: 20px;
+}
+
+.rich-link-dialog-action-spacer {
+  flex: 1 1 auto;
+}
+
+.rich-link-unlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.rich-link-unlink svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 640px) {
+  .rich-editor-toolbar {
+    gap: 6px;
+  }
+
+  .rich-editor-toolbar-group {
+    padding-right: 6px;
+  }
+
+  .rich-editor-toolbar-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .rich-editor-content {
+    min-height: 9rem;
+    padding: 15px;
+  }
+
+  .rich-editor-placeholder {
+    top: 106px;
+    left: 15px;
+  }
+
+  .rich-link-dialog {
+    padding: 20px;
+  }
+}
+
 input[type="checkbox"] {
   accent-color: var(--color-accent);
 }

@@ -89,7 +89,7 @@ export function isSafeRichTextHref(href: string): boolean {
   const value = href.trim();
 
   if (value.startsWith("/") && !value.startsWith("//") && !value.includes("\\")) {
-    return true;
+    return value !== "/admin" && !value.startsWith("/admin/");
   }
 
   try {
