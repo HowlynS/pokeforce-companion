@@ -63,6 +63,7 @@ describe("emptySearchResults", () => {
       categories: [],
       locations: [],
       shops: [],
+      playerClasses: [],
     });
   });
 
@@ -152,8 +153,9 @@ describe("countSearchResults", () => {
       categories: [entry, entry, entry],
       locations: [entry],
       shops: [entry, entry],
+      playerClasses: [entry],
     };
-    expect(countSearchResults(results)).toBe(10);
+    expect(countSearchResults(results)).toBe(11);
   });
 });
 
@@ -168,6 +170,7 @@ describe("buildSearchSummary", () => {
       categories: [],
       locations: [],
       shops: [],
+      playerClasses: [],
     };
     expect(buildSearchSummary(results)).toBe(
       "Showing 6 results across 2 resource types."
@@ -182,6 +185,7 @@ describe("buildSearchSummary", () => {
       categories: [],
       locations: [],
       shops: [],
+      playerClasses: [],
     };
     expect(buildSearchSummary(results)).toBe(
       "Showing 1 result across 1 resource type."
@@ -196,6 +200,7 @@ describe("buildSearchSummary", () => {
       categories: [entry],
       locations: [],
       shops: [],
+      playerClasses: [],
     };
     expect(buildSearchSummary(results)).toBe(
       "Showing 3 results across 3 resource types."

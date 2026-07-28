@@ -324,6 +324,10 @@ test("a CRAFTING acquisition source remains distinct from canonical Recipe brows
     page.getByRole("combobox", { name: "Resulting item", exact: true }),
     ITEM.name
   );
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    "Trainer"
+  );
   const ingredientGroup = page.getByRole("group", {
     name: "Ingredients (fill at least one row)",
   });

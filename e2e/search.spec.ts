@@ -70,7 +70,7 @@ test("visiting /search without a query shows the empty-query guidance", async ({
   // the resource-type phrasing).
   await expect(
     page.getByText(
-      "Search Items, Recipes, Professions, Categories, Locations, and Shops by name or description — for example a material like iron."
+      "Search Items, Recipes, Professions, Categories, Locations, Shops, and Classes by name or description — for example a material like iron."
     )
   ).toBeVisible();
   await expect(
@@ -267,7 +267,7 @@ test("a query with no matches shows actionable no-results guidance with the quer
   // The message names the query safely and suggests a concrete next step.
   await expect(
     page.getByText(
-      'No items, recipes, professions, categories, locations, or shops matched "test-e2e-no-such-thing".'
+      'No items, recipes, professions, categories, locations, shops, or classes matched "test-e2e-no-such-thing".'
     )
   ).toBeVisible();
   await expect(

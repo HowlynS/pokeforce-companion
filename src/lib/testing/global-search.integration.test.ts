@@ -389,6 +389,22 @@ describe("global search (integration)", () => {
     );
   });
 
+  it("finds a Player Class through its own seeded name, with no relational matching from Recipe", async () => {
+    const prisma = await getVerifiedTestPrisma();
+
+    const results = await searchGameData(prisma, "artisan");
+
+    expect(results.playerClasses.map((playerClass) => playerClass.slug)).toEqual([
+      "artisan",
+    ]);
+    expect(results.playerClasses[0].context).toBeNull();
+    // Recipe.playerClass is deliberately NOT a relational search candidate
+    // (the same restrained scope Profession/Category/Location already
+    // established for themselves) — Recipes required by Artisan do not
+    // appear here even though 5 seeded Recipes reference it.
+    expect(results.recipes).toEqual([]);
+  });
+
   it("returns empty groups when nothing matches", async () => {
     const prisma = await getVerifiedTestPrisma();
 
@@ -401,6 +417,7 @@ describe("global search (integration)", () => {
       categories: [],
       locations: [],
       shops: [],
+      playerClasses: [],
     });
   });
 
@@ -414,6 +431,7 @@ describe("global search (integration)", () => {
       categories: [],
       locations: [],
       shops: [],
+      playerClasses: [],
     });
     expect(await searchGameData(prisma, "   ")).toEqual({
       items: [],
@@ -422,6 +440,7 @@ describe("global search (integration)", () => {
       categories: [],
       locations: [],
       shops: [],
+      playerClasses: [],
     });
   });
 
@@ -448,6 +467,7 @@ describe("global search (integration)", () => {
       results.categories,
       results.locations,
       results.shops,
+      results.playerClasses,
     ]) {
       expect(group.length).toBeLessThanOrEqual(SEARCH_RESULTS_PER_TYPE);
       const names = group.map((entry) => entry.name);
@@ -471,6 +491,7 @@ describe("global search (integration)", () => {
       ...results.categories,
       ...results.locations,
       ...results.shops,
+      ...results.playerClasses,
     ]) {
       expect(Object.keys(entry).sort()).toEqual([
         "context",

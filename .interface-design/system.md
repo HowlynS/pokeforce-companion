@@ -85,18 +85,35 @@ same focused commit.
 ### Public resource responsibilities
 
 - Recipes index is the canonical full Recipe catalogue: approved result-focused
-  cards, twelve-Recipe pagination, and a server-rendered Profession filter
-  through `Recipe.profession`.
+  cards, twelve-Recipe pagination, and two combinable, server-rendered
+  filters — Profession (`Recipe.profession`) and Class (`Recipe.playerClass`,
+  public query param `class`). Clearing one preserves the other; an invalid
+  value drops only itself.
 - Items index is the canonical full Item catalogue: deterministic pagination
   and a server-rendered Item Category filter through `Item.category`.
 - Profession detail explains a discipline with its compact neutral identity
   hero, factual Recipe/result counts, at most three compact Recipe preview
   rows, a browse-all filtered Recipes link, and inline Verification.
+- Class detail mirrors Profession detail's own shape exactly: compact neutral
+  hero, factual Recipe count, at most three compact Recipe preview rows, a
+  browse-all link to Recipes filtered by Class, and inline Verification. It
+  never becomes a second full Recipe catalogue.
 - Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not duplicate Item or Recipe grids.
 - Do not reuse full Recipe cards for explanatory or contextual lists.
-- Profession remains atmosphere-free unless a future atmosphere is explicitly
-  approved.
+- Profession and Class both remain atmosphere-free unless a future atmosphere
+  is explicitly approved.
+- Recipe detail shows its required Class (linking to `/classes/<slug>`) and
+  EXP reward — both required schema fields, never hidden.
+
+### PlayerClass naming
+
+- Internal/schema/domain name: `PlayerClass` — never bare `Class` (collides
+  with the Item Category concept and the language keyword).
+- Every public-facing label reads "Class"/"Classes".
+- Initial records: Trainer, Artisan, Rancher, Ranger, Farmhand.
+- No player levels, Class progression, unlock trees, Class permissions, or
+  account/character ownership in this milestone.
 
 ## ContentImage
 

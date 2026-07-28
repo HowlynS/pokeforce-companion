@@ -1,8 +1,8 @@
 // Browser coverage for the shared admin shell against the REAL
 // application: the persistent sidebar wraps authenticated admin routes,
-// carries exactly the nine approved primary destinations (Game Versions
+// carries exactly the ten approved primary destinations (Game Versions
 // promoted to primary in the Visual Pass, sub-slice 8; Shops and Currencies
-// added in Milestone 11), marks the active
+// added in Milestone 11; Classes added in Milestone 12), marks the active
 // section (including on child routes), and never appears on public
 // pages. Runs in the chromium-admin project with the storage state saved
 // by auth.setup.ts. Read-only: every visit targets seeded fixtures
@@ -19,6 +19,7 @@ const PRIMARY_DESTINATIONS = [
   { label: "Items", href: "/admin/items" },
   { label: "Recipes", href: "/admin/recipes" },
   { label: "Professions", href: "/admin/professions" },
+  { label: "Classes", href: "/admin/classes" },
   { label: "Categories", href: "/admin/categories" },
   { label: "Locations", href: "/admin/locations" },
   { label: "Shops", href: "/admin/shops" },
@@ -47,7 +48,7 @@ function activeLink(page: Page) {
   return sidebar(page).locator('a[aria-current="page"]');
 }
 
-test("the sidebar carries exactly the nine primary destinations with their approved targets", async ({
+test("the sidebar carries exactly the ten primary destinations with their approved targets", async ({
   page,
 }) => {
   await page.goto("/admin");

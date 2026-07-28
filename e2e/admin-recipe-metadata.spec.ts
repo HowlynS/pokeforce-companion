@@ -57,6 +57,10 @@ async function createTemporaryRecipe(
     page.getByRole("combobox", { name: "Resulting item", exact: true }),
     data.resultingItem
   );
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    "Trainer"
+  );
 
   const group = page.getByRole("group", {
     name: "Ingredients (fill at least one row)",

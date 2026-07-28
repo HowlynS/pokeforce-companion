@@ -1968,3 +1968,91 @@ Alternatives considered:
   milestone because it would establish a database convention used nowhere
   else in the repository; robust server validation and the integer schema
   are the approved boundary.
+
+---
+
+### 2026-07-28 — Milestone 12: Player Classes are required on every Recipe; migration is self-contained
+
+Decision:
+
+`PlayerClass` (Trainer, Artisan, Rancher, Ranger, Farmhand) is a top-level
+resource with the same shape as Profession: name, slug, optional
+description/image, verification stamp, Game Version relation, and a Recipe
+relation. The internal/schema name is deliberately `PlayerClass`, never the
+bare word `Class` — the existing Item `Category` model already occupies
+that conceptual space, and `class` is also a reserved-ish identifier in
+several contexts this codebase touches (SQL, generated Prisma types). Every
+public-facing label still reads "Class"/"Classes"; the public Recipes-index
+query parameter is `class` (not `playerClass`) since it is user-facing
+surface, not an internal identifier.
+
+Unlike `Recipe.professionId` (optional), `Recipe.playerClassId` is required,
+matching `Recipe.resultingItemId`'s own required-relation precedent
+(`ON DELETE RESTRICT`, no explicit `onDelete` needed since Prisma's default
+for a required relation is already `Restrict`). A Class referenced by any
+Recipe can therefore never be deleted — enforced by the database itself,
+with the existing admin dependency pre-check only ever a friendly message
+in front of that real constraint, exactly like every other RESTRICT-backed
+relation in this schema.
+
+Migration strategy: at the time this migration was authored, the only
+Recipe rows in existence were the 8 deterministic development/fixture rows
+defined in `prisma/seed.ts` (confirmed directly against the dev database
+before writing the migration — no unexpected or unknown rows existed, and
+Deployment has not started, so there is no live production dataset to
+protect beyond this). The migration is therefore self-contained: it inserts
+the 5 foundational Classes with explicit ids directly in SQL (never
+dependent on `pnpm db:seed` having already run against a target database),
+backfills every pre-existing Recipe row to Trainer / 0 EXP as an explicit,
+documented, one-moment safety default, and only then applies the `NOT NULL`
+constraints on `playerClassId`/`experienceReward` — a single migration
+rather than a staged nullable-to-required rollout, since the backfill
+target is fully known and safe. `prisma/seed.ts` immediately supersedes
+that neutral backfill with a deliberate, specific Class and EXP value per
+recipe (matched by slug, upserted idempotently) on the next seed run.
+
+`experienceReward` defaults to allowing zero (no evidence exists that every
+Recipe must reward at least one EXP), matching `Recipe.requiredLevel`'s own
+"zero is a real, meaningful value" precedent rather than Item/Recipe result
+quantity fields' "at least one" rule.
+
+The public Class detail page reuses Profession detail's own `.profession-*`
+CSS classes (a pure, content-free layout/visual pattern — the compact
+neutral hero, capped 3-Recipe preview, and inline Verification) instead of
+duplicating an identical parallel `.class-*` stylesheet across roughly 40
+selectors spread through several shared responsive breakpoints. This
+mirrors the same page's own established reuse of the generic `.item-*`
+classes for its breadcrumb and verification rows.
+
+Writing real, driven E2E coverage for the new admin workspace surfaced two
+latent gaps introduced by the schema change: every one of 10 raw-SQL Recipe
+fixture inserts across `e2e/helpers/database-cleanup.ts` (used by several
+pre-existing public/admin specs) was missing the newly-required columns,
+and the shared admin success-toast dictionary had no entries for the new
+`player_class_*` codes. Both were fixed with test coverage rather than
+deferred, since either would have silently broken existing, already-passing
+E2E coverage the moment this migration reached the isolated test project.
+
+Alternatives considered:
+
+- Naming the model bare `Class` — rejected; direct collision with the
+  existing Item Category concept in both vocabulary and, potentially,
+  future generic tooling that assumes one "category-like" concept per
+  resource.
+- A staged nullable-to-required migration (add nullable columns now, backfill
+  via a follow-up deploy step, then a later migration adds `NOT NULL`) —
+  rejected as unnecessary complexity once the existing Recipe rows were
+  confirmed to be exactly the known, controlled seed set; a single
+  self-contained migration is simpler to review and cannot be left
+  half-applied.
+- Making `Recipe.playerClassId` optional (mirroring `professionId`) —
+  rejected; the milestone brief is explicit that every Recipe requires
+  exactly one Class, and an optional relation would have let the
+  dependency-blocked-deletion rule be silently bypassed by reassigning a
+  Recipe to "no Class" before deleting the Class it referenced.
+- Duplicating Profession detail's CSS under new `.class-*` selector names —
+  rejected for this milestone; the visual pattern is identical and
+  content-free, and duplicating ~40 selectors across several shared
+  breakpoints would only add drift risk for a purely cosmetic distinction.
+  Revisiting this with dedicated `.class-*` names remains an easy, isolated
+  follow-up if ever wanted.

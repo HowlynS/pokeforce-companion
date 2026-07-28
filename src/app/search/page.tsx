@@ -56,6 +56,12 @@ const RESULT_GROUPS = [
     basePath: "/shops",
     fallback: "Shop",
   },
+  {
+    key: "playerClasses",
+    heading: "Classes",
+    basePath: "/classes",
+    fallback: "Class",
+  },
 ] as const;
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
@@ -71,7 +77,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <AppShell>
       <PageHeader
         title="Search"
-        description="Search items, recipes, professions, categories, locations, and shops by name or description."
+        description="Search items, recipes, professions, categories, locations, shops, and classes by name or description."
       />
 
       {/* Plain GET form: the query lives in the URL, no client JavaScript.
@@ -123,7 +129,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       {query === "" ? (
         <EmptyState
           title="Start searching"
-          description="Search Items, Recipes, Professions, Categories, Locations, and Shops by name or description — for example a material like iron. Recipes are also found through their resulting item, profession, or ingredients."
+          description="Search Items, Recipes, Professions, Categories, Locations, Shops, and Classes by name or description — for example a material like iron. Recipes are also found through their resulting item, profession, or ingredients."
         />
       ) : totalResults === 0 ? (
         // React escapes the interpolated query, so it renders as plain
@@ -131,7 +137,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         // edited directly.
         <EmptyState
           title="No results"
-          description={`No items, recipes, professions, categories, locations, or shops matched "${query}". Check the spelling or try a shorter, broader term.`}
+          description={`No items, recipes, professions, categories, locations, shops, or classes matched "${query}". Check the spelling or try a shorter, broader term.`}
         />
       ) : (
         <>

@@ -97,6 +97,9 @@ export type GlobalSearchResults = {
   // path here, matching the existing scope of every other resource).
   locations: SearchResultEntry[];
   shops: SearchResultEntry[];
+  // Player Classes + Recipe EXP milestone: the same restrained shape as
+  // Profession/Category/Location — direct name/description matching only.
+  playerClasses: SearchResultEntry[];
 };
 
 export function emptySearchResults(): GlobalSearchResults {
@@ -107,6 +110,7 @@ export function emptySearchResults(): GlobalSearchResults {
     categories: [],
     locations: [],
     shops: [],
+    playerClasses: [],
   };
 }
 
@@ -128,7 +132,7 @@ export async function searchGameData(
   const contains = { contains: query, mode: "insensitive" as const };
   const ordering = [{ name: "asc" as const }, { slug: "asc" as const }];
 
-  const [items, recipes, professions, categories, locations, shops] = await Promise.all([
+  const [items, recipes, professions, categories, locations, shops, playerClasses] = await Promise.all([
     // Direct fields plus the Category relation by NAME. Relation names
     // selected here are internal input for the context line only and are
     // stripped from the returned entries below.
@@ -214,6 +218,14 @@ export async function searchGameData(
       orderBy: ordering,
       take: SEARCH_RESULTS_PER_TYPE,
     }),
+    // Same restrained shape as Profession/Category/Location: direct
+    // name/description matching only, no relational matching.
+    db.playerClass.findMany({
+      where: { OR: [{ name: contains }, { description: contains }] },
+      select: { slug: true, name: true, description: true },
+      orderBy: ordering,
+      take: SEARCH_RESULTS_PER_TYPE,
+    }),
   ]);
 
   return {
@@ -262,6 +274,10 @@ export async function searchGameData(
         [{ label: "Location", value: shop.location.name }]
       ),
     })),
+    playerClasses: playerClasses.map((playerClass) => ({
+      ...playerClass,
+      context: null,
+    })),
   };
 }
 
@@ -273,7 +289,8 @@ export function countSearchResults(results: GlobalSearchResults): number {
     results.professions.length +
     results.categories.length +
     results.locations.length +
-    results.shops.length
+    results.shops.length +
+    results.playerClasses.length
   );
 }
 
@@ -294,6 +311,7 @@ export function buildSearchSummary(results: GlobalSearchResults): string {
     results.categories,
     results.locations,
     results.shops,
+    results.playerClasses,
   ].filter((group) => group.length > 0).length;
 
   const resultWord = total === 1 ? "result" : "results";
