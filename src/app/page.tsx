@@ -24,7 +24,7 @@ const resourceCards = [
   },
   {
     title: "Classes",
-    description: "Player classes and the recipes that require them.",
+    description: "Player classes in the PokeForce world.",
     href: "/classes",
   },
   {

@@ -42,10 +42,7 @@ type PlayerClassWorkspaceProps = {
   /** Optional contextual side panel (image/verification/timestamp
       panels), matching the slot AdminWorkspace already exposes. */
   aside?: React.ReactNode;
-  /** Builds each record row's link — defaults to the General edit route.
-      The Recipes tab route passes `playerClassRecipesHref` so quick
-      switching between Player Classes stays on the Recipes tab instead of
-      dropping back to General. */
+  /** Builds each record row's link; defaults to the General edit route. */
   recordHref?: (slug: string, query: string) => string;
 };
 
@@ -63,16 +60,12 @@ export async function PlayerClassWorkspace({
   // The COMPLETE list, always — filtering is instant and client-side
   // (RecordList's own established pattern), so there is no server-side
   // `where`/`q` filter and no pagination `skip`/`take` here at all.
-  // Alphabetical, matching every other converted resource. The recipe
-  // _count is loaded alongside (never the full relation) so the
-  // secondary row context below never triggers an N+1 query.
+  // Alphabetical, matching every other converted resource.
   const playerClasses = await prisma.playerClass.findMany({
     orderBy: { name: "asc" },
   });
 
-  // Resolved concurrently — image is already a scalar field on every row
-  // from the query above (include only adds the recipe _count), so this
-  // is pure URL construction, never a second database query.
+  // Resolved concurrently from the scalar image path on each row.
   const imageUrls = await Promise.all(
     playerClasses.map((playerClass) => getImagePublicUrl(playerClass.image))
   );

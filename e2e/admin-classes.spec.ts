@@ -2,9 +2,7 @@
 // REAL application and the isolated Supabase test project. Runs in the
 // chromium-admin project with the storage state saved by auth.setup.ts.
 // All temporary Player Class rows use the test-e2e-player-class slug
-// prefix, the temporary Item/Recipe rows for the relation-blocked test use
-// the separate test-e2e-player-class-relation- prefix, and everything is
-// removed by guard-first, prefix-scoped cleanup in
+// prefix and are removed by guard-first, prefix-scoped cleanup in
 // beforeAll/afterEach/afterAll — a mid-test failure can never strand a
 // row. Seeded fixtures (the 5 foundational classes) are read but never
 // modified. No image file is ever provided: the optional image input stays
@@ -20,6 +18,8 @@
 // given this milestone's overall scope.
 
 import { expect, test, type Page } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
 import { selectAdminOption } from "./helpers/admin-select";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
@@ -41,17 +41,22 @@ const EDITED = {
   description: "Updated by the authenticated Player Class browser test.",
 } as const;
 
-// A separate temporary Player Class for the relation-blocked deletion
-// test, so that test never depends on the lifecycle test's data.
-const BLOCKED = {
-  name: "Test E2E Player Class Blocked",
-  slug: "test-e2e-player-class-blocked",
-  description: "Created to verify the relation-blocked deletion rule.",
+// A separate temporary Player Class for the independent deletion test, so
+// that test never depends on the lifecycle test's data.
+const INDEPENDENT = {
+  name: "Test E2E Player Class Independent",
+  slug: "test-e2e-player-class-independent",
+  description: "Created to verify independent deletion.",
 } as const;
 
 const CURRENT_VERSION_NAME = E2E_CURRENT_GAME_VERSION_NAME;
 const HISTORICAL_VERSION_NAME = "test-e2e-gv-player-classes-historical";
 const VERIFICATION_CHECKBOX_LABEL = /^Mark as verified for/;
+const SCREENSHOT_DIRECTORY = path.join(
+  process.cwd(),
+  "test-results",
+  "recipe-class-domain-correction"
+);
 
 let pageErrors: string[] = [];
 
@@ -67,6 +72,7 @@ test.afterEach(async () => {
 });
 
 test.beforeAll(async () => {
+  fs.mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
   await deleteE2eTestPlayerClassRecords();
   await deleteE2eTestGameVersionRecords();
   expect(await countE2eTestPlayerClassRecords()).toBe(0);
@@ -174,18 +180,22 @@ test("class create/edit/delete lifecycle through the real admin UI", async ({
   await page.goto("/admin/classes/new");
   await createPlayerClassThroughForm(page, INITIAL);
 
-  // Edit page shows both real tabs, no disabled placeholders.
+  // Edit page shows only the Class-owned General tab.
   const editTabNav = page.getByRole("navigation", {
     name: "Class editor sections",
   });
   await expect(
     editTabNav.getByRole("link", { name: "Recipes", exact: true })
-  ).toBeVisible();
-  await expect(editTabNav.getByRole("link")).toHaveCount(2);
+  ).toHaveCount(0);
+  await expect(editTabNav.getByRole("link")).toHaveCount(1);
   await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
   await expect(
     page.getByRole("heading", { level: 2, name: "Timestamps", exact: true })
   ).toBeVisible();
+  await page.screenshot({
+    path: path.join(SCREENSHOT_DIRECTORY, "class-admin-editor.png"),
+    fullPage: true,
+  });
 
   // --- Edit (name, slug, and description; image untouched) -------------
   await page.goto("/admin/classes");
@@ -220,7 +230,7 @@ test("class create/edit/delete lifecycle through the real admin UI", async ({
     page.getByRole("heading", { level: 2, name: "Delete Class" })
   ).toBeVisible();
   await expect(page.getByText(`(${EDITED.slug})`)).toBeVisible();
-  await expect(page.getByText("Recipes requiring this class: 0")).toBeVisible();
+  await expect(page.getByText(/Recipes requiring this class:/)).toHaveCount(0);
 
   await page
     .getByRole("dialog")
@@ -259,9 +269,9 @@ test("deletion remains available without Recipe dependencies", async ({
   page,
 }) => {
   await page.goto("/admin/classes/new");
-  await createPlayerClassThroughForm(page, BLOCKED);
+  await createPlayerClassThroughForm(page, INDEPENDENT);
 
-  await page.goto(`/admin/classes/${BLOCKED.slug}/delete`);
+  await page.goto(`/admin/classes/${INDEPENDENT.slug}/delete`);
   await expect(
     page.getByRole("heading", { level: 1, name: "Delete Class" })
   ).toBeVisible();
@@ -277,7 +287,7 @@ test("deletion remains available without Recipe dependencies", async ({
 
   await expect(page).toHaveURL("/admin/classes");
   await expect(page.getByRole("status")).toHaveText("Class deleted");
-  await expect(recordRow(page, BLOCKED.name)).toHaveCount(0);
+  await expect(recordRow(page, INDEPENDENT.name)).toHaveCount(0);
 });
 
 test("gameplay verification stamps the selected game version and survives normal edits", async ({

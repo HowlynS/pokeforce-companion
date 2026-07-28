@@ -167,6 +167,12 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
       { exact: true }
     )
   ).toBeVisible();
+  await denseCard.screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipe-card-profession-level-close.png"
+    ),
+  });
   const visibleIngredients = denseCard.locator(".recipe-output-ingredient");
   await expect(visibleIngredients).toHaveCount(3);
 

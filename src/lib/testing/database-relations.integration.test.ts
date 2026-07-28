@@ -54,15 +54,6 @@ const NONEXISTENT_ID = `${RELATIONS_TEST_SLUG_PREFIX}nonexistent-id`;
 
 const P = RELATIONS_TEST_SLUG_PREFIX;
 
-// Every Recipe below needs a real, required playerClassId. A read-only
-// reference to the seeded "trainer" Player Class — resolved once, never
-// created or modified — is simpler and cleanup-free compared to a
-// test-scoped fixture: it is never prefix-scoped, so it can never affect
-// the "no test-prefixed row left behind" / "seeded counts unchanged" checks
-// at the end of this file, exactly like the seeded Items/Categories other
-// tests in this file already reference directly. The PlayerClass CRUD/
-// dependency rules themselves belong to a dedicated player-class suite.
-
 describe("database relations (integration)", () => {
   beforeAll(async () => {
     // First database contact of the run: the guard inside

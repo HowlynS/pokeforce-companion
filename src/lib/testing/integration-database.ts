@@ -118,9 +118,8 @@ export async function deleteRelationsTestRecords(): Promise<number> {
   const categories = await prisma.category.deleteMany({
     where: { slug: startsWithPrefix },
   });
-  // After recipes: Recipe.playerClassId is a required, RESTRICT-protected
-  // relation, so a test-scoped PlayerClass can only be removed once every
-  // recipe referencing it is already gone.
+  // Classes are independent from Recipes; retaining this stable cleanup
+  // order keeps fixture removal deterministic.
   const playerClasses = await prisma.playerClass.deleteMany({
     where: { slug: startsWithPrefix },
   });
@@ -278,11 +277,9 @@ export async function deleteShopTestRecords(): Promise<number> {
 }
 
 /**
- * Deletes only Player Classes + Recipe EXP milestone integration fixtures.
- * Recipe.playerClassId is a required, RESTRICT-protected relation, so the
- * dependency order below (recipes first, then the Player Class rows they
- * required, then their resulting Items, and finally Game Versions) is
- * mandatory, mirroring deleteShopTestRecords' own established shape.
+ * Deletes only Player Class and Recipe EXP integration fixtures. Classes
+ * and Recipes are independent; the stable resource order mirrors the
+ * surrounding cleanup helpers.
  */
 export async function deletePlayerClassTestRecords(): Promise<number> {
   if (
@@ -371,9 +368,8 @@ export async function deleteGameVersionTestRecords(): Promise<number> {
   const professions = await prisma.profession.deleteMany({
     where: { slug: startsWithPrefix },
   });
-  // After recipes: Recipe.playerClassId is a required, RESTRICT-protected
-  // relation, so a test-scoped PlayerClass can only be removed once every
-  // recipe referencing it is already gone.
+  // Classes are independent from Recipes; retaining this stable cleanup
+  // order keeps fixture removal deterministic.
   const playerClasses = await prisma.playerClass.deleteMany({
     where: { slug: startsWithPrefix },
   });

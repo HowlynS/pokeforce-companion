@@ -68,7 +68,7 @@ const professions: ProfessionSeed[] = [
   { slug: "smithing", name: "Smithing", description: "Smelting and forging metal goods." },
 ];
 
-// Player Classes + Recipe EXP/Required Class milestone: the same 5
+// Player Classes + Recipe EXP milestone: the same 5
 // foundational Classes migration 20260728120000 already inserted directly
 // (so a fresh `prisma migrate deploy` never depends on this script having
 // run). This upsert exists so `pnpm db:seed` stays the idempotent,

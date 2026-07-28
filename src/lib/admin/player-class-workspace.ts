@@ -1,10 +1,6 @@
 // Pure URL and search-normalization rules for the Player Class workspace
-// (Player Classes + Recipe EXP milestone) — mirrors
-// src/lib/admin/profession-workspace.ts's shape exactly (the closest
-// existing analog: image, verification stamp, and a Recipes relationship
-// tab), but is deliberately its own independent module, not a shared
-// cross-resource framework. No React, no database: the PlayerClassWorkspace
-// component applies these, and the unit tests pin them.
+// This independent module owns Class workspace URLs without implying any
+// Recipe relationship. No React or database access lives here.
 //
 // The internal/schema/domain name is PlayerClass; the admin URL segment and
 // every user-facing label read "Class"/"Classes" instead, matching the
@@ -55,11 +51,7 @@ export function playerClassDeleteHref(slug: string, query: string): string {
   );
 }
 
-/** The Recipes tab route for one Player Class, preserving the query —
-    read-only Recipe relationship content, mirroring
-    professionRecipesHref. */
-/** Which Player Class editor tab is active — General (the record's own
-    fields) or Recipes (the Recipes requiring this Class). */
+/** The independent Class editor exposes only its own General fields. */
 export type PlayerClassEditorTabKey = "general";
 
 /** Structurally compatible with the shared `EditorTab` type
@@ -73,16 +65,9 @@ export type PlayerClassEditorTab = {
   count?: number;
 };
 
-/** Relationship-count badge for the Player Class tab strip: the number of
-    Recipes requiring this Class, exactly what the Recipes tab itself
-    lists. */
 /**
- * The Player Class editor's tab strip, shared by every route inside the
- * Player Class workspace that renders tabs (General edit and Recipes) —
- * one function so every tab's href/active state can never drift out of
- * sync between pages. The create page shows only General with no
- * placeholders at all (mirroring the Profession workspace's create-page
- * precedent), so this helper stays edit-only.
+ * The Class editor's single General tab. Create continues to render its
+ * existing local General tab before a record exists.
  */
 export function playerClassEditorTabs(
   slug: string,
@@ -97,15 +82,3 @@ export function playerClassEditorTabs(
     },
   ];
 }
-
-/**
- * The Player Class delete-blocking rule, shared by the dedicated /delete
- * route AND the in-editor delete dialog — one function so the two
- * surfaces can never drift apart. A Player Class cannot be deleted while
- * any Recipe still requires it (Recipe.playerClassId is a required
- * relation, unlike Profession's optional one — so this rule can never be
- * bypassed by reassigning to "no Class").
- */
-/** The human-readable reason a Player Class is blocked from deletion —
-    shared by both surfaces for the same reason as playerClassCanDelete
-    above. */

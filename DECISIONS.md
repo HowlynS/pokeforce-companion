@@ -1971,9 +1971,13 @@ Alternatives considered:
 
 ---
 
-### 2026-07-28 — Milestone 12: Player Classes are required on every Recipe; migration is self-contained
+### 2026-07-28 — Milestone 12 historical decision (superseded)
 
-Decision:
+This section records the original Milestone 12 implementation only. It is
+superseded by the domain correction below and must not be used as current
+architecture guidance.
+
+Historical decision:
 
 `PlayerClass` (Trainer, Artisan, Rancher, Ranger, Farmhand) is a top-level
 resource with the same shape as Profession: name, slug, optional
@@ -2056,6 +2060,30 @@ Alternatives considered:
   breakpoints would only add drift risk for a purely cosmetic distinction.
   Revisiting this with dedicated `.class-*` names remains an easy, isolated
   follow-up if ever wanted.
+
+---
+
+### 2026-07-28 — Recipes and Player Classes are independent
+
+Decision:
+
+Player Classes remain top-level public/admin resources, but Recipes do not
+belong to or require them. Migration
+`20260728180000_decouple_recipes_from_player_classes` drops only
+`Recipe.playerClassId`, its foreign key, and its index. It preserves every
+Recipe row, every PlayerClass row, the five foundational Classes, and all
+unrelated Recipe fields.
+
+Profession remains the Recipe discipline relationship.
+`Recipe.requiredLevel` is the Profession level required to perform the
+Recipe. Admin labels make that meaning explicit, and public Recipe cards,
+Profession previews, and Recipe detail expose it when present. EXP reward
+remains a separate required non-negative fact.
+
+The Recipes catalogue filters only by Profession. Class pages and the Class
+admin workspace contain no Recipe-derived counts, previews, tabs, links, or
+deletion restrictions. Classes remain independently searchable and navigable.
+Future Class gameplay relationships are undefined and must not be inferred.
 
 ---
 

@@ -153,22 +153,18 @@ warm-amber atmosphere.
 Public collection and context pages have distinct responsibilities:
 
 - `/recipes` is the canonical full Recipe catalogue. It uses the approved
-  result-focused Recipe cards, deterministic twelve-Recipe pagination, and two
-  combinable, server-rendered filters: Profession (backed only by
-  `Recipe.profession`) and Class (backed only by `Recipe.playerClass`, public
-  query parameter `class`). Clearing one filter preserves the other; an
-  invalid value drops only itself rather than resetting both.
+  result-focused Recipe cards, deterministic twelve-Recipe pagination, and one
+  server-rendered Profession filter backed only by `Recipe.profession`.
+  Player Class filtering is not part of the Recipe domain.
 - `/items` is the canonical full Item catalogue. It uses deterministic
   pagination and a server-rendered Item Category filter backed only by
   `Item.category`.
 - Profession detail explains a crafting discipline. Its compact neutral hero
   keeps factual Recipe and unique-result totals, while an optional compact
   three-Recipe preview links to the canonical filtered Recipes index.
-- Class detail explains a player Class the same way Profession detail
-  explains a discipline: a compact neutral hero with a factual Recipe total,
-  an optional compact three-Recipe preview capped identically to Profession's
-  own, and a canonical "Browse all `<Class>` recipes" link to `/recipes`
-  filtered by that Class. It never becomes a second full Recipe catalogue.
+- Class detail explains an independent player Class through its compact neutral
+  identity, optional image/description, and inline Verification. It has no
+  Recipe count, Recipe previews, or Recipe-catalogue link.
 - Item Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not reproduce an Item grid or infer
   a Recipe catalogue from resulting Item Category.
@@ -177,9 +173,9 @@ Public collection and context pages have distinct responsibilities:
 - Profession verification remains a restrained factual strip, and Profession
   remains atmosphere-free. Class verification is identical in shape, and
   Class is likewise atmosphere-free.
-- Recipe detail shows its required Class (linking to `/classes/<slug>`) and
-  its EXP reward alongside the existing Profession/Result/Ingredients facts —
-  both are required schema fields, so neither is ever hidden.
+- Recipe detail shows its Profession, optional required Profession level, and
+  EXP reward as separate facts alongside Result and Ingredients. Recipe cards
+  expose the required Profession level when present.
 
 Only render facts present in the current schema and query. Do not invent
 descriptions, rarity, weight, buy or sell price, crafting time, crafting
@@ -193,6 +189,11 @@ existing Item Category concept and the language keyword; every public label
 reads "Class"/"Classes". This milestone introduces no player levels, Class
 progression, unlock trees, Class-specific permissions, or account/character
 ownership — those remain explicitly out of scope until a later milestone.
+
+Player Classes are independent resources. Recipes do not belong to or require
+Classes. `Recipe.requiredLevel` represents the Profession level required to
+perform that Recipe. Future Class gameplay relationships are undefined and
+must not be inferred.
 
 ### Images and sprites
 

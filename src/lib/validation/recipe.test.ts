@@ -16,9 +16,8 @@ function formDataFrom(entries: Record<string, string>): FormData {
 }
 
 // A minimal valid submission: name, a resulting item, a fixed 1/1 result
-// quantity (matching the form's own default), a required Player Class, a
-// zero EXP reward (matching the form's own default), and one ingredient
-// row.
+// quantity (matching the form's own default), a zero EXP reward (matching
+// the form's own default), and one ingredient row.
 function validRecipeEntries(): Record<string, string> {
   return {
     name: "Iron Ingot",

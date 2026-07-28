@@ -42,7 +42,7 @@ export const SECTION_ICONS = {
   gameplayDetails: Sliders,
   /** Recipe's Resulting item / quantity range. */
   output: PackageOpen,
-  /** Recipe's Profession / Required Player Class / Required level / EXP
+  /** Recipe's Profession / Required profession level / EXP
       reward crafting context. */
   requirements: ListChecks,
   /** Recipe Ingredients. */

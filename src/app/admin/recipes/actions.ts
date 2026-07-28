@@ -96,8 +96,6 @@ export async function createRecipeAction(formData: FormData) {
     }
   }
 
-  // Required, unlike Profession above: every Recipe belongs to exactly one
-  // Player Class.
   const ingredientItemIds = parsed.value.ingredients.map(
     (ingredient) => ingredient.itemId
   );
@@ -270,8 +268,6 @@ export async function updateRecipeGeneralAction(formData: FormData) {
     }
   }
 
-  // Required, unlike Profession above: every Recipe belongs to exactly one
-  // Player Class.
   // Resolved before any upload so a missing current Game Version rejects
   // the submission without leaving an orphaned file behind. The shared
   // helper stamps the server's own clock and the database row marked

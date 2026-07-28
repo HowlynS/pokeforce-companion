@@ -2260,100 +2260,71 @@ Status: Complete (2026-07-28)
 
 Goal:
 
-Add player Classes (Trainer, Artisan, Rancher, Ranger, Farmhand) as a
-top-level public/admin resource, and make every Recipe require exactly one
-Class plus an EXP reward, without introducing player levels, Class
-progression, unlock trees, Class-specific permissions, or account/character
-ownership.
+Keep player Classes (Trainer, Artisan, Rancher, Ranger, Farmhand) as
+independent top-level public/admin resources, retain Recipe EXP rewards, and
+show optional Profession-level requirements without inventing any Class
+gameplay relationship.
 
 ### Domain foundation
 
-- [x] Added `PlayerClass` (name, slug, description, image, verification
-      stamp, Game Version relation, Recipe relation) in committed migration
-      `20260728120000_add_player_class_domain` — never the bare name `Class`,
-      avoiding collision with the existing Item Category concept
-- [x] Recipe gained required `playerClassId`/`playerClass` and required
-      `experienceReward` (zero is a valid, meaningful value; never invented
-      positive by default)
-- [x] The migration is self-contained: it inserts the 5 foundational Classes
-      directly (never dependent on `pnpm db:seed` having run), backfills the
-      8 pre-existing development/fixture Recipe rows to Trainer/0 EXP as a
-      one-moment safety default, and only then applies the NOT NULL
-      constraints — verified beforehand that only known development/fixture
-      Recipe rows existed (Deployment has not started; no live production
-      dataset to protect beyond this)
-- [x] `prisma/seed.ts` upserts the same 5 Classes idempotently and assigns
-      each of its 8 recipes a deliberate, specific Class and EXP value,
-      superseding the migration's neutral backfill
+- [x] `PlayerClass` remains the internal/schema name, avoiding collision with
+      the Item Category concept; public labels remain Class/Classes.
+- [x] The five foundational Classes remain intact and idempotently seeded.
+- [x] Migration `20260728180000_decouple_recipes_from_player_classes` removes
+      only `Recipe.playerClassId`, its foreign key, and its index while
+      preserving every Recipe and PlayerClass row.
+- [x] Profession remains the Recipe discipline relationship.
+- [x] `Recipe.requiredLevel` represents the optional required Profession level.
+- [x] `Recipe.experienceReward` remains a required non-negative integer; zero
+      remains a valid, meaningful value.
 - [x] `countVerificationReferences` (Game Version deletion protection) now
-      also counts PlayerClass stamps
-- [x] Fixed a latent gap discovered while writing real E2E coverage: every
-      one of 10 raw-SQL Recipe fixture inserts across
-      `e2e/helpers/database-cleanup.ts` was missing the newly-required
-      columns, and the admin success-toast dictionary had no entries for the
-      new `player_class_*` codes — both fixed with test coverage
+      also counts PlayerClass stamps.
 
 ### PlayerClass admin workspace
 
-- [x] `/admin/classes` is a full admin resource workspace mirroring the
-      Profession workspace exactly: searchable record list, General editor
-      (Identity, Description, Image, Verification, Timestamps), a read-only
-      Recipes relationship tab, dependency-blocked deletion (a Class
-      referenced by any Recipe cannot be deleted), and drafts/save-in-place/
-      Ctrl+S via the existing shared `AdminFormGuard`
-- [x] Classes added to the admin sidebar between Professions and Categories
+- [x] `/admin/classes` retains its searchable record list and General editor
+      with Identity, Description, Image, Verification, and Timestamps.
+- [x] Drafts, save-in-place, keyboard save, delete confirmation, and normal
+      deletion remain intact.
+- [x] No Recipes tab, Recipe count, dependency rows, or Recipe-based deletion
+      block remains.
+- [x] Classes remain in the admin sidebar between Professions and Categories.
 
 ### Recipe admin integration
 
-- [x] Recipe create/edit General editor's existing Requirements section
-      gained a required Class `AdminSelect` (server-validated, mirroring
-      `resultingItemId`) and an EXP reward number input (min 0, default 0,
-      mirroring `resultQuantityMin`'s own validation shape)
-- [x] Create/update/delete revalidate the affected Class's public page
+- [x] Recipe create/edit has no Player Class field, option query, validation,
+      draft state, or persistence.
+- [x] The Requirements section labels `requiredLevel` as
+      `Required profession level`.
+- [x] Profession, required level, EXP reward, Ingredients, quantities, image
+      inheritance, verification, dirty state, and keyboard save remain intact.
 
 ### Public Classes and Recipes integration
 
-- [x] Added `/classes` (canonical index — restrained card grid, no
-      pagination at the 5-record scale) and `/classes/[slug]` (identity,
-      factual Recipe count, a compact ≤3-Recipe preview capped like
-      Profession's own, a canonical browse-all link to the Recipes catalogue
-      filtered by Class, and inline Verification) — deliberately reuses
-      Profession detail's existing CSS classes (pure layout/visual rules)
-      rather than duplicating an identical parallel stylesheet
-- [x] Classes added to the main public navigation (after Professions) and
-      the homepage resource grid
-- [x] `/recipes` gained a second, combinable filter — Class (`class` query
-      param, backed only by `Recipe.playerClass`) alongside the existing
-      Profession filter; clearing one preserves the other, an invalid value
-      drops only itself, and an empty combination shows a distinct message
-- [x] Recipe detail shows its required Class (linking to `/classes/[slug]`)
-      and EXP reward — both required, so neither is ever hidden
+- [x] `/classes` and `/classes/[slug]` remain available with Class identity,
+      optional image/description, verification, navigation, and not-found
+      behavior.
+- [x] Class detail owns no Recipe count, preview, catalogue link, empty Recipe
+      state, or Recipe query.
+- [x] Classes remain in public navigation, the homepage resource grid, and
+      global search as independent resources.
+- [x] `/recipes` retains only the visible Profession filter, twelve-Recipe
+      pagination, deterministic ordering, and canonical URL behavior.
+- [x] Stale `class` query parameters canonicalize to the supported URL.
+- [x] Recipe cards show `<Profession> · Level <N>` when both values exist;
+      compact Profession previews show `Requires level <N>`.
+- [x] Recipe detail links Profession, shows optional required Profession level,
+      and keeps EXP reward separate. No Required Class output remains.
 
 ### Final Milestone 12 audit
 
-- [x] Feature commits kept slice-focused and pushed in order: `62c7a0d`
-      (domain), `5861ebb` (Class admin), `e8ec6f4` (Recipe admin
-      integration), `654a9e8` (public Class pages), and `394dd81` (Recipes
-      catalogue filtering)
-- [x] Fixed a second latent gap discovered during the final coherence pass:
-      every other top-level public resource (Item, Recipe, Profession,
-      Category, Location, Shop) already had a global search entry, but
-      PlayerClass did not. Added it to `searchGameData` with the same
-      restrained shape Profession/Category/Location already use (direct
-      name/description matching only, no relational matching from Recipe),
-      plus a `/search` results group and a new positive integration test
-- [x] Confirmed `PlayerClass` is never confused with `Category`; every
-      Recipe carries a valid required Class and EXP reward; deletion
-      constraints are RESTRICT-backed at the database level, not just an
-      application pre-check
-- [x] Confirmed no duplicated Recipe catalogue exists — `RecipeOutputCard`/
-      `RecipeOutputCatalogue` are used only by the canonical `/recipes` route
-- [x] Full verification matrix run before completion: unit tests, the
-      isolated-project integration suite, service tests, targeted and
-      broad-sweep Playwright coverage (admin Classes/Recipes lifecycle,
-      public Classes/Recipes catalogue and detail, combined-filter
-      canonicalization, responsive layouts at 1920×1080/2560×1440/3440×1440/
-      ~1000px/390×844), lint, TypeScript, production build, and diff checks
+- [x] Integration coverage proves the obsolete Recipe column, index, and
+      foreign key are absent while all five Classes and all Recipe rows remain.
+- [x] Browser coverage proves Recipe admin persistence, Profession filtering,
+      required-level presentation, independent Class pages/admin, responsive
+      behavior, and cleanup with zero temporary residue.
+- [x] Future Class gameplay relationships remain undefined and must not be
+      inferred.
 
 Nothing remains in Milestone 12. Do not begin player levels, Class
 progression, unlock trees, Class-specific permissions, account/character

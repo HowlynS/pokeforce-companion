@@ -11,6 +11,8 @@
 // written or deleted.
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
 import { selectAdminOption } from "./helpers/admin-select";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
@@ -35,6 +37,11 @@ const HISTORICAL_VERSION_NAME = "test-e2e-gv-recipes-historical";
 // {selected version's name}"), so every call site matches this pattern
 // rather than one fixed string.
 const VERIFICATION_CHECKBOX_LABEL = /^Mark as verified for/;
+const SCREENSHOT_DIRECTORY = path.join(
+  process.cwd(),
+  "test-results",
+  "recipe-class-domain-correction"
+);
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -56,6 +63,7 @@ test.afterEach(async () => {
 });
 
 test.beforeAll(async () => {
+  fs.mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
   // Remove stale rows from interrupted earlier runs; the guard inside the
   // helper throws here if the environment is not the verified test project.
   await deleteE2eTestRecipeRecords();
@@ -141,9 +149,8 @@ type RecipeFormData = {
   resultQuantityMax?: string;
   profession?: string;
   requiredLevel?: string;
-  // Both required fields (Player Classes + Recipe EXP milestone); default
-  // to a stable seeded Class and zero EXP so every existing call site that
-  // predates this milestone keeps working unchanged.
+  // Default the required EXP field to zero so every existing call site
+  // that predates the milestone keeps working unchanged.
   experienceReward?: string;
   ingredients: { item: string; quantity: string }[];
 };
@@ -1242,11 +1249,11 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
 test("Profession level and EXP reward persist without a Required Class selector", async ({
   page,
 }) => {
-  // --- Create with a distinctive Class and non-zero EXP -------------------
+  // --- Create with a distinctive Profession level and non-zero EXP --------
   await page.goto("/admin/recipes/new");
   await createRecipeThroughForm(page, {
-    name: "Test E2E Recipe Class Exp",
-    slug: "test-e2e-recipe-class-exp",
+    name: "Test E2E Recipe Profession Level Exp",
+    slug: "test-e2e-recipe-profession-level-exp",
     resultingItem: "Iron Ingot",
     profession: "Smithing",
     requiredLevel: "25",
@@ -1263,16 +1270,31 @@ test("Profession level and EXP reward persist without a Required Class selector"
   await expect(page.getByLabel("EXP reward", { exact: true })).toHaveValue(
     "150"
   );
+  const requirementsSection = page
+    .locator(".admin-editor-section")
+    .filter({
+      has: page.getByRole("heading", {
+        level: 2,
+        name: "Requirements",
+        exact: true,
+      }),
+    });
+  await requirementsSection.screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipe-admin-requirements.png"
+    ),
+  });
 
   // --- Edit: change both fields, confirm the save persists them ----------
   await page.goto("/admin/recipes");
-  await recordRow(page, "Test E2E Recipe Class Exp").click();
+  await recordRow(page, "Test E2E Recipe Profession Level Exp").click();
   await page.getByLabel(/^Required profession level/).fill("75");
   await page.getByLabel("EXP reward", { exact: true }).fill("75");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   await expect(page).toHaveURL(
-    "/admin/recipes/test-e2e-recipe-class-exp/edit"
+    "/admin/recipes/test-e2e-recipe-profession-level-exp/edit"
   );
   await expect(page.getByRole("status")).toHaveText("Recipe saved");
   await expect(
@@ -1294,7 +1316,7 @@ test("Profession level and EXP reward persist without a Required Class selector"
   // ordinary submit path; this deterministic URL exercises the fallback.
   await expInput.fill("75");
   await page.goto(
-    "/admin/recipes/test-e2e-recipe-class-exp/edit?error=invalid_experience_reward"
+    "/admin/recipes/test-e2e-recipe-profession-level-exp/edit?error=invalid_experience_reward"
   );
   const invalidExpInput = page.getByLabel("EXP reward", { exact: true });
   const inlineExpError = page.locator("#recipe-experience-reward-error");
@@ -1311,8 +1333,7 @@ test("Profession level and EXP reward persist without a Required Class selector"
   );
   await expect(invalidExpInput).toBeFocused();
 
-  // The Class's own Recipes tab lists this recipe with its current EXP
-  // value — proving the relation actually moved to the new Class.
+  // Required Class is absent throughout the validation flow.
   await expect(page.getByLabel("Required class", { exact: true })).toHaveCount(
     0
   );

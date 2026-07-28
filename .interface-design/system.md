@@ -85,26 +85,25 @@ same focused commit.
 ### Public resource responsibilities
 
 - Recipes index is the canonical full Recipe catalogue: approved result-focused
-  cards, twelve-Recipe pagination, and two combinable, server-rendered
-  filters — Profession (`Recipe.profession`) and Class (`Recipe.playerClass`,
-  public query param `class`). Clearing one preserves the other; an invalid
-  value drops only itself.
+  cards, twelve-Recipe pagination, and one server-rendered Profession filter
+  backed by `Recipe.profession`. Player Class filtering is not part of the
+  Recipe domain.
 - Items index is the canonical full Item catalogue: deterministic pagination
   and a server-rendered Item Category filter through `Item.category`.
 - Profession detail explains a discipline with its compact neutral identity
   hero, factual Recipe/result counts, at most three compact Recipe preview
   rows, a browse-all filtered Recipes link, and inline Verification.
-- Class detail mirrors Profession detail's own shape exactly: compact neutral
-  hero, factual Recipe count, at most three compact Recipe preview rows, a
-  browse-all link to Recipes filtered by Class, and inline Verification. It
-  never becomes a second full Recipe catalogue.
+- Class detail is an independent resource surface: compact neutral identity,
+  optional image/description, and inline Verification. It has no Recipe count,
+  Recipe previews, or Recipe-catalogue link.
 - Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not duplicate Item or Recipe grids.
 - Do not reuse full Recipe cards for explanatory or contextual lists.
 - Profession and Class both remain atmosphere-free unless a future atmosphere
   is explicitly approved.
-- Recipe detail shows its required Class (linking to `/classes/<slug>`) and
-  EXP reward — both required schema fields, never hidden.
+- Recipe detail shows its Profession, optional required Profession level, and
+  EXP reward as separate facts. Recipe cards expose the Profession level when
+  present.
 
 ### PlayerClass naming
 
@@ -112,6 +111,9 @@ same focused commit.
   with the Item Category concept and the language keyword).
 - Every public-facing label reads "Class"/"Classes".
 - Initial records: Trainer, Artisan, Rancher, Ranger, Farmhand.
+- Player Classes are independent resources. Recipes do not belong to or
+  require Classes, and future Class gameplay relationships must not be
+  inferred.
 - No player levels, Class progression, unlock trees, Class permissions, or
   account/character ownership in this milestone.
 

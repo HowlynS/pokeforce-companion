@@ -210,8 +210,8 @@ test("populated Recipe uses the shared detail composition and real relationships
       exact: true,
     })
   ).toBeVisible();
-  // Player Classes + Recipe EXP milestone: the required Class links to its
-  // own public page, and the EXP reward reads as a number followed by EXP.
+  // Profession and its optional level stay together; EXP remains a
+  // separate Recipe fact.
   await expect(page.getByText("Required class", { exact: true })).toHaveCount(
     0
   );
@@ -366,8 +366,8 @@ test("sparse and no-image Recipes preserve hide-empty behavior", async ({
   await expect(
     page.locator(".item-sidebar-panel").getByText("Profession", { exact: true })
   ).toHaveCount(0);
-  // Required Class and EXP reward are never optional, so both still render
-  // on a Recipe with no Profession.
+  // A Recipe without a Profession has no profession-level requirement;
+  // its required EXP reward still renders independently.
   await expect(page.getByText("Required class", { exact: true })).toHaveCount(
     0
   );

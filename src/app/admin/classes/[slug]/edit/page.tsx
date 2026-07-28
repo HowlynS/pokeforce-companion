@@ -74,8 +74,6 @@ export default async function EditPlayerClassPage({
       // Game Version's name is shown in the aside's VerificationPanel
       // below.
       verifiedGameVersion: true,
-      // Count only — feeds the Recipes tab's own badge. No recipes
-      // include — General never touches or displays the rows themselves.
     },
   });
 

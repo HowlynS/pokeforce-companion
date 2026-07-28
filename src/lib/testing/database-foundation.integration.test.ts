@@ -32,7 +32,7 @@ const SEEDED_COUNTS = {
   recipeIngredients: 15,
 } as const;
 
-// Player Classes + Recipe EXP/Required Class milestone: the 5 foundational
+// Player Classes + Recipe EXP milestone: the 5 foundational
 // Classes, inserted directly by migration 20260728120000 and re-affirmed
 // idempotently by prisma/seed.ts.
 const SEEDED_PLAYER_CLASS_SLUGS = [

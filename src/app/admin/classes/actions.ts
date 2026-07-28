@@ -259,9 +259,6 @@ export async function updatePlayerClassAction(formData: FormData) {
   if (parsed.value.slug !== originalSlug) {
     revalidatePath(`/classes/${parsed.value.slug}`);
   }
-  // Recipes list their required Class publicly and the Recipes catalogue
-  // can be filtered by it, so a rename must refresh both.
-
   redirect(
     oldImageCleanupFailed
       ? `/admin/classes/${parsed.value.slug}/edit?success=player_class_saved_image_cleanup`
@@ -290,10 +287,6 @@ export async function deletePlayerClassAction(formData: FormData) {
     redirect("/admin/classes?error=missing_player_class");
   }
 
-  // Checked immediately before deletion, not just on the confirmation page
-  // load, so a concurrently-linked recipe can't slip through. Unlike
-  // Profession, Recipe.playerClassId is REQUIRED — there is no "reassign to
-  // no Class" escape hatch, so this rule can never be bypassed.
   try {
     await prisma.playerClass.delete({ where: { id } });
   } catch (error) {

@@ -8,8 +8,20 @@
 // Storage object is ever created or touched here.
 
 import { expect, test, type Page } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+
+const SCREENSHOT_DIRECTORY = path.join(
+  process.cwd(),
+  "test-results",
+  "recipe-class-domain-correction"
+);
 
 let pageErrors: string[] = [];
+
+test.beforeAll(() => {
+  fs.mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+});
 
 test.beforeEach(({ page }) => {
   pageErrors = [];
@@ -97,6 +109,22 @@ test.describe("public Class detail", () => {
     await expect(
       page.getByRole("heading", { level: 2, name: "Verification", exact: true })
     ).toBeVisible();
+
+    for (const viewport of [
+      { name: "desktop-1920x1080", width: 1920, height: 1080 },
+      { name: "mobile-390x844", width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.reload();
+      await expectNoHorizontalOverflow(page);
+      await page.screenshot({
+        path: path.join(
+          SCREENSHOT_DIRECTORY,
+          `class-detail-${viewport.name}.png`
+        ),
+        fullPage: true,
+      });
+    }
   });
 
   test("a sparse class remains coherent without Recipe-derived sections", async ({

@@ -391,10 +391,8 @@ describe("global search (integration)", () => {
       "artisan",
     ]);
     expect(results.playerClasses[0].context).toBeNull();
-    // Recipe.playerClass is deliberately NOT a relational search candidate
-    // (the same restrained scope Profession/Category/Location already
-    // established for themselves) — Recipes required by Artisan do not
-    // appear here even though 5 seeded Recipes reference it.
+    // Classes are independent search resources. Matching Artisan never
+    // widens the result set through Recipes.
     expect(results.recipes).toEqual([]);
   });
 
