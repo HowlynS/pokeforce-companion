@@ -80,14 +80,23 @@ export function professionRecipesHref(slug: string, query: string): string {
   );
 }
 
+/** The shared, read-only Levels tab for one Profession workspace. */
+export function professionLevelsHref(slug: string, query: string): string {
+  return withProfessionSearchQuery(
+    `${PROFESSION_LIST_PATH}/${slug}/levels`,
+    query
+  );
+}
+
 /** Which Profession editor tab is active — General (the record's own
-    fields) or Recipes (Slice 9D.3). The former Metadata tab (Slice
+    fields), Recipes, or the shared read-only Levels curve. The former
+    Metadata tab (Slice
     9D.4) was removed in the Visual Pass (sub-slice 4): its one fact
     (Recipe count) is already shown by the Recipes tab's own count, and
     Verification/Timestamps duplicate General's aside, so
     /admin/professions/[slug]/metadata now redirects to General instead
     of rendering a third tab. */
-export type ProfessionEditorTabKey = "general" | "recipes";
+export type ProfessionEditorTabKey = "general" | "recipes" | "levels";
 
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
@@ -132,6 +141,11 @@ export function professionEditorTabs(
       href: professionRecipesHref(slug, query),
       active: active === "recipes",
       count: counts?.recipes,
+    },
+    {
+      label: "Levels",
+      href: professionLevelsHref(slug, query),
+      active: active === "levels",
     },
   ];
 }

@@ -2518,6 +2518,33 @@ select:focus-visible {
   border-bottom: none;
 }
 
+.profession-level-table-wrap {
+  max-height: clamp(360px, 56vh, 640px);
+  overflow: auto;
+}
+
+.profession-level-table {
+  min-width: 620px;
+  font-variant-numeric: tabular-nums;
+}
+
+.profession-level-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface);
+}
+
+.profession-level-table th,
+.profession-level-table td {
+  text-align: right;
+}
+
+.profession-level-table th:first-child,
+.profession-level-table td:first-child {
+  text-align: left;
+}
+
 /* Optional per-row detail line (e.g. Profession/Required level) shown
    beneath a table row's name cell — only rendered when there is at
    least one detail to show. */

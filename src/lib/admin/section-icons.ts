@@ -7,6 +7,7 @@
 
 import {
   Clock,
+  ChartNoAxesColumnIncreasing,
   Database,
   DownloadCloud,
   FileText,
@@ -74,6 +75,8 @@ export const SECTION_ICONS = {
   /** Game Versions — the same icon admin-nav.ts already uses for the
       Game Versions destination. */
   gameVersions: History,
+  /** Shared Profession level/EXP progression reference table. */
+  progression: ChartNoAxesColumnIncreasing,
 } as const satisfies Record<string, LucideIcon>;
 
 export type SectionIconKey = keyof typeof SECTION_ICONS;

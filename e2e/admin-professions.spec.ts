@@ -200,7 +200,7 @@ test("Create profession opens the dedicated creation route", async ({
   ).toBeVisible();
 });
 
-test("Profession editor: create shows only General; edit marks General active with Recipes as the one other real tab; exactly one h1 renders; Timestamps render on edit only", async ({
+test("Profession editor: create shows only General; edit adds Recipes and shared Levels tabs; exactly one h1 renders; Timestamps render on edit only", async ({
   page,
 }) => {
   // --- Create: exactly one h1, one real tab, no disabled placeholders,
@@ -214,6 +214,7 @@ test("Profession editor: create shows only General; edit marks General active wi
     createTabNav.getByRole("link", { name: "General", exact: true })
   ).toHaveAttribute("aria-current", "page");
   await expect(createTabNav.getByText("Recipes")).toHaveCount(0);
+  await expect(createTabNav.getByText("Levels")).toHaveCount(0);
   await expect(createTabNav.getByText("Metadata")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { level: 2, name: "Image", exact: true })
@@ -255,7 +256,10 @@ test("Profession editor: create shows only General; edit marks General active wi
   await expect(
     editTabNav.getByRole("link", { name: "Recipes", exact: true })
   ).toBeVisible();
-  await expect(editTabNav.getByRole("link")).toHaveCount(2);
+  await expect(
+    editTabNav.getByRole("link", { name: "Levels", exact: true })
+  ).toBeVisible();
+  await expect(editTabNav.getByRole("link")).toHaveCount(3);
   await expect(editTabNav.locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await expect(
@@ -267,6 +271,39 @@ test("Profession editor: create shows only General; edit marks General active wi
   await expect(panelRow(page, "Timestamps", "Created")).toBeVisible();
   await expect(panelRow(page, "Timestamps", "Updated")).toBeVisible();
   await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
+});
+
+test("Levels tab shows the exact shared read-only progression with boundary values", async ({
+  page,
+}) => {
+  await page.goto("/admin/professions/smithing/levels");
+
+  const tabs = page.getByRole("navigation", {
+    name: "Profession editor sections",
+  });
+  await expect(
+    tabs.getByRole("link", { name: "Levels", exact: true })
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByText("This progression curve is shared by all Professions.")
+  ).toBeVisible();
+
+  const table = page.getByRole("table");
+  await expect(table.getByRole("row")).toHaveCount(101);
+  await expect(table.getByRole("row").nth(1)).toContainText("0");
+  await expect(table.getByRole("row").nth(1)).toContainText("—");
+  await expect(table.getByRole("row").nth(100)).toContainText("14,391,160");
+  await expect(table.getByRole("row").nth(100)).toContainText("1,356,729");
+  await expect(table.getByRole("row").nth(100)).toContainText("—");
+
+  const scrollRegion = page.getByRole("region", {
+    name: "Profession level progression",
+  });
+  await expect(scrollRegion).toBeVisible();
+  await expect(scrollRegion).toHaveCSS("overflow-y", "auto");
+
+  await recordRow(page, "Alchemy").click();
+  await expect(page).toHaveURL("/admin/professions/alchemy/levels");
 });
 
 test("profession create/edit/delete lifecycle through the real admin UI", async ({

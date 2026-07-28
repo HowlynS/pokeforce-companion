@@ -8,6 +8,7 @@ import {
   professionDeleteHref,
   professionEditHref,
   professionEditorTabs,
+  professionLevelsHref,
   professionRecipesHref,
   withProfessionSearchQuery,
 } from "@/lib/admin/profession-workspace";
@@ -100,6 +101,15 @@ describe("profession workspace hrefs", () => {
       "/admin/professions/smithing/recipes?q=smith"
     );
   });
+
+  it("builds the Levels tab route, preserving the query", () => {
+    expect(professionLevelsHref("smithing", "")).toBe(
+      "/admin/professions/smithing/levels"
+    );
+    expect(professionLevelsHref("smithing", "smith")).toBe(
+      "/admin/professions/smithing/levels?q=smith"
+    );
+  });
 });
 
 describe("professionEditorTabs", () => {
@@ -115,6 +125,11 @@ describe("professionEditorTabs", () => {
       {
         label: "Recipes",
         href: "/admin/professions/smithing/recipes",
+        active: false,
+      },
+      {
+        label: "Levels",
+        href: "/admin/professions/smithing/levels",
         active: false,
       },
     ]);
@@ -133,6 +148,7 @@ describe("professionEditorTabs", () => {
       href: "/admin/professions/smithing/recipes?q=iron",
       active: true,
     });
+    expect(tabs[2].active).toBe(false);
   });
 
   it("preserves the query on every tab's own href", () => {
@@ -140,17 +156,18 @@ describe("professionEditorTabs", () => {
 
     expect(tabs[0].href).toBe("/admin/professions/smithing/edit?q=smith");
     expect(tabs[1].href).toBe("/admin/professions/smithing/recipes?q=smith");
+    expect(tabs[2].href).toBe("/admin/professions/smithing/levels?q=smith");
   });
 
   it("marks exactly one tab active for every valid key", () => {
-    for (const active of ["general", "recipes"] as const) {
+    for (const active of ["general", "recipes", "levels"] as const) {
       const tabs = professionEditorTabs("smithing", "", active);
       expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
     }
   });
 
   it("renders no disabled tabs — every Profession tab is now a real destination", () => {
-    for (const active of ["general", "recipes"] as const) {
+    for (const active of ["general", "recipes", "levels"] as const) {
       const tabs = professionEditorTabs("smithing", "", active);
       expect(tabs.every((tab) => !tab.disabled)).toBe(true);
       expect(tabs.every((tab) => tab.href !== "")).toBe(true);
@@ -163,6 +180,7 @@ describe("professionEditorTabs", () => {
 
       expect(tabs[0].count).toBeUndefined();
       expect(tabs[1].count).toBeUndefined();
+      expect(tabs[2].count).toBeUndefined();
     });
 
     it("threads the recipe count onto the Recipes tab only, never General", () => {
@@ -172,6 +190,7 @@ describe("professionEditorTabs", () => {
 
       expect(tabs[0].count).toBeUndefined();
       expect(tabs[1].count).toBe(4);
+      expect(tabs[2].count).toBeUndefined();
     });
 
     it("preserves an explicit zero count rather than treating it as absent", () => {
