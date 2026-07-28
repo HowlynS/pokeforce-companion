@@ -54,9 +54,8 @@ export function AppShell({
             {landing ? "Merchants Codex" : "PokeForce Companion"}
           </span>
           <span>
-            {landing
-              ? "A crafting and trading reference for items, recipes, professions, locations, and shops."
-              : "A crafting wiki companion for items, recipes, professions, categories, locations, and shops."}
+            A crafting wiki companion for items, recipes, professions,
+            classes, categories, locations, and shops.
           </span>
         </div>
       </footer>

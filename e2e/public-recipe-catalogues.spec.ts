@@ -303,6 +303,14 @@ test("Recipes index filters by Player Class, combines with the Profession filter
       name: "Filter Recipes by Class",
     });
     await expect(
+      page
+        .getByRole("navigation", { name: "Filter Recipes by Profession" })
+        .getByText("Profession", { exact: true })
+    ).toBeVisible();
+    await expect(
+      classFilters.getByText("Required class", { exact: true })
+    ).toBeVisible();
+    await expect(
       classFilters.getByRole("link", { name: "Ranger", exact: true })
     ).toHaveAttribute("aria-current", "page");
     await expect(page.locator(".recipe-output-card")).toHaveCount(3);

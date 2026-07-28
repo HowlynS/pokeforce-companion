@@ -91,6 +91,7 @@ export default async function EditRecipePage({
   const { slug } = await params;
   const { q, error } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
+  const experienceRewardInvalid = error === "invalid_experience_reward";
   const query = normalizeRecipeSearchQuery(q);
 
   const [recipe, items, professions, playerClasses] = await Promise.all([
@@ -384,18 +385,36 @@ export default async function EditRecipePage({
               />
             </label>
 
-            <label className="form-field form-field-narrow">
-              <span className="form-field-label">EXP reward</span>
-              <input
-                type="number"
-                name="experienceReward"
-                min={0}
-                step={1}
-                defaultValue={recipe.experienceReward}
-                required
-                className="form-input"
-              />
-            </label>
+            <div className="form-field form-field-narrow">
+              <label className="form-field">
+                <span className="form-field-label">EXP reward</span>
+                <input
+                  id="recipe-experience-reward"
+                  type="number"
+                  name="experienceReward"
+                  min={0}
+                  step={1}
+                  defaultValue={recipe.experienceReward}
+                  required
+                  className="form-input"
+                  aria-invalid={experienceRewardInvalid || undefined}
+                  aria-describedby={
+                    experienceRewardInvalid
+                      ? "recipe-experience-reward-error"
+                      : undefined
+                  }
+                  autoFocus={experienceRewardInvalid}
+                />
+              </label>
+              {experienceRewardInvalid ? (
+                <p
+                  id="recipe-experience-reward-error"
+                  className="form-field-feedback text-danger"
+                >
+                  {errorMessages.invalid_experience_reward}
+                </p>
+              ) : null}
+            </div>
           </EditorSection>
         </div>
 

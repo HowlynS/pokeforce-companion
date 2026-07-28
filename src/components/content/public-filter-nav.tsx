@@ -8,15 +8,20 @@ type PublicFilterOption = {
 
 type PublicFilterNavProps = {
   label: string;
+  visibleLabel?: string;
   options: PublicFilterOption[];
 };
 
 export function PublicFilterNav({
   label,
+  visibleLabel,
   options,
 }: PublicFilterNavProps) {
   return (
     <nav className="public-filter-nav" aria-label={label}>
+      {visibleLabel ? (
+        <p className="public-filter-label">{visibleLabel}</p>
+      ) : null}
       <ul>
         {options.map((option) => (
           <li key={option.href}>

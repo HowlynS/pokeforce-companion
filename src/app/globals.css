@@ -583,6 +583,15 @@ select:focus-visible {
   margin-bottom: 32px;
 }
 
+.public-filter-label {
+  margin: 0 0 10px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
 .public-filter-nav ul {
   display: flex;
   flex-wrap: wrap;
@@ -3267,6 +3276,19 @@ select:focus-visible {
    full focus border/outline treatment. */
 .form-input:hover {
   border-color: color-mix(in srgb, var(--color-border) 60%, var(--color-accent));
+}
+
+.form-input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 6%,
+    var(--color-surface)
+  );
+}
+
+.form-input[aria-invalid="true"]:focus-visible {
+  outline-color: var(--color-danger);
 }
 
 textarea.form-input {

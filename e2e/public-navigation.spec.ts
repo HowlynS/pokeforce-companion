@@ -58,6 +58,9 @@ test.describe("homepage", () => {
     await expect(page.getByRole("contentinfo")).toContainText(
       "Merchants Codex"
     );
+    await expect(page.getByRole("contentinfo")).toContainText(
+      "A crafting wiki companion for items, recipes, professions, classes, categories, locations, and shops."
+    );
   });
 
   // Locations remains one of the five focused landing-page resource cards.

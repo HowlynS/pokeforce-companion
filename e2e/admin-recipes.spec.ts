@@ -1310,9 +1310,28 @@ test("Player Classes + Recipe EXP: the Required Class selector and EXP reward fi
   expect(
     await expInput.evaluate((el) => (el as HTMLInputElement).validity.rangeUnderflow)
   ).toBe(true);
-  // Restore the persisted value so this unsaved edit never blocks the
-  // navigation below with the unsaved-changes guard.
+
+  // The server-validation redirect keeps the top-level banner and anchors
+  // the same error directly to the field. Native validation handles the
+  // ordinary submit path; this deterministic URL exercises the fallback.
   await expInput.fill("75");
+  await page.goto(
+    "/admin/recipes/test-e2e-recipe-class-exp/edit?error=invalid_experience_reward"
+  );
+  const invalidExpInput = page.getByLabel("EXP reward", { exact: true });
+  const inlineExpError = page.locator("#recipe-experience-reward-error");
+  await expect(page.getByRole("alert")).toHaveText(
+    "EXP reward must be a whole number of zero or more."
+  );
+  await expect(inlineExpError).toHaveText(
+    "EXP reward must be a whole number of zero or more."
+  );
+  await expect(invalidExpInput).toHaveAttribute("aria-invalid", "true");
+  await expect(invalidExpInput).toHaveAttribute(
+    "aria-describedby",
+    "recipe-experience-reward-error"
+  );
+  await expect(invalidExpInput).toBeFocused();
 
   // The Class's own Recipes tab lists this recipe with its current EXP
   // value — proving the relation actually moved to the new Class.

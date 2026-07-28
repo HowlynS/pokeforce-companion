@@ -107,6 +107,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
 
       <PublicFilterNav
         label="Filter Recipes by Profession"
+        visibleLabel="Profession"
         options={[
           {
             label: "All",
@@ -128,6 +129,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
 
       <PublicFilterNav
         label="Filter Recipes by Class"
+        visibleLabel="Required class"
         options={[
           {
             label: "All",
