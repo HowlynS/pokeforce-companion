@@ -7,6 +7,7 @@ import {
   parseLocationHierarchyInput,
   parseLocationInput,
 } from "@/lib/validation/location";
+import { plainTextToRichText } from "@/lib/rich-text";
 
 function formDataFrom(entries: Record<string, string>): FormData {
   const formData = new FormData();
@@ -64,6 +65,7 @@ describe("parseLocationInput", () => {
         type: "REGION",
         parentId: null,
         description: null,
+        descriptionRich: null,
         accessNote: null,
       },
     });
@@ -133,6 +135,9 @@ describe("parseLocationInput", () => {
     expect(withText.ok).toBe(true);
     if (withText.ok) {
       expect(withText.value.description).toBe("A collapsed shaft.");
+      expect(withText.value.descriptionRich).toEqual(
+        plainTextToRichText("A collapsed shaft.")
+      );
       expect(withText.value.accessNote).toBe("Requires a lantern.");
       expect(withText.value.parentId).toBe("parent123");
     }
@@ -140,6 +145,7 @@ describe("parseLocationInput", () => {
     expect(withBlank.ok).toBe(true);
     if (withBlank.ok) {
       expect(withBlank.value.description).toBeNull();
+      expect(withBlank.value.descriptionRich).toBeNull();
       expect(withBlank.value.accessNote).toBeNull();
       expect(withBlank.value.parentId).toBeNull();
     }
@@ -158,6 +164,9 @@ describe("parseLocationGeneralInput", () => {
         name: "Old Mine",
         type: "DUNGEON",
         description: "A collapsed shaft.",
+        descriptionRich: JSON.stringify(
+          plainTextToRichText("A collapsed shaft.")
+        ),
         accessNote: "Requires a lantern.",
         parentId: "some-parent-id",
       })
@@ -170,6 +179,7 @@ describe("parseLocationGeneralInput", () => {
         slug: "old-mine",
         type: "DUNGEON",
         description: "A collapsed shaft.",
+        descriptionRich: plainTextToRichText("A collapsed shaft."),
         accessNote: "Requires a lantern.",
       },
     });

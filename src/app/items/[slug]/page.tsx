@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ContentImage } from "@/components/content/content-image";
 import { CurrencyPrice } from "@/components/content/currency-price";
+import { RichTextContent } from "@/components/content/rich-text-content";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { formatPublicVerification } from "@/lib/public-verification";
@@ -25,6 +26,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     select: {
       name: true,
       description: true,
+      descriptionRich: true,
       image: true,
       heldItem: true,
       updatedAt: true,
@@ -142,9 +144,11 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               <h1 id="item-title" className="public-resource-title">
                 {item.name}
               </h1>
-              {item.description ? (
-                <p className="item-description">{item.description}</p>
-              ) : null}
+              <RichTextContent
+                value={item.descriptionRich}
+                fallback={item.description}
+                className="item-description rich-text-content"
+              />
               <dl className="item-fact-strip">
                 <div>
                   <dt>Held item</dt>

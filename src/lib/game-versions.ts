@@ -11,7 +11,10 @@
 // integration tests).
 
 import { isGameVersionNameTaken } from "@/lib/admin/record-name";
+import { Prisma } from "@/generated/prisma/client";
 import { isForeignKeyError, isUniqueConstraintError } from "@/lib/prisma-errors";
+import { plainTextToRichText, type RichTextValue } from "@/lib/rich-text";
+import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 
 type GameDataClient = (typeof import("@/lib/db"))["prisma"];
 
@@ -152,7 +155,12 @@ export type CreateGameVersionResult =
  */
 export async function createGameVersion(
   db: GameDataClient,
-  input: { name: string; releaseDate: Date | null }
+  input: {
+    name: string;
+    releaseDate: Date | null;
+    description?: string | null;
+    descriptionRich?: RichTextValue | null;
+  }
 ): Promise<CreateGameVersionResult> {
   if (await isGameVersionNameTaken(db, input.name)) {
     return { ok: false, error: "duplicate_name" };
@@ -171,6 +179,12 @@ export async function createGameVersion(
         data: {
           name: input.name,
           releaseDate: input.releaseDate,
+          ...toPrismaRichDescription({
+            description: input.description ?? null,
+            descriptionRich:
+              input.descriptionRich ??
+              plainTextToRichText(input.description),
+          }),
           isCurrent: madeCurrent,
         },
       });
@@ -211,7 +225,12 @@ export type UpdateGameVersionResult =
 export async function updateGameVersion(
   db: GameDataClient,
   id: string,
-  input: { name: string; releaseDate: Date | null; description?: string | null }
+  input: {
+    name: string;
+    releaseDate: Date | null;
+    description?: string | null;
+    descriptionRich?: RichTextValue | null;
+  }
 ): Promise<UpdateGameVersionResult> {
   const existing = await db.gameVersion.findUnique({ where: { id } });
 
@@ -223,17 +242,23 @@ export async function updateGameVersion(
     return { ok: false, error: "duplicate_name" };
   }
 
-  const data: {
-    name: string;
-    releaseDate: Date | null;
-    description?: string | null;
-  } = {
+  const data: Prisma.GameVersionUncheckedUpdateInput = {
     name: input.name,
     releaseDate: input.releaseDate,
   };
 
-  if (input.description !== undefined) {
-    data.description = input.description;
+  if (
+    input.description !== undefined ||
+    input.descriptionRich !== undefined
+  ) {
+    Object.assign(
+      data,
+      toPrismaRichDescription({
+        description: input.description ?? null,
+        descriptionRich:
+          input.descriptionRich ?? plainTextToRichText(input.description),
+      })
+    );
   }
 
   try {

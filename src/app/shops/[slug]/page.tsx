@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
 import { ShopListingCard } from "@/components/content/shop-listing-card";
+import { RichTextContent } from "@/components/content/rich-text-content";
 import { Card } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
@@ -16,6 +17,7 @@ import {
   type LocationAncestor,
 } from "@/lib/locations/location-hierarchy";
 import { formatPublicVerification } from "@/lib/public-verification";
+import { resolveRichTextValue } from "@/lib/rich-text";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +33,7 @@ const loadPublicShop = cache((slug: string) =>
       name: true,
       slug: true,
       description: true,
+      descriptionRich: true,
       image: true,
       verifiedAt: true,
       verifiedGameVersion: { select: { name: true } },
@@ -144,6 +147,10 @@ export default async function ShopDetailPage({
     ? await loadLocationAncestors(prisma, shop.location.parentId)
     : [];
   const verification = formatPublicVerification(shop);
+  const description = resolveRichTextValue(
+    shop.descriptionRich,
+    shop.description
+  );
 
   return (
     <AppShell>
@@ -153,7 +160,12 @@ export default async function ShopDetailPage({
         shopName={shop.name}
       />
 
-      <PageHeader title={shop.name} description={shop.description ?? undefined} />
+      <PageHeader
+        title={shop.name}
+        descriptionContent={description ? (
+          <RichTextContent value={description} />
+        ) : undefined}
+      />
 
       <section className="detail-hero">
         <ContentImage

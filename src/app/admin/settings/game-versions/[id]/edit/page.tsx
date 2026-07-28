@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { EditorSection } from "@/components/admin/editor-section";
 import { DateField } from "@/components/admin/date-field";
-import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { updateGameVersionAction } from "../../actions";
 
@@ -14,6 +14,8 @@ export const dynamic = "force-dynamic";
 const errorMessages: Record<string, string> = {
   missing_name: "Game Version name is required.",
   invalid_release_date: "Enter the release date as a valid calendar date.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   duplicate_name: "A Game Version with that name already exists.",
 };
 
@@ -100,15 +102,16 @@ export default async function EditGameVersionPage({
               />
             </div>
 
-            <label className="form-field">
-              <span className="form-field-label">Description (optional)</span>
-              <AutosizeTextarea
-                name="description"
-                defaultValue={version.description ?? ""}
-                className="form-input"
-                placeholder="Summarize the key features or gameplay changes introduced in this version."
-              />
-            </label>
+            <RichDescriptionEditor
+              initialValue={version.descriptionRich}
+              fallbackText={version.description}
+              placeholder="Summarize the key features or gameplay changes introduced in this version."
+              error={
+                error === "invalid_rich_description"
+                  ? "The formatted description could not be validated. Review it and try again."
+                  : null
+              }
+            />
 
             {/* The current flag is deliberately not editable here: it
                 moves only through the explicit "Mark as current" action

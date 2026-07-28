@@ -9,6 +9,7 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import { parsePlayerClassInput } from "@/lib/validation/player-class";
+import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import { isPlayerClassNameTaken } from "@/lib/admin/record-name";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
@@ -104,7 +105,11 @@ export async function createPlayerClassAction(formData: FormData) {
     // Without the opt-in stamp both verification fields stay NULL — a
     // newly created Player Class is unverified by default.
     createdPlayerClass = await prisma.playerClass.create({
-      data: { ...parsed.value, image: imagePath, ...(verification.stamp ?? {}) },
+      data: {
+        ...toPrismaRichDescription(parsed.value),
+        image: imagePath,
+        ...(verification.stamp ?? {}),
+      },
     });
   } catch (error) {
     // The row was never created, so the file just uploaded for it must not
@@ -222,7 +227,11 @@ export async function updatePlayerClassAction(formData: FormData) {
     // metadata, because Prisma leaves omitted fields untouched.
     await prisma.playerClass.update({
       where: { id },
-      data: { ...parsed.value, image: imageValue, ...(verification.stamp ?? {}) },
+      data: {
+        ...toPrismaRichDescription(parsed.value),
+        image: imageValue,
+        ...(verification.stamp ?? {}),
+      },
     });
   } catch (error) {
     // The database still references the old image (or none), so the file

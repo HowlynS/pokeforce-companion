@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
-import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { CurrencyWorkspace } from "@/components/admin/currency-workspace";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
 import { EditorHeader } from "@/components/admin/editor-header";
@@ -37,6 +37,8 @@ const errorMessages: Record<string, string> = {
   missing_name: "Currency name is required.",
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   duplicate: "A currency with that page address already exists.",
   duplicate_name: "A currency with that name already exists.",
   linked_shop_listings:
@@ -191,14 +193,15 @@ export default async function EditCurrencyPage({
             </EditorSection>
 
             <EditorSection title="Content" icon={SECTION_ICONS.content}>
-              <label className="form-field">
-                <span className="form-field-label">Description (optional)</span>
-                <AutosizeTextarea
-                  name="description"
-                  defaultValue={currency.description ?? ""}
-                  className="form-input"
+                <RichDescriptionEditor
+                  initialValue={currency.descriptionRich}
+                  fallbackText={currency.description}
+                  error={
+                    error === "invalid_rich_description"
+                      ? "The formatted description could not be validated. Review it and try again."
+                      : null
+                  }
                 />
-              </label>
             </EditorSection>
           </div>
 

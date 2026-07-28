@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContentImage } from "@/components/content/content-image";
+import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
@@ -21,6 +22,7 @@ export default async function PlayerClassDetailPage({
     select: {
       name: true,
       description: true,
+      descriptionRich: true,
       image: true,
       updatedAt: true,
       verifiedAt: true,
@@ -79,11 +81,11 @@ export default async function PlayerClassDetailPage({
               <h1 id="player-class-title" className="public-resource-title">
                 {playerClass.name}
               </h1>
-              {playerClass.description ? (
-                <p className="profession-description">
-                  {playerClass.description}
-                </p>
-              ) : null}
+              <RichTextContent
+                value={playerClass.descriptionRich}
+                fallback={playerClass.description}
+                className="profession-description rich-text-content"
+              />
               {updatedAt ? (
                 <p className="profession-updated">Updated {updatedAt}</p>
               ) : null}

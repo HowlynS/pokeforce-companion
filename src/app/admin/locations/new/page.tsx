@@ -15,6 +15,7 @@ import {
 import { prisma } from "@/lib/db";
 import { toEntitySelectOptions } from "@/lib/admin/entity-select-options";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
@@ -36,6 +37,8 @@ const errorMessages: Record<string, string> = {
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
   missing_type: "Select a location type.",
   invalid_type: "Select a valid location type.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   invalid_parent: "Select an existing location, or choose No parent.",
   duplicate: "A location with that name or slug already exists.",
   duplicate_name: "A location with that name already exists.",
@@ -192,10 +195,13 @@ export default async function NewLocationPage({
           </EditorSection>
 
           <EditorSection title="Content" icon={SECTION_ICONS.content}>
-            <label className="form-field">
-              <span className="form-field-label">Description (optional)</span>
-              <AutosizeTextarea name="description" className="form-input" />
-            </label>
+            <RichDescriptionEditor
+              error={
+                error === "invalid_rich_description"
+                  ? "The formatted description could not be validated. Review it and try again."
+                  : null
+              }
+            />
 
             <label className="form-field">
               <span className="form-field-label">

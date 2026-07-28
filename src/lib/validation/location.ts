@@ -1,4 +1,8 @@
 import { SLUG_PATTERN, normalizeSlug } from "@/lib/slug";
+import {
+  parseRichDescriptionInput,
+  type RichTextValue,
+} from "@/lib/rich-text";
 
 // Re-exported so existing imports of normalizeSlug from this module keep
 // working unchanged — the canonical implementation now lives in
@@ -38,6 +42,7 @@ export type LocationInput = {
   type: LocationType;
   parentId: string | null;
   description: string | null;
+  descriptionRich: RichTextValue | null;
   accessNote: string | null;
 };
 
@@ -56,7 +61,8 @@ export type LocationValidationError =
   | "missing_name"
   | "invalid_slug"
   | "missing_type"
-  | "invalid_type";
+  | "invalid_type"
+  | "invalid_rich_description";
 
 export type LocationParseResult =
   | { ok: true; value: LocationInput }
@@ -87,7 +93,6 @@ function parseLocationGeneralFields(
   const name = String(formData.get("name") ?? "").trim();
   const rawSlug = String(formData.get("slug") ?? "").trim();
   const rawType = String(formData.get("type") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
   const accessNote = String(formData.get("accessNote") ?? "").trim();
 
   if (!name) {
@@ -109,13 +114,18 @@ function parseLocationGeneralFields(
     return { ok: false, error: "invalid_type" };
   }
 
+  const description = parseRichDescriptionInput(formData);
+  if (!description.ok) {
+    return description;
+  }
+
   return {
     ok: true,
     value: {
       name,
       slug,
       type: rawType,
-      description: description || null,
+      ...description.value,
       accessNote: accessNote || null,
     },
   };

@@ -21,6 +21,7 @@ import {
   validateImageFile,
 } from "@/lib/storage/images";
 import { parseCurrencyInput } from "@/lib/validation/currency";
+import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 
 function getSubmittedImageFile(formData: FormData): File | null {
   const value = formData.get("image");
@@ -80,7 +81,7 @@ export async function createCurrencyAction(formData: FormData) {
   try {
     currency = await prisma.currency.create({
       data: {
-        ...parsed.value,
+        ...toPrismaRichDescription(parsed.value),
         image: imagePath,
         ...(verification.stamp ?? {}),
       },
@@ -155,7 +156,7 @@ export async function updateCurrencyAction(formData: FormData) {
     await prisma.currency.update({
       where: { id },
       data: {
-        ...parsed.value,
+        ...toPrismaRichDescription(parsed.value),
         image,
         ...(verification.stamp ?? {}),
       },

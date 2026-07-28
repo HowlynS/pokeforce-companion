@@ -1,12 +1,20 @@
 import { SLUG_PATTERN, normalizeSlug } from "@/lib/slug";
+import {
+  parseRichDescriptionInput,
+  type RichTextValue,
+} from "@/lib/rich-text";
 
 export type PlayerClassInput = {
   name: string;
   slug: string;
   description: string | null;
+  descriptionRich: RichTextValue | null;
 };
 
-export type PlayerClassValidationError = "missing_name" | "invalid_slug";
+export type PlayerClassValidationError =
+  | "missing_name"
+  | "invalid_slug"
+  | "invalid_rich_description";
 
 export type PlayerClassParseResult =
   | { ok: true; value: PlayerClassInput }
@@ -21,7 +29,6 @@ export function parsePlayerClassInput(
 ): PlayerClassParseResult {
   const name = String(formData.get("name") ?? "").trim();
   const rawSlug = String(formData.get("slug") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
 
   if (!name) {
     return { ok: false, error: "missing_name" };
@@ -34,12 +41,17 @@ export function parsePlayerClassInput(
     return { ok: false, error: "invalid_slug" };
   }
 
+  const description = parseRichDescriptionInput(formData);
+  if (!description.ok) {
+    return description;
+  }
+
   return {
     ok: true,
     value: {
       name,
       slug,
-      description: description || null,
+      ...description.value,
     },
   };
 }

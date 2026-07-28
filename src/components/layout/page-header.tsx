@@ -5,13 +5,20 @@ type PageHeaderProps = {
   /** Omitted entirely when a record has no description: missing content is
       not dressed up as page copy. */
   description?: string;
+  /** Structured authored copy rendered through the shared safe renderer. */
+  descriptionContent?: React.ReactNode;
   /** Small label above the title (e.g. "Admin") marking which area of the
       site the page belongs to. Kept outside the h1 so the page's
       accessible heading stays exactly the title. */
   eyebrow?: string;
 };
 
-export function PageHeader({ title, description, eyebrow }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  descriptionContent,
+  eyebrow,
+}: PageHeaderProps) {
   return (
     <section
       style={{
@@ -47,7 +54,18 @@ export function PageHeader({ title, description, eyebrow }: PageHeaderProps) {
         {title}
       </h1>
 
-      {description ? (
+      {descriptionContent ? (
+        <div
+          style={{
+            maxWidth: "720px",
+            color: designTokens.colors.textMuted,
+            fontSize: "18px",
+            lineHeight: 1.6,
+          }}
+        >
+          {descriptionContent}
+        </div>
+      ) : description ? (
         <p
           style={{
             margin: 0,

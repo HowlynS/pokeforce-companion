@@ -3,11 +3,13 @@ import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { ContentImage } from "@/components/content/content-image";
+import { RichTextContent } from "@/components/content/rich-text-content";
 import { Card } from "@/components/ui/card";
 import { ContentGrid } from "@/components/ui/content-grid";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { designTokens } from "@/lib/design-tokens";
 import { prisma } from "@/lib/db";
+import { resolveRichTextValue } from "@/lib/rich-text";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 import { groupObtainableItemsByType } from "@/lib/validation/acquisition-source";
 import {
@@ -159,6 +161,10 @@ export default async function LocationDetailPage({
   // items is omitted entirely, and the whole section below is skipped
   // when there are no groups at all.
   const obtainableGroups = groupObtainableItemsByType(location.acquisitionSources);
+  const description = resolveRichTextValue(
+    location.descriptionRich,
+    location.description
+  );
 
   return (
     <AppShell>
@@ -174,7 +180,9 @@ export default async function LocationDetailPage({
       <PageHeader
         eyebrow={LOCATION_TYPE_LABELS[location.type]}
         title={location.name}
-        description={location.description ?? undefined}
+        descriptionContent={description ? (
+          <RichTextContent value={description} />
+        ) : undefined}
       />
 
       <section className="detail-hero">

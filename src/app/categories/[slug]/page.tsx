@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContentImage } from "@/components/content/content-image";
+import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { cataloguePageHref } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
+import { resolveRichTextValue } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export default async function CategoryDetailPage({
     select: {
       name: true,
       description: true,
+      descriptionRich: true,
       image: true,
       _count: { select: { items: true } },
     },
@@ -30,12 +33,18 @@ export default async function CategoryDetailPage({
   if (!category) {
     notFound();
   }
+  const description = resolveRichTextValue(
+    category.descriptionRich,
+    category.description
+  );
 
   return (
     <AppShell>
       <PageHeader
         title={category.name}
-        description={category.description ?? undefined}
+        descriptionContent={description ? (
+          <RichTextContent value={description} />
+        ) : undefined}
       />
 
       <section className="detail-hero category-detail-summary">

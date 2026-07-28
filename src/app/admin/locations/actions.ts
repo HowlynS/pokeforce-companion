@@ -16,6 +16,7 @@ import {
 } from "@/lib/validation/location";
 import { isLocationNameTaken } from "@/lib/admin/record-name";
 import { wouldCreateLocationCycle } from "@/lib/locations/location-hierarchy";
+import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
   deleteImage,
@@ -129,7 +130,10 @@ export async function createLocationAction(formData: FormData) {
         slug: parsed.value.slug,
         type: parsed.value.type,
         parentId: parsed.value.parentId,
-        description: parsed.value.description,
+        ...toPrismaRichDescription({
+          description: parsed.value.description,
+          descriptionRich: parsed.value.descriptionRich,
+        }),
         accessNote: parsed.value.accessNote,
         image: imagePath,
         ...(verification.stamp ?? {}),
@@ -253,7 +257,10 @@ export async function updateLocationGeneralAction(formData: FormData) {
         name: parsed.value.name,
         slug: parsed.value.slug,
         type: parsed.value.type,
-        description: parsed.value.description,
+        ...toPrismaRichDescription({
+          description: parsed.value.description,
+          descriptionRich: parsed.value.descriptionRich,
+        }),
         accessNote: parsed.value.accessNote,
         image: imageValue,
         ...(verification.stamp ?? {}),

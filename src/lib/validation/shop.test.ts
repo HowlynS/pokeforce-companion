@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseShopInput } from "@/lib/validation/shop";
+import { plainTextToRichText } from "@/lib/rich-text";
 
 function formDataFrom(values: Record<string, string>): FormData {
   const formData = new FormData();
@@ -41,6 +42,7 @@ describe("parseShopInput", () => {
         slug: "blackthorn-supply",
         locationId: "location-1",
         description: "General supplies.",
+        descriptionRich: plainTextToRichText("General supplies."),
       },
     });
   });

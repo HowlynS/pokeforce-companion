@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeSlug, parseItemInput } from "@/lib/validation/item";
+import { plainTextToRichText } from "@/lib/rich-text";
 
 function formDataFrom(entries: Record<string, string>): FormData {
   const formData = new FormData();
@@ -61,6 +62,7 @@ describe("parseItemInput", () => {
         name: "Wood",
         slug: "wood",
         description: null,
+        descriptionRich: null,
         heldItem: false,
         tradeable: false,
         baseValue: null,
@@ -81,6 +83,9 @@ describe("parseItemInput", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.description).toBe("A log.");
+      expect(result.value.descriptionRich).toEqual(
+        plainTextToRichText("A log.")
+      );
       expect(result.value.categoryId).toBe("cat123");
     }
   });

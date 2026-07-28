@@ -4,6 +4,7 @@ import {
   parseGameVersionInput,
   parseReleaseDateInput,
 } from "@/lib/validation/game-version";
+import { plainTextToRichText } from "@/lib/rich-text";
 
 function formDataFrom(entries: Record<string, string>): FormData {
   const formData = new FormData();
@@ -55,7 +56,12 @@ describe("parseGameVersionInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "Summer Update 2026", releaseDate: null },
+      value: {
+        name: "Summer Update 2026",
+        releaseDate: null,
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -86,7 +92,12 @@ describe("parseGameVersionInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "V1", releaseDate: null },
+      value: {
+        name: "V1",
+        releaseDate: null,
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 });
@@ -120,6 +131,9 @@ describe("parseGameVersionEditInput", () => {
         name: "V1",
         releaseDate: null,
         description: "Line one\nLine two\n\nLine four",
+        descriptionRich: plainTextToRichText(
+          "Line one\nLine two\n\nLine four"
+        ),
       },
     });
   });
@@ -129,7 +143,12 @@ describe("parseGameVersionEditInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "V1", releaseDate: null, description: null },
+      value: {
+        name: "V1",
+        releaseDate: null,
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -140,7 +159,12 @@ describe("parseGameVersionEditInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "V1", releaseDate: null, description: null },
+      value: {
+        name: "V1",
+        releaseDate: null,
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 });

@@ -2,16 +2,24 @@
 // as the other validation modules: FormData in, a typed ok/error result
 // out, no database or environment access.
 
+import {
+  parseRichDescriptionInput,
+  type RichTextValue,
+} from "@/lib/rich-text";
+
 const RELEASE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export type GameVersionInput = {
   name: string;
   releaseDate: Date | null;
+  description: string | null;
+  descriptionRich: RichTextValue | null;
 };
 
 export type GameVersionValidationError =
   | "missing_name"
-  | "invalid_release_date";
+  | "invalid_release_date"
+  | "invalid_rich_description";
 
 export type GameVersionParseResult =
   | { ok: true; value: GameVersionInput }
@@ -63,15 +71,18 @@ export function parseGameVersionInput(
     return { ok: false, error: "invalid_release_date" };
   }
 
+  const description = parseRichDescriptionInput(formData);
+  if (!description.ok) {
+    return description;
+  }
+
   return {
     ok: true,
-    value: { name, releaseDate: releaseDate.value },
+    value: { name, releaseDate: releaseDate.value, ...description.value },
   };
 }
 
-export type GameVersionEditInput = GameVersionInput & {
-  description: string | null;
-};
+export type GameVersionEditInput = GameVersionInput;
 
 export type GameVersionEditParseResult =
   | { ok: true; value: GameVersionEditInput }
@@ -90,16 +101,5 @@ export type GameVersionEditParseResult =
 export function parseGameVersionEditInput(
   formData: FormData
 ): GameVersionEditParseResult {
-  const base = parseGameVersionInput(formData);
-
-  if (!base.ok) {
-    return base;
-  }
-
-  const description = String(formData.get("description") ?? "").trim();
-
-  return {
-    ok: true,
-    value: { ...base.value, description: description || null },
-  };
+  return parseGameVersionInput(formData);
 }

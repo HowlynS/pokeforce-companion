@@ -9,6 +9,7 @@ import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { prisma } from "@/lib/db";
 import { getImagePublicUrl } from "@/lib/storage/images";
@@ -50,6 +51,8 @@ const errorMessages: Record<string, string> = {
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
   missing_type: "Select a location type.",
   invalid_type: "Select a valid location type.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   duplicate: "A location with that name or slug already exists.",
   duplicate_name: "A location with that name already exists.",
   image_too_large: "The image must be 5 MB or smaller.",
@@ -298,14 +301,15 @@ export default async function EditLocationPage({
           </EditorSection>
 
           <EditorSection title="Content" icon={SECTION_ICONS.content}>
-            <label className="form-field">
-              <span className="form-field-label">Description (optional)</span>
-              <AutosizeTextarea
-                name="description"
-                defaultValue={location.description ?? ""}
-                className="form-input"
+              <RichDescriptionEditor
+                initialValue={location.descriptionRich}
+                fallbackText={location.description}
+                error={
+                  error === "invalid_rich_description"
+                    ? "The formatted description could not be validated. Review it and try again."
+                    : null
+                }
               />
-            </label>
 
             <label className="form-field">
               <span className="form-field-label">

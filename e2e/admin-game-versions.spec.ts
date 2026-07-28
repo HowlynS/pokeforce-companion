@@ -509,11 +509,14 @@ test("the date-entry field rejects malformed text and keeps the optional field g
 
 // --- Game Version description (action-strip fix + optional description) --
 
-test("the inline Create Game Version form has no description field", async ({
+test("the inline Create Game Version form uses the shared rich-description editor", async ({
   page,
 }) => {
   await page.goto("/admin/settings/game-versions");
-  await expect(page.getByLabel("Description (optional)")).toHaveCount(0);
+  await expect(page.getByLabel("Description (optional)")).toBeVisible();
+  await expect(
+    page.getByRole("toolbar", { name: "Description formatting" })
+  ).toBeVisible();
 });
 
 test("Edit Game Version: description persists with line breaks, clears to empty, never appears on the overview, and the action area is no longer nested inside the card", async ({
@@ -544,7 +547,7 @@ test("Edit Game Version: description persists with line breaks, clears to empty,
   await expect(page.getByRole("link", { name: "Cancel", exact: true })).toBeVisible();
 
   const descriptionField = page.getByLabel("Description (optional)");
-  await expect(descriptionField).toHaveValue("");
+  await expect(descriptionField).toHaveText("");
 
   const multilineDescription =
     "Adds new crafting recipes.\n\nFixes a rare duplication bug.";
@@ -557,16 +560,20 @@ test("Edit Game Version: description persists with line breaks, clears to empty,
   // The overview page never displays the description anywhere — table,
   // Create card, or otherwise.
   await expect(page.getByText("Adds new crafting recipes.")).toHaveCount(0);
-  await expect(page.getByLabel("Description (optional)")).toHaveCount(0);
+  await expect(page.getByLabel("Description (optional)")).toHaveText("");
 
   // Reopening Edit shows the persisted description back, line breaks
   // intact.
   await versionRow(page, DELETABLE_NAME)
     .getByRole("link", { name: "Edit", exact: true })
     .click();
-  await expect(page.getByLabel("Description (optional)")).toHaveValue(
-    multilineDescription
-  );
+  await expect(
+    page.getByLabel("Description (optional)").locator("p")
+  ).toHaveText([
+    "Adds new crafting recipes.",
+    "",
+    "Fixes a rare duplication bug.",
+  ]);
 
   // Clearing it and saving persists an empty value.
   await page.getByLabel("Description (optional)").fill("");
@@ -578,5 +585,5 @@ test("Edit Game Version: description persists with line breaks, clears to empty,
   await versionRow(page, DELETABLE_NAME)
     .getByRole("link", { name: "Edit", exact: true })
     .click();
-  await expect(page.getByLabel("Description (optional)")).toHaveValue("");
+  await expect(page.getByLabel("Description (optional)")).toHaveText("");
 });

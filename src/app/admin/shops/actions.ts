@@ -22,6 +22,7 @@ import {
   validateImageFile,
 } from "@/lib/storage/images";
 import { parseShopInput } from "@/lib/validation/shop";
+import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import { parseShopInventoryInput } from "@/lib/validation/shop-listing";
 
 function getSubmittedImageFile(formData: FormData): File | null {
@@ -101,7 +102,7 @@ export async function createShopAction(formData: FormData) {
   try {
     shop = await prisma.shop.create({
       data: {
-        ...parsed.value,
+        ...toPrismaRichDescription(parsed.value),
         image: imagePath,
         ...(verification.stamp ?? {}),
       },
@@ -188,7 +189,7 @@ export async function updateShopAction(formData: FormData) {
     await prisma.shop.update({
       where: { id },
       data: {
-        ...parsed.value,
+        ...toPrismaRichDescription(parsed.value),
         image,
         ...(verification.stamp ?? {}),
       },

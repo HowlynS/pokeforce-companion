@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContentImage } from "@/components/content/content-image";
+import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { cataloguePageHref } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
@@ -23,6 +24,7 @@ export default async function ProfessionDetailPage({
     select: {
       name: true,
       description: true,
+      descriptionRich: true,
       image: true,
       updatedAt: true,
       verifiedAt: true,
@@ -110,11 +112,11 @@ export default async function ProfessionDetailPage({
               <h1 id="profession-title" className="public-resource-title">
                 {profession.name}
               </h1>
-              {profession.description ? (
-                <p className="profession-description">
-                  {profession.description}
-                </p>
-              ) : null}
+              <RichTextContent
+                value={profession.descriptionRich}
+                fallback={profession.description}
+                className="profession-description rich-text-content"
+              />
               {updatedAt ? (
                 <p className="profession-updated">Updated {updatedAt}</p>
               ) : null}

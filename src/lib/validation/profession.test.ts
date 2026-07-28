@@ -3,6 +3,7 @@ import {
   normalizeSlug,
   parseProfessionInput,
 } from "@/lib/validation/profession";
+import { plainTextToRichText } from "@/lib/rich-text";
 
 function formDataFrom(entries: Record<string, string>): FormData {
   const formData = new FormData();
@@ -36,7 +37,12 @@ describe("parseProfessionInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "Blacksmithing", slug: "blacksmithing", description: null },
+      value: {
+        name: "Blacksmithing",
+        slug: "blacksmithing",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -47,7 +53,12 @@ describe("parseProfessionInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "Blacksmithing", slug: "forge-work", description: null },
+      value: {
+        name: "Blacksmithing",
+        slug: "forge-work",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -67,11 +78,21 @@ describe("parseProfessionInput", () => {
 
     expect(withText).toEqual({
       ok: true,
-      value: { name: "Alchemy", slug: "alchemy", description: "Brewing potions." },
+      value: {
+        name: "Alchemy",
+        slug: "alchemy",
+        description: "Brewing potions.",
+        descriptionRich: plainTextToRichText("Brewing potions."),
+      },
     });
     expect(withBlank).toEqual({
       ok: true,
-      value: { name: "Alchemy", slug: "alchemy", description: null },
+      value: {
+        name: "Alchemy",
+        slug: "alchemy",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 });

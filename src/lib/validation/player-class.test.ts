@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parsePlayerClassInput } from "@/lib/validation/player-class";
+import { plainTextToRichText } from "@/lib/rich-text";
 
 function formDataFrom(entries: Record<string, string>): FormData {
   const formData = new FormData();
@@ -21,7 +22,12 @@ describe("parsePlayerClassInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "Trainer", slug: "trainer", description: null },
+      value: {
+        name: "Trainer",
+        slug: "trainer",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -32,7 +38,12 @@ describe("parsePlayerClassInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "Trainer", slug: "pokemon-trainer", description: null },
+      value: {
+        name: "Trainer",
+        slug: "pokemon-trainer",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -52,11 +63,21 @@ describe("parsePlayerClassInput", () => {
 
     expect(withText).toEqual({
       ok: true,
-      value: { name: "Artisan", slug: "artisan", description: "Crafts and builds." },
+      value: {
+        name: "Artisan",
+        slug: "artisan",
+        description: "Crafts and builds.",
+        descriptionRich: plainTextToRichText("Crafts and builds."),
+      },
     });
     expect(withBlank).toEqual({
       ok: true,
-      value: { name: "Artisan", slug: "artisan", description: null },
+      value: {
+        name: "Artisan",
+        slug: "artisan",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 });

@@ -8,7 +8,7 @@ import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { DangerZonePanel } from "@/components/admin/danger-zone-panel";
-import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
 import {
   PROFESSION_LIST_PATH,
@@ -44,6 +44,8 @@ const errorMessages: Record<string, string> = {
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
   duplicate: "A profession with that name or slug already exists.",
   duplicate_name: "A profession with that name already exists.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   image_too_large: "The image must be 5 MB or smaller.",
   invalid_image_type: "Only PNG, JPEG, and WebP images are allowed.",
   upload_failed: "The image could not be uploaded. Please try again.",
@@ -223,14 +225,15 @@ export default async function EditProfessionPage({
           </EditorSection>
 
           <EditorSection title="Description" icon={SECTION_ICONS.content}>
-            <label className="form-field">
-              <span className="form-field-label">Description (optional)</span>
-              <AutosizeTextarea
-                name="description"
-                defaultValue={profession.description ?? ""}
-                className="form-input"
+              <RichDescriptionEditor
+                initialValue={profession.descriptionRich}
+                fallbackText={profession.description}
+                error={
+                  error === "invalid_rich_description"
+                    ? errorMessages.invalid_rich_description
+                    : null
+                }
               />
-            </label>
           </EditorSection>
         </div>
 

@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DateField } from "@/components/admin/date-field";
 import { EditorSection } from "@/components/admin/editor-section";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { GameVersionDeleteAction } from "@/components/admin/game-version-delete-action";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -19,6 +20,8 @@ export const dynamic = "force-dynamic";
 const errorMessages: Record<string, string> = {
   missing_name: "Game Version name is required.",
   invalid_release_date: "Enter the release date as a valid calendar date.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   duplicate_name: "A Game Version with that name already exists.",
   missing_version: "That Game Version no longer exists.",
   referenced:
@@ -175,6 +178,15 @@ export default async function GameVersionSettingsPage({
           </label>
 
           <DateField name="releaseDate" label="Release date (optional)" />
+
+          <RichDescriptionEditor
+            placeholder="Summarize the key features or gameplay changes introduced in this version."
+            error={
+              error === "invalid_rich_description"
+                ? "The formatted description could not be validated. Review it and try again."
+                : null
+            }
+          />
 
           {/* Sonnet Rollout Pass: only THIS form is guarded — the
               per-row "Mark as current" forms above are separate <form>

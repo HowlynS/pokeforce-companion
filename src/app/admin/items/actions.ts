@@ -10,6 +10,7 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import { parseItemInput } from "@/lib/validation/item";
+import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import {
   CREATABLE_ACQUISITION_TYPES,
   parseAcquisitionSourceRows,
@@ -163,7 +164,10 @@ export async function createItemAction(formData: FormData) {
         data: {
           name: parsed.value.name,
           slug: parsed.value.slug,
-          description: parsed.value.description,
+          ...toPrismaRichDescription({
+            description: parsed.value.description,
+            descriptionRich: parsed.value.descriptionRich,
+          }),
           heldItem: parsed.value.heldItem,
           tradeable: parsed.value.tradeable,
           baseValue: parsed.value.baseValue,
@@ -314,7 +318,10 @@ export async function updateItemAction(formData: FormData) {
       data: {
         name: parsed.value.name,
         slug: parsed.value.slug,
-        description: parsed.value.description,
+        ...toPrismaRichDescription({
+          description: parsed.value.description,
+          descriptionRich: parsed.value.descriptionRich,
+        }),
         heldItem: parsed.value.heldItem,
         tradeable: parsed.value.tradeable,
         baseValue: parsed.value.baseValue,

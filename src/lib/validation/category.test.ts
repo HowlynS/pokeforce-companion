@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeSlug, parseCategoryInput } from "@/lib/validation/category";
+import { plainTextToRichText } from "@/lib/rich-text";
 
 function formDataFrom(entries: Record<string, string>): FormData {
   const formData = new FormData();
@@ -43,7 +44,12 @@ describe("parseCategoryInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "Rare Materials", slug: "rare-materials", description: null },
+      value: {
+        name: "Rare Materials",
+        slug: "rare-materials",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -54,7 +60,12 @@ describe("parseCategoryInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "Rare Materials", slug: "custom-slug", description: null },
+      value: {
+        name: "Rare Materials",
+        slug: "custom-slug",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -74,11 +85,21 @@ describe("parseCategoryInput", () => {
 
     expect(withText).toEqual({
       ok: true,
-      value: { name: "Tools", slug: "tools", description: "Crafting tools." },
+      value: {
+        name: "Tools",
+        slug: "tools",
+        description: "Crafting tools.",
+        descriptionRich: plainTextToRichText("Crafting tools."),
+      },
     });
     expect(withBlank).toEqual({
       ok: true,
-      value: { name: "Tools", slug: "tools", description: null },
+      value: {
+        name: "Tools",
+        slug: "tools",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 
@@ -87,7 +108,12 @@ describe("parseCategoryInput", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { name: "Gear", slug: "gear", description: null },
+      value: {
+        name: "Gear",
+        slug: "gear",
+        description: null,
+        descriptionRich: null,
+      },
     });
   });
 });

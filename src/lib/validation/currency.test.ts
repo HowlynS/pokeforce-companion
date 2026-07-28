@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseCurrencyInput } from "@/lib/validation/currency";
+import { plainTextToRichText } from "@/lib/rich-text";
 
 function formDataFrom(values: Record<string, string>): FormData {
   const formData = new FormData();
@@ -33,6 +34,7 @@ describe("parseCurrencyInput", () => {
         slug: "pok-yen",
         symbol: "₽",
         description: "Standard game currency.",
+        descriptionRich: plainTextToRichText("Standard game currency."),
       },
     });
   });
@@ -47,6 +49,7 @@ describe("parseCurrencyInput", () => {
         slug: "runes",
         symbol: null,
         description: null,
+        descriptionRich: null,
       },
     });
   });

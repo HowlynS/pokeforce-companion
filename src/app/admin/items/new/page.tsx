@@ -6,7 +6,7 @@ import { VerificationPanel } from "@/components/admin/verification-panel";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
-import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { ItemCreateSources } from "@/components/admin/item-create-sources";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
@@ -35,6 +35,8 @@ const errorMessages: Record<string, string> = {
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
   invalid_base_value: "Base value must be a whole number of zero or more.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   duplicate: "An item with that name or slug already exists.",
   duplicate_name: "An item with that name already exists.",
   invalid_category: "Select an existing category, or choose No category.",
@@ -161,10 +163,13 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
             </EditorSection>
 
             <EditorSection title="Description" icon={SECTION_ICONS.content}>
-              <label className="form-field">
-                <span className="form-field-label">Description (optional)</span>
-                <AutosizeTextarea name="description" className="form-input" />
-              </label>
+              <RichDescriptionEditor
+                error={
+                  error === "invalid_rich_description"
+                    ? errorMessages.invalid_rich_description
+                    : null
+                }
+              />
             </EditorSection>
           </div>
 

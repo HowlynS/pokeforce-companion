@@ -9,6 +9,7 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import { parseCategoryInput } from "@/lib/validation/category";
+import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import { isCategoryNameTaken } from "@/lib/admin/record-name";
 import {
   deleteImage,
@@ -89,7 +90,7 @@ export async function createCategoryAction(formData: FormData) {
 
   try {
     createdCategory = await prisma.category.create({
-      data: { ...parsed.value, image: imagePath },
+      data: { ...toPrismaRichDescription(parsed.value), image: imagePath },
     });
   } catch (error) {
     // The row was never created, so the file just uploaded for it must not
@@ -194,7 +195,7 @@ export async function updateCategoryAction(formData: FormData) {
     // the slug in this same submission cannot lose the target record.
     await prisma.category.update({
       where: { id },
-      data: { ...parsed.value, image: imageValue },
+      data: { ...toPrismaRichDescription(parsed.value), image: imageValue },
     });
   } catch (error) {
     // The database still references the old image (or none), so the file

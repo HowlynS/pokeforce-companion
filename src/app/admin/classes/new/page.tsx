@@ -13,7 +13,7 @@ import {
 } from "@/lib/admin/player-class-workspace";
 import { prisma } from "@/lib/db";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
-import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { createPlayerClassAction } from "../actions";
 import { checkPlayerClassNameAvailability } from "../name-availability";
@@ -37,6 +37,8 @@ const errorMessages: Record<string, string> = {
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
   duplicate: "A class with that name or slug already exists.",
   duplicate_name: "A class with that name already exists.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   image_too_large: "The image must be 5 MB or smaller.",
   invalid_image_type: "Only PNG, JPEG, and WebP images are allowed.",
   upload_failed: "The image could not be uploaded. Please try again.",
@@ -133,10 +135,13 @@ export default async function NewPlayerClassPage({
           </EditorSection>
 
           <EditorSection title="Description" icon={SECTION_ICONS.content}>
-            <label className="form-field">
-              <span className="form-field-label">Description (optional)</span>
-              <AutosizeTextarea name="description" className="form-input" />
-            </label>
+            <RichDescriptionEditor
+              error={
+                error === "invalid_rich_description"
+                  ? errorMessages.invalid_rich_description
+                  : null
+              }
+            />
           </EditorSection>
         </div>
 

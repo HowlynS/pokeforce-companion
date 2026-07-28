@@ -1,4 +1,8 @@
 import { SLUG_PATTERN, normalizeSlug } from "@/lib/slug";
+import {
+  parseRichDescriptionInput,
+  type RichTextValue,
+} from "@/lib/rich-text";
 
 // Re-exported so existing imports of normalizeSlug from this module keep
 // working unchanged — the canonical implementation now lives in
@@ -10,6 +14,7 @@ export type ItemInput = {
   name: string;
   slug: string;
   description: string | null;
+  descriptionRich: RichTextValue | null;
   heldItem: boolean;
   tradeable: boolean;
   baseValue: number | null;
@@ -19,7 +24,8 @@ export type ItemInput = {
 export type ItemValidationError =
   | "missing_name"
   | "invalid_slug"
-  | "invalid_base_value";
+  | "invalid_base_value"
+  | "invalid_rich_description";
 
 export type ItemParseResult =
   | { ok: true; value: ItemInput }
@@ -28,7 +34,6 @@ export type ItemParseResult =
 export function parseItemInput(formData: FormData): ItemParseResult {
   const name = String(formData.get("name") ?? "").trim();
   const rawSlug = String(formData.get("slug") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
   // Checkbox semantics: anything other than the browser's "on" (including a
   // completely absent field) safely resolves to false.
   const heldItem = formData.get("heldItem") === "on";
@@ -45,6 +50,11 @@ export function parseItemInput(formData: FormData): ItemParseResult {
 
   if (!slug || !SLUG_PATTERN.test(slug)) {
     return { ok: false, error: "invalid_slug" };
+  }
+
+  const description = parseRichDescriptionInput(formData);
+  if (!description.ok) {
+    return description;
   }
 
   let baseValue: number | null = null;
@@ -68,7 +78,7 @@ export function parseItemInput(formData: FormData): ItemParseResult {
     value: {
       name,
       slug,
-      description: description || null,
+      ...description.value,
       heldItem,
       tradeable,
       baseValue,

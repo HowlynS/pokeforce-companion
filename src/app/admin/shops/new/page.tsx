@@ -1,6 +1,6 @@
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
-import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorSection } from "@/components/admin/editor-section";
 import { EditorTabs, type EditorTab } from "@/components/admin/editor-tabs";
@@ -31,6 +31,8 @@ const errorMessages: Record<string, string> = {
   missing_name: "Shop name is required.",
   invalid_slug:
     "Enter a valid slug using lowercase letters, numbers, and hyphens.",
+  invalid_rich_description:
+    "The formatted description could not be validated. Review it and try again.",
   missing_location: "Select a location.",
   invalid_location: "The selected location no longer exists.",
   duplicate: "A shop with that page address already exists.",
@@ -142,10 +144,13 @@ export default async function NewShopPage({
             </EditorSection>
 
             <EditorSection title="Content" icon={SECTION_ICONS.content}>
-              <label className="form-field">
-                <span className="form-field-label">Description (optional)</span>
-                <AutosizeTextarea name="description" className="form-input" />
-              </label>
+              <RichDescriptionEditor
+                error={
+                  error === "invalid_rich_description"
+                    ? "The formatted description could not be validated. Review it and try again."
+                    : null
+                }
+              />
             </EditorSection>
           </div>
 
