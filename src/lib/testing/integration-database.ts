@@ -116,13 +116,20 @@ export async function deleteRelationsTestRecords(): Promise<number> {
   const categories = await prisma.category.deleteMany({
     where: { slug: startsWithPrefix },
   });
+  // After recipes: Recipe.playerClassId is a required, RESTRICT-protected
+  // relation, so a test-scoped PlayerClass can only be removed once every
+  // recipe referencing it is already gone.
+  const playerClasses = await prisma.playerClass.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
 
   return (
     ingredients.count +
     recipes.count +
     items.count +
     professions.count +
-    categories.count
+    categories.count +
+    playerClasses.count
   );
 }
 
@@ -317,6 +324,12 @@ export async function deleteGameVersionTestRecords(): Promise<number> {
   const professions = await prisma.profession.deleteMany({
     where: { slug: startsWithPrefix },
   });
+  // After recipes: Recipe.playerClassId is a required, RESTRICT-protected
+  // relation, so a test-scoped PlayerClass can only be removed once every
+  // recipe referencing it is already gone.
+  const playerClasses = await prisma.playerClass.deleteMany({
+    where: { slug: startsWithPrefix },
+  });
   const versions = await prisma.gameVersion.deleteMany({
     where: { name: { startsWith: GAME_VERSION_TEST_NAME_PREFIX } },
   });
@@ -328,6 +341,7 @@ export async function deleteGameVersionTestRecords(): Promise<number> {
     items.count +
     locations.count +
     professions.count +
+    playerClasses.count +
     versions.count
   );
 }

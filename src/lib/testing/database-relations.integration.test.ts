@@ -41,6 +41,7 @@ import {
 const SEEDED_COUNTS = {
   categories: 5,
   professions: 10,
+  playerClasses: 5,
   items: 16,
   recipes: 8,
   recipeIngredients: 15,
@@ -53,6 +54,16 @@ const NONEXISTENT_ID = `${RELATIONS_TEST_SLUG_PREFIX}nonexistent-id`;
 
 const P = RELATIONS_TEST_SLUG_PREFIX;
 
+// Every Recipe below needs a real, required playerClassId. A read-only
+// reference to the seeded "trainer" Player Class — resolved once, never
+// created or modified — is simpler and cleanup-free compared to a
+// test-scoped fixture: it is never prefix-scoped, so it can never affect
+// the "no test-prefixed row left behind" / "seeded counts unchanged" checks
+// at the end of this file, exactly like the seeded Items/Categories other
+// tests in this file already reference directly. The PlayerClass CRUD/
+// dependency rules themselves belong to a dedicated player-class suite.
+let testPlayerClassId: string;
+
 describe("database relations (integration)", () => {
   beforeAll(async () => {
     // First database contact of the run: the guard inside
@@ -60,6 +71,12 @@ describe("database relations (integration)", () => {
     // verified test project. Also removes any prefix-scoped leftovers an
     // interrupted earlier run may have stranded.
     await deleteRelationsTestRecords();
+
+    const prisma = await getVerifiedTestPrisma();
+    const trainer = await prisma.playerClass.findUniqueOrThrow({
+      where: { slug: "trainer" },
+    });
+    testPlayerClassId = trainer.id;
   });
 
   // Backstop cleanup after every test: even a failing write test cannot
@@ -326,6 +343,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Recipe",
           slug: `${P}recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           professionId: profession.id,
         },
       });
@@ -372,6 +391,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Result Blocker Recipe",
           slug: `${P}result-blocker-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
         },
       });
 
@@ -415,6 +436,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Ingredient Recipe",
           slug: `${P}ingredient-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           ingredients: {
             create: [{ itemId: ingredientItem.id, quantity: 1 }],
           },
@@ -460,6 +483,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Cascade Recipe",
           slug: `${P}cascade-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           ingredients: {
             create: [{ itemId: ingredientItem.id, quantity: 2 }],
           },
@@ -507,6 +532,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test General Recipe",
           slug: `${P}general-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           ingredients: {
             create: [{ itemId: ingredientItem.id, quantity: 1 }],
           },
@@ -549,6 +576,8 @@ describe("database relations (integration)", () => {
           slug: `${P}general-verified-recipe`,
           image: "recipes/relations-general-verified.png",
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           verifiedAt: stampedAt,
           verifiedGameVersionId: version.id,
         },
@@ -592,6 +621,8 @@ describe("database relations (integration)", () => {
           image: "recipes/relations-ingredients-txn.png",
           requiredLevel: 9,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           verifiedAt: stampedAt,
           verifiedGameVersionId: version.id,
           ingredients: {
@@ -642,6 +673,8 @@ describe("database relations (integration)", () => {
           slug: `${P}rollback-recipe`,
           requiredLevel: 1,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           ingredients: {
             create: [{ itemId: originalIngredient.id, quantity: 4 }],
           },
@@ -726,6 +759,8 @@ describe("database relations (integration)", () => {
           resultQuantityMax: 2,
           professionId: profession.id,
           requiredLevel: 12,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
         },
       });
       await prisma.recipe.create({
@@ -736,6 +771,8 @@ describe("database relations (integration)", () => {
           resultQuantityMin: 1,
           resultQuantityMax: 1,
           professionId: profession.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
         },
       });
 
@@ -807,6 +844,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Quantity Fixed Recipe",
           slug: `${P}quantity-fixed-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           resultQuantityMin: 3,
           resultQuantityMax: 3,
         },
@@ -831,6 +870,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Quantity Variable Recipe",
           slug: `${P}quantity-variable-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           resultQuantityMin: 1,
           resultQuantityMax: 4,
         },
@@ -855,6 +896,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Quantity Default Recipe",
           slug: `${P}quantity-default-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
         },
       });
 
@@ -906,6 +949,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Quantity Relations Recipe",
           slug: `${P}quantity-relations-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           resultQuantityMin: 2,
           resultQuantityMax: 6,
           ingredients: {
@@ -955,6 +1000,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Recipes Tab Recipe",
           slug: `${P}recipes-tab-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           professionId: profession.id,
           requiredLevel: 7,
           ingredients: { create: [{ itemId: ingredientItem.id, quantity: 3 }] },
@@ -1015,6 +1062,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Recipes Tab Sparse Recipe",
           slug: `${P}recipes-tab-sparse-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           ingredients: { create: [{ itemId: ingredientItem.id, quantity: 1 }] },
         },
       });
@@ -1074,6 +1123,8 @@ describe("database relations (integration)", () => {
           name: "Relations Test Recipes Tab Dup Recipe",
           slug: `${P}recipes-tab-dup-recipe`,
           resultingItemId: resultItem.id,
+          playerClassId: testPlayerClassId,
+          experienceReward: 10,
           ingredients: { create: [{ itemId: ingredientItem.id, quantity: 1 }] },
         },
       });
@@ -1107,6 +1158,9 @@ describe("database relations (integration)", () => {
       const prisma = await getVerifiedTestPrisma();
       expect(await prisma.category.count()).toBe(SEEDED_COUNTS.categories);
       expect(await prisma.profession.count()).toBe(SEEDED_COUNTS.professions);
+      expect(await prisma.playerClass.count()).toBe(
+        SEEDED_COUNTS.playerClasses
+      );
       expect(await prisma.item.count()).toBe(SEEDED_COUNTS.items);
       expect(await prisma.recipe.count()).toBe(SEEDED_COUNTS.recipes);
       expect(await prisma.recipeIngredient.count()).toBe(
@@ -1129,6 +1183,9 @@ describe("database relations (integration)", () => {
         ).toBe(0);
         expect(
           await prisma.profession.count({ where: { slug: startsWithPrefix } })
+        ).toBe(0);
+        expect(
+          await prisma.playerClass.count({ where: { slug: startsWithPrefix } })
         ).toBe(0);
         expect(
           await prisma.recipe.count({ where: { slug: startsWithPrefix } })

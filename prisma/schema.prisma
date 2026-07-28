@@ -39,6 +39,7 @@ model GameVersion {
   verifiedCurrencies         Currency[]
   verifiedShops              Shop[]
   verifiedShopListings       ShopListing[]
+  verifiedPlayerClasses      PlayerClass[]
   createdAt                  DateTime            @default(now())
   updatedAt                  DateTime            @updatedAt
 }
@@ -104,6 +105,29 @@ model Profession {
   @@index([verifiedGameVersionId])
 }
 
+// A player Class (Trainer, Artisan, Rancher, Ranger, Farmhand, ...) —
+// deliberately named PlayerClass, never Class, so it is never confused
+// with the reserved `class` keyword or with the existing Item Category
+// model, which is an unrelated concept. Every Recipe requires exactly one
+// PlayerClass (see Recipe.playerClassId below); this milestone introduces
+// no player levels, Class progression, unlock trees, Class-specific
+// permissions, or account/character ownership.
+model PlayerClass {
+  id                    String       @id @default(cuid())
+  slug                  String       @unique
+  name                  String
+  description           String?
+  image                 String?
+  recipes               Recipe[]
+  verifiedAt            DateTime?
+  verifiedGameVersionId String?
+  verifiedGameVersion   GameVersion? @relation(fields: [verifiedGameVersionId], references: [id], onDelete: Restrict)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@index([verifiedGameVersionId])
+}
+
 model Recipe {
   id                    String             @id @default(cuid())
   slug                  String             @unique
@@ -116,6 +140,21 @@ model Recipe {
   professionId          String?
   profession            Profession?        @relation(fields: [professionId], references: [id])
   requiredLevel         Int?
+  // The Player Class required to craft this recipe (Player Classes +
+  // Recipe EXP milestone): every Recipe belongs to exactly one PlayerClass,
+  // unlike the optional Profession above. onDelete is intentionally left at
+  // Prisma's default (Restrict) rather than Cascade — a PlayerClass with
+  // Recipes still assigned to it must never be deletable out from under
+  // them, matching the same "the database is the last line of defense"
+  // rule every other required/optional relation in this schema already
+  // follows (see Shop.locationId, ShopListing.itemId).
+  playerClassId         String
+  playerClass           PlayerClass        @relation(fields: [playerClassId], references: [id])
+  // The amount of player experience this recipe rewards on first craft.
+  // Zero is a valid, meaningful value (a purely utilitarian recipe with no
+  // EXP incentive) — never invented or defaulted to a positive number
+  // without real game data behind it.
+  experienceReward      Int
   ingredients           RecipeIngredient[]
   // Gameplay-verification metadata (added in Slice 9A): stamped only by the
   // explicit opt-in "Mark gameplay data as verified for the current game
@@ -128,6 +167,7 @@ model Recipe {
 
   @@index([professionId])
   @@index([resultingItemId])
+  @@index([playerClassId])
   @@index([verifiedGameVersionId])
 }
 

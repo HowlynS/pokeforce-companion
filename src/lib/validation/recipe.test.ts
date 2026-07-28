@@ -16,13 +16,17 @@ function formDataFrom(entries: Record<string, string>): FormData {
 }
 
 // A minimal valid submission: name, a resulting item, a fixed 1/1 result
-// quantity (matching the form's own default), and one ingredient row.
+// quantity (matching the form's own default), a required Player Class, a
+// zero EXP reward (matching the form's own default), and one ingredient
+// row.
 function validRecipeEntries(): Record<string, string> {
   return {
     name: "Iron Ingot",
     resultingItemId: "item-result",
     resultQuantityMin: "1",
     resultQuantityMax: "1",
+    playerClassId: "class-1",
+    experienceReward: "0",
     ingredientItemId1: "item-a",
     ingredientQuantity1: "2",
   };
@@ -234,6 +238,61 @@ describe("parseRecipeInput", () => {
     });
   });
 
+  describe("required player class", () => {
+    it("rejects a blank value", () => {
+      const result = parseRecipeInput(
+        formDataFrom({ ...validRecipeEntries(), playerClassId: "" })
+      );
+
+      expect(result).toEqual({ ok: false, error: "missing_player_class" });
+    });
+
+    it("accepts a supplied value", () => {
+      const result = parseRecipeInput(
+        formDataFrom({ ...validRecipeEntries(), playerClassId: "class-9" })
+      );
+
+      expect(result.ok && result.value.playerClassId).toBe("class-9");
+    });
+  });
+
+  describe("experience reward", () => {
+    it("rejects a blank value — unlike Required level, zero must be explicit", () => {
+      const result = parseRecipeInput(
+        formDataFrom({ ...validRecipeEntries(), experienceReward: "" })
+      );
+
+      expect(result).toEqual({ ok: false, error: "invalid_experience_reward" });
+    });
+
+    it("accepts zero", () => {
+      const result = parseRecipeInput(
+        formDataFrom({ ...validRecipeEntries(), experienceReward: "0" })
+      );
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.experienceReward).toBe(0);
+      }
+    });
+
+    it("accepts a positive whole number", () => {
+      const result = parseRecipeInput(
+        formDataFrom({ ...validRecipeEntries(), experienceReward: "120" })
+      );
+
+      expect(result.ok && result.value.experienceReward).toBe(120);
+    });
+
+    it.each(["-1", "2.5", "soon"])("rejects %j", (value) => {
+      const result = parseRecipeInput(
+        formDataFrom({ ...validRecipeEntries(), experienceReward: value })
+      );
+
+      expect(result).toEqual({ ok: false, error: "invalid_experience_reward" });
+    });
+  });
+
   describe("ingredient rows", () => {
     it("rejects a submission with no filled ingredient rows", () => {
       const result = parseRecipeInput(
@@ -242,6 +301,8 @@ describe("parseRecipeInput", () => {
           resultingItemId: "item-result",
           resultQuantityMin: "1",
           resultQuantityMax: "1",
+          playerClassId: "class-1",
+          experienceReward: "0",
         })
       );
 
@@ -255,6 +316,8 @@ describe("parseRecipeInput", () => {
           resultingItemId: "item-result",
           resultQuantityMin: "1",
           resultQuantityMax: "1",
+          playerClassId: "class-1",
+          experienceReward: "0",
           ingredientItemId1: "item-a",
         })
       );
@@ -269,6 +332,8 @@ describe("parseRecipeInput", () => {
           resultingItemId: "item-result",
           resultQuantityMin: "1",
           resultQuantityMax: "1",
+          playerClassId: "class-1",
+          experienceReward: "0",
           ingredientQuantity1: "2",
         })
       );
@@ -327,6 +392,8 @@ describe("parseRecipeInput", () => {
           resultingItemId: "item-result",
           resultQuantityMin: "1",
           resultQuantityMax: "1",
+          playerClassId: "class-1",
+          experienceReward: "0",
           ingredientItemId1: "item-a",
           ingredientQuantity1: "1",
           // Row 2 left completely blank on purpose.
@@ -378,6 +445,8 @@ describe("parseRecipeGeneralInput", () => {
         resultQuantityMax: "3",
         professionId: "prof-1",
         requiredLevel: "5",
+        playerClassId: "class-1",
+        experienceReward: "120",
       })
     );
 
@@ -391,6 +460,8 @@ describe("parseRecipeGeneralInput", () => {
         resultQuantityMax: 3,
         professionId: "prof-1",
         requiredLevel: 5,
+        playerClassId: "class-1",
+        experienceReward: 120,
       },
     });
   });
@@ -410,6 +481,8 @@ describe("parseRecipeGeneralInput", () => {
         resultingItemId: "item-result",
         resultQuantityMin: "1",
         resultQuantityMax: "1",
+        playerClassId: "class-1",
+        experienceReward: "0",
       })
     );
 

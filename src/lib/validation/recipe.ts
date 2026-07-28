@@ -21,6 +21,8 @@ export type RecipeInput = {
   resultQuantityMax: number;
   professionId: string | null;
   requiredLevel: number | null;
+  playerClassId: string;
+  experienceReward: number;
   ingredients: RecipeIngredientInput[];
 };
 
@@ -42,6 +44,8 @@ export type RecipeValidationError =
   | "invalid_result_quantity_max"
   | "invalid_result_quantity_range"
   | "invalid_required_level"
+  | "missing_player_class"
+  | "invalid_experience_reward"
   | "no_ingredients"
   | "incomplete_ingredient"
   | "invalid_quantity"
@@ -125,6 +129,10 @@ function parseRecipeGeneralFields(formData: FormData): RecipeGeneralParseResult 
   ).trim();
   const professionId = String(formData.get("professionId") ?? "").trim();
   const rawRequiredLevel = String(formData.get("requiredLevel") ?? "").trim();
+  const playerClassId = String(formData.get("playerClassId") ?? "").trim();
+  const rawExperienceReward = String(
+    formData.get("experienceReward") ?? ""
+  ).trim();
 
   if (!name) {
     return { ok: false, error: "missing_name" };
@@ -185,6 +193,31 @@ function parseRecipeGeneralFields(formData: FormData): RecipeGeneralParseResult 
     requiredLevel = parsedRequiredLevel;
   }
 
+  // Required, unlike Profession/Required level above: every Recipe belongs
+  // to exactly one PlayerClass (Player Classes + Recipe EXP milestone).
+  if (!playerClassId) {
+    return { ok: false, error: "missing_player_class" };
+  }
+
+  // Required, like the quantity fields above — a blank submission is never
+  // silently defaulted to 0 here (the form itself pre-fills 0 on create).
+  // Zero itself is a valid, meaningful EXP reward (see the schema comment
+  // on Recipe.experienceReward), so only blank/non-integer/negative values
+  // are rejected.
+  if (!rawExperienceReward) {
+    return { ok: false, error: "invalid_experience_reward" };
+  }
+
+  const experienceReward = Number(rawExperienceReward);
+
+  if (
+    !Number.isInteger(experienceReward) ||
+    !Number.isFinite(experienceReward) ||
+    experienceReward < 0
+  ) {
+    return { ok: false, error: "invalid_experience_reward" };
+  }
+
   return {
     ok: true,
     value: {
@@ -195,6 +228,8 @@ function parseRecipeGeneralFields(formData: FormData): RecipeGeneralParseResult 
       resultQuantityMax,
       professionId: professionId || null,
       requiredLevel,
+      playerClassId,
+      experienceReward,
     },
   };
 }

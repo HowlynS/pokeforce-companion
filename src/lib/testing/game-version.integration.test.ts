@@ -604,11 +604,16 @@ describe("game versions (integration)", () => {
           ...stamp,
         },
       });
+      const playerClass = await prisma.playerClass.create({
+        data: { name: "Test GameVersion Player Class", slug: `${P}player-class` },
+      });
       const recipe = await prisma.recipe.create({
         data: {
           name: "Test GameVersion Recipe",
           slug: `${P}recipe`,
           resultingItemId: item.id,
+          playerClassId: playerClass.id,
+          experienceReward: 10,
           ...stamp,
         },
       });
@@ -645,11 +650,19 @@ describe("game versions (integration)", () => {
       const item = await prisma.item.create({
         data: { name: "Test GameVersion Preserve Item", slug: `${P}preserve-item` },
       });
+      const playerClass = await prisma.playerClass.create({
+        data: {
+          name: "Test GameVersion Preserve Player Class",
+          slug: `${P}preserve-player-class`,
+        },
+      });
       const recipe = await prisma.recipe.create({
         data: {
           name: "Test GameVersion Preserve Recipe",
           slug: `${P}preserve-recipe`,
           resultingItemId: item.id,
+          playerClassId: playerClass.id,
+          experienceReward: 10,
           ...stamp,
         },
       });

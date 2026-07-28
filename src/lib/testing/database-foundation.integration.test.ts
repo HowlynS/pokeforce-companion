@@ -26,10 +26,22 @@ import {
 const SEEDED_COUNTS = {
   categories: 5,
   professions: 10,
+  playerClasses: 5,
   items: 16,
   recipes: 8,
   recipeIngredients: 15,
 } as const;
+
+// Player Classes + Recipe EXP/Required Class milestone: the 5 foundational
+// Classes, inserted directly by migration 20260728120000 and re-affirmed
+// idempotently by prisma/seed.ts.
+const SEEDED_PLAYER_CLASS_SLUGS = [
+  "artisan",
+  "farmhand",
+  "rancher",
+  "ranger",
+  "trainer",
+] as const;
 
 const SEEDED_CATEGORY_SLUGS = [
   "materials",
@@ -110,6 +122,24 @@ describe("database foundation (integration)", () => {
       expect(await prisma.profession.count()).toBe(SEEDED_COUNTS.professions);
     });
 
+    it(`holds exactly ${SEEDED_COUNTS.playerClasses} seeded player classes`, async () => {
+      const prisma = await getVerifiedTestPrisma();
+      expect(await prisma.playerClass.count()).toBe(
+        SEEDED_COUNTS.playerClasses
+      );
+    });
+
+    it("holds exactly the five deterministic player classes, by slug", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const playerClasses = await prisma.playerClass.findMany({
+        select: { slug: true },
+        orderBy: { slug: "asc" },
+      });
+      expect(playerClasses.map((playerClass) => playerClass.slug)).toEqual([
+        ...SEEDED_PLAYER_CLASS_SLUGS,
+      ]);
+    });
+
     it(`holds exactly ${SEEDED_COUNTS.items} seeded items`, async () => {
       const prisma = await getVerifiedTestPrisma();
       expect(await prisma.item.count()).toBe(SEEDED_COUNTS.items);
@@ -185,6 +215,25 @@ describe("database foundation (integration)", () => {
       });
       expect(recipe).not.toBeNull();
       expect(recipe?.name).toBe("Iron Ingot");
+    });
+
+    it("finds the seeded player class by its stable slug", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const playerClass = await prisma.playerClass.findUnique({
+        where: { slug: "trainer" },
+      });
+      expect(playerClass).not.toBeNull();
+      expect(playerClass?.name).toBe("Trainer");
+    });
+
+    it("assigns every seeded recipe a required player class and EXP reward", async () => {
+      const prisma = await getVerifiedTestPrisma();
+      const recipe = await prisma.recipe.findUnique({
+        where: { slug: SEEDED_RECIPE_SLUG },
+        include: { playerClass: true },
+      });
+      expect(recipe?.playerClass.slug).toBe("artisan");
+      expect(recipe?.experienceReward).toBe(15);
     });
   });
 
@@ -390,6 +439,9 @@ describe("database foundation (integration)", () => {
       const prisma = await getVerifiedTestPrisma();
       expect(await prisma.category.count()).toBe(SEEDED_COUNTS.categories);
       expect(await prisma.profession.count()).toBe(SEEDED_COUNTS.professions);
+      expect(await prisma.playerClass.count()).toBe(
+        SEEDED_COUNTS.playerClasses
+      );
       expect(await prisma.item.count()).toBe(SEEDED_COUNTS.items);
       expect(await prisma.recipe.count()).toBe(SEEDED_COUNTS.recipes);
       expect(await prisma.recipeIngredient.count()).toBe(
