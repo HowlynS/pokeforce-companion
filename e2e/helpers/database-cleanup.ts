@@ -1621,6 +1621,69 @@ export async function countE2eTestRecipeRecords(): Promise<number> {
 }
 
 /**
+ * Creates one temporary Recipe referencing an EXISTING seeded Profession
+ * and Player Class by slug (both read-only, never created or modified) —
+ * built specifically to prove genuine combined Profession+Class AND
+ * filtering on the public Recipes catalogue against a pairing that does
+ * not already exist in the deterministic seed data (every seeded recipe's
+ * Profession and Class happen to co-occur 1:1). Uses the same
+ * E2E_RECIPE_SLUG_PREFIX/E2E_RECIPE_ITEM_SLUG_PREFIX prefixes as every
+ * other Recipe browser-test fixture, so the existing
+ * deleteE2eTestRecipeRecords sweep already catches it — no new cleanup
+ * surface.
+ */
+export async function createTemporaryRecipeForCatalogueFilters(options: {
+  slugSuffix: string;
+  name: string;
+  professionSlug: string;
+  playerClassSlug: string;
+}): Promise<void> {
+  assertRecipePrefixesAreSafe();
+
+  await withVerifiedDatabase(async (client) => {
+    const relations = await client.query<{
+      professionId: string;
+      playerClassId: string;
+    }>(
+      `select
+         (select id from "Profession" where slug = $1) as "professionId",
+         (select id from "PlayerClass" where slug = $2) as "playerClassId"`,
+      [options.professionSlug, options.playerClassSlug]
+    );
+    const relation = relations.rows[0];
+    if (!relation?.professionId || !relation.playerClassId) {
+      throw new Error(
+        `Cannot create the catalogue-filter test Recipe: seeded Profession "${options.professionSlug}" or Player Class "${options.playerClassSlug}" was not found.`
+      );
+    }
+
+    const item = await client.query(
+      `insert into "Item" (id, slug, name, "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, now())
+       returning id`,
+      [
+        `${E2E_RECIPE_ITEM_SLUG_PREFIX}${options.slugSuffix}`,
+        `Test E2E Catalogue Filter Result ${options.slugSuffix}`,
+      ]
+    );
+
+    await client.query(
+      `insert into "Recipe"
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax",
+          "professionId", "playerClassId", "experienceReward", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, $5, 10, now())`,
+      [
+        `${E2E_RECIPE_SLUG_PREFIX}-${options.slugSuffix}`,
+        options.name,
+        item.rows[0].id as string,
+        relation.professionId,
+        relation.playerClassId,
+      ]
+    );
+  });
+}
+
+/**
  * Creates one temporary Recipe carrying SIX ingredient rows — one more
  * than the edit form's fixed capacity — so the existing capacity guard on
  * the edit page can be exercised. The recipe and its ingredient rows are

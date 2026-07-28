@@ -29,6 +29,8 @@ export default async function RecipeDetailPage({
       verifiedAt: true,
       verifiedGameVersion: { select: { name: true } },
       profession: { select: { name: true } },
+      playerClass: { select: { name: true, slug: true } },
+      experienceReward: true,
       resultingItem: {
         select: {
           name: true,
@@ -204,6 +206,17 @@ export default async function RecipeDetailPage({
                   </div>
                 ) : null}
                 <div>
+                  <dt>Required class</dt>
+                  <dd>
+                    <Link
+                      href={`/classes/${recipe.playerClass.slug}`}
+                      className="public-content-link"
+                    >
+                      {recipe.playerClass.name}
+                    </Link>
+                  </dd>
+                </div>
+                <div>
                   <dt>Result</dt>
                   <dd>
                     <Link
@@ -217,6 +230,10 @@ export default async function RecipeDetailPage({
                 <div>
                   <dt>Ingredients</dt>
                   <dd>{recipe.ingredients.length}</dd>
+                </div>
+                <div>
+                  <dt>EXP reward</dt>
+                  <dd>{recipe.experienceReward} EXP</dd>
                 </div>
                 {updatedAt ? (
                   <div>
