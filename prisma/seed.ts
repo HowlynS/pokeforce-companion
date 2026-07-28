@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { PROFESSION_LEVEL_THRESHOLDS } from "../src/lib/professions/profession-levels";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -218,6 +219,16 @@ async function seedCategories(): Promise<Map<string, string>> {
   return idBySlug;
 }
 
+async function seedProfessionLevels(): Promise<void> {
+  for (const threshold of PROFESSION_LEVEL_THRESHOLDS) {
+    await prisma.professionLevel.upsert({
+      where: { level: threshold.level },
+      update: { experienceRequired: threshold.experienceRequired },
+      create: threshold,
+    });
+  }
+}
+
 async function seedProfessions(): Promise<Map<string, string>> {
   const idBySlug = new Map<string, string>();
   for (const profession of professions) {
@@ -326,6 +337,7 @@ async function seedRecipes(
 }
 
 async function main() {
+  await seedProfessionLevels();
   const categoryIdBySlug = await seedCategories();
   const professionIdBySlug = await seedProfessions();
   const playerClassIdBySlug = await seedPlayerClasses();

@@ -105,6 +105,14 @@ model Profession {
   @@index([verifiedGameVersionId])
 }
 
+// Shared, read-only Profession progression reference data. Every Profession
+// uses this one cumulative curve; rows are not owned by a Profession and
+// deliberately carry no professionId or player-progress state.
+model ProfessionLevel {
+  level              Int @id
+  experienceRequired Int
+}
+
 // A player Class (Trainer, Artisan, Rancher, Ranger, Farmhand, ...) —
 // deliberately named PlayerClass, never Class, so it is never confused
 // with the reserved `class` keyword or with the existing Item Category
