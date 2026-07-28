@@ -117,6 +117,16 @@ Background artwork is decorative. Foreground layout must remain correct when
 the artwork is removed, and artwork must never determine content geometry.
 Detail pages may retain a restrained right sidebar where appropriate.
 
+The approved first scenic-background rollout uses the lossless coastal
+overlook as a finite upper-page atmosphere on the homepage, Items catalogue,
+and Item detail only. It uses a strong charcoal wash, a restrained horizontal
+vignette, and a vertical fade into the solid page background. The source
+remains an unaltered CSS background; cards and panels stay nearly opaque.
+Desktop uses a slightly right-biased `55% center` crop, while mobile uses an
+explicit `82% center` crop to favor the lighthouse and sunset. Do not extend
+the scene through long content, use fixed attachment, or apply it to admin or
+other public resources without a later visual review.
+
 The established public shell contains:
 
 - Merchants Codex branding.

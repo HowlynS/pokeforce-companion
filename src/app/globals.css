@@ -77,35 +77,72 @@ select:focus-visible {
   color: var(--color-text);
 }
 
-.public-site-shell--landing {
+.public-site-shell--landing,
+.public-site-shell--scenic {
   position: relative;
   isolation: isolate;
 }
 
-/* Optional public scenic-art hook. No image is assigned until an approved
-   public asset exists; a later asset can set --public-landing-scenic-image
-   without changing layout or markup. The independent charcoal wash keeps
-   the interface readable regardless of image detail or crop. */
-.public-landing-background {
+/* Shared upper-page atmosphere for the approved public rollout. One original
+   lossless source is requested once as CSS decoration; variant custom
+   properties control only crop, visible depth, and wash strength. */
+.public-scenic-background {
+  --public-scenic-position: 55% center;
+  --public-scenic-depth: 640px;
+  --public-scenic-wash-top: rgba(17, 21, 20, 0.72);
+  --public-scenic-wash-middle: rgba(17, 21, 20, 0.82);
+  --public-scenic-vignette-left: rgba(17, 21, 20, 0.78);
+  --public-scenic-vignette-center: rgba(17, 21, 20, 0.46);
+  --public-scenic-vignette-right: rgba(17, 21, 20, 0.66);
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto;
+  height: var(--public-scenic-depth);
   z-index: 0;
   pointer-events: none;
   background-image:
     linear-gradient(
       to bottom,
-      rgba(17, 21, 20, 0.94) 0%,
-      rgba(17, 21, 20, 0.82) 48%,
-      var(--color-background) 88%
+      var(--public-scenic-wash-top) 0%,
+      var(--public-scenic-wash-middle) 48%,
+      rgba(17, 21, 20, 0.95) 78%,
+      var(--color-background) 100%
     ),
-    var(--public-landing-scenic-image, none);
-  background-position: center, center top;
-  background-repeat: no-repeat, no-repeat;
-  background-size: cover, cover;
+    linear-gradient(
+      90deg,
+      var(--public-scenic-vignette-left) 0%,
+      var(--public-scenic-vignette-center) 52%,
+      var(--public-scenic-vignette-right) 100%
+    ),
+    url("/images/backgrounds/merchants-codex-coastal-overlook.png");
+  background-position:
+    center,
+    center,
+    var(--public-scenic-position);
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
-.public-site-shell--landing > .public-site-main,
-.public-site-shell--landing > .public-site-footer {
+.public-scenic-background--home {
+  --public-scenic-depth: 880px;
+  --public-scenic-wash-top: rgba(17, 21, 20, 0.6);
+  --public-scenic-wash-middle: rgba(17, 21, 20, 0.72);
+  --public-scenic-vignette-left: rgba(17, 21, 20, 0.74);
+  --public-scenic-vignette-center: rgba(17, 21, 20, 0.38);
+  --public-scenic-vignette-right: rgba(17, 21, 20, 0.56);
+}
+
+.public-scenic-background--catalogue {
+  --public-scenic-depth: 600px;
+}
+
+.public-scenic-background--detail {
+  --public-scenic-depth: 760px;
+  --public-scenic-wash-top: rgba(17, 21, 20, 0.68);
+  --public-scenic-wash-middle: rgba(17, 21, 20, 0.8);
+}
+
+.public-site-shell--scenic > .public-site-main,
+.public-site-shell--scenic > .public-site-footer {
   position: relative;
   z-index: 1;
 }
@@ -135,6 +172,11 @@ select:focus-visible {
   z-index: 50;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-background);
+}
+
+.public-site-shell--scenic > .public-site-header {
+  background: rgba(17, 21, 20, 0.91);
+  backdrop-filter: saturate(0.82);
 }
 
 .public-site-header-inner {
@@ -534,6 +576,29 @@ select:focus-visible {
 }
 
 @media (max-width: 620px) {
+  .public-scenic-background {
+    --public-scenic-position: 82% center;
+    --public-scenic-wash-top: rgba(17, 21, 20, 0.8);
+    --public-scenic-wash-middle: rgba(17, 21, 20, 0.88);
+    --public-scenic-vignette-left: rgba(17, 21, 20, 0.72);
+    --public-scenic-vignette-center: rgba(17, 21, 20, 0.54);
+    --public-scenic-vignette-right: rgba(17, 21, 20, 0.62);
+  }
+
+  .public-scenic-background--home {
+    --public-scenic-depth: 760px;
+    --public-scenic-wash-top: rgba(17, 21, 20, 0.72);
+    --public-scenic-wash-middle: rgba(17, 21, 20, 0.82);
+  }
+
+  .public-scenic-background--catalogue {
+    --public-scenic-depth: 560px;
+  }
+
+  .public-scenic-background--detail {
+    --public-scenic-depth: 700px;
+  }
+
   .landing-page {
     gap: 64px;
   }

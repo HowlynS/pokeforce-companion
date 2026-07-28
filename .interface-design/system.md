@@ -56,6 +56,20 @@ same focused commit.
 - Decorative backgrounds never determine geometry.
 - Preserve a restrained detail-page sidebar where applicable.
 
+### Scenic public background
+
+- First rollout only: homepage, Items catalogue, and Item detail.
+- Source: the original coastal-overlook PNG as one decorative CSS background;
+  never transform the lossless master or expose it semantically.
+- Desktop crop: `55% center`; mobile crop: `82% center`.
+- Finite upper-page depths: home `880px`, catalogue `600px`, detail `760px`;
+  mobile home `760px`, catalogue `560px`, detail `700px`.
+- Use a strong charcoal vertical wash, subtle horizontal vignette, and a
+  complete fade to `#111514`; cards and panels remain nearly opaque.
+- Preserve layout when decoration is removed. Do not use fixed attachment,
+  preload globally, apply to admin, or extend to other public resources
+  without visual review.
+
 ## Resource Atmospheres
 
 - Item: localized, low-opacity cool blue.

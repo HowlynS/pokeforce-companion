@@ -99,7 +99,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     item.shopListings.length > 0 || acquisitionGroups.length > 0;
 
   return (
-    <AppShell wide>
+    <AppShell scenic="detail" wide>
       <article className="item-detail-page">
         <nav aria-label="Breadcrumb" className="public-breadcrumb item-breadcrumb">
           <ol>

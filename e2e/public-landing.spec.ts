@@ -147,10 +147,33 @@ test("landing composition stays centered and bounded at all target widths", asyn
     expect(layout.headerPosition).toBe("sticky");
     expect(layout.headerBackground).not.toBe("rgba(0, 0, 0, 0)");
 
+    const scenicBackground = page.locator(".public-scenic-background--home");
+    await expect(scenicBackground).toHaveCount(1);
+    await expect(scenicBackground).toHaveAttribute("aria-hidden", "true");
+    await expect(scenicBackground).toHaveCSS(
+      "background-image",
+      /merchants-codex-coastal-overlook\.png/
+    );
+    expect(
+      await scenicBackground.evaluate(
+        (element) => getComputedStyle(element).backgroundPosition
+      )
+    ).toContain("55%");
+
     await page.screenshot({
       path: `test-results/landing-page-visual-pass/landing-${viewport.width}x${viewport.height}.png`,
       fullPage: true,
     });
+
+    if (viewport.width === 1920) {
+      await page.locator(".public-site-header").screenshot({
+        path: "test-results/landing-page-visual-pass/scenic-header-1920.png",
+      });
+      await page.screenshot({
+        path: "test-results/landing-page-visual-pass/scenic-to-charcoal-transition-1920.png",
+        clip: { x: 0, y: 430, width: 1920, height: 500 },
+      });
+    }
   }
 });
 
@@ -180,7 +203,7 @@ test("plain-charcoal override leaves interface geometry unchanged", async ({
   const decoratedGeometry = await measure();
   await page.addStyleTag({
     content: `
-      .public-landing-background { display: none !important; }
+      .public-scenic-background { display: none !important; }
       .public-site-shell--landing { background: #111514 !important; }
     `,
   });
@@ -223,5 +246,21 @@ test("the landing page reflows safely below desktop widths", async ({
     await expect(
       page.getByRole("link", { name: "Browse Items", exact: true })
     ).toBeVisible();
+
+    const scenicBackground = page.locator(".public-scenic-background--home");
+    if (viewport.width === 390) {
+      expect(
+        await scenicBackground.evaluate(
+          (element) => getComputedStyle(element).backgroundPosition
+        )
+      ).toContain("82%");
+      await page.screenshot({
+        path: "test-results/landing-page-visual-pass/landing-390x844.png",
+        fullPage: true,
+      });
+      await page.screenshot({
+        path: "test-results/landing-page-visual-pass/scenic-mobile-crop-390x844.png",
+      });
+    }
   }
 });

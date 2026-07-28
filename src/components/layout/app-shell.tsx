@@ -4,12 +4,14 @@ import { MainNav } from "@/components/layout/main-nav";
 type AppShellProps = {
   children: React.ReactNode;
   landing?: boolean;
+  scenic?: "home" | "catalogue" | "detail";
   wide?: boolean;
 };
 
 export function AppShell({
   children,
   landing = false,
+  scenic,
   wide = false,
 }: AppShellProps) {
   const containerClassName =
@@ -21,11 +23,17 @@ export function AppShell({
     <div
       className={
         "public-site-shell" +
-        (landing ? " public-site-shell--landing" : "")
+        (landing ? " public-site-shell--landing" : "") +
+        (scenic
+          ? ` public-site-shell--scenic public-site-shell--scenic-${scenic}`
+          : "")
       }
     >
-      {landing ? (
-        <div className="public-landing-background" aria-hidden="true" />
+      {scenic ? (
+        <div
+          className={`public-scenic-background public-scenic-background--${scenic}`}
+          aria-hidden="true"
+        />
       ) : null}
 
       <header className="public-site-header">

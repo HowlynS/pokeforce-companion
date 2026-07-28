@@ -191,6 +191,15 @@ test.describe("public detail pages", () => {
     await expect(page.getByText("Tradeable:", { exact: false })).toHaveCount(0);
     await expect(page.getByText("Base value:", { exact: false })).toHaveCount(0);
 
+    const scenicBackground = page.locator(
+      ".public-scenic-background--detail"
+    );
+    await expect(scenicBackground).toHaveCount(1);
+    await expect(scenicBackground).toHaveCSS(
+      "background-image",
+      /merchants-codex-coastal-overlook\.png/
+    );
+
     for (const viewport of [
       { width: 1920, height: 1080 },
       { width: 3440, height: 1440 },
@@ -210,6 +219,26 @@ test.describe("public detail pages", () => {
         fullPage: true,
       });
     }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    const mobileWidths = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      content: document.documentElement.scrollWidth,
+    }));
+    expect(mobileWidths.content).toBeLessThanOrEqual(mobileWidths.viewport);
+    expect(
+      await scenicBackground.evaluate(
+        (element) => getComputedStyle(element).backgroundPosition
+      )
+    ).toContain("82%");
+    await page.screenshot({
+      path: path.join(
+        SCREENSHOT_DIRECTORY,
+        "item-populated-390x844.png"
+      ),
+      fullPage: true,
+    });
 
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/items/wood");

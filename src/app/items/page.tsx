@@ -58,7 +58,7 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
   });
 
   return (
-    <AppShell>
+    <AppShell scenic="catalogue">
       <PageHeader
         title="Items"
         description="Browse items, materials, and useful crafting resources."

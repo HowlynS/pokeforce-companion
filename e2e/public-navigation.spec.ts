@@ -61,6 +61,9 @@ test.describe("homepage", () => {
     await expect(page.getByRole("contentinfo")).toContainText(
       "A crafting wiki companion for items, recipes, professions, classes, categories, locations, and shops."
     );
+    await expect(page.locator(".public-scenic-background--home")).toHaveCount(
+      1
+    );
   });
 
   // Locations remains one of the five focused landing-page resource cards.
@@ -135,6 +138,24 @@ test.describe("main navigation", () => {
       navigation.getByRole("link", { name: "Items", exact: true })
     ).toHaveAttribute("aria-current", "page");
     await expect(navigation.locator('[aria-current="page"]')).toHaveCount(1);
+  });
+
+  test("the scenic atmosphere is limited to the approved public routes", async ({
+    page,
+  }) => {
+    for (const [path, variant] of [
+      ["/", "home"],
+      ["/items", "catalogue"],
+      ["/items/iron-ore", "detail"],
+    ] as const) {
+      await page.goto(path);
+      await expect(
+        page.locator(`.public-scenic-background--${variant}`)
+      ).toHaveCount(1);
+    }
+
+    await page.goto("/recipes");
+    await expect(page.locator(".public-scenic-background")).toHaveCount(0);
   });
 
   test("primary links expose keyboard focus without extra admin resources", async ({

@@ -338,6 +338,14 @@ test("Items index owns Category browsing and Category detail stays contextual", 
   await expect(
     filters.getByRole("link", { name: "All", exact: true })
   ).toHaveAttribute("aria-current", "page");
+  const scenicBackground = page.locator(
+    ".public-scenic-background--catalogue"
+  );
+  await expect(scenicBackground).toHaveCount(1);
+  await expect(scenicBackground).toHaveCSS(
+    "background-image",
+    /merchants-codex-coastal-overlook\.png/
+  );
   const toolsFilter = filters.getByRole("link", {
     name: fixture.outputCategory.name,
     exact: true,
@@ -530,6 +538,11 @@ test("Items index owns Category browsing and Category detail stays contextual", 
     await page.setViewportSize(viewport);
     await page.goto(filteredPath);
     await expectNoHorizontalOverflow(page);
+    expect(
+      await scenicBackground.evaluate(
+        (element) => getComputedStyle(element).backgroundPosition
+      )
+    ).toContain(viewport.width === 390 ? "82%" : "55%");
     await page.screenshot({
       path: path.join(
         SCREENSHOT_DIRECTORY,

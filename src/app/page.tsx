@@ -58,7 +58,7 @@ export default async function Home() {
   ] as const;
 
   return (
-    <AppShell landing>
+    <AppShell landing scenic="home">
       <div className="landing-page">
         <section className="landing-overview" aria-labelledby="landing-title">
           <div className="landing-hero-copy">
