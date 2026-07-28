@@ -66,6 +66,15 @@ same focused commit.
   mobile home `760px`, catalogue `560px`, detail `700px`.
 - Use a strong charcoal vertical wash, subtle horizontal vignette, and a
   complete fade to `#111514`; cards and panels remain nearly opaque.
+- Home desktop wash: `0.52`/`0.63`; vignette:
+  `0.72`/`0.28`/`0.44`. Home mobile wash: `0.63`/`0.72`; vignette:
+  `0.70`/`0.43`/`0.51`.
+- Items catalogue desktop wash: `0.67`/`0.76`; vignette:
+  `0.74`/`0.42`/`0.61`. Catalogue mobile wash: `0.75`/`0.82`; vignette:
+  `0.69`/`0.50`/`0.58`.
+- Homepage visibility may be stronger than catalogue/detail. Retain a darker
+  reading zone behind copy. Item detail keeps its existing scenic values and
+  cool-blue atmosphere.
 - Preserve layout when decoration is removed. Do not use fixed attachment,
   preload globally, apply to admin, or extend to other public resources
   without visual review.
@@ -181,6 +190,26 @@ same focused commit.
 - Preserve canonical relations and routes.
 - Never add fake production data for visual fullness.
 
+### Rich descriptions
+
+- Applies to Game Version, Category, Item, Profession, Player Class, Location,
+  Currency, and Shop descriptions.
+- Author with the shared TipTap WYSIWYG editor; store normalized versioned JSON
+  in `descriptionRich` and keep plain `description` as the synchronized
+  compatibility/search projection.
+- Supported only: paragraph, subordinate section/subsection headings, bold,
+  italic, underline, unordered list/list item, hard break, and safe link.
+- Prohibit H1, ordered lists, arbitrary styles/colors, images, embeds, scripts,
+  raw HTML, and unsupported nodes/marks.
+- Sanitize paste and submitted JSON through the same allowlist. Never render
+  stored raw HTML.
+- Internal resource links use canonical public routes. External links allow
+  secure `https://` URLs only and use safe new-tab attributes.
+- Link dialogs preserve and restore the authored selection across focus moves.
+- Render established public prose surfaces through shared `RichTextContent`;
+  preserve hide-empty behavior and wrap long text/URLs.
+- Do not place long-form formatted descriptions in catalogue cards by default.
+
 ## Accessibility and Responsive Rules
 
 - Use semantic headings/links and preserve accessible names.
@@ -197,6 +226,12 @@ same focused commit.
 - Keep admin dense, operational, and efficient for contributors.
 - Do not automatically apply public serif typography or atmospheres to admin.
 - Preserve existing shared admin components.
+- Use the shared themed calendar picker for contributor-editable calendar
+  dates. Currently this is only optional Game Version release date.
+- Display dates as `DD MMM YYYY`; preserve the date-only `YYYY-MM-DD` storage
+  contract without timezone conversion. Optional dates provide a clear action.
+- Keep `createdAt`, `updatedAt`, and verification timestamps read-only; they
+  are not contributor date fields.
 
 ## Workflow
 

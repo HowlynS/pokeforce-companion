@@ -2110,3 +2110,48 @@ existing Profession workspace.
 award EXP, and future planner progress can be calculated dynamically from the
 shared thresholds, but forageable/action rewards, player progress, and planner
 systems are deferred and add no speculative schema in this milestone.
+
+---
+
+### 2026-07-28 — Structured descriptions, shared calendar input, and scenic visibility
+
+Descriptions for Game Version, Category, Item, Profession, Player Class,
+Location, Currency, and Shop now have a versioned `descriptionRich` JSONB
+source. TipTap supplies the contributor-facing WYSIWYG editor, but its document
+is normalized through the application-owned allowlist before persistence.
+Only paragraphs, two subordinate heading levels, bold, italic, underline,
+unordered lists, hard breaks, and safe links are accepted. The public
+`RichTextContent` renderer maps that validated document to React elements;
+arbitrary/raw HTML is never stored or rendered.
+
+The original nullable plain `description` columns remain as synchronized
+plain-text compatibility and search projections. Migration
+`20260728193000_add_structured_rich_descriptions` adds nullable JSONB columns
+and deterministically converts each existing non-empty description to paragraph
+nodes without rewriting the legacy value. This preserves old data, keeps
+rollback limited to dropping the new columns, and lets runtime resolution fall
+back to legacy text if structured data is absent or invalid.
+
+The internal link workflow queries existing resources and inserts canonical
+public paths. External links accept only secure `https://` URLs and render with
+`noopener noreferrer`; unsupported protocols, nodes, marks, pasted styling,
+images, embeds, scripts, and arbitrary colors are discarded or rejected.
+The link dialog snapshots and restores the editor selection so keyboard focus
+and resource-search interaction cannot detach the link from its authored text.
+Long-form descriptions remain detail/prose content and do not automatically
+appear in catalogue cards.
+
+The admin date audit found one contributor-editable calendar date:
+`GameVersion.releaseDate`. It now uses the shared themed DayPicker control,
+while retaining the existing `YYYY-MM-DD` server/storage contract and displaying
+`DD MMM YYYY`. Date construction uses local calendar components rather than
+UTC serialization, preventing timezone day shifts. The optional date can be
+cleared, and picker changes participate in the existing dirty-state, draft,
+keyboard-save, and validation flows. Automatic creation/update and verification
+timestamps remain read-only.
+
+The scenic source and rollout boundary are unchanged: one byte-identical
+coastal PNG decorates only the homepage, Items catalogue, and Item detail.
+Overlay variables make the homepage moderately clearer and Items only slightly
+clearer while retaining dark reading zones, finite depths, existing desktop
+and mobile crops, the fade to `#111514`, and Item detail's cool-blue atmosphere.

@@ -127,6 +127,15 @@ explicit `82% center` crop to favor the lighthouse and sunset. Do not extend
 the scene through long content, use fixed attachment, or apply it to admin or
 other public resources without a later visual review.
 
+Homepage scenery may be more visible than catalogue/detail scenery. The final
+desktop homepage wash uses `0.52`/`0.63` top/middle opacity and a
+`0.72`/`0.28`/`0.44` left/center/right vignette; the mobile homepage uses
+`0.63`/`0.72` and `0.70`/`0.43`/`0.51`. The Items catalogue stays quieter:
+desktop `0.67`/`0.76` and `0.74`/`0.42`/`0.61`; mobile `0.75`/`0.82` and
+`0.69`/`0.50`/`0.58`. Item detail retains its established wash and cool-blue
+resource atmosphere. Reading zones stay darker than scenic focal areas, and
+the lossless master remains byte-identical.
+
 The established public shell contains:
 
 - Merchants Codex branding.
@@ -267,6 +276,29 @@ All production content is factual and database-backed:
 - Preserve canonical relationships and routes.
 - Do not use fake production content to make layouts appear fuller.
 
+### Rich descriptions
+
+Game Version, Category, Item, Profession, Player Class, Location, Currency,
+and Shop descriptions use one true WYSIWYG authoring pattern. The stored source
+is versioned, normalized structured JSON; the legacy plain `description`
+remains a synchronized compatibility/search projection. Existing plain
+descriptions were migrated into deterministic paragraphs without altering
+their text.
+
+The supported vocabulary is deliberately small: paragraphs, subordinate
+section and subsection headings, bold, italic, underline, unordered lists,
+hard line breaks, and safe links. Page-level H1, ordered lists, arbitrary
+styles, colors, images, embeds, scripts, raw HTML, and unknown nodes or marks
+are not supported. Pasted content is sanitized into the same vocabulary.
+Internal resource links use canonical public routes. External links are
+restricted to secure `https://` URLs and render with safe new-tab behavior.
+
+Public detail and established prose surfaces use the shared semantic renderer,
+never raw HTML. Empty descriptions remain hidden, long words and URLs wrap,
+and headings stay subordinate to the page title. Catalogue cards do not
+inherit long-form rich content unless a future approved card pattern explicitly
+calls for it.
+
 ## Accessibility and Interaction
 
 Use semantic links and headings, preserve accessible names, and provide
@@ -299,6 +331,14 @@ existing shared components and contributor authoring efficiency.
 
 Public display typography and resource atmospheres do not automatically apply
 to admin. Interface Design must not homogenize the two contexts.
+
+All contributor-editable calendar dates use the shared themed picker. The
+current schema has exactly one such field: optional Game Version release date.
+It displays `DD MMM YYYY`, submits/stores the existing `YYYY-MM-DD` date-only
+value without timezone conversion, supports keyboard navigation and clearing,
+and participates in dirty-state and draft recovery. Automatic `createdAt` and
+`updatedAt` values plus verification timestamps are factual/read-only and do
+not receive calendar controls.
 
 ## Visual Restraint
 
