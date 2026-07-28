@@ -1040,6 +1040,16 @@ test("duplicate ingredients are rejected live, focus the later row, and clear wh
     ),
     fullPage: true,
   });
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth
+    )
+  ).toBe(true);
+  expect((await ingredientSelect(page, 1).boundingBox())?.width ?? 0).toBeGreaterThan(
+    180
+  );
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
     .click();

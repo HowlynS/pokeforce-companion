@@ -3785,16 +3785,17 @@ input[type="checkbox"] {
   gap: 12px;
 }
 
-@media (max-width: 680px) {
+@media (max-width: 1180px) {
   .ingredient-row-dynamic {
-    grid-template-columns: minmax(0, 1fr) minmax(84px, 0.55fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .ingredient-row-remove {
-    grid-column: 1 / -1;
     justify-self: start;
   }
+}
 
+@media (max-width: 680px) {
   .item-create-source-heading {
     align-items: flex-start;
   }
