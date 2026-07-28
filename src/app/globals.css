@@ -2524,7 +2524,7 @@ select:focus-visible {
 }
 
 .profession-level-table {
-  min-width: 620px;
+  min-width: 520px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2543,6 +2543,32 @@ select:focus-visible {
 .profession-level-table th:first-child,
 .profession-level-table td:first-child {
   text-align: left;
+}
+
+.profession-level-heading-with-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* Keep the final-column explanation inside the bounded table viewport:
+   its right edge stays attached to the trigger instead of extending past
+   the table's own right boundary, while the existing shared tooltip
+   behavior and focus treatment remain unchanged. */
+.profession-level-info .admin-info-tooltip-content {
+  right: 0;
+  left: auto;
+  transform: none;
+  width: 200px;
+  max-width: calc(100vw - 32px);
+}
+
+.profession-level-info .admin-info-tooltip-surface {
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
 }
 
 /* Optional per-row detail line (e.g. Profession/Required level) shown

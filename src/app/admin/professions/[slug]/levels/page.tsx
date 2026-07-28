@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { EditorHeader } from "@/components/admin/editor-header";
+import { InfoTooltip } from "@/components/admin/info-tooltip";
 import { EditorSection } from "@/components/admin/editor-section";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ProfessionWorkspace } from "@/components/admin/profession-workspace";
@@ -79,26 +80,30 @@ export default async function ProfessionLevelsPage({
             <thead>
               <tr>
                 <th>Level</th>
-                <th>Total EXP</th>
-                <th>EXP from previous level</th>
                 <th>EXP to next level</th>
+                <th>
+                  <span className="profession-level-heading-with-help">
+                    <span>Cumulative EXP</span>
+                    <span className="profession-level-info">
+                      <InfoTooltip
+                        label="About cumulative EXP"
+                        content="Total EXP required to reach this level from level 1."
+                      />
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {progression.map((row) => (
                 <tr key={row.level}>
                   <td>{row.level}</td>
-                  <td>{numberFormatter.format(row.experienceRequired)}</td>
-                  <td>
-                    {row.experienceFromPrevious === null
-                      ? "—"
-                      : numberFormatter.format(row.experienceFromPrevious)}
-                  </td>
                   <td>
                     {row.experienceToNext === null
                       ? "—"
                       : numberFormatter.format(row.experienceToNext)}
                   </td>
+                  <td>{numberFormatter.format(row.experienceRequired)}</td>
                 </tr>
               ))}
             </tbody>

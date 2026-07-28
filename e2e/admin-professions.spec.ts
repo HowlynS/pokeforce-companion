@@ -273,7 +273,7 @@ test("Profession editor: create shows only General; edit adds Recipes and shared
   await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
 });
 
-test("Levels tab shows the exact shared read-only progression with boundary values", async ({
+test("Levels tab shows the simplified shared progression and accessible cumulative EXP help", async ({
   page,
 }) => {
   await page.goto("/admin/professions/smithing/levels");
@@ -290,17 +290,102 @@ test("Levels tab shows the exact shared read-only progression with boundary valu
 
   const table = page.getByRole("table");
   await expect(table.getByRole("row")).toHaveCount(101);
-  await expect(table.getByRole("row").nth(1)).toContainText("0");
-  await expect(table.getByRole("row").nth(1)).toContainText("—");
-  await expect(table.getByRole("row").nth(100)).toContainText("14,391,160");
-  await expect(table.getByRole("row").nth(100)).toContainText("1,356,729");
-  await expect(table.getByRole("row").nth(100)).toContainText("—");
+  const columnHeaders = table.getByRole("columnheader");
+  await expect(columnHeaders).toHaveCount(3);
+  await expect(columnHeaders.nth(0)).toHaveText("Level");
+  await expect(columnHeaders.nth(1)).toHaveText("EXP to next level");
+  await expect(
+    columnHeaders
+      .nth(2)
+      .locator(".profession-level-heading-with-help > span")
+      .first()
+  ).toHaveText("Cumulative EXP");
+  await expect(
+    table.getByRole("columnheader", { name: "EXP from previous level" })
+  ).toHaveCount(0);
+  await expect(table.getByRole("row").nth(1).getByRole("cell")).toHaveText([
+    "1",
+    "83",
+    "0",
+  ]);
+  await expect(
+    table.getByRole("row").nth(100).getByRole("cell")
+  ).toHaveText(["100", "—", "14,391,160"]);
 
   const scrollRegion = page.getByRole("region", {
     name: "Profession level progression",
   });
   await expect(scrollRegion).toBeVisible();
   await expect(scrollRegion).toHaveCSS("overflow-y", "auto");
+
+  const helpTrigger = page.getByRole("button", {
+    name: "About cumulative EXP",
+    exact: true,
+  });
+  const tooltip = page.getByRole("tooltip");
+  const tooltipCopy = "Total EXP required to reach this level from level 1.";
+  await expect(helpTrigger).toBeVisible();
+  await helpTrigger.hover();
+  await expect(tooltip).toHaveText(tooltipCopy);
+  await expect(tooltip).toBeVisible();
+
+  const triggerBox = await helpTrigger.boundingBox();
+  const tooltipBox = await tooltip.boundingBox();
+  const scrollBox = await scrollRegion.boundingBox();
+  expect(triggerBox).not.toBeNull();
+  expect(tooltipBox).not.toBeNull();
+  expect(scrollBox).not.toBeNull();
+  expect(tooltipBox!.y).toBeGreaterThanOrEqual(triggerBox!.y);
+  expect(
+    Math.abs(
+      tooltipBox!.x +
+        tooltipBox!.width -
+        (triggerBox!.x + triggerBox!.width)
+    )
+  ).toBeLessThanOrEqual(2);
+  expect(tooltipBox!.x).toBeGreaterThanOrEqual(scrollBox!.x);
+  expect(tooltipBox!.x + tooltipBox!.width).toBeLessThanOrEqual(
+    scrollBox!.x + scrollBox!.width
+  );
+
+  await page.getByRole("heading", { level: 1 }).hover();
+  await expect(tooltip).toBeHidden();
+  await helpTrigger.focus();
+  await expect(helpTrigger).toBeFocused();
+  await expect(tooltip).toHaveText(tooltipCopy);
+  await expect(tooltip).toBeVisible();
+
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 1000, height: 900 },
+    { width: 768, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await helpTrigger.scrollIntoViewIfNeeded();
+    await expect(tooltip).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.documentElement.scrollWidth -
+            document.documentElement.clientWidth
+        )
+      )
+      .toBeLessThanOrEqual(0);
+
+    const responsiveTooltipBox = await tooltip.boundingBox();
+    const responsiveScrollBox = await scrollRegion.boundingBox();
+    expect(responsiveTooltipBox).not.toBeNull();
+    expect(responsiveScrollBox).not.toBeNull();
+    expect(responsiveTooltipBox!.x).toBeGreaterThanOrEqual(
+      responsiveScrollBox!.x
+    );
+    expect(
+      responsiveTooltipBox!.x + responsiveTooltipBox!.width
+    ).toBeLessThanOrEqual(
+      responsiveScrollBox!.x + responsiveScrollBox!.width
+    );
+  }
 
   await recordRow(page, "Alchemy").click();
   await expect(page).toHaveURL("/admin/professions/alchemy/levels");
