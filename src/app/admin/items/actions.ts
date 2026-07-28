@@ -10,6 +10,10 @@ import {
   isUniqueConstraintError,
 } from "@/lib/prisma-errors";
 import { parseItemInput } from "@/lib/validation/item";
+import {
+  CREATABLE_ACQUISITION_TYPES,
+  parseAcquisitionSourceRows,
+} from "@/lib/validation/acquisition-source";
 import { isItemNameTaken } from "@/lib/items/item-name";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
@@ -62,6 +66,23 @@ export async function createItemAction(formData: FormData) {
     redirect(`/admin/items/new?error=${parsed.error}`);
   }
 
+  const parsedSources = parseAcquisitionSourceRows(formData);
+  const invalidSource = parsedSources.find((source) => !source.ok);
+  if (invalidSource && !invalidSource.ok) {
+    redirect(`/admin/items/new?error=source_${invalidSource.error}`);
+  }
+  const sources = parsedSources.flatMap((source) =>
+    source.ok ? [source.value] : []
+  );
+  if (
+    sources.some(
+      (source) =>
+        !(CREATABLE_ACQUISITION_TYPES as readonly string[]).includes(source.type)
+    )
+  ) {
+    redirect("/admin/items/new?error=source_invalid_type");
+  }
+
   // Shared duplicate rule (trimmed, case-insensitive) — the same helper the
   // live availability feedback queries, so the two can never disagree.
   if (await isItemNameTaken(prisma, parsed.value.name)) {
@@ -96,6 +117,23 @@ export async function createItemAction(formData: FormData) {
     categorySlug = category.slug;
   }
 
+  const locationIds = sources.flatMap((source) =>
+    source.locationId ? [source.locationId] : []
+  );
+  const professionIds = sources.flatMap((source) =>
+    source.professionId ? [source.professionId] : []
+  );
+  const [locationCount, professionCount] = await Promise.all([
+    prisma.location.count({ where: { id: { in: locationIds } } }),
+    prisma.profession.count({ where: { id: { in: professionIds } } }),
+  ]);
+  if (locationCount !== new Set(locationIds).size) {
+    redirect("/admin/items/new?error=source_invalid_location");
+  }
+  if (professionCount !== new Set(professionIds).size) {
+    redirect("/admin/items/new?error=source_invalid_profession");
+  }
+
   // The optional image is uploaded only after every other validation has
   // passed, so a rejected submission never leaves an orphaned file behind.
   const imageFile = getSubmittedImageFile(formData);
@@ -120,18 +158,26 @@ export async function createItemAction(formData: FormData) {
   try {
     // Without the opt-in stamp both verification fields stay NULL — a newly
     // created item is unverified by default.
-    createdItem = await prisma.item.create({
-      data: {
-        name: parsed.value.name,
-        slug: parsed.value.slug,
-        description: parsed.value.description,
-        heldItem: parsed.value.heldItem,
-        tradeable: parsed.value.tradeable,
-        baseValue: parsed.value.baseValue,
-        categoryId: parsed.value.categoryId,
-        image: imagePath,
-        ...(verification.stamp ?? {}),
-      },
+    createdItem = await prisma.$transaction(async (tx) => {
+      const item = await tx.item.create({
+        data: {
+          name: parsed.value.name,
+          slug: parsed.value.slug,
+          description: parsed.value.description,
+          heldItem: parsed.value.heldItem,
+          tradeable: parsed.value.tradeable,
+          baseValue: parsed.value.baseValue,
+          categoryId: parsed.value.categoryId,
+          image: imagePath,
+          ...(verification.stamp ?? {}),
+        },
+      });
+      if (sources.length > 0) {
+        await tx.acquisitionSource.createMany({
+          data: sources.map((source) => ({ ...source, itemId: item.id })),
+        });
+      }
+      return item;
     });
   } catch (error) {
     // The row was never created, so the file just uploaded for it must not

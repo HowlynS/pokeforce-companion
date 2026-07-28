@@ -7,6 +7,7 @@ import {
   groupAcquisitionSourcesByType,
   groupObtainableItemsByType,
   parseAcquisitionSourceInput,
+  parseAcquisitionSourceRows,
   type AcquisitionSourceForDisplay,
   type AcquisitionSourceForLocationDisplay,
 } from "@/lib/validation/acquisition-source";
@@ -162,6 +163,70 @@ describe("parseAcquisitionSourceInput", () => {
     );
 
     expect(result.ok && result.value.sourceLabel).toBe("Vendor on Route 4");
+  });
+});
+
+describe("parseAcquisitionSourceRows", () => {
+  it("accepts zero source rows", () => {
+    expect(parseAcquisitionSourceRows(formDataFrom({}))).toEqual([]);
+  });
+
+  it("parses multiple stable row identifiers without renumbering them", () => {
+    const result = parseAcquisitionSourceRows(
+      formDataFrom({
+        acquisitionSourceRowIds: "2,7",
+        sourceType2: "MINING",
+        sourceLocationId2: "location-1",
+        sourceProfessionId2: "",
+        sourceLabel2: "Deep vein",
+        sourceQuantity2: "1-3",
+        sourceNotes2: "Bring a pickaxe.",
+        sourceType7: "REWARD",
+        sourceLocationId7: "",
+        sourceProfessionId7: "profession-1",
+        sourceLabel7: "",
+        sourceQuantity7: "1",
+        sourceNotes7: "",
+      })
+    );
+
+    expect(result).toEqual([
+      {
+        ok: true,
+        value: {
+          type: "MINING",
+          locationId: "location-1",
+          professionId: null,
+          sourceLabel: "Deep vein",
+          quantity: "1-3",
+          notes: "Bring a pickaxe.",
+        },
+      },
+      {
+        ok: true,
+        value: {
+          type: "REWARD",
+          locationId: null,
+          professionId: "profession-1",
+          sourceLabel: null,
+          quantity: "1",
+          notes: null,
+        },
+      },
+    ]);
+  });
+
+  it("returns the exact invalid row while preserving the other parsed rows", () => {
+    const result = parseAcquisitionSourceRows(
+      formDataFrom({
+        acquisitionSourceRowIds: "1,4",
+        sourceType1: "FORAGING",
+        sourceType4: "",
+      })
+    );
+
+    expect(result[0]).toMatchObject({ ok: true });
+    expect(result[1]).toEqual({ ok: false, error: "missing_type" });
   });
 });
 

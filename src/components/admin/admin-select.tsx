@@ -117,6 +117,9 @@ export type AdminSelectProps = {
   formId?: string;
   id?: string;
   className?: string;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
+  autoFocus?: boolean;
 };
 
 const TYPEAHEAD_RESET_MS = 500;
@@ -180,6 +183,9 @@ export function AdminSelect({
   formId,
   id,
   className,
+  ariaInvalid = false,
+  ariaDescribedBy,
+  autoFocus = false,
 }: AdminSelectProps) {
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
@@ -229,6 +235,12 @@ export function AdminSelect({
     }
     dispatchFormChange(proxyRef.current);
   }, [currentValue]);
+
+  useEffect(() => {
+    if (autoFocus) {
+      triggerRef.current?.focus();
+    }
+  }, [autoFocus]);
 
   useEffect(() => {
     if (!open) {
@@ -420,6 +432,8 @@ export function AdminSelect({
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}
         aria-activedescendant={activeId}
+        aria-invalid={ariaInvalid || undefined}
+        aria-describedby={ariaDescribedBy}
         disabled={disabled}
         onClick={() => {
           if (open) {

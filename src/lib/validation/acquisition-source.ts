@@ -282,3 +282,33 @@ export function parseAcquisitionSourceInput(
     },
   };
 }
+
+export function parseAcquisitionSourceRows(
+  formData: FormData
+): AcquisitionSourceParseResult[] {
+  const rowIds = Array.from(
+    new Set(
+      String(formData.get("acquisitionSourceRowIds") ?? "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter((value) => /^\d+$/.test(value))
+    )
+  );
+
+  return rowIds.map((rowId) => {
+    const row = new FormData();
+    row.set("type", String(formData.get(`sourceType${rowId}`) ?? ""));
+    row.set(
+      "locationId",
+      String(formData.get(`sourceLocationId${rowId}`) ?? "")
+    );
+    row.set(
+      "professionId",
+      String(formData.get(`sourceProfessionId${rowId}`) ?? "")
+    );
+    row.set("sourceLabel", String(formData.get(`sourceLabel${rowId}`) ?? ""));
+    row.set("quantity", String(formData.get(`sourceQuantity${rowId}`) ?? ""));
+    row.set("notes", String(formData.get(`sourceNotes${rowId}`) ?? ""));
+    return parseAcquisitionSourceInput(row);
+  });
+}

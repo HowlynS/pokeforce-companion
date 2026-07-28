@@ -3395,6 +3395,19 @@ textarea.form-input {
   border-color: color-mix(in srgb, var(--color-border) 60%, var(--color-accent));
 }
 
+.admin-select-trigger[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  background: color-mix(
+    in srgb,
+    var(--color-danger) 6%,
+    var(--color-surface)
+  );
+}
+
+.admin-select-trigger[aria-invalid="true"]:focus-visible {
+  outline-color: var(--color-danger);
+}
+
 .admin-select-trigger:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -3719,6 +3732,57 @@ input[type="checkbox"] {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 10px;
+}
+
+.ingredient-row-dynamic {
+  grid-template-columns: minmax(0, 2fr) minmax(88px, 0.6fr) auto;
+  align-items: start;
+}
+
+.recipe-ingredient-editor {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ingredient-row-remove {
+  min-height: 42px;
+}
+
+.item-create-sources {
+  display: grid;
+  gap: 12px;
+}
+
+.item-create-source-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-soft);
+}
+
+.item-create-source-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 680px) {
+  .ingredient-row-dynamic {
+    grid-template-columns: minmax(0, 1fr) minmax(84px, 0.55fr);
+  }
+
+  .ingredient-row-remove {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .item-create-source-heading {
+    align-items: flex-start;
+  }
 }
 
 /* Destructive-confirmation status marker: the delete-confirmation

@@ -66,6 +66,17 @@ describe("AdminSelect: closed-state rendering", () => {
     expect(html).toContain(">Components<");
   });
 
+  it("connects an invalid trigger to its inline error", () => {
+    const html = renderSelect({
+      ariaInvalid: true,
+      ariaDescribedBy: "source-type-error",
+    });
+
+    expect(html).toMatch(
+      /<button[^>]*aria-invalid="true"[^>]*aria-describedby="source-type-error"/
+    );
+  });
+
   it("a label wrapping the component associates with the trigger button (the first labelable descendant)", () => {
     const html = renderToStaticMarkup(
       <label className="form-field">

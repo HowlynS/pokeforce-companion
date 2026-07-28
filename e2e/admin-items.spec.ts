@@ -13,6 +13,8 @@
 // written or deleted.
 
 import { expect, test, type Page } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
 import { selectAdminOption } from "./helpers/admin-select";
 import {
   E2E_CURRENT_GAME_VERSION_NAME,
@@ -78,6 +80,12 @@ const BLOCKED_INGREDIENT = {
   slug: "test-e2e-item-blocked-ingredient",
 } as const;
 
+const WORKFLOW_SCREENSHOT_DIRECTORY = path.join(
+  process.cwd(),
+  "test-results",
+  "admin-form-workflow-pass"
+);
+
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
 let pageErrors: string[] = [];
@@ -98,6 +106,7 @@ test.afterEach(async () => {
 });
 
 test.beforeAll(async () => {
+  fs.mkdirSync(WORKFLOW_SCREENSHOT_DIRECTORY, { recursive: true });
   // Remove stale rows from interrupted earlier runs; the guard inside the
   // helper throws here if the environment is not the verified test project.
   await deleteE2eTestItemRecords();
@@ -398,6 +407,166 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
 
   await page.goto("/items?category=tools");
   await expect(cardLink(page, EDITED.name)).toHaveCount(0);
+});
+
+test("Item creation saves zero, one, or multiple optional Acquisition Sources transactionally", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  // Zero sources remains the ordinary minimal-create path.
+  await createMinimalItemThroughForm(page, {
+    name: "Test E2E Item Zero Sources",
+    slug: "test-e2e-item-zero-sources",
+  });
+  await page
+    .getByRole("navigation", { name: "Item editor sections" })
+    .getByRole("link", { name: "Acquisition Sources", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "No acquisition sources yet",
+      exact: true,
+    })
+  ).toBeVisible();
+
+  // One source is entered before the Item exists and appears in the new
+  // Item's established Acquisition Sources workspace after the one
+  // transactional create succeeds.
+  await page.goto("/admin/items/new");
+  await page.getByLabel("Name", { exact: true }).fill("Test E2E Item One Source");
+  await page
+    .getByLabel(/^Page address/)
+    .fill("test-e2e-item-one-source");
+  await page
+    .getByRole("button", { name: "+ Acquisition source", exact: true })
+    .click();
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Type", exact: true }),
+    "Mining"
+  );
+  await page.getByLabel(/^Source label/).fill("Lower mine");
+  await page.getByLabel(/^Quantity/).fill("1-3");
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
+  await expect(page).toHaveURL("/admin/items/test-e2e-item-one-source/edit");
+  await page
+    .getByRole("navigation", { name: "Item editor sections" })
+    .getByRole("link", { name: "Acquisition Sources", exact: true })
+    .click();
+  await expect(page.getByText("Lower mine", { exact: true })).toBeVisible();
+  await expect(page.getByText("1-3", { exact: true })).toBeVisible();
+
+  // Multiple independent rows are persisted together, including their
+  // distinct stable-row values.
+  await page.goto("/admin/items/new");
+  await page
+    .getByLabel("Name", { exact: true })
+    .fill("Test E2E Item Multiple Sources");
+  await page
+    .getByLabel(/^Page address/)
+    .fill("test-e2e-item-multiple-sources");
+  const addSource = page.getByRole("button", {
+    name: "+ Acquisition source",
+    exact: true,
+  });
+  await addSource.click();
+  await addSource.click();
+  const typeFields = page.getByRole("combobox", { name: "Type", exact: true });
+  await selectAdminOption(typeFields.nth(0), "Foraging");
+  await selectAdminOption(typeFields.nth(1), "Reward");
+  const labels = page.getByLabel(/^Source label/);
+  await labels.nth(0).fill("Forest floor");
+  await labels.nth(1).fill("Quest chest");
+  await page.screenshot({
+    path: path.join(
+      WORKFLOW_SCREENSHOT_DIRECTORY,
+      "item-create-with-acquisition-sources-1920x1080.png"
+    ),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
+  await expect(page).toHaveURL(
+    "/admin/items/test-e2e-item-multiple-sources/edit"
+  );
+  await page
+    .getByRole("navigation", { name: "Item editor sections" })
+    .getByRole("link", { name: "Acquisition Sources", exact: true })
+    .click();
+  await expect(page.getByText("Forest floor", { exact: true })).toBeVisible();
+  await expect(page.getByText("Quest chest", { exact: true })).toBeVisible();
+
+  expect(await countE2eTestItemRecords()).toBe(3);
+});
+
+test("an invalid Item Acquisition Source creates nothing and restores every field inline without a recovery popup", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await page.goto("/admin/items/new");
+  await page
+    .getByLabel("Name", { exact: true })
+    .fill("Test E2E Item Invalid Source");
+  await page
+    .getByLabel(/^Page address/)
+    .fill("test-e2e-item-invalid-source");
+  await page.getByLabel(/^Description/).fill("Preserve this Item description.");
+  await page
+    .getByRole("button", { name: "+ Acquisition source", exact: true })
+    .click();
+  await page.getByLabel(/^Source label/).fill("Preserve this source label");
+  await page.getByLabel(/^Quantity/).fill("2-4");
+
+  // Use the real submitted proxy field to simulate a stale/tampered enum
+  // value that passes native required validation but must be rejected by
+  // the server. This exercises the transactional failure path that a
+  // contributor cannot manufacture through the valid option list.
+  await page.locator('input[name="sourceType1"]').evaluate((element) => {
+    const input = element as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value"
+    )?.set;
+    setter?.call(input, "NOT_A_REAL_TYPE");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await page.getByRole("button", { name: "Create item", exact: true }).click();
+
+  await expect(page).toHaveURL("/admin/items/new?error=source_invalid_type");
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Select a valid Acquisition Source type.",
+    })
+  ).toBeVisible();
+  await expect(
+    page.locator("#source-type-1-error")
+  ).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Restore unsaved draft?" })
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
+    "Test E2E Item Invalid Source"
+  );
+  await expect(page.getByLabel(/^Description/)).toHaveValue(
+    "Preserve this Item description."
+  );
+  await expect(page.getByLabel(/^Source label/)).toHaveValue(
+    "Preserve this source label"
+  );
+  await expect(page.getByLabel(/^Quantity/)).toHaveValue("2-4");
+  const invalidType = page.getByRole("combobox", {
+    name: "Type",
+    exact: true,
+  });
+  await expect(invalidType).toHaveAttribute("aria-invalid", "true");
+  await expect(invalidType).toBeFocused();
+  await page.screenshot({
+    path: path.join(
+      WORKFLOW_SCREENSHOT_DIRECTORY,
+      "item-create-source-validation-1000x900.png"
+    ),
+    fullPage: true,
+  });
+  expect(await countE2eTestItemRecords()).toBe(0);
 });
 
 test("gameplay verification stamps the selected game version, stays admin-only, and survives normal edits", async ({

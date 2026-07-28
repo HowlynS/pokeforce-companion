@@ -7,6 +7,7 @@ import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AdminSelect } from "@/components/admin/admin-select";
 import { RecordIdentityFields } from "@/components/admin/record-identity-fields";
 import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
+import { ItemCreateSources } from "@/components/admin/item-create-sources";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -37,6 +38,12 @@ const errorMessages: Record<string, string> = {
   duplicate: "An item with that name or slug already exists.",
   duplicate_name: "An item with that name already exists.",
   invalid_category: "Select an existing category, or choose No category.",
+  source_missing_type: "Select a type for every Acquisition Source.",
+  source_invalid_type: "Select a valid Acquisition Source type.",
+  source_invalid_location:
+    "One of the selected Acquisition Source locations no longer exists.",
+  source_invalid_profession:
+    "One of the selected Acquisition Source professions no longer exists.",
   image_too_large: "The image must be 5 MB or smaller.",
   invalid_image_type: "Only PNG, JPEG, and WebP images are allowed.",
   upload_failed: "The image could not be uploaded. Please try again.",
@@ -59,15 +66,22 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const query = normalizeItemSearchQuery(q);
 
-  const [categories, gameVersions] = await Promise.all([
+  const [categories, gameVersions, locations, professions] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: "asc" } }),
     // Current version first, then newest — the same ordering the
     // settings list uses; feeds the shared verification picker.
     prisma.gameVersion.findMany({
       orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
     }),
+    prisma.location.findMany({ orderBy: { name: "asc" } }),
+    prisma.profession.findMany({ orderBy: { name: "asc" } }),
   ]);
-  const categoryOptions = await toEntitySelectOptions(categories);
+  const [categoryOptions, locationOptions, professionOptions] =
+    await Promise.all([
+      toEntitySelectOptions(categories),
+      toEntitySelectOptions(locations),
+      toEntitySelectOptions(professions),
+    ]);
 
   // Only General makes sense before a record exists — Acquisition
   // Sources, Used in Recipes, and Metadata all describe an existing
@@ -201,6 +215,22 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
             </EditorSection>
           </div>
         </div>
+
+        <EditorSection
+          title="Acquisition Sources"
+          icon={SECTION_ICONS.source}
+        >
+          <p className="form-field-help">
+            Optional. Add known ways to obtain this Item now, or manage them
+            later from its Acquisition Sources tab.
+          </p>
+          <ItemCreateSources
+            locationOptions={locationOptions}
+            professionOptions={professionOptions}
+            draftKey="item:new:item-create-form"
+            serverError={error}
+          />
+        </EditorSection>
 
         {/* Opus Pass 2 pilot: guarded actions row (see the edit page).
             No id/originalSlug hidden fields exist on create; the
