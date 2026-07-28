@@ -11,19 +11,6 @@ export const dynamic = "force-dynamic";
 // Restrained select (never the full recipes relation, just its count) —
 // the same pattern the Category/Item public catalogues already use, not
 // the older Professions index's own over-fetching precedent.
-function buildPlayerClassDescription(playerClass: {
-  description: string | null;
-  recipeCount: number;
-}): string {
-  const recipeCountText = `${playerClass.recipeCount} ${
-    playerClass.recipeCount === 1 ? "recipe" : "recipes"
-  }`;
-
-  return playerClass.description
-    ? `${playerClass.description} · ${recipeCountText}`
-    : recipeCountText;
-}
-
 export default async function PlayerClassesPage() {
   const playerClasses = await prisma.playerClass.findMany({
     select: {
@@ -31,7 +18,6 @@ export default async function PlayerClassesPage() {
       slug: true,
       description: true,
       image: true,
-      _count: { select: { recipes: true } },
     },
     orderBy: { name: "asc" },
   });
@@ -40,7 +26,7 @@ export default async function PlayerClassesPage() {
     <AppShell>
       <PageHeader
         title="Classes"
-        description="Player classes and the recipes that require them."
+        description="Player classes in the PokeForce world."
       />
 
       {playerClasses.length > 0 ? (
@@ -49,10 +35,7 @@ export default async function PlayerClassesPage() {
             <Card
               key={playerClass.slug}
               title={playerClass.name}
-              description={buildPlayerClassDescription({
-                description: playerClass.description,
-                recipeCount: playerClass._count.recipes,
-              })}
+              description={playerClass.description}
               href={`/classes/${playerClass.slug}`}
               media={
                 <ContentImage

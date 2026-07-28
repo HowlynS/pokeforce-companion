@@ -101,6 +101,11 @@ export function RecipeOutputCard({ recipe }: RecipeOutputCardProps) {
               {recipe.resultingItem.category.name}
             </span>
           ) : null}
+          {recipe.profession && recipe.requiredLevel !== null ? (
+            <span className="recipe-output-requirement">
+              {recipe.profession.name} · Level {recipe.requiredLevel}
+            </span>
+          ) : null}
         </span>
       </Link>
 

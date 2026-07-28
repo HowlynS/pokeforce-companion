@@ -85,10 +85,6 @@ const RESOURCES: ResourceCase[] = [
         page.getByRole("combobox", { name: "Resulting item", exact: true }),
         "Iron Ingot"
       );
-      await selectAdminOption(
-        page.getByRole("combobox", { name: "Required class", exact: true }),
-        "Trainer"
-      );
       const group = page.getByRole("group", {
         name: "Ingredients (fill at least one row)",
       });

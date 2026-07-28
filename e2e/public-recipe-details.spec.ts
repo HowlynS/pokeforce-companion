@@ -212,11 +212,16 @@ test("populated Recipe uses the shared detail composition and real relationships
   ).toBeVisible();
   // Player Classes + Recipe EXP milestone: the required Class links to its
   // own public page, and the EXP reward reads as a number followed by EXP.
-  const requiredClassLink = page.getByRole("link", {
-    name: "Trainer",
-    exact: true,
-  });
-  await expect(requiredClassLink).toHaveAttribute("href", "/classes/trainer");
+  await expect(page.getByText("Required class", { exact: true })).toHaveCount(
+    0
+  );
+  await expect(
+    page.getByText("Required profession level", { exact: true })
+  ).toBeVisible();
+  await expect(page.getByText("25", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Smithing", exact: true })
+  ).toHaveAttribute("href", "/professions/smithing");
   await expect(page.getByText("10 EXP", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", {
@@ -363,9 +368,12 @@ test("sparse and no-image Recipes preserve hide-empty behavior", async ({
   ).toHaveCount(0);
   // Required Class and EXP reward are never optional, so both still render
   // on a Recipe with no Profession.
+  await expect(page.getByText("Required class", { exact: true })).toHaveCount(
+    0
+  );
   await expect(
-    page.getByRole("link", { name: "Farmhand", exact: true })
-  ).toHaveAttribute("href", "/classes/farmhand");
+    page.getByText("Required profession level", { exact: true })
+  ).toHaveCount(0);
   await expect(page.getByText("5 EXP", { exact: true })).toBeVisible();
   await expect(page.locator(".recipe-ingredient-row")).toHaveCount(1);
   await expect(page.locator(".public-sprite-stage--hero")).toContainText(

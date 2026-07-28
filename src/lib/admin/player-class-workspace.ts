@@ -58,16 +58,9 @@ export function playerClassDeleteHref(slug: string, query: string): string {
 /** The Recipes tab route for one Player Class, preserving the query —
     read-only Recipe relationship content, mirroring
     professionRecipesHref. */
-export function playerClassRecipesHref(slug: string, query: string): string {
-  return withPlayerClassSearchQuery(
-    `${PLAYER_CLASS_LIST_PATH}/${slug}/recipes`,
-    query
-  );
-}
-
 /** Which Player Class editor tab is active — General (the record's own
     fields) or Recipes (the Recipes requiring this Class). */
-export type PlayerClassEditorTabKey = "general" | "recipes";
+export type PlayerClassEditorTabKey = "general";
 
 /** Structurally compatible with the shared `EditorTab` type
     (`src/components/admin/editor-tabs.tsx`) without importing a
@@ -83,10 +76,6 @@ export type PlayerClassEditorTab = {
 /** Relationship-count badge for the Player Class tab strip: the number of
     Recipes requiring this Class, exactly what the Recipes tab itself
     lists. */
-export type PlayerClassEditorTabCounts = {
-  recipes?: number;
-};
-
 /**
  * The Player Class editor's tab strip, shared by every route inside the
  * Player Class workspace that renders tabs (General edit and Recipes) —
@@ -98,20 +87,13 @@ export type PlayerClassEditorTabCounts = {
 export function playerClassEditorTabs(
   slug: string,
   query: string,
-  active: PlayerClassEditorTabKey,
-  counts?: PlayerClassEditorTabCounts
+  active: PlayerClassEditorTabKey
 ): PlayerClassEditorTab[] {
   return [
     {
       label: "General",
       href: playerClassEditHref(slug, query),
       active: active === "general",
-    },
-    {
-      label: "Recipes",
-      href: playerClassRecipesHref(slug, query),
-      active: active === "recipes",
-      count: counts?.recipes,
     },
   ];
 }
@@ -124,13 +106,6 @@ export function playerClassEditorTabs(
  * relation, unlike Profession's optional one — so this rule can never be
  * bypassed by reassigning to "no Class").
  */
-export function playerClassCanDelete(recipeCount: number): boolean {
-  return recipeCount === 0;
-}
-
 /** The human-readable reason a Player Class is blocked from deletion —
     shared by both surfaces for the same reason as playerClassCanDelete
     above. */
-export function describeLinkedRecipes(count: number): string {
-  return count === 1 ? "1 recipe" : `${count} recipes`;
-}

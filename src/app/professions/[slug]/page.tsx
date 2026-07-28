@@ -34,6 +34,7 @@ export default async function ProfessionDetailPage({
           name: true,
           resultQuantityMin: true,
           resultQuantityMax: true,
+          requiredLevel: true,
           resultingItem: {
             select: {
               name: true,
@@ -182,6 +183,9 @@ export default async function ProfessionDetailPage({
                         </span>
                         {recipe.resultingItem.category ? (
                           <span>{recipe.resultingItem.category.name}</span>
+                        ) : null}
+                        {recipe.requiredLevel !== null ? (
+                          <span>Requires level {recipe.requiredLevel}</span>
                         ) : null}
                       </span>
                     </Link>

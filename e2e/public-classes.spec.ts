@@ -39,7 +39,7 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 test.describe("public Classes index", () => {
-  test("lists every seeded class with its recipe count, each a full-card link", async ({
+  test("lists every seeded class as an independent full-card link", async ({
     page,
   }) => {
     await page.goto("/classes");
@@ -55,10 +55,7 @@ test.describe("public Classes index", () => {
 
     const artisanCard = cardLink(page, "Artisan");
     await expect(artisanCard).toHaveAttribute("href", "/classes/artisan");
-    await expect(artisanCard).toContainText("5 recipes");
-
-    const rancherCard = cardLink(page, "Rancher");
-    await expect(rancherCard).toContainText("0 recipes");
+    await expect(page.getByText(/\d+ recipes?/)).toHaveCount(0);
   });
 
   test("is responsive with no horizontal overflow at desktop and mobile widths", async ({
@@ -76,7 +73,7 @@ test.describe("public Classes index", () => {
 });
 
 test.describe("public Class detail", () => {
-  test("a populated class caps its Recipe preview at three, with a working browse-all link", async ({
+  test("a populated class shows identity and verification without Recipe content", async ({
     page,
   }) => {
     await page.goto("/classes/artisan");
@@ -88,15 +85,12 @@ test.describe("public Class detail", () => {
       page.getByRole("navigation", { name: "Breadcrumb" })
     ).toContainText("Classes");
 
-    // 5 seeded Recipes require Artisan; the preview caps at 3.
-    await expect(page.locator(".profession-recipe-preview-row")).toHaveCount(3);
+    await expect(page.locator(".profession-recipe-preview-row")).toHaveCount(0);
     await expect(page.locator(".recipe-output-card")).toHaveCount(0);
-
-    const browseAll = page.getByRole("link", {
-      name: "Browse all Artisan recipes",
-      exact: true,
-    });
-    await expect(browseAll).toHaveAttribute("href", "/recipes?class=artisan");
+    await expect(
+      page.getByRole("link", { name: /Browse all .* recipes/ })
+    ).toHaveCount(0);
+    await expect(page.locator(".profession-hero-counts")).toHaveCount(0);
 
     // Verification renders inline, factually (unverified seed data has no
     // stamp).
@@ -105,7 +99,7 @@ test.describe("public Class detail", () => {
     ).toBeVisible();
   });
 
-  test("a class with zero recipes hides the optional preview and browse-all link", async ({
+  test("a sparse class remains coherent without Recipe-derived sections", async ({
     page,
   }) => {
     await page.goto("/classes/rancher");
@@ -113,7 +107,7 @@ test.describe("public Class detail", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Rancher", exact: true })
     ).toBeVisible();
-    await expect(page.locator(".profession-hero-counts")).toContainText("0");
+    await expect(page.locator(".profession-hero-counts")).toHaveCount(0);
     await expect(
       page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
     ).toHaveCount(0);

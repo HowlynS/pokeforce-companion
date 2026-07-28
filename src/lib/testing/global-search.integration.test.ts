@@ -248,18 +248,11 @@ describe("global search (integration)", () => {
     // Read-only reference to the seeded "trainer" Player Class, exactly
     // like the seeded "whetstone" Item above — never created or modified
     // by this test.
-    const trainer = await prisma.playerClass.findUnique({
-      where: { slug: "trainer" },
-      select: { id: true },
-    });
-    expect(trainer).not.toBeNull();
-
     await prisma.recipe.create({
       data: {
         slug: RESULT_PROBE_SLUG,
         name: "Test Integration Search Result Probe",
         resultingItemId: whetstone!.id,
-        playerClassId: trainer!.id,
         experienceReward: 10,
       },
     });

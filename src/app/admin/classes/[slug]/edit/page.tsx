@@ -12,9 +12,7 @@ import { AutosizeTextarea } from "@/components/admin/autosize-textarea";
 import { PlayerClassWorkspace } from "@/components/admin/player-class-workspace";
 import {
   PLAYER_CLASS_LIST_PATH,
-  describeLinkedRecipes,
   normalizePlayerClassSearchQuery,
-  playerClassCanDelete,
   playerClassEditorTabs,
   withPlayerClassSearchQuery,
 } from "@/lib/admin/player-class-workspace";
@@ -78,7 +76,6 @@ export default async function EditPlayerClassPage({
       verifiedGameVersion: true,
       // Count only — feeds the Recipes tab's own badge. No recipes
       // include — General never touches or displays the rows themselves.
-      _count: { select: { recipes: true } },
     },
   });
 
@@ -95,15 +92,11 @@ export default async function EditPlayerClassPage({
     orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
   });
 
-  const tabs = playerClassEditorTabs(playerClass.slug, query, "general", {
-    recipes: playerClass._count.recipes,
-  });
+  const tabs = playerClassEditorTabs(playerClass.slug, query, "general");
 
   // Feeds the in-editor delete dialog — the exact same count and rule the
   // dedicated /delete route uses, reusing the tab-badge query above rather
   // than a second query.
-  const recipeCount = playerClass._count.recipes;
-  const canDeletePlayerClass = playerClassCanDelete(recipeCount);
 
   return (
     <PlayerClassWorkspace
@@ -161,20 +154,10 @@ export default async function EditPlayerClassPage({
                 action cannot be undone.
               </>
             }
-            canDelete={canDeletePlayerClass}
+            canDelete
             formAction={deletePlayerClassAction}
             hiddenFields={{ id: playerClass.id, slug: playerClass.slug }}
-          >
-            <p className="text-muted">Recipes requiring this class: {recipeCount}</p>
-
-            {!canDeletePlayerClass ? (
-              <p className="text-danger">
-                This class cannot be deleted because it is required by{" "}
-                {describeLinkedRecipes(recipeCount)}. Reassign or remove
-                those recipes first.
-              </p>
-            ) : null}
-          </DangerZonePanel>
+          />
         </>
       }
     >

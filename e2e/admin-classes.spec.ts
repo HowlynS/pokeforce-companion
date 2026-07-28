@@ -25,10 +25,8 @@ import {
   E2E_CURRENT_GAME_VERSION_NAME,
   countE2eTestPlayerClassRecords,
   createE2eTestGameVersion,
-  createTemporaryRecipeForPlayerClass,
   deleteE2eTestGameVersionRecords,
   deleteE2eTestPlayerClassRecords,
-  removeTemporaryRecipeForPlayerClass,
 } from "./helpers/database-cleanup";
 
 const INITIAL = {
@@ -257,7 +255,7 @@ test("creating a class with a seeded name is rejected server-side", async ({
   expect(await countE2eTestPlayerClassRecords()).toBe(0);
 });
 
-test("deletion is blocked while a recipe requires the class, then allowed once removed", async ({
+test("deletion remains available without Recipe dependencies", async ({
   page,
 }) => {
   await page.goto("/admin/classes/new");
@@ -267,48 +265,15 @@ test("deletion is blocked while a recipe requires the class, then allowed once r
   await expect(
     page.getByRole("heading", { level: 1, name: "Delete Class" })
   ).toBeVisible();
-  await expect(page.getByText("Recipes requiring this class: 0")).toBeVisible();
   const deleteButton = page.getByRole("button", {
     name: "Delete Permanently",
     exact: true,
   });
   await expect(deleteButton).toBeVisible();
 
-  // Link a temporary Recipe to the class AFTER the page loaded: the server
-  // action re-checks the relation immediately before deleting.
-  await createTemporaryRecipeForPlayerClass(BLOCKED.slug);
+  await expect(page.getByRole("tab", { name: "Recipes" })).toHaveCount(0);
+  await expect(page.getByText(/Recipes requiring this class/)).toHaveCount(0);
   await deleteButton.click();
-
-  await expect(page).toHaveURL(
-    `/admin/classes/${BLOCKED.slug}/delete?error=linked_recipes`
-  );
-  await expect(
-    page.getByRole("alert").filter({
-      hasText:
-        "This class cannot be deleted because it is required by 1 recipe.",
-    })
-  ).toBeVisible();
-  await expect(page.getByText("Recipes requiring this class: 1")).toBeVisible();
-  await expect(
-    page.getByText("Reassign or remove those recipes first.")
-  ).toBeVisible();
-  await expect(deleteButton).toBeDisabled();
-
-  // The class survives; its Recipes tab lists the temporary recipe with
-  // its EXP reward.
-  await page.goto(`/admin/classes/${BLOCKED.slug}/recipes`);
-  await expect(
-    page.getByRole("cell", { name: "Test E2E Player Class Relation Recipe" })
-  ).toBeVisible();
-  await expect(page.getByText("10 EXP", { exact: true })).toBeVisible();
-
-  expect(await removeTemporaryRecipeForPlayerClass()).toBe(2);
-
-  await page.goto(`/admin/classes/${BLOCKED.slug}/delete`);
-  await expect(page.getByText("Recipes requiring this class: 0")).toBeVisible();
-  await page
-    .getByRole("button", { name: "Delete Permanently", exact: true })
-    .click();
 
   await expect(page).toHaveURL("/admin/classes");
   await expect(page.getByRole("status")).toHaveText("Class deleted");

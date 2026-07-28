@@ -16,6 +16,8 @@ const recipe: RecipeOutputCardValue = {
   name: "Dense Recipe",
   resultQuantityMin: 2,
   resultQuantityMax: 4,
+  profession: { name: "Smithing" },
+  requiredLevel: 25,
   resultingItem: {
     name: "Dense Result",
     slug: "dense-result",
@@ -44,6 +46,8 @@ describe("RecipeOutputCard", () => {
     expect(html).toContain("×2–4");
     expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(3);
     expect(html).toContain("+1 more");
+    expect(html).toContain("Smithing");
+    expect(html).toContain("Level 25");
     expect(html).toContain(
       'aria-label="Show 1 more ingredients for Dense Recipe"'
     );

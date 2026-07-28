@@ -98,14 +98,6 @@ export async function createRecipeAction(formData: FormData) {
 
   // Required, unlike Profession above: every Recipe belongs to exactly one
   // Player Class.
-  const playerClass = await prisma.playerClass.findUnique({
-    where: { id: parsed.value.playerClassId },
-  });
-
-  if (!playerClass) {
-    redirect("/admin/recipes/new?error=invalid_player_class");
-  }
-
   const ingredientItemIds = parsed.value.ingredients.map(
     (ingredient) => ingredient.itemId
   );
@@ -165,7 +157,6 @@ export async function createRecipeAction(formData: FormData) {
         resultQuantityMax: parsed.value.resultQuantityMax,
         professionId: parsed.value.professionId,
         requiredLevel: parsed.value.requiredLevel,
-        playerClassId: parsed.value.playerClassId,
         experienceReward: parsed.value.experienceReward,
         ingredients: {
           create: parsed.value.ingredients.map((ingredient) => ({
@@ -199,7 +190,6 @@ export async function createRecipeAction(formData: FormData) {
   if (profession) {
     revalidatePath(`/professions/${profession.slug}`);
   }
-  revalidatePath(`/classes/${playerClass.slug}`);
 
   // Admin Polish Pass 2, Part 2: straight to the new record's own
   // canonical editor, using the ACTUAL persisted slug from the created
@@ -237,7 +227,7 @@ export async function updateRecipeGeneralAction(formData: FormData) {
   // hidden fields were tampered with or are stale.
   const existingRecipe = await prisma.recipe.findUnique({
     where: { id },
-    include: { resultingItem: true, profession: true, playerClass: true },
+    include: { resultingItem: true, profession: true },
   });
 
   if (!existingRecipe) {
@@ -282,14 +272,6 @@ export async function updateRecipeGeneralAction(formData: FormData) {
 
   // Required, unlike Profession above: every Recipe belongs to exactly one
   // Player Class.
-  const playerClass = await prisma.playerClass.findUnique({
-    where: { id: parsed.value.playerClassId },
-  });
-
-  if (!playerClass) {
-    redirect(`${editPath ?? "/admin/recipes"}?error=invalid_player_class`);
-  }
-
   // Resolved before any upload so a missing current Game Version rejects
   // the submission without leaving an orphaned file behind. The shared
   // helper stamps the server's own clock and the database row marked
@@ -352,7 +334,6 @@ export async function updateRecipeGeneralAction(formData: FormData) {
         resultQuantityMax: parsed.value.resultQuantityMax,
         professionId: parsed.value.professionId,
         requiredLevel: parsed.value.requiredLevel,
-        playerClassId: parsed.value.playerClassId,
         experienceReward: parsed.value.experienceReward,
         // Verification fields are included ONLY when the opt-in checkbox
         // was checked — a normal edit never alters or clears existing
@@ -420,14 +401,6 @@ export async function updateRecipeGeneralAction(formData: FormData) {
     revalidatePath(`/professions/${professionSlug}`);
   }
 
-  const playerClassSlugsToRevalidate = new Set<string>([
-    existingRecipe.playerClass.slug,
-    playerClass.slug,
-  ]);
-  for (const playerClassSlug of playerClassSlugsToRevalidate) {
-    revalidatePath(`/classes/${playerClassSlug}`);
-  }
-
   // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
   // deliberately built from parsed.value.slug (the slug just PERSISTED),
   // never editPath's own originalSlug: if this very save also renamed the
@@ -470,7 +443,6 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
     include: {
       resultingItem: true,
       profession: true,
-      playerClass: true,
       ingredients: { include: { item: true } },
     },
   });
@@ -567,7 +539,6 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
   if (existingRecipe.profession) {
     revalidatePath(`/professions/${existingRecipe.profession.slug}`);
   }
-  revalidatePath(`/classes/${existingRecipe.playerClass.slug}`);
 
   // Admin Polish Pass 2, Part 1: back to the SAME canonical Ingredients
   // tab URL (never the list) so a save keeps the contributor where they
@@ -596,7 +567,6 @@ export async function deleteRecipeAction(formData: FormData) {
     include: {
       resultingItem: true,
       profession: true,
-      playerClass: true,
       ingredients: { include: { item: true } },
     },
   });
@@ -645,7 +615,6 @@ export async function deleteRecipeAction(formData: FormData) {
   if (recipe.profession) {
     revalidatePath(`/professions/${recipe.profession.slug}`);
   }
-  revalidatePath(`/classes/${recipe.playerClass.slug}`);
 
   redirect(
     imageCleanupFailed

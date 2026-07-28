@@ -57,8 +57,6 @@ const errorMessages: Record<string, string> = {
     "Maximum quantity must be equal to or greater than minimum quantity.",
   invalid_required_level:
     "Required level must be a whole number of zero or more.",
-  missing_player_class: "Select the class required to craft this recipe.",
-  invalid_player_class: "Select an existing class.",
   invalid_experience_reward:
     "EXP reward must be a whole number of zero or more.",
   invalid_resulting_item: "Select an existing item as the recipe's result.",
@@ -94,7 +92,7 @@ export default async function EditRecipePage({
   const experienceRewardInvalid = error === "invalid_experience_reward";
   const query = normalizeRecipeSearchQuery(q);
 
-  const [recipe, items, professions, playerClasses] = await Promise.all([
+  const [recipe, items, professions] = await Promise.all([
     prisma.recipe.findUnique({
       where: { slug },
       include: {
@@ -111,7 +109,6 @@ export default async function EditRecipePage({
     }),
     prisma.item.findMany({ orderBy: { name: "asc" } }),
     prisma.profession.findMany({ orderBy: { name: "asc" } }),
-    prisma.playerClass.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   if (!recipe) {
@@ -120,10 +117,9 @@ export default async function EditRecipePage({
 
   // Derived from the trusted database path; null when no image is stored.
   const imageUrl = await getImagePublicUrl(recipe.image);
-  const [itemOptions, professionOptions, playerClassOptions] = await Promise.all([
+  const [itemOptions, professionOptions] = await Promise.all([
     toEntitySelectOptions(items),
     toEntitySelectOptions(professions),
-    toEntitySelectOptions(playerClasses),
   ]);
 
   // Feeds the Resulting Item select's inherited-image side channel (Recipe
@@ -237,20 +233,12 @@ export default async function EditRecipePage({
             </p>
 
             <p className="text-muted">
-              Required class:{" "}
-              {playerClassOptions.find(
-                (option) => option.value === recipe.playerClassId
-              )?.label ?? "Unknown class"}
-            </p>
-
-            <p className="text-muted">
               Ingredients: {recipe._count.ingredients}
             </p>
 
             <p className="text-muted">
-              The resulting item, ingredient items, profession, and required
-              class will not be deleted — only this recipe and its own
-              ingredient list entries.
+              The resulting item, ingredient items, and profession will not be
+              deleted — only this recipe and its own ingredient list entries.
             </p>
           </DangerZonePanel>
         </>
@@ -362,19 +350,10 @@ export default async function EditRecipePage({
               />
             </label>
 
-            <label className="form-field">
-              <span className="form-field-label">Required class</span>
-              <AdminSelect
-                name="playerClassId"
-                required
-                defaultValue={recipe.playerClassId}
-                placeholder="Select a class"
-                options={playerClassOptions}
-              />
-            </label>
-
             <label className="form-field form-field-narrow">
-              <span className="form-field-label">Required level (optional)</span>
+              <span className="form-field-label">
+                Required profession level (optional)
+              </span>
               <input
                 type="number"
                 name="requiredLevel"

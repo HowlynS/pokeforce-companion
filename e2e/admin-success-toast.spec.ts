@@ -181,10 +181,6 @@ test("the toast does not cover the title or tabs, and stays within the content r
     page.getByRole("combobox", { name: "Resulting item", exact: true }),
     "Iron Ingot"
   );
-  await selectAdminOption(
-    page.getByRole("combobox", { name: "Required class", exact: true }),
-    "Trainer"
-  );
   const ingredientGroup = page.getByRole("group", {
     name: "Ingredients (fill at least one row)",
   });

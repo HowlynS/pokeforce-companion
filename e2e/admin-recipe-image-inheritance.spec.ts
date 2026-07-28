@@ -135,10 +135,6 @@ async function fillRecipeGeneralFields(
     resultingItemName
   );
   await selectAdminOption(
-    page.getByRole("combobox", { name: "Required class", exact: true }),
-    "Trainer"
-  );
-  await selectAdminOption(
     ingredientGroup(page).getByRole("combobox").nth(0),
     "Iron Ore"
   );
@@ -259,10 +255,6 @@ test("changing the selected resulting item swaps the inherited preview, and crea
   const secondSrc = await preview(page).getAttribute("src");
   expect(secondSrc).not.toBe(firstSrc);
 
-  await selectAdminOption(
-    page.getByRole("combobox", { name: "Required class", exact: true }),
-    "Trainer"
-  );
   await selectAdminOption(
     ingredientGroup(page).getByRole("combobox").nth(0),
     "Iron Ore"

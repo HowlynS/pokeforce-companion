@@ -25,7 +25,6 @@ function validRecipeEntries(): Record<string, string> {
     resultingItemId: "item-result",
     resultQuantityMin: "1",
     resultQuantityMax: "1",
-    playerClassId: "class-1",
     experienceReward: "0",
     ingredientItemId1: "item-a",
     ingredientQuantity1: "2",
@@ -238,24 +237,6 @@ describe("parseRecipeInput", () => {
     });
   });
 
-  describe("required player class", () => {
-    it("rejects a blank value", () => {
-      const result = parseRecipeInput(
-        formDataFrom({ ...validRecipeEntries(), playerClassId: "" })
-      );
-
-      expect(result).toEqual({ ok: false, error: "missing_player_class" });
-    });
-
-    it("accepts a supplied value", () => {
-      const result = parseRecipeInput(
-        formDataFrom({ ...validRecipeEntries(), playerClassId: "class-9" })
-      );
-
-      expect(result.ok && result.value.playerClassId).toBe("class-9");
-    });
-  });
-
   describe("experience reward", () => {
     it("rejects a blank value — unlike Required level, zero must be explicit", () => {
       const result = parseRecipeInput(
@@ -301,7 +282,6 @@ describe("parseRecipeInput", () => {
           resultingItemId: "item-result",
           resultQuantityMin: "1",
           resultQuantityMax: "1",
-          playerClassId: "class-1",
           experienceReward: "0",
         })
       );
@@ -316,7 +296,6 @@ describe("parseRecipeInput", () => {
           resultingItemId: "item-result",
           resultQuantityMin: "1",
           resultQuantityMax: "1",
-          playerClassId: "class-1",
           experienceReward: "0",
           ingredientItemId1: "item-a",
         })
@@ -332,7 +311,6 @@ describe("parseRecipeInput", () => {
           resultingItemId: "item-result",
           resultQuantityMin: "1",
           resultQuantityMax: "1",
-          playerClassId: "class-1",
           experienceReward: "0",
           ingredientQuantity1: "2",
         })
@@ -392,7 +370,6 @@ describe("parseRecipeInput", () => {
           resultingItemId: "item-result",
           resultQuantityMin: "1",
           resultQuantityMax: "1",
-          playerClassId: "class-1",
           experienceReward: "0",
           ingredientItemId1: "item-a",
           ingredientQuantity1: "1",
@@ -445,7 +422,6 @@ describe("parseRecipeGeneralInput", () => {
         resultQuantityMax: "3",
         professionId: "prof-1",
         requiredLevel: "5",
-        playerClassId: "class-1",
         experienceReward: "120",
       })
     );
@@ -460,7 +436,6 @@ describe("parseRecipeGeneralInput", () => {
         resultQuantityMax: 3,
         professionId: "prof-1",
         requiredLevel: 5,
-        playerClassId: "class-1",
         experienceReward: 120,
       },
     });
@@ -481,7 +456,6 @@ describe("parseRecipeGeneralInput", () => {
         resultingItemId: "item-result",
         resultQuantityMin: "1",
         resultQuantityMax: "1",
-        playerClassId: "class-1",
         experienceReward: "0",
       })
     );

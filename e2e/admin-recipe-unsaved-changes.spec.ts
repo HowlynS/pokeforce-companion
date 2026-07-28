@@ -58,10 +58,6 @@ async function createTempRecipe(
     "Iron Ore"
   );
   await selectAdminOption(
-    page.getByRole("combobox", { name: "Required class", exact: true }),
-    "Trainer"
-  );
-  await selectAdminOption(
     page.locator(".admin-select:has(input[name=\"ingredientItemId1\"])").getByRole("combobox"),
     "Iron Ingot"
   );

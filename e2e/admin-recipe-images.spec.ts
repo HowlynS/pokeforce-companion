@@ -129,10 +129,6 @@ async function fillMinimalRecipeForm(
     "Iron Ingot"
   );
   await selectAdminOption(
-    page.getByRole("combobox", { name: "Required class", exact: true }),
-    "Trainer"
-  );
-  await selectAdminOption(
     ingredientGroup(page).getByRole("combobox").nth(0),
     "Iron Ore"
   );

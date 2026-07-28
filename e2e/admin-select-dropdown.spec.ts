@@ -153,10 +153,6 @@ test("Recipe Ingredients: each row's dropdown is keyboard-operable and isolated 
     page.getByRole("combobox", { name: "Resulting item", exact: true }),
     "Iron Ore"
   );
-  await selectAdminOption(
-    page.getByRole("combobox", { name: "Required class", exact: true }),
-    "Trainer"
-  );
 
   const group = page.getByRole("group", {
     name: "Ingredients (fill at least one row)",

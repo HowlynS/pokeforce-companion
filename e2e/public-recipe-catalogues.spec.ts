@@ -3,9 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   createE2ePublicProfessionDetailFixture,
-  createTemporaryRecipeForCatalogueFilters,
   deleteE2ePublicProfessionDetailFixture,
-  deleteE2eTestRecipeRecords,
   readE2ePublicProfessionDetailFixtureState,
 } from "./helpers/database-cleanup";
 import { readValidatedProfessionSpriteBytes } from "./helpers/profession-sprite-fixtures";
@@ -279,94 +277,40 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   ).toHaveAttribute("aria-current", "page");
 });
 
-test("Recipes index filters by Player Class, combines with the Profession filter, and canonicalizes invalid values", async ({
+test("Recipes index exposes only Profession filtering and drops stale Class queries", async ({
   page,
 }) => {
   // The deterministic seed's own Profession/Class assignments happen to
   // co-occur 1:1 (every Smithing recipe is Artisan, every Alchemy recipe
   // is Ranger), so a temporary Recipe pairing Smithing with Ranger proves
   // genuine AND filtering rather than one filter alone happening to match.
-  await createTemporaryRecipeForCatalogueFilters({
-    slugSuffix: "smithing-ranger-combo",
-    name: "Test E2E Smithing Ranger Combo Recipe",
-    professionSlug: "smithing",
-    playerClassSlug: "ranger",
-  });
-
-  try {
-    await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/recipes");
+  await expect(
+    page.getByRole("navigation", { name: "Filter Recipes by Profession" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Filter Recipes by Class" })
+  ).toHaveCount(0);
+  await expect(page.getByText("Required class", { exact: true })).toHaveCount(
+    0
+  );
 
     // --- Class filter alone: seeded Alchemy recipes (2) plus the new
     // Smithing/Ranger combo recipe (1) = 3 Ranger recipes ------------------
-    await page.goto("/recipes?class=ranger");
-    const classFilters = page.getByRole("navigation", {
-      name: "Filter Recipes by Class",
-    });
-    await expect(
-      page
-        .getByRole("navigation", { name: "Filter Recipes by Profession" })
-        .getByText("Profession", { exact: true })
-    ).toBeVisible();
-    await expect(
-      classFilters.getByText("Required class", { exact: true })
-    ).toBeVisible();
-    await expect(
-      classFilters.getByRole("link", { name: "Ranger", exact: true })
-    ).toHaveAttribute("aria-current", "page");
-    await expect(page.locator(".recipe-output-card")).toHaveCount(3);
-    await expect(
-      page.getByText("Test E2E Smithing Ranger Combo Recipe", { exact: true })
-    ).toBeVisible();
-    await expect(
-      page.getByText("Minor Healing Tonic", { exact: true })
-    ).toBeVisible();
-
     // --- Combined Profession + Class: only the one Recipe that is BOTH
     // Smithing and Ranger — none of Smithing's other 5 (all Artisan)
     // recipes, and none of Alchemy's other Ranger recipe, appear ----------
-    await page.goto("/recipes?profession=smithing&class=ranger");
-    const professionFilters = page.getByRole("navigation", {
-      name: "Filter Recipes by Profession",
-    });
-    await expect(
-      professionFilters.getByRole("link", { name: "Smithing", exact: true })
-    ).toHaveAttribute("aria-current", "page");
-    await expect(
-      page
-        .getByRole("navigation", { name: "Filter Recipes by Class" })
-        .getByRole("link", { name: "Ranger", exact: true })
-    ).toHaveAttribute("aria-current", "page");
-    await expect(page.locator(".recipe-output-card")).toHaveCount(1);
-    await expect(
-      page.getByText("Test E2E Smithing Ranger Combo Recipe", { exact: true })
-    ).toBeVisible();
-    await expect(
-      page.getByText("Iron Ingot", { exact: true })
-    ).toHaveCount(0);
-    await expect(
-      page.getByText("Minor Healing Tonic", { exact: true })
-    ).toHaveCount(0);
-
     // --- Clearing the Class filter (its own "All") preserves Profession --
-    await page
-      .getByRole("navigation", { name: "Filter Recipes by Class" })
-      .getByRole("link", { name: "All", exact: true })
-      .click();
-    await expect(page).toHaveURL("/recipes?profession=smithing");
-    await expect(page.locator(".recipe-output-card")).toHaveCount(6);
-
     // --- An invalid Class canonicalizes safely, preserving a valid
     // Profession filter rather than wiping both -----------------------------
-    await page.goto("/recipes?profession=smithing&class=not-a-class");
-    await expect(page).toHaveURL("/recipes?profession=smithing");
+  await page.goto("/recipes?profession=smithing&class=not-a-class");
+  await expect(page).toHaveURL("/recipes?profession=smithing");
 
     // --- An invalid Class alone (no other filter) canonicalizes to the
     // fully unfiltered catalogue -------------------------------------------
-    await page.goto("/recipes?class=not-a-class");
-    await expect(page).toHaveURL("/recipes");
-  } finally {
-    expect(await deleteE2eTestRecipeRecords()).toBeGreaterThanOrEqual(1);
-  }
+  await page.goto("/recipes?class=not-a-class");
+  await expect(page).toHaveURL("/recipes");
 });
 
 test("Items index owns Category browsing and Category detail stays contextual", async ({

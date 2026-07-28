@@ -12,6 +12,12 @@ export const recipeOutputCardSelect = {
   name: true,
   resultQuantityMin: true,
   resultQuantityMax: true,
+  requiredLevel: true,
+  profession: {
+    select: {
+      name: true,
+    },
+  },
   resultingItem: {
     select: {
       name: true,

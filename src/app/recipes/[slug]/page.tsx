@@ -28,8 +28,8 @@ export default async function RecipeDetailPage({
       updatedAt: true,
       verifiedAt: true,
       verifiedGameVersion: { select: { name: true } },
-      profession: { select: { name: true } },
-      playerClass: { select: { name: true, slug: true } },
+      profession: { select: { name: true, slug: true } },
+      requiredLevel: true,
       experienceReward: true,
       resultingItem: {
         select: {
@@ -202,20 +202,22 @@ export default async function RecipeDetailPage({
                 {recipe.profession ? (
                   <div>
                     <dt>Profession</dt>
-                    <dd>{recipe.profession.name}</dd>
+                    <dd>
+                      <Link
+                        href={`/professions/${recipe.profession.slug}`}
+                        className="public-content-link"
+                      >
+                        {recipe.profession.name}
+                      </Link>
+                    </dd>
                   </div>
                 ) : null}
-                <div>
-                  <dt>Required class</dt>
-                  <dd>
-                    <Link
-                      href={`/classes/${recipe.playerClass.slug}`}
-                      className="public-content-link"
-                    >
-                      {recipe.playerClass.name}
-                    </Link>
-                  </dd>
-                </div>
+                {recipe.requiredLevel !== null ? (
+                  <div>
+                    <dt>Required profession level</dt>
+                    <dd>{recipe.requiredLevel}</dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt>Result</dt>
                   <dd>

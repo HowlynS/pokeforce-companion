@@ -62,7 +62,6 @@ const P = RELATIONS_TEST_SLUG_PREFIX;
 // at the end of this file, exactly like the seeded Items/Categories other
 // tests in this file already reference directly. The PlayerClass CRUD/
 // dependency rules themselves belong to a dedicated player-class suite.
-let testPlayerClassId: string;
 
 describe("database relations (integration)", () => {
   beforeAll(async () => {
@@ -72,11 +71,6 @@ describe("database relations (integration)", () => {
     // interrupted earlier run may have stranded.
     await deleteRelationsTestRecords();
 
-    const prisma = await getVerifiedTestPrisma();
-    const trainer = await prisma.playerClass.findUniqueOrThrow({
-      where: { slug: "trainer" },
-    });
-    testPlayerClassId = trainer.id;
   });
 
   // Backstop cleanup after every test: even a failing write test cannot
@@ -343,7 +337,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Recipe",
           slug: `${P}recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           professionId: profession.id,
         },
@@ -391,7 +384,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Result Blocker Recipe",
           slug: `${P}result-blocker-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
         },
       });
@@ -436,7 +428,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Ingredient Recipe",
           slug: `${P}ingredient-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           ingredients: {
             create: [{ itemId: ingredientItem.id, quantity: 1 }],
@@ -483,7 +474,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Cascade Recipe",
           slug: `${P}cascade-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           ingredients: {
             create: [{ itemId: ingredientItem.id, quantity: 2 }],
@@ -532,7 +522,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test General Recipe",
           slug: `${P}general-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           ingredients: {
             create: [{ itemId: ingredientItem.id, quantity: 1 }],
@@ -576,7 +565,6 @@ describe("database relations (integration)", () => {
           slug: `${P}general-verified-recipe`,
           image: "recipes/relations-general-verified.png",
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           verifiedAt: stampedAt,
           verifiedGameVersionId: version.id,
@@ -621,7 +609,6 @@ describe("database relations (integration)", () => {
           image: "recipes/relations-ingredients-txn.png",
           requiredLevel: 9,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           verifiedAt: stampedAt,
           verifiedGameVersionId: version.id,
@@ -673,7 +660,6 @@ describe("database relations (integration)", () => {
           slug: `${P}rollback-recipe`,
           requiredLevel: 1,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           ingredients: {
             create: [{ itemId: originalIngredient.id, quantity: 4 }],
@@ -759,7 +745,6 @@ describe("database relations (integration)", () => {
           resultQuantityMax: 2,
           professionId: profession.id,
           requiredLevel: 12,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
         },
       });
@@ -771,7 +756,6 @@ describe("database relations (integration)", () => {
           resultQuantityMin: 1,
           resultQuantityMax: 1,
           professionId: profession.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
         },
       });
@@ -844,7 +828,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Quantity Fixed Recipe",
           slug: `${P}quantity-fixed-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           resultQuantityMin: 3,
           resultQuantityMax: 3,
@@ -870,7 +853,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Quantity Variable Recipe",
           slug: `${P}quantity-variable-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           resultQuantityMin: 1,
           resultQuantityMax: 4,
@@ -896,7 +878,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Quantity Default Recipe",
           slug: `${P}quantity-default-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
         },
       });
@@ -949,7 +930,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Quantity Relations Recipe",
           slug: `${P}quantity-relations-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           resultQuantityMin: 2,
           resultQuantityMax: 6,
@@ -1000,7 +980,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Recipes Tab Recipe",
           slug: `${P}recipes-tab-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           professionId: profession.id,
           requiredLevel: 7,
@@ -1062,7 +1041,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Recipes Tab Sparse Recipe",
           slug: `${P}recipes-tab-sparse-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           ingredients: { create: [{ itemId: ingredientItem.id, quantity: 1 }] },
         },
@@ -1123,7 +1101,6 @@ describe("database relations (integration)", () => {
           name: "Relations Test Recipes Tab Dup Recipe",
           slug: `${P}recipes-tab-dup-recipe`,
           resultingItemId: resultItem.id,
-          playerClassId: testPlayerClassId,
           experienceReward: 10,
           ingredients: { create: [{ itemId: ingredientItem.id, quantity: 1 }] },
         },

@@ -226,13 +226,11 @@ describe("database foundation (integration)", () => {
       expect(playerClass?.name).toBe("Trainer");
     });
 
-    it("assigns every seeded recipe a required player class and EXP reward", async () => {
+    it("keeps the seeded Recipe EXP reward independently", async () => {
       const prisma = await getVerifiedTestPrisma();
       const recipe = await prisma.recipe.findUnique({
         where: { slug: SEEDED_RECIPE_SLUG },
-        include: { playerClass: true },
       });
-      expect(recipe?.playerClass.slug).toBe("artisan");
       expect(recipe?.experienceReward).toBe(15);
     });
   });

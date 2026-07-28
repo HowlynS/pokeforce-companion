@@ -1722,6 +1722,14 @@ select:focus-visible {
   line-height: 1.4;
 }
 
+.recipe-output-requirement {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .recipe-output-identity,
 .recipe-output-ingredient {
   transition:

@@ -36,7 +36,6 @@ type RecipeSeed = {
   resultQuantityMin?: number;
   resultQuantityMax?: number;
   professionSlug?: string;
-  playerClassSlug: string;
   experienceReward: number;
   ingredients: { itemSlug: string; quantity: number }[];
 };
@@ -109,7 +108,6 @@ const recipes: RecipeSeed[] = [
     slug: "charcoal",
     name: "Charcoal",
     resultSlug: "charcoal",
-    playerClassSlug: "farmhand",
     experienceReward: 5,
     ingredients: [{ itemSlug: "wood", quantity: 2 }],
   },
@@ -118,7 +116,6 @@ const recipes: RecipeSeed[] = [
     name: "Iron Ingot",
     resultSlug: "iron-ingot",
     professionSlug: "smithing",
-    playerClassSlug: "artisan",
     experienceReward: 15,
     ingredients: [
       { itemSlug: "iron-ore", quantity: 2 },
@@ -130,7 +127,6 @@ const recipes: RecipeSeed[] = [
     name: "Copper Ingot",
     resultSlug: "copper-ingot",
     professionSlug: "smithing",
-    playerClassSlug: "artisan",
     experienceReward: 15,
     ingredients: [
       { itemSlug: "copper-ore", quantity: 2 },
@@ -142,7 +138,6 @@ const recipes: RecipeSeed[] = [
     name: "Iron Sword",
     resultSlug: "iron-sword",
     professionSlug: "smithing",
-    playerClassSlug: "artisan",
     experienceReward: 40,
     ingredients: [
       { itemSlug: "iron-ingot", quantity: 2 },
@@ -154,7 +149,6 @@ const recipes: RecipeSeed[] = [
     name: "Copper Dagger",
     resultSlug: "copper-dagger",
     professionSlug: "smithing",
-    playerClassSlug: "artisan",
     experienceReward: 25,
     ingredients: [
       { itemSlug: "copper-ingot", quantity: 1 },
@@ -166,7 +160,6 @@ const recipes: RecipeSeed[] = [
     name: "Reinforced Shield",
     resultSlug: "reinforced-shield",
     professionSlug: "smithing",
-    playerClassSlug: "artisan",
     experienceReward: 45,
     ingredients: [
       { itemSlug: "iron-ingot", quantity: 3 },
@@ -178,7 +171,6 @@ const recipes: RecipeSeed[] = [
     name: "Minor Healing Tonic",
     resultSlug: "minor-healing-tonic",
     professionSlug: "alchemy",
-    playerClassSlug: "ranger",
     experienceReward: 20,
     ingredients: [
       { itemSlug: "herb-leaf", quantity: 2 },
@@ -189,7 +181,6 @@ const recipes: RecipeSeed[] = [
     slug: "stamina-brew",
     name: "Stamina Brew",
     resultSlug: "stamina-brew",
-    playerClassSlug: "ranger",
     experienceReward: 20,
     // The one deliberately variable-output seeded recipe: a batch of Stamina
     // Brew yields anywhere from 1 to 4 bottles, proving the range end to
@@ -242,17 +233,14 @@ async function seedProfessions(): Promise<Map<string, string>> {
   return idBySlug;
 }
 
-async function seedPlayerClasses(): Promise<Map<string, string>> {
-  const idBySlug = new Map<string, string>();
+async function seedPlayerClasses(): Promise<void> {
   for (const playerClass of playerClasses) {
-    const record = await prisma.playerClass.upsert({
+    await prisma.playerClass.upsert({
       where: { slug: playerClass.slug },
       update: { name: playerClass.name },
       create: playerClass,
     });
-    idBySlug.set(playerClass.slug, record.id);
   }
-  return idBySlug;
 }
 
 async function seedItems(categoryIdBySlug: Map<string, string>): Promise<Map<string, string>> {
@@ -274,8 +262,7 @@ async function seedItems(categoryIdBySlug: Map<string, string>): Promise<Map<str
 
 async function seedRecipes(
   itemIdBySlug: Map<string, string>,
-  professionIdBySlug: Map<string, string>,
-  playerClassIdBySlug: Map<string, string>
+  professionIdBySlug: Map<string, string>
 ): Promise<void> {
   for (const recipe of recipes) {
     const resultingItemId = itemIdBySlug.get(recipe.resultSlug);
@@ -290,11 +277,6 @@ async function seedRecipes(
     }
     const professionId = resolvedProfessionId ?? null;
 
-    const playerClassId = playerClassIdBySlug.get(recipe.playerClassSlug);
-    if (!playerClassId) {
-      throw new Error(`Unknown player class slug "${recipe.playerClassSlug}" for recipe "${recipe.slug}"`);
-    }
-
     const resultQuantityMin = recipe.resultQuantityMin ?? 1;
     const resultQuantityMax = recipe.resultQuantityMax ?? 1;
 
@@ -306,7 +288,6 @@ async function seedRecipes(
         resultQuantityMin,
         resultQuantityMax,
         professionId,
-        playerClassId,
         experienceReward: recipe.experienceReward,
       },
       create: {
@@ -316,7 +297,6 @@ async function seedRecipes(
         resultQuantityMin,
         resultQuantityMax,
         professionId,
-        playerClassId,
         experienceReward: recipe.experienceReward,
       },
     });
@@ -340,9 +320,9 @@ async function main() {
   await seedProfessionLevels();
   const categoryIdBySlug = await seedCategories();
   const professionIdBySlug = await seedProfessions();
-  const playerClassIdBySlug = await seedPlayerClasses();
+  await seedPlayerClasses();
   const itemIdBySlug = await seedItems(categoryIdBySlug);
-  await seedRecipes(itemIdBySlug, professionIdBySlug, playerClassIdBySlug);
+  await seedRecipes(itemIdBySlug, professionIdBySlug);
 }
 
 main()

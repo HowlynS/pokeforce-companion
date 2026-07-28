@@ -821,25 +821,15 @@ export async function createTemporaryRecipeForProfession(
     // created or modified here — Player Class assignment is not what this
     // fixture tests) exactly like Recipe.resultingItem/profession
     // reference real rows.
-    const playerClass = await client.query(
-      `select id from "PlayerClass" where slug = 'trainer'`
-    );
-    if (playerClass.rowCount !== 1) {
-      throw new Error(
-        "Cannot create the temporary Recipe relation: the seeded 'trainer' Player Class was not found."
-      );
-    }
-
     await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "professionId", "playerClassId", "experienceReward", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, $5, 10, now())`,
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "professionId", "experienceReward", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, 10, now())`,
       [
         `${E2E_PROFESSION_RELATION_SLUG_PREFIX}recipe`,
         "Test E2E Profession Relation Recipe",
         item.rows[0].id as string,
         profession.rows[0].id as string,
-        playerClass.rows[0].id as string,
       ]
     );
   });
@@ -899,20 +889,11 @@ export async function createTemporaryRecipeForProfessionsTab(
 
     // Recipe.playerClassId is required; references the seeded "trainer"
     // Player Class (read-only) exactly like the sibling helper above.
-    const playerClass = await client.query(
-      `select id from "PlayerClass" where slug = 'trainer'`
-    );
-    if (playerClass.rowCount !== 1) {
-      throw new Error(
-        "Cannot create the temporary Recipe relation: the seeded 'trainer' Player Class was not found."
-      );
-    }
-
     await client.query(
       `insert into "Recipe"
          (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax",
-          "professionId", "requiredLevel", "playerClassId", "experienceReward", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, 10, now())`,
+          "professionId", "requiredLevel", "experienceReward", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, 10, now())`,
       [
         `${E2E_PROFESSION_RELATION_SLUG_PREFIX}recipe-${options.suffix}`,
         options.recipeName,
@@ -921,7 +902,6 @@ export async function createTemporaryRecipeForProfessionsTab(
         options.resultQuantityMax ?? 1,
         profession.rows[0].id as string,
         options.requiredLevel ?? null,
-        playerClass.rows[0].id as string,
       ]
     );
   });
@@ -1025,78 +1005,12 @@ export async function countE2eTestPlayerClassRecords(): Promise<number> {
  * playerClassId IS the relation under test (required, not optional), so no
  * separate seeded fallback Class is needed here.
  */
-export async function createTemporaryRecipeForPlayerClass(
-  playerClassSlug: string
-): Promise<void> {
-  assertPlayerClassPrefixesAreSafe();
-
-  if (!playerClassSlug.startsWith(E2E_PLAYER_CLASS_SLUG_PREFIX)) {
-    throw new Error(
-      "Refusing to link a Recipe: the target Player Class slug does not carry the browser-test prefix."
-    );
-  }
-
-  await withVerifiedDatabase(async (client) => {
-    const playerClass = await client.query(
-      `select id from "PlayerClass" where slug = $1`,
-      [playerClassSlug]
-    );
-
-    if (playerClass.rowCount !== 1) {
-      throw new Error(
-        "Cannot create the temporary Recipe relation: the browser-test Player Class was not found."
-      );
-    }
-
-    // id has no database default (Prisma cuids are client-generated) and
-    // updatedAt has no database default (@updatedAt is client-maintained),
-    // so both are supplied explicitly.
-    const item = await client.query(
-      `insert into "Item" (id, slug, name, "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, now())
-       returning id`,
-      [
-        `${E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX}item`,
-        "Test E2E Player Class Relation Item",
-      ]
-    );
-
-    await client.query(
-      `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "playerClassId", "experienceReward", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, 10, now())`,
-      [
-        `${E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX}recipe`,
-        "Test E2E Player Class Relation Recipe",
-        item.rows[0].id as string,
-        playerClass.rows[0].id as string,
-      ]
-    );
-  });
-}
-
 /**
  * Removes ONLY the temporary relation Recipe/Item rows (foreign-key-safe
  * order), leaving the browser-test Player Class in place so the deletion
  * flow can be retried through the real UI. Returns how many rows were
  * removed.
  */
-export async function removeTemporaryRecipeForPlayerClass(): Promise<number> {
-  assertPlayerClassPrefixesAreSafe();
-
-  return withVerifiedDatabase(async (client) => {
-    const recipes = await client.query(
-      `delete from "Recipe" where slug like $1`,
-      [`${E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX}%`]
-    );
-    const items = await client.query(
-      `delete from "Item" where slug like $1`,
-      [`${E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX}%`]
-    );
-    return (recipes.rowCount ?? 0) + (items.rowCount ?? 0);
-  });
-}
-
 // Defense in depth for every Location helper below.
 function assertLocationPrefixIsSafe(): void {
   if (E2E_LOCATION_SLUG_PREFIX.length < 5) {
@@ -1352,27 +1266,17 @@ export async function createTemporaryRecipeProducingItem(
     // Recipe.playerClassId is required; references the seeded "trainer"
     // Player Class (read-only, never created or modified here — Player
     // Class assignment is not what this fixture tests).
-    const playerClass = await client.query(
-      `select id from "PlayerClass" where slug = 'trainer'`
-    );
-    if (playerClass.rowCount !== 1) {
-      throw new Error(
-        "Cannot create the temporary producing Recipe: the seeded 'trainer' Player Class was not found."
-      );
-    }
-
     // id has no database default (Prisma cuids are client-generated) and
     // updatedAt has no database default (@updatedAt is client-maintained),
     // so both are supplied explicitly.
     await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "playerClassId", "experienceReward", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, 10, now())`,
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "experienceReward", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, 10, now())`,
       [
         `${E2E_ITEM_RELATION_SLUG_PREFIX}produces`,
         "Test E2E Item Relation Producing Recipe",
         item.rows[0].id as string,
-        playerClass.rows[0].id as string,
       ]
     );
   });
@@ -1425,27 +1329,17 @@ export async function createTemporaryRecipeProducingItemWithMetadata(
     // Recipe.playerClassId is required; references the seeded "trainer"
     // Player Class (read-only, never created or modified here — Player
     // Class assignment is not what this fixture tests).
-    const playerClass = await client.query(
-      `select id from "PlayerClass" where slug = 'trainer'`
-    );
-    if (playerClass.rowCount !== 1) {
-      throw new Error(
-        "Cannot create the temporary producing Recipe: the seeded 'trainer' Player Class was not found."
-      );
-    }
-
     await client.query(
       `insert into "Recipe"
          (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax",
-          "professionId", "requiredLevel", "playerClassId", "experienceReward", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, $5, $6, 10, now())`,
+          "professionId", "requiredLevel", "experienceReward", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, $5, 10, now())`,
       [
         `${E2E_ITEM_RELATION_SLUG_PREFIX}produces-meta`,
         "Test E2E Item Relation Producing Recipe With Metadata",
         item.rows[0].id as string,
         profession.rows[0].id as string,
         requiredLevel,
-        playerClass.rows[0].id as string,
       ]
     );
   });
@@ -1494,25 +1388,15 @@ export async function createTemporaryIngredientReferenceToItem(
     // Recipe.playerClassId is required; references the seeded "trainer"
     // Player Class (read-only, never created or modified here — Player
     // Class assignment is not what this fixture tests).
-    const playerClass = await client.query(
-      `select id from "PlayerClass" where slug = 'trainer'`
-    );
-    if (playerClass.rowCount !== 1) {
-      throw new Error(
-        "Cannot create the temporary ingredient reference: the seeded 'trainer' Player Class was not found."
-      );
-    }
-
     const recipe = await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "playerClassId", "experienceReward", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, 10, now())
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "experienceReward", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, 10, now())
        returning id`,
       [
         `${E2E_ITEM_RELATION_SLUG_PREFIX}consumes`,
         "Test E2E Item Relation Consuming Recipe",
         resultItem.rows[0].id as string,
-        playerClass.rows[0].id as string,
       ]
     );
 
@@ -1632,57 +1516,6 @@ export async function countE2eTestRecipeRecords(): Promise<number> {
  * deleteE2eTestRecipeRecords sweep already catches it — no new cleanup
  * surface.
  */
-export async function createTemporaryRecipeForCatalogueFilters(options: {
-  slugSuffix: string;
-  name: string;
-  professionSlug: string;
-  playerClassSlug: string;
-}): Promise<void> {
-  assertRecipePrefixesAreSafe();
-
-  await withVerifiedDatabase(async (client) => {
-    const relations = await client.query<{
-      professionId: string;
-      playerClassId: string;
-    }>(
-      `select
-         (select id from "Profession" where slug = $1) as "professionId",
-         (select id from "PlayerClass" where slug = $2) as "playerClassId"`,
-      [options.professionSlug, options.playerClassSlug]
-    );
-    const relation = relations.rows[0];
-    if (!relation?.professionId || !relation.playerClassId) {
-      throw new Error(
-        `Cannot create the catalogue-filter test Recipe: seeded Profession "${options.professionSlug}" or Player Class "${options.playerClassSlug}" was not found.`
-      );
-    }
-
-    const item = await client.query(
-      `insert into "Item" (id, slug, name, "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, now())
-       returning id`,
-      [
-        `${E2E_RECIPE_ITEM_SLUG_PREFIX}${options.slugSuffix}`,
-        `Test E2E Catalogue Filter Result ${options.slugSuffix}`,
-      ]
-    );
-
-    await client.query(
-      `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax",
-          "professionId", "playerClassId", "experienceReward", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, $5, 10, now())`,
-      [
-        `${E2E_RECIPE_SLUG_PREFIX}-${options.slugSuffix}`,
-        options.name,
-        item.rows[0].id as string,
-        relation.professionId,
-        relation.playerClassId,
-      ]
-    );
-  });
-}
-
 /**
  * Creates one temporary Recipe carrying SIX ingredient rows — one more
  * than the edit form's fixed capacity — so the existing capacity guard on
@@ -1725,28 +1558,18 @@ export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
     // Recipe.playerClassId is required; references the seeded "trainer"
     // Player Class (read-only, never created or modified here — Player
     // Class assignment is not what this fixture tests).
-    const playerClass = await client.query(
-      `select id from "PlayerClass" where slug = 'trainer'`
-    );
-    if (playerClass.rowCount !== 1) {
-      throw new Error(
-        "Cannot create the six-ingredient Recipe: the seeded 'trainer' Player Class was not found."
-      );
-    }
-
     // id has no database default (Prisma cuids are client-generated) and
     // updatedAt has no database default (@updatedAt is client-maintained),
     // so both are supplied explicitly.
     const recipe = await client.query(
       `insert into "Recipe"
-         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "playerClassId", "experienceReward", "updatedAt")
-       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, $4, 10, now())
+         (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "experienceReward", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, $3, 1, 1, 10, now())
        returning id`,
       [
         `${E2E_RECIPE_SLUG_PREFIX}-six-ingredients`,
         "Test E2E Recipe Six Ingredients",
         idBySlug.get(resultSlug) as string,
-        playerClass.rows[0].id as string,
       ]
     );
 
@@ -1934,13 +1757,11 @@ export async function createE2ePublicItemDetailFixture(
       const relations = await client.query<{
         categoryId: string;
         professionId: string;
-        playerClassId: string;
         gameVersionId: string;
       }>(
         `select
            (select id from "Category" where slug = 'materials') as "categoryId",
            (select id from "Profession" where slug = 'smithing') as "professionId",
-           (select id from "PlayerClass" where slug = 'trainer') as "playerClassId",
            (select id from "GameVersion" where "isCurrent" = true limit 1)
              as "gameVersionId"`
       );
@@ -1948,11 +1769,10 @@ export async function createE2ePublicItemDetailFixture(
       if (
         !relation?.categoryId ||
         !relation.professionId ||
-        !relation.playerClassId ||
         !relation.gameVersionId
       ) {
         throw new Error(
-          "The public Item-detail fixture requires seeded Materials, Smithing, Trainer, and current Game Version records."
+          "The public Item-detail fixture requires seeded Materials, Smithing, and current Game Version records."
         );
       }
 
@@ -1982,16 +1802,15 @@ export async function createE2ePublicItemDetailFixture(
         await client.query(
           `insert into "Recipe"
             ("id", "slug", "name", "resultingItemId", "professionId",
-             "playerClassId", "experienceReward",
-             "resultQuantityMin", "resultQuantityMax", "createdAt", "updatedAt")
-           values ($1, $2, $3, $4, $5, $6, 10, 1, 1, now(), now())`,
+             "requiredLevel", "experienceReward", "resultQuantityMin",
+             "resultQuantityMax", "createdAt", "updatedAt")
+           values ($1, $2, $3, $4, $5, 25, 10, 1, 1, now(), now())`,
           [
             "test-e2e-public-item-detail-recipe-id",
             `${E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX}-recipe`,
             recipeName,
             "test-e2e-public-item-detail-result-id",
             relation.professionId,
-            relation.playerClassId,
           ]
         );
         await client.query(
@@ -2671,10 +2490,11 @@ export async function createE2ePublicProfessionDetailFixture(
         { itemKey: "duskwork-lens", quantity: 3 },
       ],
     },
-  ].map((recipe) => ({
+  ].map((recipe, index) => ({
     ...recipe,
     name: `A ${recipe.name}`,
     resultName: `A ${recipe.resultName}`,
+    requiredLevel: (index + 1) * 5,
   }));
   const resultDefinitions = recipeDefinitions.map((recipe) => ({
     key: `result:${recipe.key}`,
@@ -2700,6 +2520,7 @@ export async function createE2ePublicProfessionDetailFixture(
       slug: `${E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX}-${recipe.key}`,
       resultQuantityMin: recipe.resultQuantityMin,
       resultQuantityMax: recipe.resultQuantityMax,
+      requiredLevel: recipe.requiredLevel,
       result: {
         name: result.name,
         slug: result.slug,
@@ -2803,15 +2624,12 @@ export async function createE2ePublicProfessionDetailFixture(
       const relations = await client.query<{
         categoryId: string;
         consumerCategoryId: string;
-        playerClassId: string;
         gameVersionId: string;
       }>(
         `select
            (select id from "Category" where slug = 'tools') as "categoryId",
            (select id from "Category" where slug = 'gear')
              as "consumerCategoryId",
-           (select id from "PlayerClass" where slug = 'trainer')
-             as "playerClassId",
            (select id from "GameVersion" where "isCurrent" = true limit 1)
              as "gameVersionId"`
       );
@@ -2819,11 +2637,10 @@ export async function createE2ePublicProfessionDetailFixture(
       if (
         !relation?.categoryId ||
         !relation.consumerCategoryId ||
-        !relation.playerClassId ||
         !relation.gameVersionId
       ) {
         throw new Error(
-          "The public Profession-detail fixture requires seeded Tools and Gear categories, a seeded Trainer Player Class, and a current Game Version."
+          "The public Profession-detail fixture requires seeded Tools and Gear categories and a current Game Version."
         );
       }
 
@@ -2910,7 +2727,7 @@ export async function createE2ePublicProfessionDetailFixture(
             `insert into "Recipe"
               ("id", "slug", "name", "image", "resultingItemId",
                "resultQuantityMin", "resultQuantityMax", "professionId",
-               "playerClassId", "experienceReward",
+               "requiredLevel", "experienceReward",
                "createdAt", "updatedAt")
              values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 10, now(), now())`,
             [
@@ -2922,7 +2739,7 @@ export async function createE2ePublicProfessionDetailFixture(
               recipe.resultQuantityMin,
               recipe.resultQuantityMax,
               "test-e2e-public-profession-detail-id",
-              relation.playerClassId,
+              recipe.requiredLevel,
             ]
           );
 
@@ -2968,15 +2785,14 @@ export async function createE2ePublicProfessionDetailFixture(
           `insert into "Recipe"
             ("id", "slug", "name", "image", "resultingItemId",
              "resultQuantityMin", "resultQuantityMax", "professionId",
-             "playerClassId", "experienceReward",
+             "experienceReward",
              "createdAt", "updatedAt")
-           values ($1, $2, $3, null, $4, 1, 1, null, $5, 10, now(), now())`,
+           values ($1, $2, $3, null, $4, 1, 1, null, 10, now(), now())`,
           [
             consumerOnlyRecipeId,
             consumerOnlyRecipe.slug,
             consumerOnlyRecipe.name,
             consumerOnlyResultId,
-            relation.playerClassId,
           ]
         );
         await client.query(
@@ -3009,7 +2825,7 @@ export async function createE2ePublicProfessionDetailFixture(
           `insert into "Recipe"
             ("id", "slug", "name", "image", "resultingItemId",
              "resultQuantityMin", "resultQuantityMax", "professionId",
-             "playerClassId", "experienceReward",
+             "requiredLevel", "experienceReward",
              "createdAt", "updatedAt")
            values ($1, $2, $3, null, $4, 1, 1, $5, $6, 10, now(), now())`,
           [
@@ -3018,7 +2834,7 @@ export async function createE2ePublicProfessionDetailFixture(
             sparseRecipe.name,
             sparseResultId,
             "test-e2e-public-profession-detail-sparse-id",
-            relation.playerClassId,
+            100,
           ]
         );
 

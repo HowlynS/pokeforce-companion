@@ -29,54 +29,31 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
   const { page: rawPage, profession: rawProfession, class: rawClass } =
     await searchParams;
   const professionSlug = readCatalogueQueryValue(rawProfession);
-  const playerClassSlug = readCatalogueQueryValue(rawClass);
 
-  const [professions, playerClasses] = await Promise.all([
-    prisma.profession.findMany({
-      where: { recipes: { some: {} } },
-      select: { id: true, name: true, slug: true },
-      orderBy: [{ name: "asc" }, { id: "asc" }],
-    }),
-    prisma.playerClass.findMany({
-      where: { recipes: { some: {} } },
-      select: { id: true, name: true, slug: true },
-      orderBy: [{ name: "asc" }, { id: "asc" }],
-    }),
-  ]);
+  const professions = await prisma.profession.findMany({
+    where: { recipes: { some: {} } },
+    select: { id: true, name: true, slug: true },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
+  });
 
   const selectedProfession = professionSlug
     ? professions.find((profession) => profession.slug === professionSlug)
     : undefined;
-  const selectedPlayerClass = playerClassSlug
-    ? playerClasses.find((playerClass) => playerClass.slug === playerClassSlug)
-    : undefined;
 
-  // Canonicalize safely: drop only the filter(s) that don't resolve to a
-  // real, non-empty option, preserving whichever filter is still valid —
-  // never redirecting away from a filter the visitor got right.
-  if (
-    (professionSlug && !selectedProfession) ||
-    (playerClassSlug && !selectedPlayerClass)
-  ) {
+  // Player Class filtering is no longer part of the Recipe domain. Drop
+  // stale class parameters and invalid Profession values to the supported
+  // canonical catalogue URL.
+  if (rawClass !== undefined || (professionSlug && !selectedProfession)) {
     redirect(
       cataloguePageHref("/recipes", 1, {
         profession: selectedProfession?.slug,
-        class: selectedPlayerClass?.slug,
       })
     );
   }
 
-  const recipeWhere =
-    selectedProfession || selectedPlayerClass
-      ? {
-          ...(selectedProfession
-            ? { profession: { slug: selectedProfession.slug } }
-            : {}),
-          ...(selectedPlayerClass
-            ? { playerClass: { slug: selectedPlayerClass.slug } }
-            : {}),
-        }
-      : undefined;
+  const recipeWhere = selectedProfession
+    ? { profession: { slug: selectedProfession.slug } }
+    : undefined;
   const recipeCount = await prisma.recipe.count({ where: recipeWhere });
   const { currentPage, pageCount, skip } = resolveRecipeOutputPage(
     rawPage,
@@ -93,10 +70,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
         })
       : [];
 
-  const activeQuery = {
-    profession: selectedProfession?.slug,
-    class: selectedPlayerClass?.slug,
-  };
+  const activeQuery = { profession: selectedProfession?.slug };
 
   return (
     <AppShell>
@@ -111,40 +85,15 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
         options={[
           {
             label: "All",
-            href: cataloguePageHref("/recipes", 1, {
-              class: selectedPlayerClass?.slug,
-            }),
+            href: cataloguePageHref("/recipes", 1),
             active: !selectedProfession,
           },
           ...professions.map((profession) => ({
             label: profession.name,
             href: cataloguePageHref("/recipes", 1, {
               profession: profession.slug,
-              class: selectedPlayerClass?.slug,
             }),
             active: profession.slug === selectedProfession?.slug,
-          })),
-        ]}
-      />
-
-      <PublicFilterNav
-        label="Filter Recipes by Class"
-        visibleLabel="Required class"
-        options={[
-          {
-            label: "All",
-            href: cataloguePageHref("/recipes", 1, {
-              profession: selectedProfession?.slug,
-            }),
-            active: !selectedPlayerClass,
-          },
-          ...playerClasses.map((playerClass) => ({
-            label: playerClass.name,
-            href: cataloguePageHref("/recipes", 1, {
-              profession: selectedProfession?.slug,
-              class: playerClass.slug,
-            }),
-            active: playerClass.slug === selectedPlayerClass?.slug,
           })),
         ]}
       />
@@ -160,10 +109,10 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
           ariaLabel="Recipe catalogue"
           query={activeQuery}
         />
-      ) : selectedProfession || selectedPlayerClass ? (
+      ) : selectedProfession ? (
         <EmptyState
           title="No recipes match this filter"
-          description="Try a different Profession or Class, or browse all recipes."
+          description="Try a different Profession, or browse all recipes."
         />
       ) : (
         <EmptyState

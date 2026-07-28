@@ -67,7 +67,6 @@ export async function PlayerClassWorkspace({
   // _count is loaded alongside (never the full relation) so the
   // secondary row context below never triggers an N+1 query.
   const playerClasses = await prisma.playerClass.findMany({
-    include: { _count: { select: { recipes: true } } },
     orderBy: { name: "asc" },
   });
 
@@ -82,9 +81,6 @@ export async function PlayerClassWorkspace({
     href: recordHref(playerClass.slug, query),
     primary: playerClass.name,
     slug: playerClass.slug,
-    secondary: `${playerClass._count.recipes} ${
-      playerClass._count.recipes === 1 ? "recipe" : "recipes"
-    }`,
     selected: playerClass.slug === selectedSlug,
     image: imageUrls[index],
   }));

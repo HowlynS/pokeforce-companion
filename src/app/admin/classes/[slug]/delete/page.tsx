@@ -5,9 +5,7 @@ import { PlayerClassWorkspace } from "@/components/admin/player-class-workspace"
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
   PLAYER_CLASS_LIST_PATH,
-  describeLinkedRecipes,
   normalizePlayerClassSearchQuery,
-  playerClassCanDelete,
   withPlayerClassSearchQuery,
 } from "@/lib/admin/player-class-workspace";
 import { prisma } from "@/lib/db";
@@ -34,15 +32,12 @@ export default async function DeletePlayerClassPage({
 
   const playerClass = await prisma.playerClass.findUnique({
     where: { slug },
-    include: { _count: { select: { recipes: true } } },
   });
 
   if (!playerClass) {
     notFound();
   }
 
-  const recipeCount = playerClass._count.recipes;
-  const canDelete = playerClassCanDelete(recipeCount);
 
   // The delete confirmation inside the Player Class workspace, mirroring
   // the Profession workspace's own dedicated /delete route precedent: the
@@ -73,11 +68,7 @@ export default async function DeletePlayerClassPage({
 
           {error ? (
             <p role="alert" className="banner banner-error">
-              {error === "linked_recipes"
-                ? `This class cannot be deleted because it is required by ${describeLinkedRecipes(
-                    recipeCount
-                  )}.`
-                : "Something went wrong."}
+              Something went wrong.
             </p>
           ) : null}
         </>
@@ -92,21 +83,11 @@ export default async function DeletePlayerClassPage({
             action cannot be undone.
           </>
         }
-        canDelete={canDelete}
+        canDelete
         formAction={deletePlayerClassAction}
         hiddenFields={{ id: playerClass.id, slug: playerClass.slug }}
         cancelHref={withPlayerClassSearchQuery(PLAYER_CLASS_LIST_PATH, query)}
-      >
-        <p className="text-muted">Recipes requiring this class: {recipeCount}</p>
-
-        {!canDelete ? (
-          <p className="text-danger">
-            This class cannot be deleted because it is required by{" "}
-            {describeLinkedRecipes(recipeCount)}. Reassign or remove those
-            recipes first.
-          </p>
-        ) : null}
-      </DeleteRecordDialog>
+      />
     </PlayerClassWorkspace>
   );
 }

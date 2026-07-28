@@ -261,7 +261,6 @@ export async function updatePlayerClassAction(formData: FormData) {
   }
   // Recipes list their required Class publicly and the Recipes catalogue
   // can be filtered by it, so a rename must refresh both.
-  revalidatePath("/recipes");
 
   redirect(
     oldImageCleanupFailed
@@ -285,7 +284,6 @@ export async function deletePlayerClassAction(formData: FormData) {
 
   const playerClass = await prisma.playerClass.findUnique({
     where: { id },
-    include: { _count: { select: { recipes: true } } },
   });
 
   if (!playerClass) {
@@ -296,10 +294,6 @@ export async function deletePlayerClassAction(formData: FormData) {
   // load, so a concurrently-linked recipe can't slip through. Unlike
   // Profession, Recipe.playerClassId is REQUIRED — there is no "reassign to
   // no Class" escape hatch, so this rule can never be bypassed.
-  if (playerClass._count.recipes > 0) {
-    redirect(`${confirmPath}?error=linked_recipes`);
-  }
-
   try {
     await prisma.playerClass.delete({ where: { id } });
   } catch (error) {
