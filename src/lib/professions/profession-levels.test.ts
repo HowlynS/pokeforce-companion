@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   PROFESSION_LEVEL_THRESHOLDS,
+  PROFESSION_LEVEL_TRANSITION_EXPERIENCE,
+  professionThresholdsMatchExpectedTable,
   withProfessionLevelDifferences,
 } from "@/lib/professions/profession-levels";
 
@@ -13,6 +15,7 @@ describe("shared Profession level thresholds", () => {
   });
 
   it("preserves every supplied cumulative threshold exactly", () => {
+    expect(professionThresholdsMatchExpectedTable()).toBe(true);
     expect(
       PROFESSION_LEVEL_THRESHOLDS.map(({ experienceRequired }) =>
         experienceRequired
@@ -33,7 +36,32 @@ describe("shared Profession level thresholds", () => {
     ]);
   });
 
+  it("preserves every supplied level-transition value exactly", () => {
+    expect(PROFESSION_LEVEL_TRANSITION_EXPERIENCE).toEqual([
+      83, 91, 102, 112, 124, 138, 151, 168, 185, 204, 226, 249, 274, 304,
+      335, 369, 408, 450, 497, 548, 606, 667, 737, 814, 898, 990, 1094,
+      1207, 1332, 1470, 1623, 1791, 1977, 2182, 2409, 2658, 2935, 3240,
+      3576, 3947, 4358, 4810, 5310, 5863, 6471, 7144, 7887, 8707, 9612,
+      10612, 11715, 12934, 14278, 15764, 17404, 19214, 21212, 23420,
+      25856, 28546, 31516, 34795, 38416, 42413, 46826, 51699, 57079,
+      63019, 69576, 76818, 84812, 93638, 103383, 114143, 126022, 139138,
+      153619, 169608, 187260, 206750, 228269, 252027, 278259, 307221,
+      339198, 374502, 413482, 456519, 504037, 556499, 614422, 678376,
+      748985, 826944, 913019, 1008052, 1112977, 1228825, 1356729,
+    ]);
+    expect(PROFESSION_LEVEL_TRANSITION_EXPERIENCE).toHaveLength(99);
+
+    const progression = withProfessionLevelDifferences(
+      PROFESSION_LEVEL_THRESHOLDS
+    );
+    expect(progression.slice(0, -1).map((row) => row.experienceToNext)).toEqual(
+      [...PROFESSION_LEVEL_TRANSITION_EXPERIENCE]
+    );
+  });
+
   it("strictly increases after level 1", () => {
+    expect(PROFESSION_LEVEL_THRESHOLDS[0].experienceRequired).toBe(0);
+    expect(PROFESSION_LEVEL_THRESHOLDS[99].experienceRequired).toBe(14391160);
     for (let index = 1; index < PROFESSION_LEVEL_THRESHOLDS.length; index += 1) {
       expect(PROFESSION_LEVEL_THRESHOLDS[index].experienceRequired).toBeGreaterThan(
         PROFESSION_LEVEL_THRESHOLDS[index - 1].experienceRequired

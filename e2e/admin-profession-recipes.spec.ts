@@ -326,9 +326,9 @@ test("General remains a real link from the Recipes tab, and no Profession tab is
   await expect(tabNav(page).locator('[aria-current="page"]')).toHaveCount(1);
 
   // The Metadata tab was removed (Visual Pass sub-slice 4) — every
-  // remaining Profession tab (General, Recipes) is a real link; none is
+  // remaining Profession tab (General, Recipes, Levels) is a real link; none is
   // a disabled placeholder.
-  await expect(tabNav(page).getByRole("link")).toHaveCount(2);
+  await expect(tabNav(page).getByRole("link")).toHaveCount(3);
   await expect(tabNav(page).locator('[aria-disabled="true"]')).toHaveCount(0);
 
   await tabNav(page).getByRole("link", { name: "General", exact: true }).click();

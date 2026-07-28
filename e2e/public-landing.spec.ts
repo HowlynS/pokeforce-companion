@@ -57,7 +57,7 @@ test("hero CTAs and all five resource cards use their approved routes", async ({
       .getByRole("link", { name: "Categories", exact: true })
   ).toHaveCount(0);
   await expect(page.getByRole("contentinfo")).toContainText(
-    "A crafting and trading reference for items, recipes, professions, locations, and shops."
+    "A crafting wiki companion for items, recipes, professions, classes, categories, locations, and shops."
   );
 
   await page.getByRole("link", { name: "Browse Items", exact: true }).click();

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   PROFESSION_LEVEL_THRESHOLDS,
+  PROFESSION_LEVEL_TRANSITION_EXPERIENCE,
   withProfessionLevelDifferences,
 } from "@/lib/professions/profession-levels";
 import {
@@ -49,5 +50,10 @@ describe("shared Profession progression reference data (integration)", () => {
 
     expect(progression[0].experienceFromPrevious).toBeNull();
     expect(progression[99].experienceToNext).toBeNull();
+    expect(progression.slice(0, -1).map((row) => row.experienceToNext)).toEqual(
+      [...PROFESSION_LEVEL_TRANSITION_EXPERIENCE]
+    );
+    expect(progression[0].experienceRequired).toBe(0);
+    expect(progression[99].experienceRequired).toBe(14391160);
   });
 });

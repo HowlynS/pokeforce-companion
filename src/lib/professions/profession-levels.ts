@@ -8,7 +8,7 @@ export type ProfessionLevelThreshold = {
  * Future Profession actions or sources may award EXP against this shared
  * curve; no player-progress or planner system exists yet.
  */
-export const PROFESSION_LEVEL_THRESHOLDS = [
+const EXPECTED_PROFESSION_LEVEL_THRESHOLDS = [
   { level: 1, experienceRequired: 0 },
   { level: 2, experienceRequired: 83 },
   { level: 3, experienceRequired: 174 },
@@ -110,6 +110,53 @@ export const PROFESSION_LEVEL_THRESHOLDS = [
   { level: 99, experienceRequired: 13034431 },
   { level: 100, experienceRequired: 14391160 },
 ] as const satisfies readonly ProfessionLevelThreshold[];
+
+/** Exact EXP required for each transition from level 1→2 through 99→100. */
+export const PROFESSION_LEVEL_TRANSITION_EXPERIENCE = [
+  83, 91, 102, 112, 124, 138, 151, 168, 185, 204, 226, 249, 274, 304, 335,
+  369, 408, 450, 497, 548, 606, 667, 737, 814, 898, 990, 1094, 1207,
+  1332, 1470, 1623, 1791, 1977, 2182, 2409, 2658, 2935, 3240, 3576,
+  3947, 4358, 4810, 5310, 5863, 6471, 7144, 7887, 8707, 9612, 10612,
+  11715, 12934, 14278, 15764, 17404, 19214, 21212, 23420, 25856, 28546,
+  31516, 34795, 38416, 42413, 46826, 51699, 57079, 63019, 69576, 76818,
+  84812, 93638, 103383, 114143, 126022, 139138, 153619, 169608, 187260,
+  206750, 228269, 252027, 278259, 307221, 339198, 374502, 413482,
+  456519, 504037, 556499, 614422, 678376, 748985, 826944, 913019,
+  1008052, 1112977, 1228825, 1356729,
+] as const;
+
+/**
+ * Cumulative thresholds derived only by summing the supplied transitions.
+ * The independent expected table above is retained as an integrity oracle,
+ * never as the source used by the seed.
+ */
+export const PROFESSION_LEVEL_THRESHOLDS =
+  PROFESSION_LEVEL_TRANSITION_EXPERIENCE.reduce<ProfessionLevelThreshold[]>(
+    (thresholds, transitionExperience, index) => {
+      thresholds.push({
+        level: index + 2,
+        experienceRequired:
+          thresholds[thresholds.length - 1].experienceRequired +
+          transitionExperience,
+      });
+      return thresholds;
+    },
+    [{ level: 1, experienceRequired: 0 }]
+  );
+
+export function professionThresholdsMatchExpectedTable(): boolean {
+  return (
+    PROFESSION_LEVEL_THRESHOLDS.length ===
+      EXPECTED_PROFESSION_LEVEL_THRESHOLDS.length &&
+    PROFESSION_LEVEL_THRESHOLDS.every(
+      (threshold, index) =>
+        threshold.level ===
+          EXPECTED_PROFESSION_LEVEL_THRESHOLDS[index]?.level &&
+        threshold.experienceRequired ===
+          EXPECTED_PROFESSION_LEVEL_THRESHOLDS[index]?.experienceRequired
+    )
+  );
+}
 
 export type ProfessionLevelProgressionRow = ProfessionLevelThreshold & {
   experienceFromPrevious: number | null;

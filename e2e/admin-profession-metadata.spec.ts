@@ -88,7 +88,7 @@ test("the tab strip no longer offers a Metadata destination anywhere", async ({
   await createTemporaryProfession(page, PROFESSION);
 
   await page.goto(`/admin/professions/${PROFESSION.slug}/edit`);
-  await expect(tabNav(page).getByRole("link")).toHaveCount(2);
+  await expect(tabNav(page).getByRole("link")).toHaveCount(3);
   await expect(
     tabNav(page).getByRole("link", { name: "Metadata" })
   ).toHaveCount(0);

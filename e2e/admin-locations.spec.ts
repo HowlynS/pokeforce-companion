@@ -829,7 +829,9 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await expect(
     page.getByRole("cell", { name: SUBJECT.name, exact: true })
   ).toBeVisible();
-  await expect(page.getByText("Dungeon", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "Dungeon", exact: true })
+  ).toBeVisible();
   // Parent A has one direct child (the subject) and no parent of its own:
   // 1 child + 0 = 1.
   await expect(
