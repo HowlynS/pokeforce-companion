@@ -1,4 +1,6 @@
-import { mkdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, stat } from "node:fs/promises";
+import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 const resources = [
@@ -31,6 +33,28 @@ function resourceCard(page: Page, name: string) {
     .getByRole("link")
     .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
 }
+
+test("the lossless scenic source remains byte-identical", async () => {
+  const assetPath = path.join(
+    process.cwd(),
+    "public",
+    "images",
+    "backgrounds",
+    "merchants-codex-coastal-overlook.png"
+  );
+  const bytes = await readFile(assetPath);
+  const metadata = await stat(assetPath);
+
+  expect(bytes.subarray(0, 8)).toEqual(
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+  );
+  expect(bytes.readUInt32BE(16)).toBe(3876);
+  expect(bytes.readUInt32BE(20)).toBe(1622);
+  expect(metadata.size).toBe(6_806_415);
+  expect(createHash("sha256").update(bytes).digest("hex").toUpperCase()).toBe(
+    "E07B93BE5F96562FD503E91C416BA3B11DC42FB6CFB5D0737D4D39DB0E532142"
+  );
+});
 
 test("hero CTAs and all five resource cards use their approved routes", async ({
   page,
@@ -159,6 +183,32 @@ test("landing composition stays centered and bounded at all target widths", asyn
         (element) => getComputedStyle(element).backgroundPosition
       )
     ).toContain("55%");
+    expect(
+      await scenicBackground.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          washTop: style.getPropertyValue("--public-scenic-wash-top").trim(),
+          washMiddle: style
+            .getPropertyValue("--public-scenic-wash-middle")
+            .trim(),
+          vignetteLeft: style
+            .getPropertyValue("--public-scenic-vignette-left")
+            .trim(),
+          vignetteCenter: style
+            .getPropertyValue("--public-scenic-vignette-center")
+            .trim(),
+          vignetteRight: style
+            .getPropertyValue("--public-scenic-vignette-right")
+            .trim(),
+        };
+      })
+    ).toEqual({
+      washTop: "#11151485",
+      washMiddle: "#111514a1",
+      vignetteLeft: "#111514b8",
+      vignetteCenter: "#11151447",
+      vignetteRight: "#11151470",
+    });
 
     await page.screenshot({
       path: `test-results/landing-page-visual-pass/landing-${viewport.width}x${viewport.height}.png`,
@@ -254,6 +304,34 @@ test("the landing page reflows safely below desktop widths", async ({
           (element) => getComputedStyle(element).backgroundPosition
         )
       ).toContain("82%");
+      expect(
+        await scenicBackground.evaluate((element) => {
+          const style = getComputedStyle(element);
+          return {
+            washTop: style
+              .getPropertyValue("--public-scenic-wash-top")
+              .trim(),
+            washMiddle: style
+              .getPropertyValue("--public-scenic-wash-middle")
+              .trim(),
+            vignetteLeft: style
+              .getPropertyValue("--public-scenic-vignette-left")
+              .trim(),
+            vignetteCenter: style
+              .getPropertyValue("--public-scenic-vignette-center")
+              .trim(),
+            vignetteRight: style
+              .getPropertyValue("--public-scenic-vignette-right")
+              .trim(),
+          };
+        })
+      ).toEqual({
+        washTop: "#111514a1",
+        washMiddle: "#111514b8",
+        vignetteLeft: "#111514b3",
+        vignetteCenter: "#1115146e",
+        vignetteRight: "#11151482",
+      });
       await page.screenshot({
         path: "test-results/landing-page-visual-pass/landing-390x844.png",
         fullPage: true,

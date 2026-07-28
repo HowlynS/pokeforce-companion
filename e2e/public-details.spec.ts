@@ -199,6 +199,32 @@ test.describe("public detail pages", () => {
       "background-image",
       /merchants-codex-coastal-overlook\.png/
     );
+    expect(
+      await scenicBackground.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          washTop: style.getPropertyValue("--public-scenic-wash-top").trim(),
+          washMiddle: style
+            .getPropertyValue("--public-scenic-wash-middle")
+            .trim(),
+          vignetteLeft: style
+            .getPropertyValue("--public-scenic-vignette-left")
+            .trim(),
+          vignetteCenter: style
+            .getPropertyValue("--public-scenic-vignette-center")
+            .trim(),
+          vignetteRight: style
+            .getPropertyValue("--public-scenic-vignette-right")
+            .trim(),
+        };
+      })
+    ).toEqual({
+      washTop: "#111514ad",
+      washMiddle: "#111514cc",
+      vignetteLeft: "#111514c7",
+      vignetteCenter: "#11151475",
+      vignetteRight: "#111514a8",
+    });
 
     for (const viewport of [
       { width: 1920, height: 1080 },

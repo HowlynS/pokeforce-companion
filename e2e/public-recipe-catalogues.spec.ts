@@ -346,6 +346,32 @@ test("Items index owns Category browsing and Category detail stays contextual", 
     "background-image",
     /merchants-codex-coastal-overlook\.png/
   );
+  expect(
+    await scenicBackground.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        washTop: style.getPropertyValue("--public-scenic-wash-top").trim(),
+        washMiddle: style
+          .getPropertyValue("--public-scenic-wash-middle")
+          .trim(),
+        vignetteLeft: style
+          .getPropertyValue("--public-scenic-vignette-left")
+          .trim(),
+        vignetteCenter: style
+          .getPropertyValue("--public-scenic-vignette-center")
+          .trim(),
+        vignetteRight: style
+          .getPropertyValue("--public-scenic-vignette-right")
+          .trim(),
+      };
+    })
+  ).toEqual({
+    washTop: "#111514ab",
+    washMiddle: "#111514c2",
+    vignetteLeft: "#111514bd",
+    vignetteCenter: "#1115146b",
+    vignetteRight: "#1115149c",
+  });
   const toolsFilter = filters.getByRole("link", {
     name: fixture.outputCategory.name,
     exact: true,
@@ -543,6 +569,36 @@ test("Items index owns Category browsing and Category detail stays contextual", 
         (element) => getComputedStyle(element).backgroundPosition
       )
     ).toContain(viewport.width === 390 ? "82%" : "55%");
+    if (viewport.width === 390) {
+      expect(
+        await scenicBackground.evaluate((element) => {
+          const style = getComputedStyle(element);
+          return {
+            washTop: style
+              .getPropertyValue("--public-scenic-wash-top")
+              .trim(),
+            washMiddle: style
+              .getPropertyValue("--public-scenic-wash-middle")
+              .trim(),
+            vignetteLeft: style
+              .getPropertyValue("--public-scenic-vignette-left")
+              .trim(),
+            vignetteCenter: style
+              .getPropertyValue("--public-scenic-vignette-center")
+              .trim(),
+            vignetteRight: style
+              .getPropertyValue("--public-scenic-vignette-right")
+              .trim(),
+          };
+        })
+      ).toEqual({
+        washTop: "#111514bf",
+        washMiddle: "#111514d1",
+        vignetteLeft: "#111514b0",
+        vignetteCenter: "#11151480",
+        vignetteRight: "#11151494",
+      });
+    }
     await page.screenshot({
       path: path.join(
         SCREENSHOT_DIRECTORY,
