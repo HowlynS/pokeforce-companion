@@ -86,9 +86,9 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
                 key={item.id}
                 title={item.name}
                 description={
-                  <em className="item-index-card-category">
+                  <span className="item-index-card-category">
                     {item.category?.name ?? "Uncategorized"}
-                  </em>
+                  </span>
                 }
                 href={`/items/${item.slug}`}
                 media={

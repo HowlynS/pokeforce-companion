@@ -354,10 +354,21 @@ test("Items index owns Category browsing and Category detail stays contextual", 
     ".public-sprite-stage--card.public-sprite-stage--empty"
   );
   const firstItemCard = page.locator(".item-index-catalogue .interactive-card").first();
-  await expect(firstItemCard.getByRole("heading")).toBeVisible();
+  const firstItemTitle = firstItemCard.getByRole("heading");
+  await expect(firstItemTitle).toBeVisible();
+  await expect(firstItemTitle).toHaveCSS("font-size", "20px");
   const firstItemCategory = firstItemCard.locator(".item-index-card-category");
   await expect(firstItemCategory).toHaveText(fixture.outputCategory.name);
-  await expect(firstItemCategory).toHaveCSS("font-style", "italic");
+  await expect(firstItemCategory).toHaveCSS("font-size", "14px");
+  await expect(firstItemCategory).toHaveCSS("font-style", "normal");
+  expect(
+    await firstItemTitle.evaluate(
+      (title, category) =>
+        Number.parseFloat(getComputedStyle(title).fontSize) >
+        Number.parseFloat(getComputedStyle(category as Element).fontSize),
+      await firstItemCategory.elementHandle()
+    )
+  ).toBe(true);
   await expect(
     page.locator(".item-index-catalogue").getByText("Category:", {
       exact: false,
@@ -367,6 +378,11 @@ test("Items index owns Category browsing and Category detail stays contextual", 
     page.locator(".item-index-catalogue").getByText("Tradeable:", {
       exact: false,
     })
+  ).toHaveCount(0);
+  await expect(
+    page
+      .locator(".item-index-catalogue")
+      .getByText(/Description:|Base value:/i)
   ).toHaveCount(0);
   const genuineStage = firstItemCard.locator(".public-sprite-stage--card");
   const fallbackCard = page
@@ -405,6 +421,33 @@ test("Items index owns Category browsing and Category detail stays contextual", 
   });
   await fallbackCard.screenshot({
     path: path.join(SCREENSHOT_DIRECTORY, "item-no-image-card-close.png"),
+  });
+  const longTitleCard = page
+    .locator(".item-index-catalogue .interactive-card")
+    .filter({ hasText: "Field Surveyor's Dusk Gauge" });
+  await expect(longTitleCard.getByRole("heading")).toHaveCSS(
+    "white-space",
+    "normal"
+  );
+  const longTitleGeometry = await longTitleCard.evaluate((card) => {
+    const heading = card.querySelector("h3");
+    if (!heading) {
+      throw new Error("Expected long-title Item card heading");
+    }
+    return {
+      headingWithinCard:
+        heading.getBoundingClientRect().right <=
+        card.getBoundingClientRect().right,
+      wraps: heading.getBoundingClientRect().height >
+        Number.parseFloat(getComputedStyle(heading).lineHeight) + 1,
+    };
+  });
+  expect(longTitleGeometry).toEqual({
+    headingWithinCard: true,
+    wraps: true,
+  });
+  await longTitleCard.screenshot({
+    path: path.join(SCREENSHOT_DIRECTORY, "item-long-title-card-close.png"),
   });
 
   await toolsFilter.click();

@@ -640,8 +640,19 @@ select:focus-visible {
   min-width: 0;
 }
 
+.item-index-catalogue .interactive-card h3 {
+  font-size: 20px !important;
+  line-height: 1.25 !important;
+  text-wrap: pretty;
+}
+
 .item-index-card-category {
-  font-style: italic;
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .item-index-card-media {
