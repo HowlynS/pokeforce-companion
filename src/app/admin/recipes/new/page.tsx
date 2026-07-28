@@ -50,6 +50,10 @@ const errorMessages: Record<string, string> = {
     "Maximum quantity must be equal to or greater than minimum quantity.",
   invalid_required_level:
     "Required level must be a whole number of zero or more.",
+  missing_player_class: "Select the class required to craft this recipe.",
+  invalid_player_class: "Select an existing class.",
+  invalid_experience_reward:
+    "EXP reward must be a whole number of zero or more.",
   no_ingredients: "Add at least one ingredient.",
   incomplete_ingredient:
     "Each ingredient row needs both an item and a quantity.",
@@ -82,9 +86,10 @@ export default async function NewRecipePage({
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;
   const query = normalizeRecipeSearchQuery(q);
 
-  const [items, professions, gameVersions] = await Promise.all([
+  const [items, professions, playerClasses, gameVersions] = await Promise.all([
     prisma.item.findMany({ orderBy: { name: "asc" } }),
     prisma.profession.findMany({ orderBy: { name: "asc" } }),
+    prisma.playerClass.findMany({ orderBy: { name: "asc" } }),
     // Current version first, then newest — the same ordering the
     // settings list uses; feeds the shared verification picker.
     prisma.gameVersion.findMany({
@@ -96,9 +101,10 @@ export default async function NewRecipePage({
     { length: RECIPE_INGREDIENT_ROW_COUNT },
     (_, index) => index + 1
   );
-  const [itemOptions, professionOptions] = await Promise.all([
+  const [itemOptions, professionOptions, playerClassOptions] = await Promise.all([
     toEntitySelectOptions(items),
     toEntitySelectOptions(professions),
+    toEntitySelectOptions(playerClasses),
   ]);
 
   // Feeds the Resulting Item select's inherited-image side channel (Recipe
@@ -172,6 +178,11 @@ export default async function NewRecipePage({
         <EmptyState
           title="No items available"
           description="Create at least one item before creating a recipe."
+        />
+      ) : playerClasses.length === 0 ? (
+        <EmptyState
+          title="No classes available"
+          description="Create at least one class before creating a recipe."
         />
       ) : (
         <div className="admin-editor-surface">
@@ -269,6 +280,17 @@ export default async function NewRecipePage({
                 />
               </label>
 
+              <label className="form-field">
+                <span className="form-field-label">Required class</span>
+                <AdminSelect
+                  name="playerClassId"
+                  required
+                  defaultValue=""
+                  placeholder="Select a class"
+                  options={playerClassOptions}
+                />
+              </label>
+
               <label className="form-field form-field-narrow">
                 <span className="form-field-label">
                   Required level (optional)
@@ -278,6 +300,19 @@ export default async function NewRecipePage({
                   name="requiredLevel"
                   min={0}
                   step={1}
+                  className="form-input"
+                />
+              </label>
+
+              <label className="form-field form-field-narrow">
+                <span className="form-field-label">EXP reward</span>
+                <input
+                  type="number"
+                  name="experienceReward"
+                  min={0}
+                  step={1}
+                  defaultValue={0}
+                  required
                   className="form-input"
                 />
               </label>

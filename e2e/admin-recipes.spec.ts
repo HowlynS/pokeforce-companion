@@ -141,6 +141,11 @@ type RecipeFormData = {
   resultQuantityMax?: string;
   profession?: string;
   requiredLevel?: string;
+  // Both required fields (Player Classes + Recipe EXP milestone); default
+  // to a stable seeded Class and zero EXP so every existing call site that
+  // predates this milestone keeps working unchanged.
+  playerClass?: string;
+  experienceReward?: string;
   ingredients: { item: string; quantity: string }[];
 };
 
@@ -171,8 +176,15 @@ async function createRecipeThroughForm(page: Page, data: RecipeFormData) {
       data.profession
     );
   }
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    data.playerClass ?? "Trainer"
+  );
   if (data.requiredLevel) {
     await page.getByLabel(/^Required level/).fill(data.requiredLevel);
+  }
+  if (data.experienceReward) {
+    await page.getByLabel("EXP reward", { exact: true }).fill(data.experienceReward);
   }
   for (const [index, ingredient] of data.ingredients.entries()) {
     await selectAdminOption(ingredientSelect(page, index), ingredient.item);
@@ -553,6 +565,10 @@ test("a maximum quantity below the minimum is rejected with a useful error, both
   );
   await page.getByLabel("Minimum quantity", { exact: true }).fill("4");
   await page.getByLabel("Maximum quantity", { exact: true }).fill("1");
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    "Trainer"
+  );
   await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   await ingredientQuantity(page, 0).fill("1");
   await page
@@ -874,6 +890,10 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
     page.getByRole("combobox", { name: "Resulting item", exact: true }),
     "Iron Ingot"
   );
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    "Trainer"
+  );
   await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   await page
     .getByRole("button", { name: "Create Recipe", exact: true })
@@ -894,6 +914,10 @@ test("incomplete ingredient pairs are rejected in both directions", async ({
   await selectAdminOption(
     page.getByRole("combobox", { name: "Resulting item", exact: true }),
     "Iron Ingot"
+  );
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    "Trainer"
   );
   await ingredientQuantity(page, 0).fill("2");
   await page
@@ -924,6 +948,10 @@ test("ingredient quantities are guarded by browser-native validation with no upp
   await selectAdminOption(
     page.getByRole("combobox", { name: "Resulting item", exact: true }),
     "Iron Ingot"
+  );
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    "Trainer"
   );
   await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   const quantity = ingredientQuantity(page, 0);
@@ -985,6 +1013,10 @@ test("selecting the same ingredient twice is rejected server-side", async ({
   await selectAdminOption(
     page.getByRole("combobox", { name: "Resulting item", exact: true }),
     "Iron Ingot"
+  );
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    "Trainer"
   );
   await selectAdminOption(ingredientSelect(page, 0), "Iron Ore");
   await ingredientQuantity(page, 0).fill("1");
@@ -1228,6 +1260,67 @@ test("recipe deletion removes the recipe and cascades its ingredient rows", asyn
   // The cascade removed the recipe's own ingredient rows and nothing else.
   expect(await countE2eTestRecipeRecords()).toBe(0);
   expect((await readFixtureCounts()).recipeIngredients).toBe(15);
+});
+
+test("Player Classes + Recipe EXP: the Required Class selector and EXP reward field persist through create and edit", async ({
+  page,
+}) => {
+  // --- Create with a distinctive Class and non-zero EXP -------------------
+  await page.goto("/admin/recipes/new");
+  await createRecipeThroughForm(page, {
+    name: "Test E2E Recipe Class Exp",
+    slug: "test-e2e-recipe-class-exp",
+    resultingItem: "Iron Ingot",
+    playerClass: "Artisan",
+    experienceReward: "150",
+    ingredients: [{ item: "Iron Ore", quantity: "1" }],
+  });
+
+  await expect(
+    page.getByRole("combobox", { name: "Required class", exact: true })
+  ).toHaveText("Artisan");
+  await expect(page.getByLabel("EXP reward", { exact: true })).toHaveValue(
+    "150"
+  );
+
+  // --- Edit: change both fields, confirm the save persists them ----------
+  await page.goto("/admin/recipes");
+  await recordRow(page, "Test E2E Recipe Class Exp").click();
+  await selectAdminOption(
+    page.getByRole("combobox", { name: "Required class", exact: true }),
+    "Ranger"
+  );
+  await page.getByLabel("EXP reward", { exact: true }).fill("75");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
+
+  await expect(page).toHaveURL(
+    "/admin/recipes/test-e2e-recipe-class-exp/edit"
+  );
+  await expect(page.getByRole("status")).toHaveText("Recipe saved");
+  await expect(
+    page.getByRole("combobox", { name: "Required class", exact: true })
+  ).toHaveText("Ranger");
+  await expect(page.getByLabel("EXP reward", { exact: true })).toHaveValue(
+    "75"
+  );
+
+  // --- EXP reward rejects a negative value client-side (min=0) -----------
+  const expInput = page.getByLabel("EXP reward", { exact: true });
+  await expInput.fill("-5");
+  expect(
+    await expInput.evaluate((el) => (el as HTMLInputElement).validity.rangeUnderflow)
+  ).toBe(true);
+  // Restore the persisted value so this unsaved edit never blocks the
+  // navigation below with the unsaved-changes guard.
+  await expInput.fill("75");
+
+  // The Class's own Recipes tab lists this recipe with its current EXP
+  // value — proving the relation actually moved to the new Class.
+  await page.goto("/admin/classes/ranger/recipes");
+  await expect(
+    page.getByRole("cell", { name: "Test E2E Recipe Class Exp" })
+  ).toBeVisible();
+  await expect(page.getByText("75 EXP", { exact: true })).toBeVisible();
 });
 
 test("gameplay verification stamps the selected game version and survives normal edits", async ({
