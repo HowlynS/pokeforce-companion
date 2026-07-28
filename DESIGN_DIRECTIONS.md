@@ -127,14 +127,16 @@ explicit `82% center` crop to favor the lighthouse and sunset. Do not extend
 the scene through long content, use fixed attachment, or apply it to admin or
 other public resources without a later visual review.
 
-Homepage scenery may be more visible than catalogue/detail scenery. The final
-desktop homepage wash uses `0.52`/`0.63` top/middle opacity and a
-`0.72`/`0.28`/`0.44` left/center/right vignette; the mobile homepage uses
-`0.63`/`0.72` and `0.70`/`0.43`/`0.51`. The Items catalogue stays quieter:
-desktop `0.67`/`0.76` and `0.74`/`0.42`/`0.61`; mobile `0.75`/`0.82` and
-`0.69`/`0.50`/`0.58`. Item detail retains its established wash and cool-blue
-resource atmosphere. Reading zones stay darker than scenic focal areas, and
-the lossless master remains byte-identical.
+Homepage scenery may be more visible than catalogue/detail scenery. Following
+a second visibility pass, the desktop homepage wash uses `0.36`/`0.46`
+top/middle opacity and a `0.54`/`0.16`/`0.30` left/center/right vignette; the
+mobile homepage uses `0.48`/`0.56` and `0.52`/`0.28`/`0.36`. The Items
+catalogue stays quieter but meaningfully lighter than before: desktop
+`0.48`/`0.58` and `0.56`/`0.26`/`0.44`; mobile `0.56`/`0.64` and
+`0.52`/`0.32`/`0.42`. Item detail retains its established wash and cool-blue
+resource atmosphere, unchanged by this pass. Reading zones stay darker than
+scenic focal areas, the lower fade into solid `#111514` is unchanged, and the
+lossless master remains byte-identical.
 
 The established public shell contains:
 

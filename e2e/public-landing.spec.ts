@@ -203,11 +203,11 @@ test("landing composition stays centered and bounded at all target widths", asyn
         };
       })
     ).toEqual({
-      washTop: "#11151485",
-      washMiddle: "#111514a1",
-      vignetteLeft: "#111514b8",
-      vignetteCenter: "#11151447",
-      vignetteRight: "#11151470",
+      washTop: "#1115145c",
+      washMiddle: "#11151475",
+      vignetteLeft: "#1115148a",
+      vignetteCenter: "#11151429",
+      vignetteRight: "#1115144d",
     });
 
     await page.screenshot({
@@ -326,11 +326,11 @@ test("the landing page reflows safely below desktop widths", async ({
           };
         })
       ).toEqual({
-        washTop: "#111514a1",
-        washMiddle: "#111514b8",
-        vignetteLeft: "#111514b3",
-        vignetteCenter: "#1115146e",
-        vignetteRight: "#11151482",
+        washTop: "#1115147a",
+        washMiddle: "#1115148f",
+        vignetteLeft: "#11151485",
+        vignetteCenter: "#11151447",
+        vignetteRight: "#1115145c",
       });
       await page.screenshot({
         path: "test-results/landing-page-visual-pass/landing-390x844.png",

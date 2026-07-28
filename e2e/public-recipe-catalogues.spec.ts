@@ -366,11 +366,11 @@ test("Items index owns Category browsing and Category detail stays contextual", 
       };
     })
   ).toEqual({
-    washTop: "#111514ab",
-    washMiddle: "#111514c2",
-    vignetteLeft: "#111514bd",
-    vignetteCenter: "#1115146b",
-    vignetteRight: "#1115149c",
+    washTop: "#1115147a",
+    washMiddle: "#11151494",
+    vignetteLeft: "#1115148f",
+    vignetteCenter: "#11151442",
+    vignetteRight: "#11151470",
   });
   const toolsFilter = filters.getByRole("link", {
     name: fixture.outputCategory.name,
@@ -592,11 +592,11 @@ test("Items index owns Category browsing and Category detail stays contextual", 
           };
         })
       ).toEqual({
-        washTop: "#111514bf",
-        washMiddle: "#111514d1",
-        vignetteLeft: "#111514b0",
-        vignetteCenter: "#11151480",
-        vignetteRight: "#11151494",
+        washTop: "#1115148f",
+        washMiddle: "#111514a3",
+        vignetteLeft: "#11151485",
+        vignetteCenter: "#11151452",
+        vignetteRight: "#1115146b",
       });
     }
     await page.screenshot({

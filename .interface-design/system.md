@@ -66,15 +66,16 @@ same focused commit.
   mobile home `760px`, catalogue `560px`, detail `700px`.
 - Use a strong charcoal vertical wash, subtle horizontal vignette, and a
   complete fade to `#111514`; cards and panels remain nearly opaque.
-- Home desktop wash: `0.52`/`0.63`; vignette:
-  `0.72`/`0.28`/`0.44`. Home mobile wash: `0.63`/`0.72`; vignette:
-  `0.70`/`0.43`/`0.51`.
-- Items catalogue desktop wash: `0.67`/`0.76`; vignette:
-  `0.74`/`0.42`/`0.61`. Catalogue mobile wash: `0.75`/`0.82`; vignette:
-  `0.69`/`0.50`/`0.58`.
+- Home desktop wash: `0.36`/`0.46`; vignette:
+  `0.54`/`0.16`/`0.30`. Home mobile wash: `0.48`/`0.56`; vignette:
+  `0.52`/`0.28`/`0.36`.
+- Items catalogue desktop wash: `0.48`/`0.58`; vignette:
+  `0.56`/`0.26`/`0.44`. Catalogue mobile wash: `0.56`/`0.64`; vignette:
+  `0.52`/`0.32`/`0.42`.
 - Homepage visibility may be stronger than catalogue/detail. Retain a darker
-  reading zone behind copy. Item detail keeps its existing scenic values and
-  cool-blue atmosphere.
+  reading zone behind copy and the existing lower fade into solid `#111514`.
+  Item detail keeps its existing scenic values and cool-blue atmosphere,
+  untouched by the second visibility pass.
 - Preserve layout when decoration is removed. Do not use fixed attachment,
   preload globally, apply to admin, or extend to other public resources
   without visual review.
