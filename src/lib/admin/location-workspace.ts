@@ -37,12 +37,46 @@ import {
   ACQUISITION_TYPES,
   type AcquisitionType,
 } from "@/lib/validation/acquisition-source";
+import type { LocationType } from "@/lib/validation/location";
 
 export const LOCATION_LIST_PATH = "/admin/locations";
 export const LOCATION_CREATE_PATH = "/admin/locations/new";
 
 /** The URL parameter the Location list's search submits as. */
 export const LOCATION_SEARCH_PARAM = "q";
+
+/**
+ * Canonical broad-to-specific order for the admin Location catalogue.
+ * It follows the established Location model: world-scale regions first,
+ * traversal routes and settlements next, then contained/interior places,
+ * with exceptional special areas last.
+ */
+export const ADMIN_LOCATION_TYPE_ORDER = [
+  "REGION",
+  "ROUTE",
+  "TOWN",
+  "BUILDING",
+  "DUNGEON",
+  "SUB_AREA",
+  "SPECIAL_AREA",
+] as const satisfies readonly LocationType[];
+
+export function sortAdminLocations<
+  T extends { id: string; name: string; type: LocationType },
+>(locations: readonly T[]): T[] {
+  return [...locations].sort((a, b) => {
+    const typeDifference =
+      ADMIN_LOCATION_TYPE_ORDER.indexOf(a.type) -
+      ADMIN_LOCATION_TYPE_ORDER.indexOf(b.type);
+
+    if (typeDifference !== 0) {
+      return typeDifference;
+    }
+
+    const nameDifference = a.name.localeCompare(b.name);
+    return nameDifference !== 0 ? nameDifference : a.id.localeCompare(b.id);
+  });
+}
 
 /**
  * Normalizes a raw ?q= value the same way the server filters: trimmed;

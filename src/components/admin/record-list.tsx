@@ -84,6 +84,10 @@ export type RecordListRow = {
       fixed-size fallback slot. Ignored unless the list's own
       `showImages` is set. */
   image?: string | null;
+  /** Optional visible group heading. A heading is emitted only when this
+      value differs from the preceding filtered row, so empty groups never
+      render and filtering preserves the caller's grouping/order. */
+  group?: string;
 };
 
 type RecordListProps = {
@@ -278,8 +282,18 @@ export function RecordList({
       ) : (
         <nav aria-label={`${label} records`} className="admin-record-rows">
           <ul className="admin-record-row-list">
-            {effectiveRows.map((row) => (
-              <li key={row.slug}>
+            {effectiveRows.map((row, index) => (
+              <li
+                key={row.slug}
+                className={
+                  row.group && row.group !== effectiveRows[index - 1]?.group
+                    ? "admin-record-row-group-start"
+                    : undefined
+                }
+              >
+                {row.group && row.group !== effectiveRows[index - 1]?.group ? (
+                  <h3 className="admin-record-group-heading">{row.group}</h3>
+                ) : null}
                 <a
                   href={row.href}
                   className={

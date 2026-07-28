@@ -149,6 +149,29 @@ describe("RecordList case-insensitive/slug filtering (initial render)", () => {
 });
 
 describe("RecordList rows and selection", () => {
+  it("renders represented group headings in row order and hides filtered-empty groups", () => {
+    const html = renderList({
+      initialQuery: "cave",
+      rows: [
+        {
+          href: "/admin/locations/region/edit",
+          primary: "Region",
+          slug: "region",
+          group: "Region",
+        },
+        {
+          href: "/admin/locations/cave/edit",
+          primary: "Cave",
+          slug: "cave",
+          group: "Dungeon",
+        },
+      ],
+    });
+
+    expect(html).toContain("admin-record-group-heading");
+    expect(html).toContain(">Dungeon</h3>");
+    expect(html).not.toContain(">Region</h3>");
+  });
   it("renders primary labels, optional secondary context, and caller hrefs verbatim", () => {
     const html = renderList();
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADMIN_LOCATION_TYPE_ORDER,
   LOCATION_CREATE_PATH,
   LOCATION_LIST_PATH,
   describeLinkedLocations,
@@ -11,9 +12,44 @@ import {
   locationHierarchyHref,
   locationSourcesHref,
   normalizeLocationSearchQuery,
+  sortAdminLocations,
   sortLocationAcquisitionSourcesByType,
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
+
+describe("admin Location type hierarchy", () => {
+  it("defines every established type exactly once, from Region to Special Area", () => {
+    expect(ADMIN_LOCATION_TYPE_ORDER).toEqual([
+      "REGION",
+      "ROUTE",
+      "TOWN",
+      "BUILDING",
+      "DUNGEON",
+      "SUB_AREA",
+      "SPECIAL_AREA",
+    ]);
+    expect(new Set(ADMIN_LOCATION_TYPE_ORDER)).toHaveLength(7);
+  });
+
+  it("sorts by canonical type, then name, then stable id tie-breaker", () => {
+    const locations = [
+      { id: "z", name: "Shared", type: "SPECIAL_AREA" as const },
+      { id: "b", name: "Shared", type: "TOWN" as const },
+      { id: "a", name: "Shared", type: "TOWN" as const },
+      { id: "r", name: "Amber", type: "REGION" as const },
+      { id: "d", name: "Cavern", type: "DUNGEON" as const },
+    ];
+
+    expect(sortAdminLocations(locations).map(({ id }) => id)).toEqual([
+      "r",
+      "a",
+      "b",
+      "d",
+      "z",
+    ]);
+    expect(locations[0].id).toBe("z");
+  });
+});
 
 // Admin Polish Pass 1, Part 5: shared between the dedicated /delete route
 // and the in-editor delete dialog — pinned here so the two surfaces can

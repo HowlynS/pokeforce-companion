@@ -17,8 +17,8 @@
 // Locations are the only converted resource with a self-referencing
 // hierarchy. This slice deliberately does NOT build a tree control,
 // expandable hierarchy, or nested navigation — the record list stays a
-// single flat, alphabetically ordered list (matching every other
-// workspace's own ordering exactly), with the parent's name surfacing as
+// flat, grouped in the explicit broad-to-specific Location type order,
+// then alphabetically within each group. The parent's name surfaces as
 // concise secondary context only. `include: { parent: true }` loads that
 // context in the same query — never a per-row follow-up — so showing it
 // introduces no N+1 behavior.
@@ -40,6 +40,7 @@ import {
   LOCATION_LIST_PATH,
   locationEditHref,
   normalizeLocationSearchQuery,
+  sortAdminLocations,
   withLocationSearchQuery,
 } from "@/lib/admin/location-workspace";
 
@@ -98,8 +99,7 @@ export async function LocationWorkspace({
 
   // The COMPLETE list, always — filtering is now instant and client-side
   // (Phase B1, System A), so there is no server-side `where`/`q` filter
-  // and no pagination `skip`/`take` here at all. Alphabetical, matching
-  // the previous admin table's own ordering. The parent relation is
+  // and no pagination `skip`/`take` here at all. The parent relation is
   // loaded alongside (never a per-row follow-up query) so the secondary
   // row context below never triggers an N+1 query.
   //
@@ -108,10 +108,10 @@ export async function LocationWorkspace({
   // `searchTerms`, the shared filter's resource-agnostic escape hatch for
   // exactly this kind of already-displayed, already-loaded short metadata
   // (never a Location-specific branch inside the shared matcher itself).
-  const locations = await prisma.location.findMany({
+  const locations = sortAdminLocations(await prisma.location.findMany({
     include: { parent: true },
-    orderBy: { name: "asc" },
-  });
+    orderBy: [{ name: "asc" }, { id: "asc" }],
+  }));
 
   // Resolved concurrently — image is already a scalar field on every row
   // from the query above (include only adds the parent relation), so
@@ -131,6 +131,7 @@ export async function LocationWorkspace({
     secondary: locationSecondaryContext(location),
     selected: location.slug === selectedSlug,
     image: imageUrls[index],
+    group: LOCATION_TYPE_LABELS[location.type],
   }));
 
   return (

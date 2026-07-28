@@ -1164,6 +1164,16 @@ test("record-list search filters instantly while typing by name, slug, and type 
   await expect(recordRow(page, "Test E2E Location Search A")).toBeVisible();
   await expect(recordRow(page, "Test E2E Location Search B")).toBeVisible();
   await expect(recordRow(page, "Test E2E Location Search C")).toBeVisible();
+  await expect(page.locator(".admin-record-group-heading")).toHaveText([
+    "Route",
+    "Town",
+    "Dungeon",
+  ]);
+  await expect(page.locator(".admin-record-primary")).toHaveText([
+    "Test E2E Location Search B",
+    "Test E2E Location Search A",
+    "Test E2E Location Search C",
+  ]);
   await expect(page.getByText("3 of ", { exact: false })).toBeVisible();
   await expect(page).toHaveURL(/\/admin\/locations\?q=/);
 

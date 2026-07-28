@@ -5630,6 +5630,21 @@ input[type="checkbox"] {
   }
 }
 
+.admin-record-group-heading {
+  margin: 0;
+  padding: 12px 12px 7px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.admin-record-row-group-start:not(:first-child) {
+  border-top: 1px solid var(--color-border);
+}
+
 /* ---- Shop Inventory -------------------------------------------------- */
 .shop-inventory-form.form-grid-wide.form-grid-responsive {
   grid-template-columns: minmax(0, 1fr);
