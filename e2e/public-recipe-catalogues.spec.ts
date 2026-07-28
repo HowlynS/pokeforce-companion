@@ -157,9 +157,15 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   const denseCard = allCards.filter({ hasText: denseRecipe.name });
   await expect(
     denseCard.getByRole("link", {
-      name: `${denseRecipe.name}, produces ×${denseRecipe.resultQuantityMin} ${denseRecipe.result.name}, category ${fixture.outputCategory.name}`,
+      name: `${denseRecipe.name}, produces ×${denseRecipe.resultQuantityMin} ${denseRecipe.result.name}, category ${fixture.outputCategory.name}, ${fixture.profession.name} level ${denseRecipe.requiredLevel}`,
       exact: true,
     })
+  ).toBeVisible();
+  await expect(
+    denseCard.getByText(
+      `${fixture.profession.name} · Level ${denseRecipe.requiredLevel}`,
+      { exact: true }
+    )
   ).toBeVisible();
   const visibleIngredients = denseCard.locator(".recipe-output-ingredient");
   await expect(visibleIngredients).toHaveCount(3);
@@ -280,10 +286,6 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
 test("Recipes index exposes only Profession filtering and drops stale Class queries", async ({
   page,
 }) => {
-  // The deterministic seed's own Profession/Class assignments happen to
-  // co-occur 1:1 (every Smithing recipe is Artisan, every Alchemy recipe
-  // is Ranger), so a temporary Recipe pairing Smithing with Ranger proves
-  // genuine AND filtering rather than one filter alone happening to match.
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/recipes");
   await expect(
@@ -295,20 +297,13 @@ test("Recipes index exposes only Profession filtering and drops stale Class quer
   await expect(page.getByText("Required class", { exact: true })).toHaveCount(
     0
   );
-
-    // --- Class filter alone: seeded Alchemy recipes (2) plus the new
-    // Smithing/Ranger combo recipe (1) = 3 Ranger recipes ------------------
-    // --- Combined Profession + Class: only the one Recipe that is BOTH
-    // Smithing and Ranger — none of Smithing's other 5 (all Artisan)
-    // recipes, and none of Alchemy's other Ranger recipe, appear ----------
-    // --- Clearing the Class filter (its own "All") preserves Profession --
-    // --- An invalid Class canonicalizes safely, preserving a valid
-    // Profession filter rather than wiping both -----------------------------
+  // A stale Class parameter is removed while the supported Profession
+  // filter remains intact.
   await page.goto("/recipes?profession=smithing&class=not-a-class");
   await expect(page).toHaveURL("/recipes?profession=smithing");
 
-    // --- An invalid Class alone (no other filter) canonicalizes to the
-    // fully unfiltered catalogue -------------------------------------------
+  // A stale Class parameter by itself canonicalizes to the unfiltered
+  // catalogue.
   await page.goto("/recipes?class=not-a-class");
   await expect(page).toHaveURL("/recipes");
 });

@@ -56,13 +56,6 @@ export const E2E_PROFESSION_RELATION_SLUG_PREFIX =
 // trainer, artisan, rancher, ranger, farmhand).
 export const E2E_PLAYER_CLASS_SLUG_PREFIX = "test-e2e-player-class";
 
-// Temporary Item/Recipe rows created ONLY so a Recipe can reference a
-// test Player Class for the relation-blocked deletion test. Deliberately a
-// separate, unmistakable prefix, mirroring
-// E2E_PROFESSION_RELATION_SLUG_PREFIX exactly.
-export const E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX =
-  "test-e2e-player-class-relation-";
-
 // Covers every Item slug the browser tests use (test-e2e-item,
 // test-e2e-item-updated, test-e2e-item-duplicate, the blocked-deletion
 // items, and the relation helper item below) and can never match a seeded
@@ -816,11 +809,6 @@ export async function createTemporaryRecipeForProfession(
       ]
     );
 
-    // Recipe.playerClassId is required; every raw-SQL fixture Recipe
-    // references the seeded "trainer" Player Class (read-only, never
-    // created or modified here — Player Class assignment is not what this
-    // fixture tests) exactly like Recipe.resultingItem/profession
-    // reference real rows.
     await client.query(
       `insert into "Recipe"
          (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "professionId", "experienceReward", "updatedAt")
@@ -887,8 +875,6 @@ export async function createTemporaryRecipeForProfessionsTab(
       ]
     );
 
-    // Recipe.playerClassId is required; references the seeded "trainer"
-    // Player Class (read-only) exactly like the sibling helper above.
     await client.query(
       `insert into "Recipe"
          (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax",
@@ -931,12 +917,7 @@ export async function removeTemporaryRecipeForProfession(): Promise<number> {
 // Defense in depth for every Player Class helper below, mirroring
 // assertProfessionPrefixesAreSafe exactly.
 function assertPlayerClassPrefixesAreSafe(): void {
-  if (
-    E2E_PLAYER_CLASS_SLUG_PREFIX.length < 5 ||
-    !E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX.startsWith(
-      E2E_PLAYER_CLASS_SLUG_PREFIX
-    )
-  ) {
+  if (E2E_PLAYER_CLASS_SLUG_PREFIX.length < 5) {
     throw new Error(
       "Refusing prefix-scoped cleanup: the browser-test Player Class slug prefixes are unsafe."
     );
@@ -944,73 +925,36 @@ function assertPlayerClassPrefixesAreSafe(): void {
 }
 
 /**
- * Deletes ONLY the browser-test Player Class rows and the temporary
- * relation rows created for the blocked-deletion test, in foreign-key-safe
- * order: Recipe first (it references both the Item and the Player Class),
- * then Item, then PlayerClass. Mirrors deleteE2eTestProfessionRecords
- * exactly.
+ * Deletes only browser-test Player Class rows. No Recipe dependency cleanup
+ * exists because Classes are independent resources.
  */
 export async function deleteE2eTestPlayerClassRecords(): Promise<number> {
   assertPlayerClassPrefixesAreSafe();
 
   return withVerifiedDatabase(async (client) => {
-    const recipes = await client.query(
-      `delete from "Recipe" where slug like $1`,
-      [`${E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX}%`]
-    );
-    const items = await client.query(
-      `delete from "Item" where slug like $1`,
-      [`${E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX}%`]
-    );
     const playerClasses = await client.query(
       `delete from "PlayerClass" where slug like $1`,
       [`${E2E_PLAYER_CLASS_SLUG_PREFIX}%`]
     );
-    return (
-      (recipes.rowCount ?? 0) +
-      (items.rowCount ?? 0) +
-      (playerClasses.rowCount ?? 0)
-    );
+    return playerClasses.rowCount ?? 0;
   });
 }
 
 /**
- * Read-only count of leftover browser-test Player Class rows plus any
- * temporary relation Item/Recipe rows.
+ * Read-only count of leftover browser-test Player Class rows.
  */
 export async function countE2eTestPlayerClassRecords(): Promise<number> {
   return withVerifiedDatabase(async (client) => {
     const result = await client.query(
-      `select
-         (select count(*) from "PlayerClass" where slug like $1)::int
-           + (select count(*) from "Recipe" where slug like $2)::int
-           + (select count(*) from "Item" where slug like $2)::int as n`,
-      [
-        `${E2E_PLAYER_CLASS_SLUG_PREFIX}%`,
-        `${E2E_PLAYER_CLASS_RELATION_SLUG_PREFIX}%`,
-      ]
+      `select count(*)::int as n
+       from "PlayerClass"
+       where slug like $1`,
+      [`${E2E_PLAYER_CLASS_SLUG_PREFIX}%`]
     );
     return result.rows[0].n as number;
   });
 }
 
-/**
- * Creates the minimum temporary rows for a Recipe to require a
- * browser-test Player Class: one Item (the required resulting item) and
- * one Recipe requiring the Class. Both rows use the unmistakable relation
- * prefix, and the target Player Class slug MUST itself carry the
- * browser-test prefix, so a seeded Class can never be linked. Item/Recipe
- * admin forms are deliberately not used — those browser workflows are out
- * of scope for this suite. Unlike the Profession twin, the Recipe's own
- * playerClassId IS the relation under test (required, not optional), so no
- * separate seeded fallback Class is needed here.
- */
-/**
- * Removes ONLY the temporary relation Recipe/Item rows (foreign-key-safe
- * order), leaving the browser-test Player Class in place so the deletion
- * flow can be retried through the real UI. Returns how many rows were
- * removed.
- */
 // Defense in depth for every Location helper below.
 function assertLocationPrefixIsSafe(): void {
   if (E2E_LOCATION_SLUG_PREFIX.length < 5) {
@@ -1263,9 +1207,6 @@ export async function createTemporaryRecipeProducingItem(
       );
     }
 
-    // Recipe.playerClassId is required; references the seeded "trainer"
-    // Player Class (read-only, never created or modified here — Player
-    // Class assignment is not what this fixture tests).
     // id has no database default (Prisma cuids are client-generated) and
     // updatedAt has no database default (@updatedAt is client-maintained),
     // so both are supplied explicitly.
@@ -1326,9 +1267,6 @@ export async function createTemporaryRecipeProducingItemWithMetadata(
       );
     }
 
-    // Recipe.playerClassId is required; references the seeded "trainer"
-    // Player Class (read-only, never created or modified here — Player
-    // Class assignment is not what this fixture tests).
     await client.query(
       `insert into "Recipe"
          (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax",
@@ -1385,9 +1323,6 @@ export async function createTemporaryIngredientReferenceToItem(
       ]
     );
 
-    // Recipe.playerClassId is required; references the seeded "trainer"
-    // Player Class (read-only, never created or modified here — Player
-    // Class assignment is not what this fixture tests).
     const recipe = await client.query(
       `insert into "Recipe"
          (id, slug, name, "resultingItemId", "resultQuantityMin", "resultQuantityMax", "experienceReward", "updatedAt")
@@ -1505,18 +1440,6 @@ export async function countE2eTestRecipeRecords(): Promise<number> {
 }
 
 /**
- * Creates one temporary Recipe referencing an EXISTING seeded Profession
- * and Player Class by slug (both read-only, never created or modified) —
- * built specifically to prove genuine combined Profession+Class AND
- * filtering on the public Recipes catalogue against a pairing that does
- * not already exist in the deterministic seed data (every seeded recipe's
- * Profession and Class happen to co-occur 1:1). Uses the same
- * E2E_RECIPE_SLUG_PREFIX/E2E_RECIPE_ITEM_SLUG_PREFIX prefixes as every
- * other Recipe browser-test fixture, so the existing
- * deleteE2eTestRecipeRecords sweep already catches it — no new cleanup
- * surface.
- */
-/**
  * Creates one temporary Recipe carrying SIX ingredient rows — one more
  * than the edit form's fixed capacity — so the existing capacity guard on
  * the edit page can be exercised. The recipe and its ingredient rows are
@@ -1555,9 +1478,6 @@ export async function createTemporaryRecipeWithSixIngredients(): Promise<void> {
       items.rows.map((row) => [row.slug as string, row.id as string])
     );
 
-    // Recipe.playerClassId is required; references the seeded "trainer"
-    // Player Class (read-only, never created or modified here — Player
-    // Class assignment is not what this fixture tests).
     // id has no database default (Prisma cuids are client-generated) and
     // updatedAt has no database default (@updatedAt is client-maintained),
     // so both are supplied explicitly.
@@ -2221,6 +2141,7 @@ export async function createE2ePublicProfessionDetailFixture(
     slug: string;
     resultQuantityMin: number;
     resultQuantityMax: number;
+    requiredLevel: number;
     result: {
       name: string;
       slug: string;

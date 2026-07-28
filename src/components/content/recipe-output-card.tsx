@@ -34,6 +34,10 @@ export function RecipeOutputCard({ recipe }: RecipeOutputCardProps) {
     recipe.resultingItem.category
       ? `, category ${recipe.resultingItem.category.name}`
       : ""
+  }${
+    recipe.profession && recipe.requiredLevel !== null
+      ? `, ${recipe.profession.name} level ${recipe.requiredLevel}`
+      : ""
   }`;
   const renderIngredients = (
     ingredients: RecipeOutputCardValue["ingredients"]

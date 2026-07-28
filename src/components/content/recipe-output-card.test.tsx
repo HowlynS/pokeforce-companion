@@ -41,7 +41,7 @@ describe("RecipeOutputCard", () => {
 
     expect(html).toContain('href="/recipes/dense-recipe"');
     expect(html).toContain(
-      'aria-label="Dense Recipe, produces ×2–4 Dense Result, category Tools"'
+      'aria-label="Dense Recipe, produces ×2–4 Dense Result, category Tools, Smithing level 25"'
     );
     expect(html).toContain("×2–4");
     expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(3);
@@ -52,5 +52,14 @@ describe("RecipeOutputCard", () => {
       'aria-label="Show 1 more ingredients for Dense Recipe"'
     );
     expect(html).not.toContain("Ingredient 4");
+  });
+
+  it("hides profession-level metadata when no required level is set", () => {
+    const html = renderToStaticMarkup(
+      <RecipeOutputCard recipe={{ ...recipe, requiredLevel: null }} />
+    );
+
+    expect(html).not.toContain("Level 25");
+    expect(html).not.toContain("Smithing level 25");
   });
 });
