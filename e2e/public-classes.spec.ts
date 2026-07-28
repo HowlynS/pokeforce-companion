@@ -1,0 +1,156 @@
+// Non-destructive browser coverage for the public Classes index and detail
+// pages, against the REAL isolated Supabase test project. Entirely
+// read-only: every check reads the deterministic seed from prisma/seed.ts
+// (exact counts confirmed directly against the test database before
+// writing this spec), matching the established convention other public
+// specs already use (e.g. public-details.spec.ts, admin-professions.spec.ts)
+// rather than building a bespoke fixture — no record, Auth user, or
+// Storage object is ever created or touched here.
+
+import { expect, test, type Page } from "@playwright/test";
+
+let pageErrors: string[] = [];
+
+test.beforeEach(({ page }) => {
+  pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+});
+
+test.afterEach(() => {
+  expect(pageErrors, "no uncaught page errors are allowed").toEqual([]);
+});
+
+function cardLink(page: Page, name: string) {
+  return page
+    .getByRole("link")
+    .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+}
+
+async function expectNoHorizontalOverflow(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth
+      )
+    )
+    .toBe(true);
+}
+
+test.describe("public Classes index", () => {
+  test("lists every seeded class with its recipe count, each a full-card link", async ({
+    page,
+  }) => {
+    await page.goto("/classes");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Classes", exact: true })
+    ).toBeVisible();
+
+    // The five foundational classes, matching the deterministic seed.
+    for (const name of ["Trainer", "Artisan", "Rancher", "Ranger", "Farmhand"]) {
+      await expect(cardLink(page, name)).toBeVisible();
+    }
+
+    const artisanCard = cardLink(page, "Artisan");
+    await expect(artisanCard).toHaveAttribute("href", "/classes/artisan");
+    await expect(artisanCard).toContainText("5 recipes");
+
+    const rancherCard = cardLink(page, "Rancher");
+    await expect(rancherCard).toContainText("0 recipes");
+  });
+
+  test("is responsive with no horizontal overflow at desktop and mobile widths", async ({
+    page,
+  }) => {
+    for (const viewport of [
+      { width: 1920, height: 1080 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto("/classes");
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+});
+
+test.describe("public Class detail", () => {
+  test("a populated class caps its Recipe preview at three, with a working browse-all link", async ({
+    page,
+  }) => {
+    await page.goto("/classes/artisan");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Artisan", exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Breadcrumb" })
+    ).toContainText("Classes");
+
+    // 5 seeded Recipes require Artisan; the preview caps at 3.
+    await expect(page.locator(".profession-recipe-preview-row")).toHaveCount(3);
+    await expect(page.locator(".recipe-output-card")).toHaveCount(0);
+
+    const browseAll = page.getByRole("link", {
+      name: "Browse all Artisan recipes",
+      exact: true,
+    });
+    await expect(browseAll).toHaveAttribute("href", "/recipes?class=artisan");
+
+    // Verification renders inline, factually (unverified seed data has no
+    // stamp).
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Verification", exact: true })
+    ).toBeVisible();
+  });
+
+  test("a class with zero recipes hides the optional preview and browse-all link", async ({
+    page,
+  }) => {
+    await page.goto("/classes/rancher");
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Rancher", exact: true })
+    ).toBeVisible();
+    await expect(page.locator(".profession-hero-counts")).toContainText("0");
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: /Browse all .* recipes/ })
+    ).toHaveCount(0);
+  });
+
+  test("an unknown class slug 404s with the public not-found shell", async ({
+    page,
+  }) => {
+    const response = await page.goto("/classes/not-a-real-class");
+
+    expect(response?.status()).toBe(404);
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "This page could not be found.",
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Main navigation" })
+    ).toBeVisible();
+  });
+
+  test("is responsive with no horizontal overflow at desktop, intermediate, and mobile widths", async ({
+    page,
+  }) => {
+    for (const viewport of [
+      { width: 1920, height: 1080 },
+      { width: 3440, height: 1440 },
+      { width: 1000, height: 1000 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto("/classes/artisan");
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+});

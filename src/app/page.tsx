@@ -23,6 +23,11 @@ const resourceCards = [
     href: "/professions",
   },
   {
+    title: "Classes",
+    description: "Player classes and the recipes that require them.",
+    href: "/classes",
+  },
+  {
     title: "Locations",
     description: "Regions, routes, and points of interest.",
     href: "/locations",

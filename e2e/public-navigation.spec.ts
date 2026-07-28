@@ -78,12 +78,23 @@ test.describe("homepage", () => {
     await expect(card).toBeVisible();
     await expect(card).toHaveAttribute("href", "/shops");
   });
+
+  test("the Classes card is visible and links to /classes", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const card = cardLink(page, "Classes");
+    await expect(card).toBeVisible();
+    await expect(card).toHaveAttribute("href", "/classes");
+  });
 });
 
 const NAV_TARGETS = [
   { label: "Items", path: "/items", heading: "Items" },
   { label: "Recipes", path: "/recipes", heading: "Recipes" },
   { label: "Professions", path: "/professions", heading: "Professions" },
+  { label: "Classes", path: "/classes", heading: "Classes" },
   { label: "Locations", path: "/locations", heading: "Locations" },
   { label: "Shops", path: "/shops", heading: "Shops" },
 ] as const;
@@ -289,6 +300,12 @@ const LIST_PAGES = [
     heading: "Categories",
     seededName: "Materials",
     detailHref: "/categories/materials",
+  },
+  {
+    path: "/classes",
+    heading: "Classes",
+    seededName: "Trainer",
+    detailHref: "/classes/trainer",
   },
 ] as const;
 
