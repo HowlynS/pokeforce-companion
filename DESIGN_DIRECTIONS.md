@@ -177,6 +177,19 @@ Public collection and context pages have distinct responsibilities:
   EXP reward as separate facts alongside Result and Ingredients. Recipe cards
   expose the required Profession level when present.
 
+### Public Item catalogue cards
+
+Public Item catalogue cards remain visually simpler than Recipe cards:
+
+- Use a centered fixed image or fallback stage with identical geometry.
+- Keep the Item name left-aligned at `20px` with a `1.25` line-height.
+- Show only the Category name directly beneath the title at `14px`, upright,
+  muted, and medium weight.
+- Do not prefix the Category with `Category:`.
+- Do not show Tradeable status, description, or base value.
+- Preserve full-card navigation, visible focus, long-title wrapping, and the
+  established responsive grid.
+
 Only render facts present in the current schema and query. Do not invent
 descriptions, rarity, weight, buy or sell price, crafting time, crafting
 difficulty, station, required level, notes, or any other property.

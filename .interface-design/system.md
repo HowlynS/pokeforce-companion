@@ -105,6 +105,19 @@ same focused commit.
   EXP reward as separate facts. Recipe cards expose the Profession level when
   present.
 
+### Public Item catalogue cards
+
+- Keep Item cards visually simpler than Recipe cards.
+- Center the fixed image/fallback stage; genuine images and fallbacks use
+  identical geometry.
+- Item title: left-aligned, `20px`, `1.25` line-height, clean wrapping.
+- Category: Category name only, directly beneath the title, left-aligned,
+  `14px`, upright, muted, and medium weight.
+- Never show a `Category:` prefix, Tradeable status, description, or base
+  value.
+- Preserve full-card navigation, visible focus, and the responsive catalogue
+  grid.
+
 ### PlayerClass naming
 
 - Internal/schema/domain name: `PlayerClass` — never bare `Class` (collides
