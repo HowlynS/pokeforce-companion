@@ -77,12 +77,36 @@ async function addFormattedDescription(page: Page) {
 
   const dialog = page.getByRole("dialog", { name: "Add link" });
   await expect(dialog).toBeVisible();
-  await dialog.getByLabel("Find an internal resource").fill("Iron Ore");
+  const resourceSearch = dialog.getByLabel("Find an internal resource");
+  await expect(dialog.locator(".rich-link-results")).toHaveCount(0);
+  await expect(
+    dialog.getByText("No matching resources", { exact: true })
+  ).toHaveCount(0);
+
+  await resourceSearch.fill("zzzz-no-matching-resource");
+  await expect(
+    dialog.getByText("No matching resources", { exact: true })
+  ).toBeVisible();
+  await expect(dialog.locator(".rich-link-results")).toHaveCount(0);
+
+  await resourceSearch.fill("Iron Ore");
   const result = dialog
     .getByRole("button")
     .filter({ hasText: /^Iron OreItem/ });
   await expect(result).toBeVisible();
-  await result.click();
+  await resourceSearch.press("ArrowDown");
+  await expect(result).toBeFocused();
+  await result.press("Enter");
+
+  const selectedResource = dialog.getByRole("region", {
+    name: "Selected resource",
+  });
+  await expect(selectedResource).toContainText("Iron Ore");
+  await expect(selectedResource).toContainText("Item");
+  await expect(selectedResource).toContainText("/items/iron-ore");
+  await expect(resourceSearch).toHaveValue("");
+  await expect(dialog.locator(".rich-link-results")).toHaveCount(0);
+
   await dialog.getByRole("button", { name: "Apply link" }).click();
   await expect(dialog).toHaveCount(0);
   await expect(editor.getByRole("link", { name: "Iron Ore" })).toHaveAttribute(
@@ -151,6 +175,73 @@ test("creates, edits, restores, validates, and publicly renders formatted conten
 
   await page.goto(`/admin/categories/${CATEGORY_SLUG}/edit`);
   const editor = descriptionEditor(page);
+  const editorLink = editor.getByRole("link", { name: "Iron Ore" });
+  await expect(editorLink).toBeVisible();
+
+  await editorLink.hover();
+  const linkPopover = page.getByRole("dialog", { name: "Link destination" });
+  await expect(linkPopover).toBeVisible();
+  await expect(linkPopover).toContainText("Iron Ore");
+  await expect(linkPopover).toContainText("Item");
+  await expect(linkPopover).toContainText("/items/iron-ore");
+
+  const popoverBox = await linkPopover.boundingBox();
+  expect(popoverBox).not.toBeNull();
+  expect(popoverBox!.x).toBeGreaterThanOrEqual(0);
+  expect(popoverBox!.x + popoverBox!.width).toBeLessThanOrEqual(
+    await page.evaluate(() => window.innerWidth)
+  );
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.keyboard.press("Escape");
+  await expect(linkPopover).toHaveCount(0);
+  const narrowScrollWidth = await page.evaluate(
+    () => document.documentElement.scrollWidth
+  );
+  await editorLink.scrollIntoViewIfNeeded();
+  await editorLink.hover();
+  const narrowPopoverBox = await linkPopover.boundingBox();
+  expect(narrowPopoverBox).not.toBeNull();
+  expect(narrowPopoverBox!.x).toBeGreaterThanOrEqual(0);
+  expect(narrowPopoverBox!.x + narrowPopoverBox!.width).toBeLessThanOrEqual(390);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth)
+  ).toBeLessThanOrEqual(narrowScrollWidth);
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  await page.getByLabel("Name", { exact: true }).hover();
+  await expect(linkPopover).toHaveCount(0);
+
+  await editorLink.focus();
+  await expect(linkPopover).toBeVisible();
+  const popoverEditButton = linkPopover.getByRole("button", {
+    name: "Edit link",
+  });
+  await popoverEditButton.focus();
+  await expect(popoverEditButton).toBeFocused();
+  await page.getByLabel("Name", { exact: true }).focus();
+  await expect(linkPopover).toHaveCount(0);
+
+  const editUrl = page.url();
+  await editorLink.click();
+  await expect(page).toHaveURL(editUrl);
+  await expect(linkPopover).toBeVisible();
+  await linkPopover.getByRole("button", { name: "Edit link" }).click();
+
+  const editLinkDialog = page.getByRole("dialog", { name: "Edit link" });
+  await expect(editLinkDialog).toBeVisible();
+  await expect(
+    editLinkDialog.getByLabel("Public path or secure external URL")
+  ).toHaveValue("/items/iron-ore");
+  await page.keyboard.press("Escape");
+  await expect(editLinkDialog).toHaveCount(0);
+
+  await editorLink.hover();
+  await expect(linkPopover).toBeVisible();
+  await linkPopover.getByRole("button", { name: "Remove link" }).click();
+  await expect(editor.getByRole("link", { name: "Iron Ore" })).toHaveCount(0);
+  await expect(editor).toContainText("Iron Ore");
+
   await editor.press("Control+End");
   await editor.press("Enter");
   await editor.type("Draft-only underline");

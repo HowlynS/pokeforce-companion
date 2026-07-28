@@ -299,6 +299,19 @@ and headings stay subordinate to the page title. Catalogue cards do not
 inherit long-form rich content unless a future approved card pattern explicitly
 calls for it.
 
+The admin rich-text editor's internal-resource link search renders feedback
+only while actively loading, once results are populated, or after a completed
+non-empty search finds nothing ("No matching resources") — an empty bordered
+results container must never appear. Selecting a resource clears the stale
+search and shows a selected-target summary (label, type/context, and
+canonical path). Every authored link also exposes a shared, viewport-aware
+destination popover on hover, keyboard focus, and caret placement, offering
+Edit link, Remove link, and Escape dismissal; linked text must not navigate
+while being edited, so clicking a link in the editor opens the popover instead
+of following it. Removing a link preserves its visible text and other
+formatting. Both the search and the popover resolve resources through the same
+canonical resource-link infrastructure — never a parallel lookup.
+
 ## Accessibility and Interaction
 
 Use semantic links and headings, preserve accessible names, and provide

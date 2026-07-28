@@ -7,8 +7,140 @@ import {
   type ResourceLinkOption,
 } from "@/lib/admin/resource-link";
 
+async function resolveResourceLink(href: string) {
+  const match = href.match(
+    /^\/(items|recipes|professions|classes|categories|locations|shops)\/([^/?#]+)$/
+  );
+  if (!match) {
+    return null;
+  }
+
+  let slug: string;
+  try {
+    slug = decodeURIComponent(match[2]);
+  } catch {
+    return null;
+  }
+
+  switch (match[1]) {
+    case "items": {
+      const item = await prisma.item.findUnique({
+        where: { slug },
+        select: { name: true, slug: true, category: { select: { name: true } } },
+      });
+      return item
+        ? ({
+            type: "Item",
+            name: item.name,
+            href: `/items/${item.slug}`,
+            context: item.category?.name ?? null,
+          } satisfies ResourceLinkOption)
+        : null;
+    }
+    case "recipes": {
+      const recipe = await prisma.recipe.findUnique({
+        where: { slug },
+        select: {
+          name: true,
+          slug: true,
+          profession: { select: { name: true } },
+        },
+      });
+      return recipe
+        ? ({
+            type: "Recipe",
+            name: recipe.name,
+            href: `/recipes/${recipe.slug}`,
+            context: recipe.profession?.name ?? null,
+          } satisfies ResourceLinkOption)
+        : null;
+    }
+    case "professions": {
+      const profession = await prisma.profession.findUnique({
+        where: { slug },
+        select: { name: true, slug: true },
+      });
+      return profession
+        ? ({
+            type: "Profession",
+            name: profession.name,
+            href: `/professions/${profession.slug}`,
+            context: null,
+          } satisfies ResourceLinkOption)
+        : null;
+    }
+    case "classes": {
+      const playerClass = await prisma.playerClass.findUnique({
+        where: { slug },
+        select: { name: true, slug: true },
+      });
+      return playerClass
+        ? ({
+            type: "Class",
+            name: playerClass.name,
+            href: `/classes/${playerClass.slug}`,
+            context: null,
+          } satisfies ResourceLinkOption)
+        : null;
+    }
+    case "categories": {
+      const category = await prisma.category.findUnique({
+        where: { slug },
+        select: { name: true, slug: true },
+      });
+      return category
+        ? ({
+            type: "Category",
+            name: category.name,
+            href: `/categories/${category.slug}`,
+            context: null,
+          } satisfies ResourceLinkOption)
+        : null;
+    }
+    case "locations": {
+      const location = await prisma.location.findUnique({
+        where: { slug },
+        select: { name: true, slug: true, type: true },
+      });
+      return location
+        ? ({
+            type: "Location",
+            name: location.name,
+            href: `/locations/${location.slug}`,
+            context: location.type,
+          } satisfies ResourceLinkOption)
+        : null;
+    }
+    case "shops": {
+      const shop = await prisma.shop.findUnique({
+        where: { slug },
+        select: {
+          name: true,
+          slug: true,
+          location: { select: { name: true } },
+        },
+      });
+      return shop
+        ? ({
+            type: "Shop",
+            name: shop.name,
+            href: `/shops/${shop.slug}`,
+            context: shop.location.name,
+          } satisfies ResourceLinkOption)
+        : null;
+    }
+    default:
+      return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   await requireAdminUser();
+
+  const href = request.nextUrl.searchParams.get("href")?.trim() ?? "";
+  if (href) {
+    return NextResponse.json({ result: await resolveResourceLink(href) });
+  }
 
   const query = request.nextUrl.searchParams.get("q")?.trim().slice(0, 80) ?? "";
   if (query.length < RESOURCE_LINK_SEARCH_MIN_LENGTH) {

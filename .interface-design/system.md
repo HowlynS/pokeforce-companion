@@ -210,6 +210,35 @@ same focused commit.
   preserve hide-empty behavior and wrap long text/URLs.
 - Do not place long-form formatted descriptions in catalogue cards by default.
 
+### Admin internal-resource link search feedback
+
+- Render search feedback only for one of: active loading ("Searching…"),
+  populated results, or a completed non-empty search with no matches
+  ("No matching resources").
+- Never render an empty bordered results container; the bordered
+  `.rich-link-results` box only mounts once there are results to show.
+- Selecting a result clears the stale query/results and shows a selected-target
+  summary (`.rich-link-selected-resource`): name, type/context, and the
+  canonical path.
+- Reuse the existing canonical resource-link lookup
+  (`src/app/admin/resource-links/route.ts`) for both search and href
+  resolution; do not add a parallel lookup path.
+
+### Rich-text link hover/focus popover
+
+- Every rich-text link exposes a shared viewport-aware destination popover
+  (`.rich-link-popover`) on hover, keyboard focus, and caret placement inside
+  the link.
+- Linked text must not navigate while being edited; clicks on a link inside the
+  editor open the popover instead of following the href.
+- The popover supports Edit link, Remove link, Escape dismissal, safe path
+  wrapping, visible focus, and a graceful "Internal resource"/"External link"
+  fallback while the target is still resolving or unresolved.
+- Removing a link preserves its visible text and any other marks (bold,
+  italic, underline) — only the link mark is unset.
+- Popover resource resolution reuses the same canonical resource-link
+  infrastructure as search, never a second lookup implementation.
+
 ## Accessibility and Responsive Rules
 
 - Use semantic headings/links and preserve accessible names.

@@ -1,15 +1,18 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useId,
   useMemo,
   useRef,
   useState,
+  type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { createPortal } from "react-dom";
+import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
   Bold,
@@ -51,7 +54,58 @@ type RichDescriptionEditorProps = {
 
 type LinkSearchResponse = {
   results?: ResourceLinkOption[];
+  result?: ResourceLinkOption | null;
 };
+
+type LinkPopoverState = {
+  anchor: HTMLAnchorElement;
+  href: string;
+  from: number;
+  to: number;
+};
+
+type LinkPopoverPosition = {
+  left: number;
+  top: number;
+  placement: "above" | "below";
+  ready: boolean;
+};
+
+const LINK_POPOVER_GAP = 8;
+const LINK_POPOVER_VIEWPORT_MARGIN = 12;
+
+function linkElementFromTarget(target: EventTarget | null) {
+  return target instanceof Element
+    ? target.closest<HTMLAnchorElement>(".rich-editor-content a[href]")
+    : null;
+}
+
+function linkRangeFromElement(editor: Editor, anchor: HTMLAnchorElement) {
+  const textLength = anchor.textContent?.length ?? 0;
+  if (textLength === 0) {
+    return null;
+  }
+  try {
+    const from = editor.view.posAtDOM(anchor, 0);
+    return { from, to: from + textLength };
+  } catch {
+    return null;
+  }
+}
+
+function linkElementAtSelection(editor: Editor) {
+  if (!editor.isActive("link")) {
+    return null;
+  }
+  try {
+    const dom = editor.view.domAtPos(editor.state.selection.from);
+    const element =
+      dom.node instanceof Element ? dom.node : dom.node.parentElement;
+    return element?.closest<HTMLAnchorElement>("a[href]") ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type ToolbarButtonProps = {
   label: string;
@@ -107,7 +161,10 @@ export function RichDescriptionEditor({
   const linkButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const resultButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const linkSelectionRef = useRef<{ from: number; to: number } | null>(null);
+  const linkPopoverRef = useRef<HTMLDivElement>(null);
+  const linkPopoverCloseTimerRef = useRef<number | null>(null);
   const initializedRef = useRef(false);
   const initialDocument = useMemo(
     () => editorDocumentFromValue(initialValue, fallbackText),
@@ -122,9 +179,85 @@ export function RichDescriptionEditor({
   const [linkError, setLinkError] = useState<string | null>(null);
   const [resourceQuery, setResourceQuery] = useState("");
   const [resourceResults, setResourceResults] = useState<ResourceLinkOption[]>([]);
+  const [selectedResource, setSelectedResource] =
+    useState<ResourceLinkOption | null>(null);
   const [resourceStatus, setResourceStatus] = useState<
-    "idle" | "searching" | "ready" | "error"
+    "idle" | "pending" | "searching" | "ready" | "error"
   >("idle");
+  const [linkPopover, setLinkPopover] = useState<LinkPopoverState | null>(null);
+  const [linkPopoverPosition, setLinkPopoverPosition] =
+    useState<LinkPopoverPosition>({
+      left: 0,
+      top: 0,
+      placement: "below",
+      ready: false,
+    });
+  const [popoverResource, setPopoverResource] =
+    useState<ResourceLinkOption | null>(null);
+  const [popoverResourceLoading, setPopoverResourceLoading] = useState(false);
+
+  const cancelLinkPopoverClose = useCallback(() => {
+    if (linkPopoverCloseTimerRef.current !== null) {
+      window.clearTimeout(linkPopoverCloseTimerRef.current);
+      linkPopoverCloseTimerRef.current = null;
+    }
+  }, []);
+
+  const closeLinkPopover = useCallback(() => {
+    cancelLinkPopoverClose();
+    setLinkPopover(null);
+    setLinkPopoverPosition((current) => ({ ...current, ready: false }));
+    setPopoverResource(null);
+    setPopoverResourceLoading(false);
+  }, [cancelLinkPopoverClose]);
+
+  const scheduleLinkPopoverClose = useCallback(() => {
+    cancelLinkPopoverClose();
+    linkPopoverCloseTimerRef.current = window.setTimeout(() => {
+      closeLinkPopover();
+    }, 140);
+  }, [cancelLinkPopoverClose, closeLinkPopover]);
+
+  const showLinkPopoverForElement = useCallback(
+    (currentEditor: Editor, anchor: HTMLAnchorElement) => {
+      const href = anchor.getAttribute("href")?.trim();
+      const range = linkRangeFromElement(currentEditor, anchor);
+      if (!href || !range || !isSafeRichTextHref(href)) {
+        return;
+      }
+      cancelLinkPopoverClose();
+      setLinkPopover({
+        anchor,
+        href,
+        from: range.from,
+        to: range.to,
+      });
+      setPopoverResource(null);
+      setPopoverResourceLoading(href.startsWith("/"));
+      setLinkPopoverPosition((current) => ({ ...current, ready: false }));
+    },
+    [cancelLinkPopoverClose]
+  );
+
+  const syncLinkPopoverFromSelection = useCallback(
+    (currentEditor: Editor) => {
+      const anchor = linkElementAtSelection(currentEditor);
+      if (anchor) {
+        showLinkPopoverForElement(currentEditor, anchor);
+      } else {
+        window.requestAnimationFrame(() => {
+          const activeElement = document.activeElement;
+          if (
+            !linkPopoverRef.current?.contains(activeElement) &&
+            !linkElementFromTarget(activeElement)
+          ) {
+            closeLinkPopover();
+          }
+        });
+      }
+    },
+    [closeLinkPopover, showLinkPopoverForElement]
+  );
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -148,6 +281,7 @@ export function RichDescriptionEditor({
           HTMLAttributes: {
             rel: "noopener noreferrer",
             target: null,
+            tabindex: "0",
           },
           isAllowedUri: (url) => isSafeRichTextHref(url),
         },
@@ -169,7 +303,10 @@ export function RichDescriptionEditor({
       },
     },
     onCreate: () => setRevision((value) => value + 1),
-    onSelectionUpdate: () => setRevision((value) => value + 1),
+    onSelectionUpdate: ({ editor: currentEditor }) => {
+      setRevision((value) => value + 1);
+      syncLinkPopoverFromSelection(currentEditor);
+    },
     onTransaction: () => setRevision((value) => value + 1),
     onUpdate: ({ editor: currentEditor }) => {
       setSerialized(serializeEditorDocument(currentEditor.getJSON()));
@@ -238,23 +375,181 @@ export function RichDescriptionEditor({
     };
   }, [linkOpen, resourceQuery]);
 
-  function openLinkDialog() {
+  useEffect(() => {
+    if (!linkOpen) {
+      return;
+    }
+    const href = linkHref.trim();
+    if (!href.startsWith("/") || selectedResource?.href === href) {
+      return;
+    }
+    const controller = new AbortController();
+    void fetch(`/admin/resource-links?href=${encodeURIComponent(href)}`, {
+      credentials: "same-origin",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Resolution failed");
+        }
+        return (await response.json()) as LinkSearchResponse;
+      })
+      .then((payload) => {
+        setSelectedResource(payload.result ?? null);
+      })
+      .catch((resolutionError) => {
+        if ((resolutionError as Error).name !== "AbortError") {
+          setSelectedResource(null);
+        }
+      });
+    return () => controller.abort();
+  }, [linkHref, linkOpen, selectedResource?.href]);
+
+  useEffect(() => {
+    if (!linkPopover) {
+      return;
+    }
+    if (!linkPopover.href.startsWith("/")) {
+      return;
+    }
+    const controller = new AbortController();
+    void fetch(
+      `/admin/resource-links?href=${encodeURIComponent(linkPopover.href)}`,
+      {
+        credentials: "same-origin",
+        signal: controller.signal,
+      }
+    )
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Resolution failed");
+        }
+        return (await response.json()) as LinkSearchResponse;
+      })
+      .then((payload) => {
+        setPopoverResource(payload.result ?? null);
+        setPopoverResourceLoading(false);
+      })
+      .catch((resolutionError) => {
+        if ((resolutionError as Error).name !== "AbortError") {
+          setPopoverResource(null);
+          setPopoverResourceLoading(false);
+        }
+      });
+    return () => controller.abort();
+  }, [linkPopover]);
+
+  const updateLinkPopoverPosition = useCallback(() => {
+    const popover = linkPopoverRef.current;
+    if (!linkPopover || !popover || !linkPopover.anchor.isConnected) {
+      return;
+    }
+    const anchorRect = linkPopover.anchor.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const availableBelow =
+      window.innerHeight - anchorRect.bottom - LINK_POPOVER_VIEWPORT_MARGIN;
+    const availableAbove =
+      anchorRect.top - LINK_POPOVER_VIEWPORT_MARGIN;
+    const placement =
+      availableBelow < popoverRect.height && availableAbove > availableBelow
+        ? "above"
+        : "below";
+    const idealTop =
+      placement === "above"
+        ? anchorRect.top - popoverRect.height - LINK_POPOVER_GAP
+        : anchorRect.bottom + LINK_POPOVER_GAP;
+    const top = Math.max(
+      LINK_POPOVER_VIEWPORT_MARGIN,
+      Math.min(
+        idealTop,
+        window.innerHeight - popoverRect.height - LINK_POPOVER_VIEWPORT_MARGIN
+      )
+    );
+    const left = Math.max(
+      LINK_POPOVER_VIEWPORT_MARGIN,
+      Math.min(
+        anchorRect.left,
+        window.innerWidth - popoverRect.width - LINK_POPOVER_VIEWPORT_MARGIN
+      )
+    );
+    setLinkPopoverPosition({ left, top, placement, ready: true });
+  }, [linkPopover]);
+
+  useEffect(() => {
+    if (!linkPopover) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(updateLinkPopoverPosition);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        !linkPopover.anchor.contains(target) &&
+        !linkPopoverRef.current?.contains(target)
+      ) {
+        closeLinkPopover();
+      }
+    };
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeLinkPopover();
+        window.setTimeout(() => linkButtonRef.current?.focus(), 0);
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updateLinkPopoverPosition);
+    window.addEventListener("scroll", updateLinkPopoverPosition, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updateLinkPopoverPosition);
+      window.removeEventListener("scroll", updateLinkPopoverPosition, true);
+    };
+  }, [
+    closeLinkPopover,
+    linkPopover,
+    popoverResource,
+    popoverResourceLoading,
+    updateLinkPopoverPosition,
+  ]);
+
+  useEffect(
+    () => () => {
+      cancelLinkPopoverClose();
+    },
+    [cancelLinkPopoverClose]
+  );
+
+  function openLinkDialog(options?: {
+    selection?: { from: number; to: number };
+    href?: string;
+  }) {
     if (!editor) {
       return;
     }
-    const { from, to } = editor.state.selection;
-    linkSelectionRef.current = { from, to };
-    setLinkHref(String(editor.getAttributes("link").href ?? ""));
+    const selection = options?.selection ?? editor.state.selection;
+    linkSelectionRef.current = {
+      from: selection.from,
+      to: selection.to,
+    };
+    setLinkHref(
+      options?.href ?? String(editor.getAttributes("link").href ?? "")
+    );
     setLinkError(null);
     setResourceQuery("");
     setResourceResults([]);
+    setSelectedResource(null);
     setResourceStatus("idle");
+    closeLinkPopover();
     setLinkOpen(true);
   }
 
   function closeLinkDialog() {
     setLinkOpen(false);
     setLinkError(null);
+    setSelectedResource(null);
     linkSelectionRef.current = null;
     window.setTimeout(() => linkButtonRef.current?.focus(), 0);
   }
@@ -298,6 +593,71 @@ export function RichDescriptionEditor({
       .unsetLink()
       .run();
     closeLinkDialog();
+  }
+
+  function removePopoverLink() {
+    if (!editor || !linkPopover) {
+      return;
+    }
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: linkPopover.from, to: linkPopover.to })
+      .extendMarkRange("link")
+      .unsetLink()
+      .run();
+    closeLinkPopover();
+  }
+
+  function handleEditorMouseOver(event: MouseEvent<HTMLDivElement>) {
+    const anchor = linkElementFromTarget(event.target);
+    if (editor && anchor) {
+      showLinkPopoverForElement(editor, anchor);
+    }
+  }
+
+  function handleEditorMouseOut(event: MouseEvent<HTMLDivElement>) {
+    const anchor = linkElementFromTarget(event.target);
+    if (!anchor) {
+      return;
+    }
+    const nextAnchor = linkElementFromTarget(event.relatedTarget);
+    if (nextAnchor !== anchor) {
+      scheduleLinkPopoverClose();
+    }
+  }
+
+  function handleEditorFocus(event: FocusEvent<HTMLDivElement>) {
+    const anchor = linkElementFromTarget(event.target);
+    if (editor && anchor) {
+      showLinkPopoverForElement(editor, anchor);
+    }
+  }
+
+  function handleEditorBlur(event: FocusEvent<HTMLDivElement>) {
+    const nextTarget = event.relatedTarget;
+    if (
+      linkElementFromTarget(nextTarget) ||
+      (nextTarget instanceof Node &&
+        linkPopoverRef.current?.contains(nextTarget))
+    ) {
+      return;
+    }
+    scheduleLinkPopoverClose();
+  }
+
+  function handleEditorClick(event: MouseEvent<HTMLDivElement>) {
+    const anchor = linkElementFromTarget(event.target);
+    if (!editor || !anchor) {
+      return;
+    }
+    event.preventDefault();
+    showLinkPopoverForElement(editor, anchor);
+  }
+
+  function focusResourceResult(index: number) {
+    const button = resultButtonRefs.current[index];
+    button?.focus();
   }
 
   function handleDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -350,6 +710,11 @@ export function RichDescriptionEditor({
         data-invalid={error ? "true" : undefined}
         aria-invalid={error ? "true" : undefined}
         aria-describedby={error ? errorId : undefined}
+        onMouseOver={handleEditorMouseOver}
+        onMouseOut={handleEditorMouseOut}
+        onFocusCapture={handleEditorFocus}
+        onBlurCapture={handleEditorBlur}
+        onClickCapture={handleEditorClick}
       >
         <div
           className="rich-editor-toolbar"
@@ -420,7 +785,7 @@ export function RichDescriptionEditor({
               label={isLinkActive ? "Edit link" : "Link"}
               active={isLinkActive}
               disabled={!canCreateLink}
-              onClick={openLinkDialog}
+              onClick={() => openLinkDialog()}
               buttonRef={linkButtonRef}
             >
               <Link2 aria-hidden="true" />
@@ -449,6 +814,79 @@ export function RichDescriptionEditor({
           </span>
         ) : null}
       </div>
+
+      {linkPopover && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={linkPopoverRef}
+              className="rich-link-popover"
+              role="dialog"
+              aria-label="Link destination"
+              data-placement={linkPopoverPosition.placement}
+              data-ready={linkPopoverPosition.ready ? "true" : "false"}
+              style={{
+                left: linkPopoverPosition.left,
+                top: linkPopoverPosition.top,
+              }}
+              onMouseEnter={cancelLinkPopoverClose}
+              onMouseLeave={scheduleLinkPopoverClose}
+              onFocusCapture={cancelLinkPopoverClose}
+              onBlurCapture={(event) => {
+                if (
+                  !(event.relatedTarget instanceof Node) ||
+                  !event.currentTarget.contains(event.relatedTarget)
+                ) {
+                  scheduleLinkPopoverClose();
+                }
+              }}
+            >
+              <span className="rich-link-popover-copy">
+                <strong>
+                  {popoverResource?.name ??
+                    (linkPopover.href.startsWith("/")
+                      ? popoverResourceLoading
+                        ? "Resolving resource…"
+                        : "Internal resource"
+                      : "External link")}
+                </strong>
+                {popoverResource ? (
+                  <span>
+                    {popoverResource.type}
+                    {popoverResource.context
+                      ? ` · ${popoverResource.context}`
+                      : ""}
+                  </span>
+                ) : null}
+              </span>
+              <code className="rich-link-popover-path">{linkPopover.href}</code>
+              <div className="rich-link-popover-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-compact"
+                  onClick={() =>
+                    openLinkDialog({
+                      selection: {
+                        from: linkPopover.from,
+                        to: linkPopover.to,
+                      },
+                      href: linkPopover.href,
+                    })
+                  }
+                >
+                  Edit link
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-compact rich-link-popover-remove"
+                  onClick={removePopoverLink}
+                >
+                  Remove link
+                </button>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       <input
         ref={hiddenRef}
@@ -520,50 +958,115 @@ export function RichDescriptionEditor({
                   onChange={(event) => {
                     const value = event.target.value;
                     setResourceQuery(value);
-                    if (value.trim().length < RESOURCE_LINK_SEARCH_MIN_LENGTH) {
-                      setResourceResults([]);
-                      setResourceStatus("idle");
+                    setResourceResults([]);
+                    setResourceStatus(
+                      value.trim().length >= RESOURCE_LINK_SEARCH_MIN_LENGTH
+                        ? "pending"
+                        : "idle"
+                    );
+                  }}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "ArrowDown" &&
+                      resourceResults.length > 0
+                    ) {
+                      event.preventDefault();
+                      focusResourceResult(0);
                     }
                   }}
                 />
               </span>
             </label>
 
-            <div
-              className="rich-link-results"
-              aria-live="polite"
-              aria-label="Internal resource results"
-            >
-              {resourceStatus === "searching" ? (
-                <p className="rich-link-status">Searching…</p>
-              ) : null}
-              {resourceStatus === "error" ? (
-                <p className="rich-link-status">
-                  Resource search is unavailable. Enter a path below.
-                </p>
-              ) : null}
-              {resourceStatus === "ready" && resourceResults.length === 0 ? (
-                <p className="rich-link-status">No matching public resources.</p>
-              ) : null}
-              {resourceResults.map((result) => (
-                <button
-                  type="button"
-                  className="rich-link-result"
-                  key={`${result.type}:${result.href}`}
-                  data-selected={linkHref === result.href ? "true" : undefined}
-                  onClick={() => {
-                    setLinkHref(result.href);
-                    setLinkError(null);
-                  }}
-                >
-                  <span className="rich-link-result-name">{result.name}</span>
-                  <span className="rich-link-result-meta">
-                    {result.type}
-                    {result.context ? ` · ${result.context}` : ""}
+            {resourceStatus === "searching" ? (
+              <p className="rich-link-search-status" role="status">
+                Searching…
+              </p>
+            ) : null}
+            {resourceStatus === "error" ? (
+              <p className="rich-link-search-status" role="status">
+                Resource search is unavailable. Enter a path below.
+              </p>
+            ) : null}
+            {resourceStatus === "ready" &&
+            resourceQuery.trim().length >= RESOURCE_LINK_SEARCH_MIN_LENGTH &&
+            resourceResults.length === 0 ? (
+              <p className="rich-link-search-status" role="status">
+                No matching resources
+              </p>
+            ) : null}
+            {resourceStatus === "ready" && resourceResults.length > 0 ? (
+              <div
+                className="rich-link-results"
+                aria-label="Internal resource results"
+                aria-live="polite"
+              >
+                {resourceResults.map((result, index) => (
+                  <button
+                    ref={(button) => {
+                      resultButtonRefs.current[index] = button;
+                    }}
+                    type="button"
+                    className="rich-link-result"
+                    key={`${result.type}:${result.href}`}
+                    data-selected={linkHref === result.href ? "true" : undefined}
+                    onClick={() => {
+                      setLinkHref(result.href);
+                      setLinkError(null);
+                      setSelectedResource(result);
+                      setResourceQuery("");
+                      setResourceResults([]);
+                      setResourceStatus("idle");
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "ArrowDown") {
+                        event.preventDefault();
+                        focusResourceResult(
+                          Math.min(index + 1, resourceResults.length - 1)
+                        );
+                      } else if (event.key === "ArrowUp") {
+                        event.preventDefault();
+                        if (index === 0) {
+                          searchInputRef.current?.focus();
+                        } else {
+                          focusResourceResult(index - 1);
+                        }
+                      } else if (event.key === "Home") {
+                        event.preventDefault();
+                        focusResourceResult(0);
+                      } else if (event.key === "End") {
+                        event.preventDefault();
+                        focusResourceResult(resourceResults.length - 1);
+                      }
+                    }}
+                  >
+                    <span className="rich-link-result-name">{result.name}</span>
+                    <span className="rich-link-result-meta">
+                      {result.type}
+                      {result.context ? ` · ${result.context}` : ""}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {selectedResource ? (
+              <section
+                className="rich-link-selected-resource"
+                aria-label="Selected resource"
+              >
+                <span className="rich-link-selected-copy">
+                  <strong>{selectedResource.name}</strong>
+                  <span>
+                    {selectedResource.type}
+                    {selectedResource.context
+                      ? ` · ${selectedResource.context}`
+                      : ""}
                   </span>
-                </button>
-              ))}
-            </div>
+                </span>
+                <code>{selectedResource.href}</code>
+              </section>
+            ) : null}
 
             <label className="form-field">
               <span className="form-field-label">
@@ -578,7 +1081,11 @@ export function RichDescriptionEditor({
                 aria-describedby={linkError ? `${editorId}-link-error` : undefined}
                 placeholder="/items/iron-bar or https://example.com"
                 onChange={(event) => {
-                  setLinkHref(event.target.value);
+                  const value = event.target.value;
+                  setLinkHref(value);
+                  if (selectedResource?.href !== value.trim()) {
+                    setSelectedResource(null);
+                  }
                   setLinkError(null);
                 }}
               />
