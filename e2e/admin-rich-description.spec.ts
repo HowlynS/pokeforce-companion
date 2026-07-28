@@ -64,6 +64,12 @@ async function addFormattedDescription(page: Page) {
 
   await editor.press("End");
   await editor.press("Enter");
+  await page.getByRole("button", { name: "Bulleted list" }).click();
+  await editor.type("First step");
+  await editor.press("Enter");
+  await editor.type("Second step");
+  await editor.press("Enter");
+  await editor.press("Enter");
   await editor.type("Iron Ore");
   await editor.press("Control+Shift+ArrowLeft");
   await editor.press("Control+Shift+ArrowLeft");
@@ -79,13 +85,10 @@ async function addFormattedDescription(page: Page) {
   await result.click();
   await dialog.getByRole("button", { name: "Apply link" }).click();
   await expect(dialog).toHaveCount(0);
-
-  await editor.press("End");
-  await editor.press("Enter");
-  await page.getByRole("button", { name: "Bulleted list" }).click();
-  await editor.type("First step");
-  await editor.press("Enter");
-  await editor.type("Second step");
+  await expect(editor.getByRole("link", { name: "Iron Ore" })).toHaveAttribute(
+    "href",
+    "/items/iron-ore"
+  );
 }
 
 test("every audited admin description surface uses the shared WYSIWYG field", async ({

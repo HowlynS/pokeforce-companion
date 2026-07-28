@@ -107,6 +107,7 @@ export function RichDescriptionEditor({
   const linkButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const linkSelectionRef = useRef<{ from: number; to: number } | null>(null);
   const initializedRef = useRef(false);
   const initialDocument = useMemo(
     () => editorDocumentFromValue(initialValue, fallbackText),
@@ -241,6 +242,8 @@ export function RichDescriptionEditor({
     if (!editor) {
       return;
     }
+    const { from, to } = editor.state.selection;
+    linkSelectionRef.current = { from, to };
     setLinkHref(String(editor.getAttributes("link").href ?? ""));
     setLinkError(null);
     setResourceQuery("");
@@ -252,6 +255,7 @@ export function RichDescriptionEditor({
   function closeLinkDialog() {
     setLinkOpen(false);
     setLinkError(null);
+    linkSelectionRef.current = null;
     window.setTimeout(() => linkButtonRef.current?.focus(), 0);
   }
 
@@ -260,7 +264,9 @@ export function RichDescriptionEditor({
     if (!editor) {
       return;
     }
-    if (editor.state.selection.empty && !editor.isActive("link")) {
+    const selection = linkSelectionRef.current ?? editor.state.selection;
+    const linkIsActive = editor.isActive("link");
+    if (selection.from === selection.to && !linkIsActive) {
       setLinkError("Select text in the description before adding a link.");
       return;
     }
@@ -268,8 +274,11 @@ export function RichDescriptionEditor({
       setLinkError("Use a canonical /path or a secure https:// URL.");
       return;
     }
-    const chain = editor.chain().focus();
-    if (editor.isActive("link")) {
+    const chain = editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: selection.from, to: selection.to });
+    if (linkIsActive) {
       chain.extendMarkRange("link");
     }
     chain.setLink({ href }).run();
@@ -280,7 +289,14 @@ export function RichDescriptionEditor({
     if (!editor) {
       return;
     }
-    editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    const selection = linkSelectionRef.current ?? editor.state.selection;
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: selection.from, to: selection.to })
+      .extendMarkRange("link")
+      .unsetLink()
+      .run();
     closeLinkDialog();
   }
 
