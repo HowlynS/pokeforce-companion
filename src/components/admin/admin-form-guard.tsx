@@ -334,6 +334,13 @@ export function AdminFormGuard({
       // The history buffer is neutralized separately, on the pending→true
       // transition (see the pending-watcher effect), where it is safe.
       submittingRef.current = true;
+      // A trailing dirty-state debounce queued just before the click must
+      // never overwrite this authoritative submitted marker with an
+      // ordinary draft while navigation is in flight.
+      if (draftTimerRef.current) {
+        clearTimeout(draftTimerRef.current);
+        draftTimerRef.current = null;
+      }
       writeDraftNow(true);
     };
     flushSubmitDraftRef.current = onSubmit;
@@ -658,6 +665,19 @@ export function AdminFormGuard({
     setDirty(true);
     pushSentinelRef.current();
   }
+
+  // A server-side validation redirect is not abandonment. Restore the
+  // just-submitted draft automatically and keep the form dirty instead of
+  // asking whether the contributor wants to recover work they never chose
+  // to discard. Genuine navigation still uses the confirmation dialogs.
+  useEffect(() => {
+    if (recovery && searchParams.get("error") && formRef.current) {
+      restoreDraft();
+    }
+    // restoreDraft intentionally consumes `recovery`; including the
+    // function itself would create a new dependency every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recovery, searchParams]);
 
   /** Explicit "Discard draft" button: drops the stored draft, keeping the
       loaded server values. */
