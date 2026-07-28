@@ -2056,3 +2056,29 @@ Alternatives considered:
   breakpoints would only add drift risk for a purely cosmetic distinction.
   Revisiting this with dedicated `.class-*` names remains an easy, isolated
   follow-up if ever wanted.
+
+---
+
+### 2026-07-28 — Milestone 13: admin hierarchy and shared Profession progression
+
+Categories is nested beneath Items in the admin navigation because Category
+is an Item-only classification resource. Category remains an independent
+model, workspace, and route; the nesting changes navigation hierarchy only.
+
+The admin Location record list uses one explicit broad-to-specific type order:
+Region, Route, Town, Building or interior, Dungeon, Sub-area, then Special
+area. Represented types are grouped under their human-readable labels, with
+records ordered alphabetically by name and then stable id within each group.
+Search preserves the same ordering and omits empty groups.
+
+All Professions share one `ProfessionLevel` reference curve covering levels
+1–100. The table stores only each level and its cumulative EXP threshold;
+per-level differences are calculated from adjacent thresholds. It is not
+owned by an individual Profession and contains no player state. The admin
+Levels tab is therefore read-only and displays the same curve in every
+existing Profession workspace.
+
+`% to 99` is deliberately excluded. Future Profession actions or sources may
+award EXP, and future planner progress can be calculated dynamically from the
+shared thresholds, but forageable/action rewards, player progress, and planner
+systems are deferred and add no speculative schema in this milestone.
