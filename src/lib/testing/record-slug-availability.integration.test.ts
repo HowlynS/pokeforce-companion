@@ -19,6 +19,7 @@ import {
   isCategorySlugTaken,
   isItemSlugTaken,
   isLocationSlugTaken,
+  isPlayerClassSlugTaken,
   isProfessionSlugTaken,
   isRecipeSlugTaken,
 } from "@/lib/admin/record-slug";
@@ -66,6 +67,14 @@ const SEEDED_RESOURCES = [
     otherSeededSlug: "copper-ore",
     findId: async (db: GameDataClient, slug: string) =>
       db.item.findUnique({ where: { slug }, select: { id: true } }),
+  },
+  {
+    label: "PlayerClass",
+    isTaken: isPlayerClassSlugTaken,
+    seededSlug: "trainer",
+    otherSeededSlug: "artisan",
+    findId: async (db: GameDataClient, slug: string) =>
+      db.playerClass.findUnique({ where: { slug }, select: { id: true } }),
   },
 ] as const;
 

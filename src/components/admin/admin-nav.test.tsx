@@ -26,6 +26,7 @@ const APPROVED_LABELS = [
   "Items",
   "Recipes",
   "Professions",
+  "Classes",
   "Categories",
   "Locations",
   "Shops",
@@ -38,6 +39,7 @@ const APPROVED_HREFS = [
   "/admin/items",
   "/admin/recipes",
   "/admin/professions",
+  "/admin/classes",
   "/admin/categories",
   "/admin/locations",
   "/admin/shops",
@@ -122,6 +124,16 @@ describe("AdminNav active-state wiring", () => {
     );
     expect(active).toHaveLength(1);
     expect(active[0]).toContain('href="/admin"');
+  });
+
+  it("marks exactly the Classes link active on a Classes child route", () => {
+    const html = renderNav("/admin/classes/artisan/recipes");
+
+    const active = linkTags(html).filter((tag) =>
+      tag.includes('aria-current="page"')
+    );
+    expect(active).toHaveLength(1);
+    expect(active[0]).toContain('href="/admin/classes"');
   });
 
   it("marks exactly the Locations link active on a Locations child route", () => {

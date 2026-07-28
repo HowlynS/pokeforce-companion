@@ -19,6 +19,9 @@ describe("adminSuccessMessage", () => {
     expect(adminSuccessMessage("profession_created")).toBe("Profession created");
     expect(adminSuccessMessage("profession_saved")).toBe("Profession saved");
     expect(adminSuccessMessage("profession_deleted")).toBe("Profession deleted");
+    expect(adminSuccessMessage("player_class_created")).toBe("Class created");
+    expect(adminSuccessMessage("player_class_saved")).toBe("Class saved");
+    expect(adminSuccessMessage("player_class_deleted")).toBe("Class deleted");
     expect(adminSuccessMessage("category_created")).toBe("Category created");
     expect(adminSuccessMessage("category_saved")).toBe("Category saved");
     expect(adminSuccessMessage("category_deleted")).toBe("Category deleted");
@@ -60,6 +63,12 @@ describe("adminSuccessMessage", () => {
     );
     expect(adminSuccessMessage("profession_deleted_image_cleanup")).toMatch(
       /Profession deleted, but/
+    );
+    expect(adminSuccessMessage("player_class_saved_image_cleanup")).toMatch(
+      /Class saved, but/
+    );
+    expect(adminSuccessMessage("player_class_deleted_image_cleanup")).toMatch(
+      /Class deleted, but/
     );
     expect(adminSuccessMessage("category_saved_image_cleanup")).toMatch(
       /Category saved, but/

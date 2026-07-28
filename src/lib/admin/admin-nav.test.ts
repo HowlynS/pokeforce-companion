@@ -19,6 +19,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "Items",
       "Recipes",
       "Professions",
+      "Classes",
       "Categories",
       "Locations",
       "Shops",
@@ -30,6 +31,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "/admin/items",
       "/admin/recipes",
       "/admin/professions",
+      "/admin/classes",
       "/admin/categories",
       "/admin/locations",
       "/admin/shops",
@@ -41,6 +43,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       "items",
       "recipes",
       "professions",
+      "playerClasses",
       "categories",
       "locations",
       "shops",
@@ -92,6 +95,14 @@ describe("isAdminNavItemActive", () => {
     expect(activeHrefFor("/admin/professions")).toBe("/admin/professions");
     expect(activeHrefFor("/admin/professions/smithing/edit")).toBe(
       "/admin/professions"
+    );
+
+    expect(activeHrefFor("/admin/classes")).toBe("/admin/classes");
+    expect(activeHrefFor("/admin/classes/artisan/edit")).toBe(
+      "/admin/classes"
+    );
+    expect(activeHrefFor("/admin/classes/artisan/recipes")).toBe(
+      "/admin/classes"
     );
 
     expect(activeHrefFor("/admin/categories")).toBe("/admin/categories");

@@ -13,6 +13,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import {
   isCategoryNameTaken,
+  isPlayerClassNameTaken,
   isProfessionNameTaken,
   isRecipeNameTaken,
 } from "@/lib/admin/record-name";
@@ -53,6 +54,15 @@ const RESOURCES = [
     otherSeededName: "Charcoal",
     findId: async (db: GameDataClient, slug: string) =>
       db.recipe.findUnique({ where: { slug }, select: { id: true } }),
+  },
+  {
+    label: "PlayerClass",
+    isTaken: isPlayerClassNameTaken,
+    seededSlug: "trainer",
+    seededName: "Trainer",
+    otherSeededName: "Artisan",
+    findId: async (db: GameDataClient, slug: string) =>
+      db.playerClass.findUnique({ where: { slug }, select: { id: true } }),
   },
 ] as const;
 

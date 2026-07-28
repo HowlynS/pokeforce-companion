@@ -118,6 +118,7 @@ describe("generateImageObjectPath", () => {
     ["categories", "image/png", /^categories\/[0-9a-f-]+\.png$/],
     ["currencies", "image/webp", /^currencies\/[0-9a-f-]+\.webp$/],
     ["shops", "image/jpeg", /^shops\/[0-9a-f-]+\.jpg$/],
+    ["player-classes", "image/png", /^player-classes\/[0-9a-f-]+\.png$/],
   ] as const)(
     "builds a %s path with the controlled extension for %s",
     (resourceType, mimeType, expectedPattern) => {
@@ -154,6 +155,7 @@ describe("generateImageObjectPath", () => {
       ["categories", "image/png"],
       ["currencies", "image/webp"],
       ["shops", "image/jpeg"],
+      ["player-classes", "image/png"],
     ] as const) {
       const path = generateImageObjectPath(resourceType, mimeType);
 
@@ -170,6 +172,7 @@ describe("isSafeImageObjectPath", () => {
     "categories/def-456.png",
     "currencies/currency-123.webp",
     "shops/shop-123.jpg",
+    "player-classes/class-123.png",
   ])("accepts the generated-shape path %j", (path) => {
     expect(isSafeImageObjectPath(path)).toBe(true);
   });

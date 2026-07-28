@@ -13,6 +13,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  GraduationCap,
   Hammer,
   History,
   LayoutDashboard,
@@ -37,6 +38,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   items: Package,
   recipes: ScrollText,
   professions: Hammer,
+  playerClasses: GraduationCap,
   categories: Shapes,
   locations: MapPinned,
   shops: Store,

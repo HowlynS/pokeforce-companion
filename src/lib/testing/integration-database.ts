@@ -28,6 +28,8 @@ export const LOCATIONS_TEST_SLUG_PREFIX = "test-integration-location-";
 export const ACQUISITION_TEST_SLUG_PREFIX = "test-acquisition-";
 export const SHOP_TEST_SLUG_PREFIX = "test-shop-";
 export const SHOP_TEST_VERSION_NAME_PREFIX = "test-shop-version-";
+export const PLAYER_CLASS_TEST_SLUG_PREFIX = "test-player-class-";
+export const PLAYER_CLASS_TEST_VERSION_NAME_PREFIX = "test-player-class-version-";
 // Rows (of every verifiable model) created by the game-version integration
 // suite carry this slug prefix.
 export const GAME_VERSION_ROWS_SLUG_PREFIX = "test-gameversion-";
@@ -271,6 +273,51 @@ export async function deleteShopTestRecords(): Promise<number> {
     items.count +
     currencies.count +
     locations.count +
+    versions.count
+  );
+}
+
+/**
+ * Deletes only Player Classes + Recipe EXP milestone integration fixtures.
+ * Recipe.playerClassId is a required, RESTRICT-protected relation, so the
+ * dependency order below (recipes first, then the Player Class rows they
+ * required, then their resulting Items, and finally Game Versions) is
+ * mandatory, mirroring deleteShopTestRecords' own established shape.
+ */
+export async function deletePlayerClassTestRecords(): Promise<number> {
+  if (
+    PLAYER_CLASS_TEST_SLUG_PREFIX.length < 5 ||
+    PLAYER_CLASS_TEST_VERSION_NAME_PREFIX.length < 5
+  ) {
+    throw new Error(
+      "Refusing prefix-scoped cleanup: a player-class-test prefix is suspiciously short."
+    );
+  }
+
+  const prisma = await getVerifiedTestPrisma();
+  const slugPrefix = { startsWith: PLAYER_CLASS_TEST_SLUG_PREFIX };
+
+  const ingredients = await prisma.recipeIngredient.deleteMany({
+    where: { recipe: { slug: slugPrefix } },
+  });
+  const recipes = await prisma.recipe.deleteMany({
+    where: { slug: slugPrefix },
+  });
+  const playerClasses = await prisma.playerClass.deleteMany({
+    where: { slug: slugPrefix },
+  });
+  const items = await prisma.item.deleteMany({
+    where: { slug: slugPrefix },
+  });
+  const versions = await prisma.gameVersion.deleteMany({
+    where: { name: { startsWith: PLAYER_CLASS_TEST_VERSION_NAME_PREFIX } },
+  });
+
+  return (
+    ingredients.count +
+    recipes.count +
+    playerClasses.count +
+    items.count +
     versions.count
   );
 }

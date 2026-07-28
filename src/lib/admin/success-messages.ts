@@ -35,6 +35,14 @@ export const ADMIN_SUCCESS_MESSAGES = {
   profession_deleted_image_cleanup:
     "Profession deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
 
+  player_class_created: "Class created",
+  player_class_saved: "Class saved",
+  player_class_saved_image_cleanup:
+    "Class saved, but the previous image file could not be removed from storage and may need manual cleanup in Supabase.",
+  player_class_deleted: "Class deleted",
+  player_class_deleted_image_cleanup:
+    "Class deleted, but its image file could not be removed from storage and may need manual cleanup in Supabase.",
+
   category_created: "Category created",
   category_saved: "Category saved",
   category_saved_image_cleanup:
