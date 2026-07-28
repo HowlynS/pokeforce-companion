@@ -43,6 +43,20 @@ const EDITED = {
 
 const DELETABLE_NAME = "test-e2e-gv-deletable";
 const BLOCKED_NAME = "test-e2e-gv-blocked";
+const MONTH_NAMES: Record<string, string> = {
+  Jan: "January",
+  Feb: "February",
+  Mar: "March",
+  Apr: "April",
+  May: "May",
+  Jun: "June",
+  Jul: "July",
+  Aug: "August",
+  Sep: "September",
+  Oct: "October",
+  Nov: "November",
+  Dec: "December",
+};
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -90,20 +104,39 @@ async function createVersionThroughForm(
 ) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   if (data.releaseDate) {
-    const releaseDateField = page.getByLabel(/^Release date/);
-    await releaseDateField.fill(data.releaseDate);
-    // Blurring the field BEFORE clicking Submit matters here: DateField
-    // shows its own client-side error paragraph on blur for malformed
-    // text, which shifts the submit button down. Blurring first (Tab)
-    // lets that shift finish settling before Playwright computes the
-    // submit button's click coordinates, rather than racing a shift
-    // caused by the click's own mousedown-triggered blur — the second
-    // ordering can miss the button entirely.
-    await page.keyboard.press("Tab");
+    await chooseReleaseDate(page, data.releaseDate);
   }
   await page
     .getByRole("button", { name: "Create Game Version", exact: true })
     .click();
+}
+
+async function chooseReleaseDate(page: Page, displayDate: string) {
+  const [day, monthAbbreviation, year] = displayDate.split(" ");
+  const monthName = MONTH_NAMES[monthAbbreviation];
+  if (!day || !monthName || !year) {
+    throw new Error(`Unsupported test date: ${displayDate}`);
+  }
+
+  await page
+    .getByRole("button", { name: "Choose release date", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Choose release date",
+    exact: true,
+  });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel("Choose the Year").selectOption({ label: year });
+  await dialog.getByLabel("Choose the Month").selectOption({ label: monthName });
+  await dialog
+    .getByRole("button", {
+      name: new RegExp(
+        `${monthName} ${Number(day)}(?:st|nd|rd|th), ${year}$`
+      ),
+    })
+    .click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByLabel(/^Release date/)).toHaveValue(displayDate);
 }
 
 test("game version lifecycle: reachable from the dashboard settings link, create, edit, mark current, delete", async ({
@@ -154,7 +187,8 @@ test("game version lifecycle: reachable from the dashboard settings link, create
   await expect(
     page.getByText("A Game Version with that name already exists.")
   ).toBeVisible();
-  await page.getByRole("button", { name: "Discard draft" }).click();
+  await page.getByLabel("Name", { exact: true }).fill("");
+  await expect(page.getByText("Unsaved changes", { exact: true })).toHaveCount(0);
 
   // --- Edit name and release date ----------------------------------------
   await versionRow(page, CREATED.name)
@@ -164,7 +198,7 @@ test("game version lifecycle: reachable from the dashboard settings link, create
     page.getByRole("heading", { level: 1, name: "Edit Game Version" })
   ).toBeVisible();
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
-  await page.getByLabel(/^Release date/).fill(EDITED.releaseDate);
+  await chooseReleaseDate(page, EDITED.releaseDate);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL(
     "/admin/settings/game-versions?success=updated"
@@ -451,7 +485,9 @@ test("release date displays as DD MMM YYYY and the date-entry field is unambiguo
 
   const releaseDateField = page.getByLabel(/^Release date/);
   await expect(releaseDateField).toHaveAttribute("placeholder", "DD MMM YYYY");
-  await expect(page.getByText("Format: DD MMM YYYY")).toBeVisible();
+  await expect(
+    page.getByText("Select a date. Display format: DD MMM YYYY.")
+  ).toBeVisible();
 
   await createVersionThroughForm(page, {
     name: DELETABLE_NAME,
@@ -476,7 +512,7 @@ test("release date displays as DD MMM YYYY and the date-entry field is unambiguo
   );
 });
 
-test("the date-entry field rejects malformed text and keeps the optional field genuinely optional", async ({
+test("the date picker keeps the optional field genuinely optional and supports clearing", async ({
   page,
 }) => {
   await page.goto("/admin/settings/game-versions");
@@ -493,17 +529,26 @@ test("the date-entry field rejects malformed text and keeps the optional field g
     })
   ).toBeVisible();
 
-  // Malformed text is rejected server-side with the existing error —
-  // never silently coerced into "no date".
   await createVersionThroughForm(page, {
-    name: "test-e2e-gv-malformed-date",
-    releaseDate: "not a real date",
+    name: "test-e2e-gv-clear-date",
+    releaseDate: CREATED.releaseDate,
   });
-  await expect(page).toHaveURL(
-    "/admin/settings/game-versions?error=invalid_release_date"
-  );
+  await versionRow(page, "test-e2e-gv-clear-date")
+    .getByRole("link", { name: "Edit", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Choose release date", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Clear date", exact: true }).click();
+  await expect(page.getByLabel(/^Release date/)).toHaveValue("");
+  await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(
-    page.getByText("Enter the release date as a valid calendar date.")
+    page.getByRole("row").filter({
+      has: page.getByRole("cell", {
+        name: "test-e2e-gv-clear-date",
+        exact: true,
+      }),
+    }).getByRole("cell", { name: "—", exact: true })
   ).toBeVisible();
 });
 

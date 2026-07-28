@@ -1,100 +1,73 @@
-// Component tests for the shared DateField (Admin Visual/UX Correction
-// pass, Part 10), rendered to static HTML with react-dom/server — the
-// established Node-only component-test approach this codebase already
-// uses for RecordSlugField. A static render never runs effects, so this
-// covers everything derivable from props alone: the visible DD MMM YYYY
-// text, the submitted hidden ISO value, blank/optional behavior, and
-// label/accessibility structure. Genuinely interactive typing/blur
-// behavior is E2E territory, matching the RecordSlugField precedent.
-
-import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
 import { DateField } from "@/components/admin/date-field";
 
-describe("DateField: visible DD MMM YYYY formatting from a persisted ISO value", () => {
-  it("shows the persisted date as DD MMM YYYY", () => {
+describe("DateField closed state", () => {
+  it("shows a persisted date as DD MMM YYYY and submits unchanged ISO", () => {
     const html = renderToStaticMarkup(
-      <DateField name="releaseDate" label="Release date (optional)" defaultValue="2026-09-05" />
+      <DateField
+        name="releaseDate"
+        label="Release date (optional)"
+        defaultValue="2026-09-05"
+      />
     );
 
     expect(html).toMatch(/<input [^>]*value="05 Sep 2026"/);
-  });
-
-  it("shows a blank field when there is no persisted value", () => {
-    const html = renderToStaticMarkup(
-      <DateField name="releaseDate" label="Release date (optional)" defaultValue={null} />
-    );
-
-    expect(html).toMatch(/<input [^>]*value=""/);
-  });
-
-  it("shows a blank field when defaultValue is omitted entirely", () => {
-    const html = renderToStaticMarkup(
-      <DateField name="releaseDate" label="Release date (optional)" />
-    );
-
-    expect(html).toMatch(/<input [^>]*value=""/);
-  });
-});
-
-describe("DateField: hidden submitted value stays normalized ISO", () => {
-  it("submits the normalized ISO value in a hidden field with the given name", () => {
-    const html = renderToStaticMarkup(
-      <DateField name="releaseDate" label="Release date (optional)" defaultValue="2026-09-05" />
-    );
-
     expect(html).toMatch(
       /<input type="hidden" name="releaseDate" value="2026-09-05"/
     );
   });
 
-  it("submits an empty hidden value for a blank optional field", () => {
+  it("keeps an optional date blank when no value exists", () => {
     const html = renderToStaticMarkup(
-      <DateField name="releaseDate" label="Release date (optional)" defaultValue={null} />
+      <DateField
+        name="releaseDate"
+        label="Release date (optional)"
+        defaultValue={null}
+      />
     );
 
+    expect(html).toMatch(/<input [^>]*value=""/);
     expect(html).toMatch(/<input type="hidden" name="releaseDate" value=""/);
   });
 
-  it("uses the caller-supplied field name for the hidden input", () => {
+  it("uses the caller-supplied field name", () => {
     const html = renderToStaticMarkup(
-      <DateField name="verifiedAt" label="Some other date" defaultValue={null} />
+      <DateField name="availableOn" label="Available on" />
     );
 
-    expect(html).toContain('name="verifiedAt"');
+    expect(html).toContain('name="availableOn"');
     expect(html).not.toContain('name="releaseDate"');
   });
 });
 
-describe("DateField: structure and accessibility", () => {
-  it("associates the label with the visible input via nesting (no separate id/for pair)", () => {
+describe("DateField accessibility and calendar trigger", () => {
+  it("renders a labelled readonly field and a dialog trigger", () => {
     const html = renderToStaticMarkup(
       <DateField name="releaseDate" label="Release date (optional)" />
     );
 
-    expect(html).toMatch(
-      /<label class="form-field"><span class="form-field-label">Release date \(optional\)<\/span><input [^>]*id="[^"]+"/
-    );
+    expect(html).toContain("Release date (optional)");
+    expect(html).toContain('readOnly=""');
+    expect(html).toContain('aria-haspopup="dialog"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('aria-label="Choose release date"');
+    expect(html).toContain("Display format: DD MMM YYYY.");
   });
 
-  it("renders format guidance text", () => {
+  it("supports a field-specific trigger name", () => {
     const html = renderToStaticMarkup(
-      <DateField name="releaseDate" label="Release date (optional)" />
+      <DateField
+        name="releaseDate"
+        label="Release date (optional)"
+        triggerLabel="Choose version release date"
+      />
     );
 
-    expect(html).toContain("DD MMM YYYY");
-    expect(html).toContain("05 Sep 2026");
+    expect(html).toContain('aria-label="Choose version release date"');
   });
 
-  it("renders no error message before the field has been touched, even with no value", () => {
-    const html = renderToStaticMarkup(
-      <DateField name="releaseDate" label="Release date (optional)" />
-    );
-
-    expect(html).not.toContain("role=\"alert\"");
-  });
-
-  it("has no locale-dependent native date input anywhere in its markup", () => {
+  it("does not expose a native browser date input", () => {
     const html = renderToStaticMarkup(
       <DateField name="releaseDate" label="Release date (optional)" />
     );

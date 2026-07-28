@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@daypicker/react/style.css";
 
 /* Mirrors src/lib/design-tokens.ts so shared interactive styles (hover,
    focus, button variants) can live in real CSS — inline style objects
@@ -3513,6 +3514,191 @@ select:focus-visible {
 
 textarea.form-input {
   resize: vertical;
+}
+
+/* Shared contributor-facing calendar field. The input keeps the established
+   human-readable date format while the portalled popover avoids clipping in
+   editor panels and bounded workspaces. DayPicker owns grid semantics and
+   keyboard movement; these rules only map it onto the admin visual system. */
+.admin-date-field,
+.admin-date-control {
+  min-width: 0;
+}
+
+.admin-date-control {
+  position: relative;
+  width: 100%;
+}
+
+.admin-date-input {
+  width: 100%;
+  padding-right: 52px;
+  cursor: pointer;
+}
+
+.admin-date-trigger {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.admin-date-trigger:hover,
+.admin-date-trigger:focus-visible,
+.admin-date-trigger[aria-expanded="true"] {
+  border-color: var(--color-border);
+  background: var(--color-surface-raised, #202421);
+  color: var(--color-accent);
+}
+
+.admin-date-trigger svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+}
+
+.admin-date-popover {
+  position: fixed;
+  z-index: 1200;
+  width: min(352px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+  border-radius: 10px;
+  background: var(--color-surface-raised, #202421);
+  color: var(--color-text);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.58);
+  visibility: hidden;
+}
+
+.admin-date-popover[data-ready="true"] {
+  visibility: visible;
+}
+
+.admin-date-calendar.rdp-root {
+  --rdp-accent-color: var(--color-accent);
+  --rdp-accent-background-color: color-mix(
+    in srgb,
+    var(--color-accent) 15%,
+    var(--color-surface-raised, #202421)
+  );
+  --rdp-day-height: 40px;
+  --rdp-day-width: 40px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-width: 36px;
+  --rdp-day_button-border-radius: 7px;
+  --rdp-selected-border: 1px solid var(--color-accent-soft);
+  --rdp-outside-opacity: 0.42;
+  --rdp-disabled-opacity: 0.3;
+  --rdp-today-color: var(--color-accent-soft);
+  width: 100%;
+  margin: 0;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.admin-date-calendar .rdp-months,
+.admin-date-calendar .rdp-month,
+.admin-date-calendar .rdp-month_grid {
+  width: 100%;
+  max-width: none;
+}
+
+.admin-date-calendar .rdp-month_caption {
+  padding-right: 76px;
+  font-size: 14px;
+}
+
+.admin-date-calendar .rdp-dropdowns {
+  min-width: 0;
+}
+
+.admin-date-calendar .rdp-dropdown_root {
+  min-width: 0;
+  padding: 6px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.admin-date-calendar .rdp-caption_label {
+  min-width: 0;
+}
+
+.admin-date-calendar .rdp-button_previous,
+.admin-date-calendar .rdp-button_next {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+}
+
+.admin-date-calendar .rdp-button_previous:hover,
+.admin-date-calendar .rdp-button_next:hover,
+.admin-date-calendar .rdp-button_previous:focus-visible,
+.admin-date-calendar .rdp-button_next:focus-visible {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-accent);
+}
+
+.admin-date-calendar .rdp-weekday {
+  color: var(--color-text-muted);
+}
+
+.admin-date-calendar .rdp-day_button:hover:not(:disabled),
+.admin-date-calendar .rdp-day_button:focus-visible {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.admin-date-calendar .rdp-selected .rdp-day_button {
+  background: var(--color-accent);
+  color: #17140d;
+}
+
+.admin-date-calendar .rdp-today:not(.rdp-selected) .rdp-day_button {
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
+.admin-date-calendar .rdp-footer {
+  padding-top: 10px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.admin-date-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-date-clear {
+  min-height: 36px;
+  padding: 7px 11px;
+  font-size: 13px;
 }
 
 /* Shared AdminSelect dropdown (Massive Admin Interaction Completion Pass,

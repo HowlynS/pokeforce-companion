@@ -1,126 +1,343 @@
 "use client";
 
-// Shared unambiguous date-entry field (Admin Visual/UX Correction pass,
-// Part 10): replaces a native `<input type="date">`, whose visible
-// numeric ordering (dd/mm/yyyy vs mm/dd/yyyy) depends on the browser's own
-// locale — a contributor has no reliable way to know which digit is the
-// day without checking. This field's visible text is always "DD MMM YYYY"
-// (e.g. "05 Sep 2026"): a fixed, locale-independent format, exactly the
-// same one every OTHER visible date in the app now renders through
-// formatDisplayDate (src/lib/format-date.ts) — a contributor never sees
-// two different date conventions across the admin surface.
-//
-// A plain accessible text input, not a custom listbox/combobox widget —
-// deliberately NOT the general custom dropdown/calendar-picker framework
-// out of scope for this pass; a compact calendar affordance was
-// considered but skipped as genuinely optional per the brief ("acceptable
-// only if... do not implement the entire framework merely for this
-// field"), so this stays a focused, reusable field component.
-//
-// Submits its OWN hidden `name` field carrying the value server actions
-// already expect (parseReleaseDateInput's own contract): "" for a blank/
-// optional date, normalized "YYYY-MM-DD" for a successfully parsed date.
-// Malformed (non-blank, unparseable) text is submitted VERBATIM instead of
-// being silently coerced to blank — this deliberately makes the existing
-// server-side pattern check reject it with its existing invalid_release_date
-// error, rather than this field quietly discarding a typo as "no date".
-// No timezone conversion anywhere: parsing/formatting works entirely on
-// the DD/MMM/YYYY digits themselves, never through a `Date` object (which
-// would round-trip through the runtime's local timezone).
-
-import { useEffect, useId, useRef, useState } from "react";
+import { DayPicker } from "@daypicker/react";
+import { CalendarDays } from "lucide-react";
 import {
-  formatIsoToDateEntryText,
-  parseDateEntryText,
-} from "@/lib/date-field";
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
+import { createPortal } from "react-dom";
 import { dispatchFormChange } from "@/lib/admin/form-change-event";
+import { formatIsoToDateEntryText } from "@/lib/date-field";
 
 type DateFieldProps = {
-  /** The form field name the normalized ISO value submits as. */
+  /** Form field receiving the existing YYYY-MM-DD date-only value. */
   name: string;
   /** Visible field label. */
   label: string;
-  /** The persisted value, as normalized ISO "YYYY-MM-DD", or null/undefined
-      for no date yet (a blank field). */
+  /** Persisted YYYY-MM-DD value, or null/undefined for no selected date. */
   defaultValue?: string | null;
+  /** Optional fields expose an explicit clear action. */
+  clearable?: boolean;
+  /** Override when a field needs a more specific trigger name. */
+  triggerLabel?: string;
 };
 
-export function DateField({ name, label, defaultValue }: DateFieldProps) {
-  const fieldId = useId();
+type PopoverPosition = {
+  left: number;
+  top: number;
+  placement: "above" | "below";
+  ready: boolean;
+};
+
+const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const POPOVER_GAP = 8;
+const VIEWPORT_MARGIN = 12;
+
+function dateFromIso(iso: string | null | undefined): Date | undefined {
+  const match = iso ? ISO_DATE_PATTERN.exec(iso) : null;
+  if (!match) {
+    return undefined;
+  }
+  const [, year, month, day] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day), 12);
+  if (
+    date.getFullYear() !== Number(year) ||
+    date.getMonth() !== Number(month) - 1 ||
+    date.getDate() !== Number(day)
+  ) {
+    return undefined;
+  }
+  return date;
+}
+
+function isoFromDate(date: Date): string {
+  return [
+    String(date.getFullYear()).padStart(4, "0"),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function fieldNameFromLabel(label: string): string {
+  return label.replace(/\s*\(optional\)\s*$/i, "").trim().toLowerCase();
+}
+
+export function DateField({
+  name,
+  label,
+  defaultValue,
+  clearable = true,
+  triggerLabel,
+}: DateFieldProps) {
+  const generatedId = useId();
+  const fieldId = `date-field-${generatedId.replaceAll(":", "")}`;
   const helperId = `${fieldId}-helper`;
-  const errorId = `${fieldId}-error`;
-
-  const [text, setText] = useState(() =>
-    formatIsoToDateEntryText(defaultValue ?? null)
-  );
-  const [touched, setTouched] = useState(false);
-
-  const parsed = parseDateEntryText(text);
-  const showError = touched && !parsed.ok;
-  // A malformed (non-blank) value is submitted AS-IS so the server's own
-  // pattern check rejects it with the existing error — never silently
-  // coerced to "" (which would read as "no date" instead of "invalid
-  // date").
-  const submittedValue = parsed.ok ? parsed.iso ?? "" : text;
-
-  // The hidden <input> that actually submits. The visible text input has no
-  // `name`, so its own native input event carries no form value; the value
-  // the guard must see lives here and is updated by React (no native
-  // event). Emit the shared form-change signal whenever the SUBMITTED value
-  // changes so the AdminFormGuard's dirty detection is deterministic rather
-  // than reliant on a timed recompute. See form-change-event.ts.
+  const dialogId = `${fieldId}-dialog`;
   const hiddenRef = useRef<HTMLInputElement>(null);
-  const dateMountedRef = useRef(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(false);
+  const initialDate = useMemo(() => dateFromIso(defaultValue), [defaultValue]);
+  const [isoValue, setIsoValue] = useState(() =>
+    initialDate ? isoFromDate(initialDate) : ""
+  );
+  const [month, setMonth] = useState(() => initialDate ?? new Date());
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<PopoverPosition>({
+    left: 0,
+    top: 0,
+    placement: "below",
+    ready: false,
+  });
+  const selected = useMemo(() => dateFromIso(isoValue), [isoValue]);
+  const visibleValue = formatIsoToDateEntryText(isoValue);
+  const fieldName = fieldNameFromLabel(label);
+  const accessibleTriggerLabel =
+    triggerLabel ?? `Choose ${fieldName || "date"}`;
+
   useEffect(() => {
-    if (!dateMountedRef.current) {
-      dateMountedRef.current = true;
+    if (!mountedRef.current) {
+      mountedRef.current = true;
       return;
     }
     dispatchFormChange(hiddenRef.current);
-  }, [submittedValue]);
+  }, [isoValue]);
+
+  const closePopover = useCallback((restoreFocus = true) => {
+    setOpen(false);
+    setPosition((current) => ({ ...current, ready: false }));
+    if (restoreFocus) {
+      window.setTimeout(() => triggerRef.current?.focus(), 0);
+    }
+  }, []);
+
+  const updatePopoverPosition = useCallback(() => {
+    const anchor = anchorRef.current;
+    const popover = popoverRef.current;
+    if (!anchor || !popover) {
+      return;
+    }
+    const anchorRect = anchor.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const availableBelow =
+      window.innerHeight - anchorRect.bottom - VIEWPORT_MARGIN;
+    const availableAbove = anchorRect.top - VIEWPORT_MARGIN;
+    const placement =
+      availableBelow < popoverRect.height && availableAbove > availableBelow
+        ? "above"
+        : "below";
+    const idealTop =
+      placement === "above"
+        ? anchorRect.top - popoverRect.height - POPOVER_GAP
+        : anchorRect.bottom + POPOVER_GAP;
+    const top = Math.max(
+      VIEWPORT_MARGIN,
+      Math.min(
+        idealTop,
+        window.innerHeight - popoverRect.height - VIEWPORT_MARGIN
+      )
+    );
+    const left = Math.max(
+      VIEWPORT_MARGIN,
+      Math.min(
+        anchorRect.left,
+        window.innerWidth - popoverRect.width - VIEWPORT_MARGIN
+      )
+    );
+    setPosition({ left, top, placement, ready: true });
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(updatePopoverPosition);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        !anchorRef.current?.contains(target) &&
+        !popoverRef.current?.contains(target)
+      ) {
+        closePopover();
+      }
+    };
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closePopover();
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updatePopoverPosition);
+    window.addEventListener("scroll", updatePopoverPosition, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updatePopoverPosition);
+      window.removeEventListener("scroll", updatePopoverPosition, true);
+    };
+  }, [closePopover, open, updatePopoverPosition]);
+
+  function openPopover() {
+    if (selected) {
+      setMonth(selected);
+    }
+    setOpen(true);
+  }
+
+  function handleFieldKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+      event.preventDefault();
+      openPopover();
+    }
+  }
+
+  function handleSelect(date: Date | undefined) {
+    if (!date) {
+      if (clearable) {
+        setIsoValue("");
+        closePopover();
+      }
+      return;
+    }
+    setIsoValue(isoFromDate(date));
+    setMonth(date);
+    closePopover();
+  }
+
+  function handleClear() {
+    setIsoValue("");
+    setMonth(new Date());
+    closePopover();
+  }
+
+  const startYear = Math.min(1900, selected?.getFullYear() ?? 1900);
+  const endYear = Math.max(
+    new Date().getFullYear() + 20,
+    selected?.getFullYear() ?? 0
+  );
+  const calendarLabel = `Calendar, ${month.toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+  })}`;
 
   return (
-    <div className="form-field">
-      <label className="form-field">
-        <span className="form-field-label">{label}</span>
+    <div className="form-field admin-date-field">
+      <span id={`${fieldId}-label`} className="form-field-label">
+        {label}
+      </span>
+
+      <div ref={anchorRef} className="admin-date-control">
         <input
           id={fieldId}
           type="text"
-          inputMode="text"
+          inputMode="none"
           autoComplete="off"
           placeholder="DD MMM YYYY"
-          className="form-input"
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          onBlur={() => setTouched(true)}
-          aria-describedby={`${helperId} ${errorId}`}
+          className="form-input admin-date-input"
+          value={visibleValue}
+          readOnly
+          aria-labelledby={`${fieldId}-label`}
+          aria-describedby={helperId}
+          aria-haspopup="dialog"
+          aria-controls={dialogId}
+          onClick={openPopover}
+          onKeyDown={handleFieldKeyDown}
         />
-      </label>
+        <button
+          ref={triggerRef}
+          type="button"
+          className="admin-date-trigger"
+          aria-label={accessibleTriggerLabel}
+          aria-haspopup="dialog"
+          aria-controls={dialogId}
+          aria-expanded={open}
+          onClick={() => (open ? closePopover(false) : openPopover())}
+          onKeyDown={handleFieldKeyDown}
+        >
+          <CalendarDays aria-hidden="true" />
+        </button>
+      </div>
 
       <p id={helperId} className="form-field-helper">
-        Format: DD MMM YYYY (e.g. 05 Sep 2026)
+        Select a date. Display format: DD MMM YYYY.
       </p>
 
-      {/* Always rendered (never conditionally mounted), matching every
-          other live feedback row in this codebase (e.g.
-          RecordSlugField's own .form-field-feedback): min-height on
-          .form-field-feedback reserves the same vertical space whether
-          or not an error is currently showing, so the error appearing
-          on blur never shifts the submit button (or anything else)
-          below it — a real layout-stability concern for sighted users,
-          not just an artifact this pass noticed through flaky
-          click-timing in its own E2E coverage. */}
-      <p
-        id={errorId}
-        role={showError ? "alert" : undefined}
-        className="form-field-feedback text-danger"
-      >
-        {showError
-          ? "Enter a valid date as DD MMM YYYY, e.g. 05 Sep 2026."
-          : ""}
-      </p>
+      <input
+        ref={hiddenRef}
+        type="hidden"
+        name={name}
+        value={isoValue}
+        onInput={(event) => {
+          const restored = event.currentTarget.value;
+          const restoredDate = dateFromIso(restored);
+          setIsoValue(restoredDate ? isoFromDate(restoredDate) : "");
+          if (restoredDate) {
+            setMonth(restoredDate);
+          }
+        }}
+      />
 
-      <input ref={hiddenRef} type="hidden" name={name} value={submittedValue} />
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              id={dialogId}
+              className="admin-date-popover"
+              data-placement={position.placement}
+              data-ready={position.ready ? "true" : "false"}
+              role="dialog"
+              aria-label={accessibleTriggerLabel}
+              style={{ left: position.left, top: position.top }}
+            >
+              <DayPicker
+                className="admin-date-calendar"
+                mode="single"
+                selected={selected}
+                month={month}
+                onMonthChange={setMonth}
+                onSelect={handleSelect}
+                autoFocus
+                role="application"
+                aria-label={calendarLabel}
+                captionLayout="dropdown"
+                navLayout="after"
+                reverseYears
+                fixedWeeks
+                showOutsideDays
+                startMonth={new Date(startYear, 0, 1, 12)}
+                endMonth={new Date(endYear, 11, 1, 12)}
+                footer={
+                  selected
+                    ? `Selected date: ${formatIsoToDateEntryText(isoValue)}`
+                    : "No date selected"
+                }
+              />
+              <div className="admin-date-popover-actions">
+                {clearable ? (
+                  <button
+                    type="button"
+                    className="btn btn-secondary admin-date-clear"
+                    onClick={handleClear}
+                    disabled={!selected}
+                  >
+                    Clear date
+                  </button>
+                ) : null}
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
