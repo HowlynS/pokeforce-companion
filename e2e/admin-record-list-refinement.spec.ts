@@ -30,6 +30,7 @@
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { selectAdminOption } from "./helpers/admin-select";
+import fs from "node:fs";
 import path from "node:path";
 import {
   countE2eTestItemImageRecords,
@@ -39,7 +40,17 @@ import {
   deleteE2eTestLocationRecords,
 } from "./helpers/database-cleanup";
 
-const PNG_FIXTURE = path.join(__dirname, "fixtures", "tiny-valid.png");
+const PNG_FIXTURE = path.join(
+  __dirname,
+  "fixtures",
+  "profession-sprites",
+  "aetherglass-tonic.png"
+);
+const WORKFLOW_SCREENSHOT_DIRECTORY = path.join(
+  process.cwd(),
+  "test-results",
+  "admin-form-workflow-pass"
+);
 
 // The one gold accent the whole admin surface shares
 // (--color-accent: #c39a4b), as Chromium resolves it. Matches the
@@ -94,6 +105,7 @@ test.afterEach(async () => {
 });
 
 test.beforeAll(async () => {
+  fs.mkdirSync(WORKFLOW_SCREENSHOT_DIRECTORY, { recursive: true });
   // Remove stale rows/objects from interrupted earlier runs; the guard
   // inside the helper throws here if the environment is not the verified
   // test project. Only then is the folder baseline recorded.
@@ -223,7 +235,7 @@ test("a real uploaded image renders a decoded, decorative thumbnail; a seeded it
     .poll(() => img.evaluate((el) => (el as HTMLImageElement).naturalWidth), {
       message: "the thumbnail must decode to a non-zero natural width",
     })
-    .toBeGreaterThan(0);
+    .toBe(32);
 
   // --- Missing-image fallback: no <img>, hidden from assistive tech --
   const fallbackRow = recordRow(page, "Items", SEEDED_ITEM_WITHOUT_IMAGE);
@@ -252,6 +264,11 @@ test("a real uploaded image renders a decoded, decorative thumbnail; a seeded it
   expect(populated.backgroundImage).toBe("none");
   expect(populated.boxShadow).toBe("none");
   await expect(img).toHaveCSS("object-fit", "contain");
+  await expect(img).toHaveCSS("image-rendering", "pixelated");
+  const renderedImageBox = await img.boundingBox();
+  expect(renderedImageBox).not.toBeNull();
+  expect(renderedImageBox!.width).toBeGreaterThan(32);
+  expect(renderedImageBox!.height).toBeGreaterThan(32);
 
   // --- The empty slot stays present, restrained, and clearly distinct --
   // A faint dashed outline over a translucent fill: visible enough to
@@ -270,6 +287,41 @@ test("a real uploaded image renders a decoded, decorative thumbnail; a seeded it
   // And unmistakably a different treatment from the populated slot.
   expect(fallback.backgroundColor).not.toBe(populated.backgroundColor);
   expect(fallback.borderTopWidth).not.toBe(populated.borderTopWidth);
+  await page.locator(".admin-workspace-record-list").screenshot({
+    path: path.join(
+      WORKFLOW_SCREENSHOT_DIRECTORY,
+      "admin-record-list-sprite-and-fallback.png"
+    ),
+  });
+
+  // The same uploaded 32×32 sprite fills the compact AdminSelect stage
+  // rather than reverting to intrinsic sizing, while the consuming
+  // selector keeps its own smaller fixed geometry.
+  await page.goto("/admin/recipes/new");
+  const resultSelect = page.getByRole("combobox", {
+    name: "Resulting item",
+    exact: true,
+  });
+  await resultSelect.click();
+  const spriteOption = page.getByRole("option", {
+    name: ITEM.name,
+    exact: true,
+  });
+  const compactStage = spriteOption.locator(".resource-icon");
+  const compactImage = compactStage.locator("img.resource-icon-img");
+  await expect(compactStage).toHaveCSS("width", "22px");
+  await expect(compactStage).toHaveCSS("height", "22px");
+  await expect(compactImage).toHaveCSS("width", "16px");
+  await expect(compactImage).toHaveCSS("height", "16px");
+  await expect(compactImage).toHaveCSS("object-fit", "contain");
+  await expect(compactImage).toHaveCSS("image-rendering", "pixelated");
+  const listboxId = await resultSelect.getAttribute("aria-controls");
+  await page.locator(`#${listboxId}`).screenshot({
+    path: path.join(
+      WORKFLOW_SCREENSHOT_DIRECTORY,
+      "admin-select-32px-sprite.png"
+    ),
+  });
 });
 
 test("the selected row reads more strongly than an ordinary row, and hover shifts the surface without moving anything", async ({
