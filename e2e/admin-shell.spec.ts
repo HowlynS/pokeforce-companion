@@ -1,6 +1,7 @@
 // Browser coverage for the shared admin shell against the REAL
 // application: the persistent sidebar wraps authenticated admin routes,
-// carries exactly the ten approved primary destinations (Game Versions
+// carries nine top-level destinations plus Categories nested beneath Items
+// (Game Versions
 // promoted to primary in the Visual Pass, sub-slice 8; Shops and Currencies
 // added in Milestone 11; Classes added in Milestone 12), marks the active
 // section (including on child routes), and never appears on public
@@ -17,10 +18,10 @@ import { expect, test, type Page } from "@playwright/test";
 const PRIMARY_DESTINATIONS = [
   { label: "Dashboard", href: "/admin" },
   { label: "Items", href: "/admin/items" },
+  { label: "Categories", href: "/admin/categories" },
   { label: "Recipes", href: "/admin/recipes" },
   { label: "Professions", href: "/admin/professions" },
   { label: "Classes", href: "/admin/classes" },
-  { label: "Categories", href: "/admin/categories" },
   { label: "Locations", href: "/admin/locations" },
   { label: "Shops", href: "/admin/shops" },
   { label: "Game Versions", href: "/admin/settings/game-versions" },
@@ -48,11 +49,14 @@ function activeLink(page: Page) {
   return sidebar(page).locator('a[aria-current="page"]');
 }
 
-test("the sidebar carries exactly the ten primary destinations with their approved targets", async ({
+test("the sidebar carries every approved destination with its target", async ({
   page,
 }) => {
   await page.goto("/admin");
 
+  await sidebar(page)
+    .getByRole("button", { name: "Expand Items navigation", exact: true })
+    .click();
   const links = sidebar(page).getByRole("link");
   await expect(links).toHaveCount(PRIMARY_DESTINATIONS.length);
 
@@ -95,6 +99,62 @@ test("the sidebar carries exactly the ten primary destinations with their approv
       exact: true,
     })
   ).toBeVisible();
+});
+
+test("Items owns one collapsible Categories child with route-aware expansion and keyboard focus", async ({
+  page,
+}) => {
+  await page.goto("/admin");
+
+  const expand = sidebar(page).getByRole("button", {
+    name: "Expand Items navigation",
+    exact: true,
+  });
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    sidebar(page).getByRole("link", { name: "Categories", exact: true })
+  ).toHaveCount(0);
+  await expect(sidebar(page).locator('a[href="/admin/categories"]')).toBeHidden();
+
+  await expand.focus();
+  await expect(expand).toBeFocused();
+  await expand.press("Enter");
+  const collapse = sidebar(page).getByRole("button", {
+    name: "Collapse Items navigation",
+    exact: true,
+  });
+  await expect(collapse).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    sidebar(page).getByRole("link", { name: "Categories", exact: true })
+  ).toHaveCount(1);
+
+  await collapse.press("Space");
+  await expect(expand).toBeFocused();
+  await expect(
+    sidebar(page).getByRole("link", { name: "Categories", exact: true })
+  ).toHaveCount(0);
+  await expect(sidebar(page).locator('a[href="/admin/categories"]')).toBeHidden();
+
+  await page.goto("/admin/items");
+  await expect(
+    sidebar(page).getByRole("button", {
+      name: "Collapse Items navigation",
+      exact: true,
+    })
+  ).toBeVisible();
+  await expect(activeLink(page)).toHaveText("Items");
+
+  await page.goto("/admin/categories");
+  await expect(
+    sidebar(page).getByRole("button", {
+      name: "Collapse Items navigation",
+      exact: true,
+    })
+  ).toBeVisible();
+  await expect(activeLink(page)).toHaveText("Categories");
+  await expect(
+    sidebar(page).getByRole("link", { name: "Categories", exact: true })
+  ).toHaveCount(1);
 });
 
 test("the active destination's icon and label both turn gold; keyboard focus stays visible", async ({

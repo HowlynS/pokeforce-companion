@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { ADMIN_NAV_ITEMS, isAdminNavItemActive } from "@/lib/admin/admin-nav";
+import {
+  ADMIN_NAV_DESTINATIONS,
+  ADMIN_NAV_ITEMS,
+  ITEM_ADMIN_NAV_CHILDREN,
+  isAdminNavItemActive,
+} from "@/lib/admin/admin-nav";
 
 // Which single nav item (by href) is active for a pathname — or null.
 // Mirrors how the sidebar consumes the rule, so these tests also prove at
 // most one item can ever be active at a time.
 function activeHrefFor(pathname: string): string | null {
-  const active = ADMIN_NAV_ITEMS.filter((item) =>
+  const active = ADMIN_NAV_DESTINATIONS.filter((item) =>
     isAdminNavItemActive(item.href, pathname)
   );
   expect(active.length).toBeLessThanOrEqual(1);
@@ -20,7 +25,6 @@ describe("ADMIN_NAV_ITEMS", () => {
       "Recipes",
       "Professions",
       "Classes",
-      "Categories",
       "Locations",
       "Shops",
       "Game Versions",
@@ -32,7 +36,6 @@ describe("ADMIN_NAV_ITEMS", () => {
       "/admin/recipes",
       "/admin/professions",
       "/admin/classes",
-      "/admin/categories",
       "/admin/locations",
       "/admin/shops",
       "/admin/settings/game-versions",
@@ -44,7 +47,6 @@ describe("ADMIN_NAV_ITEMS", () => {
       "recipes",
       "professions",
       "playerClasses",
-      "categories",
       "locations",
       "shops",
       "gameVersions",
@@ -52,9 +54,24 @@ describe("ADMIN_NAV_ITEMS", () => {
     ]);
   });
 
+  it("keeps Categories as the sole Items child destination", () => {
+    expect(ITEM_ADMIN_NAV_CHILDREN).toEqual([
+      {
+        label: "Categories",
+        href: "/admin/categories",
+        icon: "categories",
+      },
+    ]);
+    expect(
+      ADMIN_NAV_ITEMS.some((item) => item.href === "/admin/categories")
+    ).toBe(false);
+  });
+
   it("never includes Acquisition Sources or other excluded destinations", () => {
-    const labels = ADMIN_NAV_ITEMS.map((item) => item.label.toLowerCase());
-    const hrefs = ADMIN_NAV_ITEMS.map((item) => item.href);
+    const labels = ADMIN_NAV_DESTINATIONS.map((item) =>
+      item.label.toLowerCase()
+    );
+    const hrefs = ADMIN_NAV_DESTINATIONS.map((item) => item.href);
 
     for (const excluded of ["acquisition", "user", "role", "audit", "route hub"]) {
       expect(labels.some((label) => label.includes(excluded))).toBe(false);

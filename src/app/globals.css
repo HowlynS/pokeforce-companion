@@ -3904,6 +3904,64 @@ input[type="checkbox"] {
   font-weight: 700;
 }
 
+.admin-nav-group {
+  min-width: 0;
+}
+
+.admin-nav-group-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 2px;
+}
+
+.admin-nav-group-toggle {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.admin-nav-group-toggle:hover {
+  background: var(--color-surface-soft);
+  color: var(--color-accent);
+}
+
+.admin-nav-group-toggle svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 0.15s ease;
+}
+
+.admin-nav-group-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.admin-nav-children {
+  display: grid;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.admin-nav-link--nested {
+  min-height: 38px;
+  margin-left: 24px;
+  padding-block: 8px;
+  font-size: 14px;
+}
+
+.admin-nav-link--nested .admin-nav-icon {
+  width: 16px;
+  height: 16px;
+  flex-basis: 16px;
+}
+
 /* Decorative destination icon (aria-hidden, set in admin-nav.tsx): a
    fixed column so every label aligns, and no explicit color — it
    inherits currentColor, so the same hover/active rules above that
