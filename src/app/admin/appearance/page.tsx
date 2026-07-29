@@ -12,6 +12,7 @@ import { EditorSection } from "@/components/admin/editor-section";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { AppearanceAssetField } from "@/components/admin/appearance-asset-field";
 import { AppearanceRestoreDefaults } from "@/components/admin/appearance-restore-defaults";
+import { AppearanceLivePreview } from "@/components/admin/appearance-live-preview";
 import { saveAppearanceAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -64,8 +65,9 @@ export default async function AppearancePage({
         </p>
       ) : null}
 
-      <div className="admin-editor-sections appearance-editor-sections">
-        <EditorSection
+      <div className="appearance-workbench-grid">
+        <div className="admin-editor-sections appearance-editor-sections">
+          <EditorSection
           title="Branding"
           icon={Palette}
           description="The shared header identity and browser icon."
@@ -97,9 +99,9 @@ export default async function AppearancePage({
               helper="PNG or ICO · 16–512px per side · max 1 MB."
             />
           </div>
-        </EditorSection>
+          </EditorSection>
 
-        <EditorSection
+          <EditorSection
           title="Scenic backgrounds"
           icon={Mountain}
           description="Independent wallpapers for the three approved scenic public surfaces."
@@ -147,9 +149,9 @@ export default async function AppearancePage({
               fit="cover"
             />
           </div>
-        </EditorSection>
+          </EditorSection>
 
-        <EditorSection
+          <EditorSection
           title="Publishing"
           icon={ImageIcon}
           description="The complete appearance draft publishes atomically."
@@ -159,27 +161,14 @@ export default async function AppearancePage({
             files are cleaned only after the new configuration is published.
             Committed fallback assets are never deleted.
           </p>
-        </EditorSection>
-      </div>
+          </EditorSection>
+        </div>
 
-      {(
-        [
-          ["homeDesktopPositionX", appearance.home.desktop.x],
-          ["homeDesktopPositionY", appearance.home.desktop.y],
-          ["homeMobilePositionX", appearance.home.mobile.x],
-          ["homeMobilePositionY", appearance.home.mobile.y],
-          ["catalogueDesktopPositionX", appearance.catalogue.desktop.x],
-          ["catalogueDesktopPositionY", appearance.catalogue.desktop.y],
-          ["catalogueMobilePositionX", appearance.catalogue.mobile.x],
-          ["catalogueMobilePositionY", appearance.catalogue.mobile.y],
-          ["itemDetailDesktopPositionX", appearance.itemDetail.desktop.x],
-          ["itemDetailDesktopPositionY", appearance.itemDetail.desktop.y],
-          ["itemDetailMobilePositionX", appearance.itemDetail.mobile.x],
-          ["itemDetailMobilePositionY", appearance.itemDetail.mobile.y],
-        ] as const
-      ).map(([name, value]) => (
-        <input key={name} type="hidden" name={name} value={value} />
-      ))}
+        <AppearanceLivePreview
+          published={appearance}
+          defaults={DEFAULT_SITE_APPEARANCE}
+        />
+      </div>
 
       <AdminFormGuard
         submitLabel="Save Appearance"

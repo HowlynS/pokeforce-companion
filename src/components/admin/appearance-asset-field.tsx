@@ -7,6 +7,7 @@ import { dispatchFormChange } from "@/lib/admin/form-change-event";
 export const APPEARANCE_RESTORE_DEFAULTS_EVENT =
   "pf:appearance-restore-defaults";
 export const APPEARANCE_RESET_DRAFT_EVENT = "pf:appearance-reset-draft";
+export const APPEARANCE_ASSET_DRAFT_EVENT = "pf:appearance-asset-draft";
 
 type AppearanceAssetFieldProps = {
   name: string;
@@ -109,6 +110,26 @@ export function AppearanceAssetField({
       : custom
         ? "Custom asset published"
         : "Committed default published";
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent(APPEARANCE_ASSET_DRAFT_EVENT, {
+        detail: {
+          name,
+          url: draftUrl,
+          width: previewDimensions?.width ?? currentWidth,
+          height: previewDimensions?.height ?? currentHeight,
+        },
+      })
+    );
+  }, [
+    currentHeight,
+    currentWidth,
+    draftUrl,
+    name,
+    previewDimensions?.height,
+    previewDimensions?.width,
+  ]);
 
   return (
     <fieldset className="appearance-asset-field">

@@ -17,6 +17,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const PRIMARY_DESTINATIONS = [
   { label: "Dashboard", href: "/admin" },
+  { label: "Appearance", href: "/admin/appearance" },
   { label: "Items", href: "/admin/items" },
   { label: "Categories", href: "/admin/categories" },
   { label: "Recipes", href: "/admin/recipes" },
