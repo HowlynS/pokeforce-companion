@@ -12,6 +12,45 @@ datasource db {
   provider = "postgresql"
 }
 
+// One application-owned public appearance record. Custom assets are stored as
+// Supabase object paths (matching every other image-bearing model); the public
+// resolver turns them into cache-busted URLs and falls back to committed
+// assets whenever this row or an individual value is absent or malformed.
+// The fixed id is enforced by the appearance service, keeping this a singleton
+// rather than a general-purpose theme table.
+model SiteAppearance {
+  id                         String   @id @default("site")
+  headerLogoPath             String?
+  headerLogoWidth            Int?
+  headerLogoHeight           Int?
+  faviconPath                String?
+  faviconWidth               Int?
+  faviconHeight              Int?
+  homeBackgroundPath         String?
+  homeBackgroundWidth        Int?
+  homeBackgroundHeight       Int?
+  homeDesktopPositionX       Float?
+  homeDesktopPositionY       Float?
+  homeMobilePositionX        Float?
+  homeMobilePositionY        Float?
+  catalogueBackgroundPath    String?
+  catalogueBackgroundWidth   Int?
+  catalogueBackgroundHeight  Int?
+  catalogueDesktopPositionX  Float?
+  catalogueDesktopPositionY  Float?
+  catalogueMobilePositionX   Float?
+  catalogueMobilePositionY   Float?
+  itemDetailBackgroundPath   String?
+  itemDetailBackgroundWidth  Int?
+  itemDetailBackgroundHeight Int?
+  itemDetailDesktopPositionX Float?
+  itemDetailDesktopPositionY Float?
+  itemDetailMobilePositionX  Float?
+  itemDetailMobilePositionY  Float?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}
+
 // One release of the game, managed by admins in the secondary settings area
 // ("Game Version" is the only contributor-facing term — never "build").
 // Verification stamps on gameplay data reference a row here relationally;
