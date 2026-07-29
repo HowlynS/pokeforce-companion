@@ -280,3 +280,35 @@ same focused commit.
 - Validate at target widths and capture comparison screenshots.
 - Keep Codex and Claude Code interchangeable.
 - Never edit concurrently in the same working tree.
+
+## Appearance Workspace
+
+The admin Appearance route is a dense workbench, not a gallery or theme
+builder. At wide widths, use the existing 4px spacing system in a two-column
+controls/preview composition (`minmax(420px, 0.72fr)` /
+`minmax(0, 1.28fr)`); stack the columns below 1480px without horizontal
+overflow. The shared sticky form action bar remains the single Save/Cancel
+surface.
+
+Asset controls use one bordered field group per asset with:
+
+- concise purpose and accepted-file guidance;
+- side-by-side Published and Draft previews when space allows;
+- visible source/dimension metadata;
+- an ordinary, keyboard-accessible file input rather than a drop zone;
+- explicit replacement/removal intent plus a per-asset reset.
+
+The live preview is always labelled as an unpublished draft. It reuses public
+header/scenic classes and layers, provides Homepage, Items catalogue, and Item
+detail modes, and exposes Desktop 1920×1080, Ultrawide 3440×1440, and Mobile
+390×844 presets. Crop inputs are exact integer percentages from 0–100. Pointer
+dragging and numeric input update the same value, with visible active, focus,
+and disabled states. Desktop and mobile values are independent; ultrawide
+shares desktop. Provide Reset to published and Restore default crop actions.
+
+Preview content is representative structure only and must not invent gameplay
+facts. Scenic backgrounds are decorative and absent from the accessibility
+tree. Logo previews always preserve the uploaded intrinsic ratio. Pending
+files may use authenticated in-memory object URLs in the protected admin
+client, but do not become public until Save publishes the whole appearance
+configuration.

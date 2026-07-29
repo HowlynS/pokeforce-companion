@@ -15,6 +15,16 @@ describe("positionFromPointerDrag", () => {
         height: 500,
       })
     ).toEqual({ x: 65, y: 50 });
+
+    expect(
+      positionFromPointerDrag({
+        start: { x: 55, y: 60 },
+        deltaX: -33,
+        deltaY: 17,
+        width: 320,
+        height: 180,
+      })
+    ).toEqual({ x: 65, y: 51 });
   });
 
   it("clamps both axes and leaves the value unchanged for invalid geometry", () => {

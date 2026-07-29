@@ -84,6 +84,7 @@ export default async function AppearancePage({
               defaultUrl={DEFAULT_SITE_APPEARANCE.headerLogo.url}
               accept="image/png,image/jpeg,image/webp"
               helper="PNG, JPEG, or WebP · 32–4096px per side · max 5 MB. Proportions are always preserved."
+              validation="logo"
             />
 
             <AppearanceAssetField
@@ -97,6 +98,7 @@ export default async function AppearancePage({
               defaultUrl={DEFAULT_SITE_APPEARANCE.favicon.url}
               accept="image/png,image/x-icon,image/vnd.microsoft.icon,.ico"
               helper="PNG or ICO · 16–512px per side · max 1 MB."
+              validation="favicon"
             />
           </div>
           </EditorSection>
@@ -119,6 +121,7 @@ export default async function AppearancePage({
               accept="image/png,image/jpeg,image/webp"
               helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
               fit="cover"
+              validation="wallpaper"
             />
 
             <AppearanceAssetField
@@ -133,6 +136,7 @@ export default async function AppearancePage({
               accept="image/png,image/jpeg,image/webp"
               helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
               fit="cover"
+              validation="wallpaper"
             />
 
             <AppearanceAssetField
@@ -147,6 +151,7 @@ export default async function AppearancePage({
               accept="image/png,image/jpeg,image/webp"
               helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
               fit="cover"
+              validation="wallpaper"
             />
           </div>
           </EditorSection>

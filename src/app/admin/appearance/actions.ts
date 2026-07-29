@@ -102,7 +102,7 @@ function positionValue(
     return fallback;
   }
   const value = Number(raw);
-  return Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
+  return Number.isInteger(value) && value >= 0 && value <= 100 ? value : null;
 }
 
 async function cleanupAssets(paths: readonly (string | null | undefined)[]) {

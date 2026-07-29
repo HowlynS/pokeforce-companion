@@ -74,12 +74,69 @@ test("dragging the scenic canvas updates the numeric controls and reset restores
 
   expect(Number(await x.inputValue())).toBeGreaterThan(originalX);
   expect(Number(await y.inputValue())).toBeLessThan(originalY);
+  expect(
+    await x.evaluate((input: HTMLInputElement) => input.validity.valid)
+  ).toBe(true);
+  expect(
+    await y.evaluate((input: HTMLInputElement) => input.validity.valid)
+  ).toBe(true);
 
   await page
     .getByRole("button", { name: "Reset to published", exact: true })
     .click();
   await expect(x).toHaveValue(String(originalX));
   await expect(y).toHaveValue(String(originalY));
+});
+
+test("client asset validation preserves the pending preview and unpublished draft", async ({
+  page,
+}) => {
+  await page.goto("/admin/appearance");
+  const fileInput = page.locator('input[name="headerLogoFile"]');
+  await fileInput.setInputFiles(path.resolve("e2e/fixtures/tiny-valid.png"));
+
+  await expect(page.locator("#headerLogo-error")).toHaveText(
+    "Logo dimensions must be between 32×32 and 4096×4096 pixels."
+  );
+  await expect(page.getByText("Selected: tiny-valid.png")).toBeVisible();
+  await expect(
+    page.getByAltText("Draft header logo preview")
+  ).toHaveJSProperty("naturalWidth", 1);
+
+  await page.getByRole("button", { name: /Save Appearance/ }).click();
+  await expect(page).toHaveURL(/\/admin\/appearance$/);
+  await expect(page.getByText("Selected: tiny-valid.png")).toBeVisible();
+  expect(
+    await fileInput.evaluate(
+      (input: HTMLInputElement) => input.validity.valid
+    )
+  ).toBe(false);
+});
+
+test("the editor remains usable without horizontal overflow at every supported admin width", async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 3440, height: 1440 },
+    { width: 1920, height: 1080 },
+    { width: 1000, height: 900 },
+    { width: 768, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/admin/appearance");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Appearance" })
+    ).toBeVisible();
+    await expect(page.locator(".appearance-preview-stage")).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(
+      dimensions.scrollWidth,
+      `horizontal overflow at ${viewport.width}px`
+    ).toBeLessThanOrEqual(dimensions.clientWidth);
+  }
 });
 
 test("one atomic save publishes logo, favicon, and independent scenic settings, then restores defaults", async ({
@@ -124,7 +181,7 @@ test("one atomic save publishes logo, favicon, and independent scenic settings, 
   );
   await expect(page.locator(".public-scenic-background--home")).toHaveAttribute(
     "style",
-    /--public-scenic-position-desktop:44% 61%/
+    /--public-scenic-position-desktop:\s*44% 61%/
   );
   await expect(page.locator('link[rel~="icon"]')).toHaveAttribute(
     "href",
@@ -134,12 +191,12 @@ test("one atomic save publishes logo, favicon, and independent scenic settings, 
   await page.goto("/items");
   await expect(
     page.locator(".public-scenic-background--catalogue")
-  ).toHaveAttribute("style", /--public-scenic-position-desktop:52% 66%/);
+  ).toHaveAttribute("style", /--public-scenic-position-desktop:\s*52% 66%/);
 
   await page.goto("/items/iron-ore");
   await expect(page.locator(".public-scenic-background--detail")).toHaveAttribute(
     "style",
-    /--public-scenic-position-desktop:48% 57%/
+    /--public-scenic-position-desktop:\s*48% 57%/
   );
   await expect(page.locator(".resource-atmosphere--item")).toBeVisible();
 

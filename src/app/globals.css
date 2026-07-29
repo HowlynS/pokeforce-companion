@@ -193,6 +193,13 @@
   font-size: 12px;
 }
 
+.appearance-field-error {
+  margin: 8px 0 0;
+  color: var(--color-danger);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .appearance-workbench-grid {
   display: grid;
   min-width: 0;
@@ -392,6 +399,15 @@
   left: 0;
   overflow: hidden;
   transform-origin: top left;
+}
+
+.appearance-preview-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .appearance-public-preview {
@@ -684,13 +700,12 @@ select:focus-visible {
       var(--public-scenic-vignette-center) 52%,
       var(--public-scenic-vignette-right) 100%
     ),
-    var(
-      --public-scenic-image,
-      url("/images/backgrounds/merchants-codex-coastal-overlook.png")
-    );
+    var(--public-scenic-image, none),
+    url("/images/backgrounds/merchants-codex-coastal-overlook.png");
   background-position:
     center,
     center,
+    var(--public-scenic-position),
     var(--public-scenic-position);
   background-repeat: no-repeat;
   background-size: cover;

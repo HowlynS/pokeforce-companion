@@ -21,7 +21,66 @@ type AppearanceAssetFieldProps = {
   accept: string;
   helper: string;
   fit?: "contain" | "cover";
+  validation: "logo" | "favicon" | "wallpaper";
 };
+
+const CLIENT_VALIDATION = {
+  logo: {
+    maxBytes: 5 * 1024 * 1024,
+    minWidth: 32,
+    minHeight: 32,
+    maxWidth: 4096,
+    maxHeight: 4096,
+    dimensionsMessage: "Logo dimensions must be between 32×32 and 4096×4096 pixels.",
+  },
+  favicon: {
+    maxBytes: 1024 * 1024,
+    minWidth: 16,
+    minHeight: 16,
+    maxWidth: 512,
+    maxHeight: 512,
+    dimensionsMessage: "Favicon dimensions must be between 16×16 and 512×512 pixels.",
+  },
+  wallpaper: {
+    maxBytes: 5 * 1024 * 1024,
+    minWidth: 640,
+    minHeight: 360,
+    maxWidth: 8192,
+    maxHeight: 8192,
+    dimensionsMessage: "Wallpaper dimensions must be between 640×360 and 8192×8192 pixels.",
+  },
+} as const;
+
+function validateClientAsset(
+  file: File,
+  validation: AppearanceAssetFieldProps["validation"],
+  dimensions?: { width: number; height: number }
+): string | null {
+  const rules = CLIENT_VALIDATION[validation];
+  const acceptedTypes =
+    validation === "favicon"
+      ? new Set(["image/png", "image/x-icon", "image/vnd.microsoft.icon"])
+      : new Set(["image/png", "image/jpeg", "image/webp"]);
+  const isIco =
+    validation === "favicon" && file.name.toLowerCase().endsWith(".ico");
+
+  if (!acceptedTypes.has(file.type.toLowerCase()) && !isIco) {
+    return `Choose a supported ${validation === "favicon" ? "PNG or ICO" : "PNG, JPEG, or WebP"} file.`;
+  }
+  if (file.size > rules.maxBytes) {
+    return `The selected file exceeds the ${validation === "favicon" ? "1 MB" : "5 MB"} limit.`;
+  }
+  if (
+    dimensions &&
+    (dimensions.width < rules.minWidth ||
+      dimensions.height < rules.minHeight ||
+      dimensions.width > rules.maxWidth ||
+      dimensions.height > rules.maxHeight)
+  ) {
+    return rules.dimensionsMessage;
+  }
+  return null;
+}
 
 export function AppearanceAssetField({
   name,
@@ -35,12 +94,14 @@ export function AppearanceAssetField({
   accept,
   helper,
   fit = "contain",
+  validation,
 }: AppearanceAssetFieldProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const intentRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [previewDimensions, setPreviewDimensions] = useState<{
     width: number;
     height: number;
@@ -48,6 +109,11 @@ export function AppearanceAssetField({
 
   function notifyProgrammaticChange() {
     requestAnimationFrame(() => dispatchFormChange(intentRef.current));
+  }
+
+  function updateValidationError(message: string | null) {
+    setValidationError(message);
+    fileRef.current?.setCustomValidity(message ?? "");
   }
 
   function resetDraft() {
@@ -58,6 +124,7 @@ export function AppearanceAssetField({
     setFileName(null);
     setPreviewDimensions(null);
     setPendingRemoval(false);
+    updateValidationError(null);
     if (fileRef.current) {
       fileRef.current.value = "";
     }
@@ -73,6 +140,7 @@ export function AppearanceAssetField({
       setFileName(null);
       setPreviewDimensions(null);
       setPendingRemoval(custom);
+      updateValidationError(null);
       if (fileRef.current) {
         fileRef.current.value = "";
       }
@@ -169,10 +237,22 @@ export function AppearanceAssetField({
               if (!previewUrl) {
                 return;
               }
-              setPreviewDimensions({
+              const dimensions = {
                 width: event.currentTarget.naturalWidth,
                 height: event.currentTarget.naturalHeight,
-              });
+              };
+              setPreviewDimensions(dimensions);
+              const file = fileRef.current?.files?.[0];
+              updateValidationError(
+                file ? validateClientAsset(file, validation, dimensions) : null
+              );
+            }}
+            onError={() => {
+              if (previewUrl) {
+                updateValidationError(
+                  "The selected file could not be decoded as an image."
+                );
+              }
             }}
           />
         </div>
@@ -201,7 +281,7 @@ export function AppearanceAssetField({
         type="file"
         accept={accept}
         className="appearance-file-input"
-        aria-describedby={`${name}-help`}
+        aria-describedby={`${name}-help${validationError ? ` ${name}-error` : ""}`}
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
           if (!file) {
@@ -214,11 +294,17 @@ export function AppearanceAssetField({
           setFileName(file.name);
           setPendingRemoval(false);
           setPreviewDimensions(null);
+          updateValidationError(validateClientAsset(file, validation));
         }}
       />
       <p id={`${name}-help`} className="field-help">
         {helper}
       </p>
+      {validationError ? (
+        <p id={`${name}-error`} role="alert" className="appearance-field-error">
+          {validationError}
+        </p>
+      ) : null}
 
       <div className="appearance-asset-actions">
         <button
@@ -268,17 +354,19 @@ function AssetPreview({
   alt,
   fit,
   onLoad,
+  onError,
 }: {
   url: string | null;
   alt: string;
   fit: "contain" | "cover";
   onLoad?: React.ReactEventHandler<HTMLImageElement>;
+  onError?: React.ReactEventHandler<HTMLImageElement>;
 }) {
   return (
     <div className={`appearance-asset-preview appearance-asset-preview--${fit}`}>
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element -- local blob URLs and remote admin preview URLs are both intentional here.
-        <img src={url} alt={alt} onLoad={onLoad} />
+        <img src={url} alt={alt} onLoad={onLoad} onError={onError} />
       ) : (
         <span>No asset published</span>
       )}

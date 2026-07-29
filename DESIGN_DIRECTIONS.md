@@ -419,3 +419,23 @@ For a new or changed public page:
 
 Once this direction is loaded, Interface Design should enforce consistency and
 surface conflicts—not infer a replacement aesthetic.
+
+## Admin Appearance Governance
+
+The Appearance workspace is the authoritative admin workflow for the public
+header logo, favicon, and the three approved scenic wallpapers: homepage,
+Items catalogue, and Item detail. It changes those visual assets and their crop
+positions; it is not a general theme editor and must not expose typography,
+color-token, component-style, or arbitrary-page controls.
+
+Committed brand and scenic assets remain safe defaults. Published custom assets
+use cache-busted public URLs, while missing records, malformed values, and
+unavailable custom objects fall back to the committed presentation without
+breaking navigation or content. Decorative scenic layers remain
+accessibility-neutral and `aria-hidden`.
+
+Each scenic surface owns an independent desktop crop and mobile crop.
+Ultrawide uses the desktop crop. The admin preview uses the real public classes
+and atmosphere layers, but every preview edit remains unpublished until the
+complete draft is saved. Header-logo proportions are intrinsic and responsive;
+the logo may scale but must never stretch or be cropped.

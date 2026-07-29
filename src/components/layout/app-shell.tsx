@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { MainNav } from "@/components/layout/main-nav";
+import { PublicLogo } from "@/components/layout/public-logo";
+import {
+  DEFAULT_HEADER_LOGO_HEIGHT,
+  DEFAULT_HEADER_LOGO_URL,
+  DEFAULT_HEADER_LOGO_WIDTH,
+} from "@/lib/appearance/defaults";
 import { getPublishedSiteAppearance } from "@/lib/appearance/public";
 
 type AppShellProps = {
@@ -59,20 +65,15 @@ export async function AppShell({
             className="public-site-brand"
             aria-label="Merchants Codex home"
           >
-            {/* The intrinsic attributes reserve the saved aspect ratio while
-                responsive CSS keeps height automatic, so the mark cannot
-                stretch. A plain image supports cache-busted Supabase URLs
-                immediately without a repository rebuild. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={
-                appearance.headerLogo.url ??
-                "/images/branding/merchants-codex-logo.png"
+            <PublicLogo
+              key={appearance.headerLogo.url ?? DEFAULT_HEADER_LOGO_URL}
+              src={appearance.headerLogo.url ?? DEFAULT_HEADER_LOGO_URL}
+              width={
+                appearance.headerLogo.width ?? DEFAULT_HEADER_LOGO_WIDTH
               }
-              alt="Merchants Codex"
-              width={appearance.headerLogo.width ?? 1394}
-              height={appearance.headerLogo.height ?? 486}
-              className="public-site-logo"
+              height={
+                appearance.headerLogo.height ?? DEFAULT_HEADER_LOGO_HEIGHT
+              }
             />
           </Link>
 

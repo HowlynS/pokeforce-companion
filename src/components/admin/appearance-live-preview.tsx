@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Grip, Monitor, RotateCcw, Smartphone } from "lucide-react";
 import {
   APPEARANCE_ASSET_DRAFT_EVENT,
@@ -109,11 +109,12 @@ export function AppearanceLivePreview({
   const [assets, setAssets] = useState(() => assetDraft(published));
   const [dragging, setDragging] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) {
       return;
     }
+    setAvailableWidth(stage.clientWidth);
     const observer = new ResizeObserver(([entry]) => {
       setAvailableWidth(entry.contentRect.width);
     });
@@ -323,8 +324,14 @@ export function AppearanceLivePreview({
       <div
         ref={stageRef}
         className="appearance-preview-stage"
+        data-ready={scale > 0 ? "true" : "false"}
         style={{ height: target.height * scale }}
       >
+        {scale === 0 ? (
+          <span className="appearance-preview-loading" role="status">
+            Preparing preview…
+          </span>
+        ) : null}
         <div
           className={`appearance-preview-viewport appearance-preview-viewport--${device}`}
           style={{

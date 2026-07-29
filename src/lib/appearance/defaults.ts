@@ -28,11 +28,16 @@ export type ResolvedSiteAppearance = {
   version: string;
 };
 
+export const DEFAULT_HEADER_LOGO_URL =
+  "/images/branding/merchants-codex-logo.png";
+export const DEFAULT_HEADER_LOGO_WIDTH = 1394;
+export const DEFAULT_HEADER_LOGO_HEIGHT = 486;
+
 export const DEFAULT_SITE_APPEARANCE: ResolvedSiteAppearance = {
   headerLogo: {
-    url: "/images/branding/merchants-codex-logo.png",
-    width: 1394,
-    height: 486,
+    url: DEFAULT_HEADER_LOGO_URL,
+    width: DEFAULT_HEADER_LOGO_WIDTH,
+    height: DEFAULT_HEADER_LOGO_HEIGHT,
     custom: false,
   },
   // No favicon is committed in the current design. A null URL deliberately

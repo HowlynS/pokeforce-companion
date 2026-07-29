@@ -2155,3 +2155,49 @@ coastal PNG decorates only the homepage, Items catalogue, and Item detail.
 Overlay variables make the homepage moderately clearer and Items only slightly
 clearer while retaining dark reading zones, finite depths, existing desktop
 and mobile crops, the fade to `#111514`, and Item detail's cool-blue atmosphere.
+
+---
+
+### 2026-07-29 — Managed public appearance
+
+Appearance is represented by one optional `SiteAppearance` row with the fixed
+id `site`. Nullable storage paths and intrinsic dimensions describe the header
+logo, favicon, and three scenic images; each scenic surface stores independent
+desktop and mobile X/Y percentages. No row, malformed data, or unavailable
+database access resolves to committed defaults. This is deliberately a
+singleton configuration rather than a theme, revision, or per-page asset
+system.
+
+Custom bytes live in the existing private-to-admin/public-read
+`game-images` Supabase bucket under unique immutable
+`appearance/<kind>/<uuid>.<ext>` paths. File signatures, MIME, dimensions, and
+sizes are validated before upload. Favicons accept PNG/ICO up to 1 MB and
+16–512px; logos accept PNG/JPEG/WebP up to 5 MB and 32–4096px; wallpapers
+accept PNG/JPEG/WebP up to 5 MB and 640×360–8192×8192px. Database publication
+is one transaction after all required uploads succeed. New uploads are deleted
+if publication fails; replaced objects are deleted only after the new row is
+committed. Committed fallback files are never deletion targets.
+
+Public resolution is cached under the `site-appearance` tag. A successful save
+expires that tag and cache-busts custom URLs with the row `updatedAt` version.
+The URL resolver is pure and does not depend on request cookies, so metadata
+and shared layouts can use it safely. The header logo falls back on image-load
+failure, while scenic CSS keeps the committed wallpaper as a lower layer if a
+custom object disappears. The favicon is optional; browser metadata updates
+dynamically when one is published.
+
+The protected admin workbench holds pending replacement bytes and crop edits
+only in its client draft. They do not affect public output until Save atomically
+publishes the complete configuration. Ordinary field values participate in
+the shared dirty-state and compatible draft-recovery flow; browser security
+prevents reconstructing selected file bytes after a reload, so those must be
+reselected. Restore all defaults is destructive only to the managed
+configuration and therefore requires confirmation.
+
+Preview crop behavior matches CSS `background-size: cover` at the approved
+desktop, ultrawide, and mobile ratios. Ultrawide intentionally shares the
+desktop crop. Zoom was omitted because a simple scalar preview control would
+not faithfully model cover behavior across all three target ratios. Header
+logo dimensions are stored to reserve its intrinsic aspect ratio, and CSS
+always leaves height automatic. Wallpapers are `aria-hidden` decorative layers
+and carry no required information.

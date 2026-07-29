@@ -25,9 +25,15 @@ export function positionFromPointerDrag({
   // CSS background-position moves the image in the opposite direction as
   // its percentage increases when `cover` crops an oversized image. Subtract
   // pointer movement so the visible wallpaper follows the contributor's drag.
+  // The persisted contract is integer percentages, so pointer interaction must
+  // emit the same valid values as the step=1 numeric controls.
   return {
-    x: clampAppearancePercentage(start.x - (deltaX / width) * 100, start.x),
-    y: clampAppearancePercentage(start.y - (deltaY / height) * 100, start.y),
+    x: Math.round(
+      clampAppearancePercentage(start.x - (deltaX / width) * 100, start.x)
+    ),
+    y: Math.round(
+      clampAppearancePercentage(start.y - (deltaY / height) * 100, start.y)
+    ),
   };
 }
 
