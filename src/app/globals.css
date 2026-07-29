@@ -125,14 +125,15 @@ select:focus-visible {
 
 .public-scenic-background--home {
   --public-scenic-depth: 880px;
-  --public-scenic-wash-top: rgba(17, 21, 20, 0.36);
-  --public-scenic-wash-middle: rgba(17, 21, 20, 0.46);
-  --public-scenic-vignette-left: rgba(17, 21, 20, 0.54);
-  --public-scenic-vignette-center: rgba(17, 21, 20, 0.16);
-  --public-scenic-vignette-right: rgba(17, 21, 20, 0.3);
+  --public-scenic-wash-top: rgba(17, 21, 20, 0.22);
+  --public-scenic-wash-middle: rgba(17, 21, 20, 0.3);
+  --public-scenic-vignette-left: rgba(17, 21, 20, 0.38);
+  --public-scenic-vignette-center: rgba(17, 21, 20, 0.08);
+  --public-scenic-vignette-right: rgba(17, 21, 20, 0.18);
 }
 
 .public-scenic-background--catalogue {
+  --public-scenic-position: 55% 60%;
   --public-scenic-depth: 600px;
   --public-scenic-wash-top: rgba(17, 21, 20, 0.48);
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.58);
@@ -322,7 +323,29 @@ select:focus-visible {
 }
 
 .landing-hero-copy {
+  position: relative;
   max-width: 880px;
+  isolation: isolate;
+}
+
+/* With the homepage scenic wash lightened for visibility (see
+   .public-scenic-background--home), the hero copy needs its own
+   localized reading gradient rather than relying on the page-wide
+   wash to stay legible over the brighter artwork. Scoped to this
+   element only — it never dims the statistics card, resource cards,
+   or the rest of the scenic image. */
+.landing-hero-copy::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -16px;
+  background: radial-gradient(
+    ellipse 640px 460px at 28% 42%,
+    rgba(17, 21, 20, 0.6) 0%,
+    rgba(17, 21, 20, 0.34) 48%,
+    rgba(17, 21, 20, 0) 82%
+  );
+  pointer-events: none;
 }
 
 .landing-eyebrow {
@@ -593,11 +616,11 @@ select:focus-visible {
 
   .public-scenic-background--home {
     --public-scenic-depth: 760px;
-    --public-scenic-wash-top: rgba(17, 21, 20, 0.48);
-    --public-scenic-wash-middle: rgba(17, 21, 20, 0.56);
-    --public-scenic-vignette-left: rgba(17, 21, 20, 0.52);
-    --public-scenic-vignette-center: rgba(17, 21, 20, 0.28);
-    --public-scenic-vignette-right: rgba(17, 21, 20, 0.36);
+    --public-scenic-wash-top: rgba(17, 21, 20, 0.36);
+    --public-scenic-wash-middle: rgba(17, 21, 20, 0.42);
+    --public-scenic-vignette-left: rgba(17, 21, 20, 0.4);
+    --public-scenic-vignette-center: rgba(17, 21, 20, 0.2);
+    --public-scenic-vignette-right: rgba(17, 21, 20, 0.26);
   }
 
   .public-scenic-background--catalogue {
