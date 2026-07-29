@@ -152,6 +152,17 @@ The established public shell contains:
 Do not independently redesign the shell while implementing an individual
 resource page.
 
+The official Merchants Codex image logo (`public/images/branding/
+merchants-codex-logo.png`) is the authoritative public-header brand mark. It
+replaced the prior temporary "Merchants Codex / PokeForce Companion" text
+lockup and lives at the far left of the shared header as the one home link,
+implemented through the shared public shell so every public page inherits it
+automatically. Its proportions are preserved and it is sized responsively
+through CSS, never stretched or distorted; the lossless master asset is never
+independently recropped, recolored, or reconstructed. Applying it to the
+admin shell is a separate, later decision — this pattern covers the public
+header only.
+
 ## Public Detail Pages
 
 The shared detail-page composition is:

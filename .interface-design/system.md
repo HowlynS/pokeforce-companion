@@ -93,6 +93,13 @@ same focused commit.
 - Reuse shared brand, header, navigation, search, main region, and footer.
 - Preserve active navigation, visible focus, and overflow-free responsiveness.
 - Do not redesign the shell within a resource-page slice.
+- The official Merchants Codex image logo (`public/images/branding/
+  merchants-codex-logo.png`) is the authoritative brand mark, replacing the
+  prior temporary text lockup. It is the header's one home link, implemented
+  once in the shared public shell so every public page inherits it. Preserve
+  its proportions, size it responsively through CSS only, and never
+  independently recrop, recolor, or reconstruct the lossless master. Applying
+  it to the admin shell is a separate decision, not implied by this pattern.
 
 ## Public Detail Pattern
 

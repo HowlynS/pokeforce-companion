@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { MainNav } from "@/components/layout/main-nav";
 
@@ -38,14 +39,19 @@ export function AppShell({
 
       <header className="public-site-header">
         <div className={`${containerClassName} public-site-header-inner`}>
-          {/* This text lockup is deliberately isolated from the shell layout:
-              a later approved logo can replace its contents without changing
-              the home link, header spacing, or page heading hierarchy. */}
-          <Link href="/" className="public-site-brand">
-            <span className="public-site-brand-name">Merchants Codex</span>
-            <span className="public-site-brand-description">
-              PokeForce Companion
-            </span>
+          <Link
+            href="/"
+            className="public-site-brand"
+            aria-label="Merchants Codex home"
+          >
+            <Image
+              src="/images/branding/merchants-codex-logo.png"
+              alt="Merchants Codex"
+              width={1246}
+              height={384}
+              priority
+              className="public-site-logo"
+            />
           </Link>
 
           <MainNav />

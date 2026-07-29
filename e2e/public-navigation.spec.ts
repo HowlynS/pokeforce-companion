@@ -49,7 +49,7 @@ test.describe("homepage", () => {
       })
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Merchants Codex.*PokeForce Companion/ })
+      page.getByRole("link", { name: "Merchants Codex home", exact: true })
     ).toHaveAttribute("href", "/");
     await expect(page.getByRole("main")).toBeVisible();
     await expect(
