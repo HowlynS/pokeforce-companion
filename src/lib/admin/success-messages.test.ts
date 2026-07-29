@@ -7,6 +7,9 @@ import {
 
 describe("adminSuccessMessage", () => {
   it("returns the mapped message for a known code", () => {
+    expect(adminSuccessMessage("appearance_saved")).toBe(
+      "Appearance published"
+    );
     expect(adminSuccessMessage("item_created")).toBe("Item created");
     expect(adminSuccessMessage("item_saved")).toBe("Item saved");
     expect(adminSuccessMessage("item_deleted")).toBe("Item deleted");
@@ -46,6 +49,9 @@ describe("adminSuccessMessage", () => {
   });
 
   it("returns the longer image-cleanup-caveat messages for every image-bearing resource", () => {
+    expect(adminSuccessMessage("appearance_saved_asset_cleanup")).toMatch(
+      /Appearance published, but one or more replaced files/
+    );
     expect(adminSuccessMessage("item_saved_image_cleanup")).toMatch(
       /Item saved, but the previous image file/
     );

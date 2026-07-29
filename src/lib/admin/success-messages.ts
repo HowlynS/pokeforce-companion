@@ -10,6 +10,10 @@
 // closely enough to make a generator worthwhile, and this table is the
 // simplest thing that reads correctly for all of them.
 export const ADMIN_SUCCESS_MESSAGES = {
+  appearance_saved: "Appearance published",
+  appearance_saved_asset_cleanup:
+    "Appearance published, but one or more replaced files could not be removed from storage and may need manual cleanup in Supabase.",
+
   item_created: "Item created",
   item_saved: "Item saved",
   item_saved_image_cleanup:

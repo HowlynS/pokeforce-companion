@@ -23,6 +23,7 @@ import { AdminNav } from "@/components/admin/admin-nav";
 
 const APPROVED_LABELS = [
   "Dashboard",
+  "Appearance",
   "Items",
   "Categories",
   "Recipes",
@@ -36,6 +37,7 @@ const APPROVED_LABELS = [
 
 const APPROVED_HREFS = [
   "/admin",
+  "/admin/appearance",
   "/admin/items",
   "/admin/categories",
   "/admin/recipes",

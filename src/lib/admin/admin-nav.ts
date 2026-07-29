@@ -13,6 +13,7 @@
 // identifier to its Lucide icon component.
 export type AdminNavIcon =
   | "dashboard"
+  | "appearance"
   | "items"
   | "recipes"
   | "professions"
@@ -31,6 +32,7 @@ export type AdminNavItem = {
 
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Dashboard", href: "/admin", icon: "dashboard" },
+  { label: "Appearance", href: "/admin/appearance", icon: "appearance" },
   { label: "Items", href: "/admin/items", icon: "items" },
   { label: "Recipes", href: "/admin/recipes", icon: "recipes" },
   { label: "Professions", href: "/admin/professions", icon: "professions" },

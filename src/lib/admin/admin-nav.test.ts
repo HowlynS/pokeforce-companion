@@ -21,6 +21,7 @@ describe("ADMIN_NAV_ITEMS", () => {
   it("contains the approved destinations in order", () => {
     expect(ADMIN_NAV_ITEMS.map((item) => item.label)).toEqual([
       "Dashboard",
+      "Appearance",
       "Items",
       "Recipes",
       "Professions",
@@ -32,6 +33,7 @@ describe("ADMIN_NAV_ITEMS", () => {
     ]);
     expect(ADMIN_NAV_ITEMS.map((item) => item.href)).toEqual([
       "/admin",
+      "/admin/appearance",
       "/admin/items",
       "/admin/recipes",
       "/admin/professions",
@@ -43,6 +45,7 @@ describe("ADMIN_NAV_ITEMS", () => {
     ]);
     expect(ADMIN_NAV_ITEMS.map((item) => item.icon)).toEqual([
       "dashboard",
+      "appearance",
       "items",
       "recipes",
       "professions",
@@ -89,6 +92,7 @@ describe("isAdminNavItemActive", () => {
   it("marks Dashboard active only on exactly /admin", () => {
     expect(activeHrefFor("/admin")).toBe("/admin");
     expect(activeHrefFor("/admin/items")).not.toBe("/admin");
+    expect(activeHrefFor("/admin/appearance")).not.toBe("/admin");
     expect(activeHrefFor("/admin/settings/game-versions")).not.toBe("/admin");
   });
 
@@ -105,6 +109,8 @@ describe("isAdminNavItemActive", () => {
   });
 
   it("marks each remaining resource active on its list and child routes", () => {
+    expect(activeHrefFor("/admin/appearance")).toBe("/admin/appearance");
+
     expect(activeHrefFor("/admin/recipes")).toBe("/admin/recipes");
     expect(activeHrefFor("/admin/recipes/iron-sword/edit")).toBe("/admin/recipes");
     expect(activeHrefFor("/admin/recipes/iron-sword/delete")).toBe("/admin/recipes");

@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   MapPinned,
   Package,
+  Palette,
   ScrollText,
   Shapes,
   Store,
@@ -31,6 +32,7 @@ import {
 
 const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   dashboard: LayoutDashboard,
+  appearance: Palette,
   items: Package,
   recipes: ScrollText,
   professions: Hammer,
