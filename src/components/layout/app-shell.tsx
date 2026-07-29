@@ -47,8 +47,8 @@ export function AppShell({
             <Image
               src="/images/branding/merchants-codex-logo.png"
               alt="Merchants Codex"
-              width={1246}
-              height={384}
+              width={1394}
+              height={486}
               priority
               className="public-site-logo"
             />
