@@ -655,7 +655,10 @@ select:focus-visible {
    lossless source is requested once as CSS decoration; variant custom
    properties control only crop, visible depth, and wash strength. */
 .public-scenic-background {
-  --public-scenic-position: 55% center;
+  --public-scenic-position: var(
+    --public-scenic-position-desktop,
+    55% center
+  );
   --public-scenic-depth: 640px;
   --public-scenic-wash-top: rgba(17, 21, 20, 0.72);
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.82);
@@ -703,7 +706,10 @@ select:focus-visible {
 }
 
 .public-scenic-background--catalogue {
-  --public-scenic-position: 55% 60%;
+  --public-scenic-position: var(
+    --public-scenic-position-desktop,
+    55% 60%
+  );
   --public-scenic-depth: 600px;
   --public-scenic-wash-top: rgba(17, 21, 20, 0.48);
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.58);
@@ -1174,7 +1180,10 @@ select:focus-visible {
   }
 
   .public-scenic-background {
-    --public-scenic-position: 82% center;
+    --public-scenic-position: var(
+      --public-scenic-position-mobile,
+      82% center
+    );
     --public-scenic-wash-top: rgba(17, 21, 20, 0.8);
     --public-scenic-wash-middle: rgba(17, 21, 20, 0.88);
     --public-scenic-vignette-left: rgba(17, 21, 20, 0.72);

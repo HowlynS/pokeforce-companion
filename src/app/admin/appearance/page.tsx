@@ -117,7 +117,7 @@ export default async function AppearancePage({
               custom={Boolean(record?.homeBackgroundPath)}
               defaultUrl={DEFAULT_SITE_APPEARANCE.home.background.url}
               accept="image/png,image/jpeg,image/webp"
-              helper="PNG, JPEG, or WebP · 640–8192px per side · max 10 MB."
+              helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
               fit="cover"
             />
 
@@ -131,7 +131,7 @@ export default async function AppearancePage({
               custom={Boolean(record?.catalogueBackgroundPath)}
               defaultUrl={DEFAULT_SITE_APPEARANCE.catalogue.background.url}
               accept="image/png,image/jpeg,image/webp"
-              helper="PNG, JPEG, or WebP · 640–8192px per side · max 10 MB."
+              helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
               fit="cover"
             />
 
@@ -145,7 +145,7 @@ export default async function AppearancePage({
               custom={Boolean(record?.itemDetailBackgroundPath)}
               defaultUrl={DEFAULT_SITE_APPEARANCE.itemDetail.background.url}
               accept="image/png,image/jpeg,image/webp"
-              helper="PNG, JPEG, or WebP · 640–8192px per side · max 10 MB."
+              helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
               fit="cover"
             />
           </div>

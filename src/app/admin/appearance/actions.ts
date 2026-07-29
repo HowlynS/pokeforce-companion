@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
@@ -318,7 +318,7 @@ export async function saveAppearanceAction(formData: FormData) {
   });
   const cleanupSucceeded = await cleanupAssets(oldPathsToClean);
 
-  revalidateTag(SITE_APPEARANCE_CACHE_TAG, "max");
+  updateTag(SITE_APPEARANCE_CACHE_TAG);
   for (const path of [
     "/",
     "/items",

@@ -210,11 +210,7 @@ export async function validateAppearanceAsset(
     };
   }
 
-  const maxBytes = isFavicon
-    ? 1024 * 1024
-    : WALLPAPER_KINDS.has(kind)
-      ? 10 * 1024 * 1024
-      : 5 * 1024 * 1024;
+  const maxBytes = isFavicon ? 1024 * 1024 : 5 * 1024 * 1024;
   if (file.size > maxBytes) {
     return {
       ok: false,
@@ -222,7 +218,7 @@ export async function validateAppearanceAsset(
       message: isFavicon
         ? "The favicon must be 1 MB or smaller."
         : WALLPAPER_KINDS.has(kind)
-          ? "Wallpaper images must be 10 MB or smaller."
+          ? "Wallpaper images must be 5 MB or smaller."
           : "The logo must be 5 MB or smaller.",
     };
   }
@@ -247,24 +243,28 @@ export async function validateAppearanceAsset(
     };
   }
 
-  const [minimum, maximum] = isFavicon
-    ? [16, 512]
+  const dimensionsInvalid = isFavicon
+    ? dimensions.width < 16 ||
+      dimensions.height < 16 ||
+      dimensions.width > 512 ||
+      dimensions.height > 512
     : WALLPAPER_KINDS.has(kind)
-      ? [640, 8192]
-      : [32, 4096];
-  if (
-    dimensions.width < minimum ||
-    dimensions.height < minimum ||
-    dimensions.width > maximum ||
-    dimensions.height > maximum
-  ) {
+      ? dimensions.width < 640 ||
+        dimensions.height < 360 ||
+        dimensions.width > 8192 ||
+        dimensions.height > 8192
+      : dimensions.width < 32 ||
+        dimensions.height < 32 ||
+        dimensions.width > 4096 ||
+        dimensions.height > 4096;
+  if (dimensionsInvalid) {
     return {
       ok: false,
       error: "invalid_asset_dimensions",
       message: isFavicon
         ? "Favicons must be between 16×16 and 512×512 pixels."
         : WALLPAPER_KINDS.has(kind)
-          ? "Wallpapers must be between 640×640 and 8192×8192 pixels."
+          ? "Wallpapers must be between 640×360 and 8192×8192 pixels."
           : "Logo dimensions must be between 32×32 and 4096×4096 pixels.",
     };
   }

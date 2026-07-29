@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import { DM_Serif_Display, Manrope } from "next/font/google";
 import "./globals.css";
+import { getPublishedSiteAppearance } from "@/lib/appearance/public";
 
 // Site-wide interface typeface (Visual Pass sub-slice 1): a restrained
 // weight set covers body copy through headings without needing extreme
@@ -22,10 +23,29 @@ const dmSerifDisplay = DM_Serif_Display({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "PokeForce Companion",
-  description: "A crafting wiki companion for PokeForce.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const appearance = await getPublishedSiteAppearance();
+  return {
+    title: "PokeForce Companion",
+    description: "A crafting wiki companion for PokeForce.",
+    ...(appearance.favicon.url
+      ? {
+          icons: {
+            icon: [
+              {
+                url: appearance.favicon.url,
+                ...(appearance.favicon.width && appearance.favicon.height
+                  ? {
+                      sizes: `${appearance.favicon.width}x${appearance.favicon.height}`,
+                    }
+                  : {}),
+              },
+            ],
+          },
+        }
+      : {}),
+  };
+}
 
 export default function RootLayout({
   children,

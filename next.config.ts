@@ -2,10 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
+    // The authentication proxy clones request bodies before Server Actions
+    // receive them. Keep its buffer aligned with the action limit below or
+    // a valid multi-asset publication would be truncated at Next's 10 MB
+    // proxy default before application validation can run.
+    proxyClientMaxBodySize: "24mb",
     serverActions: {
-      // Slightly above the 5 MB application-level image limit so a maximum-
-      // size upload still fits once multipart/form-data overhead is added.
-      bodySizeLimit: "6mb",
+      // One appearance save may legitimately carry all five replacements
+      // (three 5 MB wallpapers, a 5 MB logo, and a 1 MB favicon). The
+      // action validates each role independently before publication.
+      bodySizeLimit: "24mb",
     },
   },
 };

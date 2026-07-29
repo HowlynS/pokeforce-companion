@@ -224,6 +224,59 @@ async function withVerifiedDatabase<T>(
   }
 }
 
+/**
+ * Restores the isolated browser-test appearance singleton to the no-record
+ * fallback and removes only the exact custom object paths referenced by that
+ * row. The test project is guarded before either database or storage access;
+ * committed repository assets are URLs, never stored paths, and therefore
+ * can never enter this cleanup target list.
+ */
+export async function resetE2eSiteAppearance(): Promise<void> {
+  const paths = await withVerifiedDatabase(async (client) => {
+    const result = await client.query<{
+      headerLogoPath: string | null;
+      faviconPath: string | null;
+      homeBackgroundPath: string | null;
+      catalogueBackgroundPath: string | null;
+      itemDetailBackgroundPath: string | null;
+    }>(
+      `delete from "SiteAppearance"
+       where "id" = 'site'
+       returning "headerLogoPath", "faviconPath", "homeBackgroundPath",
+                 "catalogueBackgroundPath", "itemDetailBackgroundPath"`
+    );
+    const row = result.rows[0];
+    return row
+      ? [
+          row.headerLogoPath,
+          row.faviconPath,
+          row.homeBackgroundPath,
+          row.catalogueBackgroundPath,
+          row.itemDetailBackgroundPath,
+        ].filter((path): path is string => Boolean(path))
+      : [];
+  });
+
+  if (paths.length === 0) {
+    return;
+  }
+  if (paths.some((path) => !path.startsWith("appearance/"))) {
+    throw new Error("Refusing appearance cleanup: an object path is out of scope.");
+  }
+
+  const admin = await createSignedInAdminClient();
+  try {
+    const { error } = await admin.storage
+      .from(SERVICE_TEST_BUCKET)
+      .remove([...new Set(paths)]);
+    if (error) {
+      throw new Error("Appearance browser-test storage cleanup failed.");
+    }
+  } finally {
+    await signOutServiceClient(admin);
+  }
+}
+
 export async function deleteE2eTestCurrencyRecords(): Promise<number> {
   if (E2E_CURRENCY_SLUG_PREFIX.length < 5) {
     throw new Error("Refusing Currency cleanup: prefix is too short.");

@@ -1,4 +1,14 @@
 import { expect, test } from "@playwright/test";
+import path from "node:path";
+import { resetE2eSiteAppearance } from "./helpers/database-cleanup";
+
+test.beforeEach(async () => {
+  await resetE2eSiteAppearance();
+});
+
+test.afterEach(async () => {
+  await resetE2eSiteAppearance();
+});
 
 test("Appearance is protected, discoverable, and keeps desktop/mobile crop drafts independent", async ({
   page,
@@ -70,4 +80,79 @@ test("dragging the scenic canvas updates the numeric controls and reset restores
     .click();
   await expect(x).toHaveValue(String(originalX));
   await expect(y).toHaveValue(String(originalY));
+});
+
+test("one atomic save publishes logo, favicon, and independent scenic settings, then restores defaults", async ({
+  page,
+}) => {
+  await page.goto("/admin/appearance");
+
+  const logo = path.resolve("public/images/branding/merchants-codex-logo.png");
+  const wallpaper = logo;
+  const favicon = path.resolve(
+    "e2e/fixtures/profession-sprites/aetherglass-tonic.png"
+  );
+
+  await page.locator('input[name="headerLogoFile"]').setInputFiles(logo);
+  await page.locator('input[name="faviconFile"]').setInputFiles(favicon);
+  await page.locator('input[name="homeBackgroundFile"]').setInputFiles(wallpaper);
+  await page
+    .locator('input[name="catalogueBackgroundFile"]')
+    .setInputFiles(wallpaper);
+  await page
+    .locator('input[name="itemDetailBackgroundFile"]')
+    .setInputFiles(wallpaper);
+
+  await page.getByLabel("X position").fill("44");
+  await page.getByLabel("Y position").fill("61");
+  await page
+    .getByRole("button", { name: "Items catalogue", exact: true })
+    .click();
+  await page.getByLabel("X position").fill("52");
+  await page.getByLabel("Y position").fill("66");
+  await page.getByRole("button", { name: "Item detail", exact: true }).click();
+  await page.getByLabel("X position").fill("48");
+  await page.getByLabel("Y position").fill("57");
+
+  await page.getByRole("button", { name: /Save Appearance/ }).click();
+  await expect(page.getByRole("status")).toHaveText("Appearance published");
+
+  await page.goto("/");
+  await expect(page.locator(".public-site-logo")).toHaveAttribute(
+    "src",
+    /appearance\/header-logo\/.+\.png\?v=\d+/
+  );
+  await expect(page.locator(".public-scenic-background--home")).toHaveAttribute(
+    "style",
+    /--public-scenic-position-desktop:44% 61%/
+  );
+  await expect(page.locator('link[rel~="icon"]')).toHaveAttribute(
+    "href",
+    /appearance\/favicon\/.+\.png\?v=\d+/
+  );
+
+  await page.goto("/items");
+  await expect(
+    page.locator(".public-scenic-background--catalogue")
+  ).toHaveAttribute("style", /--public-scenic-position-desktop:52% 66%/);
+
+  await page.goto("/items/iron-ore");
+  await expect(page.locator(".public-scenic-background--detail")).toHaveAttribute(
+    "style",
+    /--public-scenic-position-desktop:48% 57%/
+  );
+  await expect(page.locator(".resource-atmosphere--item")).toBeVisible();
+
+  await page.goto("/admin/appearance");
+  await page.getByRole("button", { name: "Restore all defaults" }).click();
+  await page.getByRole("button", { name: "Restore defaults" }).click();
+  await page.getByRole("button", { name: /Save Appearance/ }).click();
+  await expect(page.getByRole("status")).toHaveText("Appearance published");
+
+  await page.goto("/");
+  await expect(page.locator(".public-site-logo")).toHaveAttribute(
+    "src",
+    "/images/branding/merchants-codex-logo.png"
+  );
+  await expect(page.locator('link[rel~="icon"]')).toHaveCount(0);
 });
