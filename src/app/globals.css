@@ -455,6 +455,261 @@
   z-index: 1;
 }
 
+.appearance-admin-shell-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-background);
+  background-image:
+    linear-gradient(rgba(10, 13, 12, 0.2), rgba(10, 13, 12, 0.2)),
+    var(--admin-preview-background-image, none);
+  background-repeat: no-repeat;
+  background-position:
+    center,
+    var(--admin-preview-background-position, 50% 50%);
+  background-size: cover;
+  color: var(--color-text);
+}
+
+.appearance-admin-preview-frame {
+  display: flex;
+  width: min(96%, 2900px);
+  min-height: 100%;
+  margin: 0 auto;
+  border-inline: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.appearance-admin-preview-sidebar {
+  display: flex;
+  width: 232px;
+  flex: 0 0 232px;
+  flex-direction: column;
+  gap: 28px;
+  padding: 24px 16px;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.appearance-admin-preview-brand {
+  display: grid;
+  gap: 4px;
+  padding: 4px 12px 0;
+}
+
+.appearance-admin-preview-brand strong {
+  color: var(--color-accent);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+.appearance-admin-preview-brand span,
+.appearance-admin-preview-account {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.appearance-admin-preview-account {
+  display: grid;
+  gap: 8px;
+  margin: 0 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-soft);
+}
+
+.appearance-admin-preview-avatar {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-background);
+}
+
+.appearance-admin-preview-signout,
+.appearance-admin-preview-action {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.appearance-admin-preview-signout {
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.appearance-admin-preview-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.appearance-admin-preview-nav-primary {
+  display: grid;
+  gap: 4px;
+}
+
+.appearance-admin-preview-nav-primary > span,
+.appearance-admin-preview-site-group > span {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.appearance-admin-preview-nav i {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+}
+
+.appearance-admin-preview-nav-active {
+  background: var(--color-surface-soft);
+  color: var(--color-accent) !important;
+  font-weight: 700;
+}
+
+.appearance-admin-preview-site-group {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.appearance-admin-preview-site-group small {
+  padding-inline: 12px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.appearance-admin-preview-content {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+  background: #151917;
+}
+
+.appearance-admin-preview-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.appearance-admin-preview-header small {
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.appearance-admin-preview-header h3 {
+  margin: 4px 0;
+  font-size: 28px;
+  letter-spacing: -0.025em;
+}
+
+.appearance-admin-preview-header p,
+.appearance-admin-preview-panel p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.appearance-admin-preview-action {
+  background: var(--color-accent);
+  color: var(--color-background);
+}
+
+.appearance-admin-preview-workspace {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 280px;
+  gap: 24px;
+  align-items: start;
+}
+
+.appearance-admin-preview-records,
+.appearance-admin-preview-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.appearance-admin-preview-records > span:not(.appearance-admin-preview-search) {
+  height: 38px;
+  border-radius: 6px;
+  background: var(--color-surface-soft);
+}
+
+.appearance-admin-preview-records > .is-selected {
+  box-shadow: inset 3px 0 var(--color-accent);
+}
+
+.appearance-admin-preview-search {
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-background);
+}
+
+.appearance-admin-preview-editor {
+  display: grid;
+  gap: 16px;
+}
+
+.appearance-admin-preview-panel label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.appearance-admin-preview-panel label i {
+  display: block;
+  height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-background);
+}
+
+.appearance-admin-preview-panel label i.is-textarea {
+  height: 108px;
+}
+
+.appearance-admin-preview-panel--compact {
+  grid-template-columns: 1fr;
+}
+
+.appearance-admin-preview-context .appearance-admin-preview-panel > span {
+  height: 44px;
+  border-radius: 6px;
+  background: var(--color-surface-soft);
+}
+
 .appearance-preview-drag-layer {
   position: absolute;
   inset: 112px 0 auto;
@@ -470,6 +725,12 @@
 
 .appearance-preview-drag-layer[data-dragging="true"] {
   cursor: grabbing;
+}
+
+.appearance-preview-drag-layer--admin {
+  inset: 0;
+  height: 100%;
+  padding-top: 24px;
 }
 
 .appearance-preview-drag-layer > span {
@@ -5264,14 +5525,13 @@ input[type="checkbox"] {
    column shrinks (min-width: 0) and wide tables scroll inside their own
    wrappers. */
 
-/* Admin Shell Background pass (revised — Wallpaper Correction pass): the
-   scenic coastal artwork lives ONLY here, on the one element the /admin
-   layout renders exactly once — it can never leak onto public pages or
-   /login, which use the separate AppShell. Stable, replaceable asset path
-   per the brief: plain CSS url() against
-   /images/admin/admin-shell-background.webp (Next.js serves everything
-   under public/ unhashed at its literal path) — no JS import, no base64
-   inline, so swapping the file later needs no code change.
+/* Admin Shell Background pass (revised — managed Appearance workspace):
+   the scenic artwork lives ONLY here, on the one element the /admin layout
+   renders exactly once — it can never leak onto public pages or /login,
+   which use the separate AppShell. AdminShell supplies the resolved,
+   cache-busted custom image and desktop crop through scoped variables.
+   The original /images/admin/admin-shell-background.webp at 50% 50% stays
+   the committed fallback when no custom asset resolves.
 
    The artwork is scenic SIDE FRAMING, not a wallpaper behind the
    application: .admin-content-inner (below) now owns its own fully
@@ -5347,9 +5607,14 @@ input[type="checkbox"] {
   background-color: var(--color-background);
   background-image:
     linear-gradient(rgba(10, 13, 12, 0.2), rgba(10, 13, 12, 0.2)),
-    url("/images/admin/admin-shell-background.webp");
+    var(
+      --admin-shell-background-image,
+      url("/images/admin/admin-shell-background.webp")
+    );
   background-repeat: no-repeat, no-repeat;
-  background-position: center, center;
+  background-position:
+    center,
+    var(--admin-shell-background-position, 50% 50%);
   background-size: cover, cover;
   background-attachment: fixed, fixed;
   color: var(--color-text);

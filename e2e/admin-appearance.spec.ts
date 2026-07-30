@@ -24,7 +24,7 @@ test("Appearance is protected, discoverable, and keeps desktop/mobile crop draft
       .getByRole("link", { name: "Appearance", exact: true })
   ).toHaveAttribute("aria-current", "page");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Live public preview" })
+    page.getByRole("heading", { level: 2, name: "Live appearance preview" })
   ).toBeVisible();
 
   const desktop = page.getByRole("button", { name: "Desktop", exact: true });
@@ -98,19 +98,164 @@ test("client asset validation preserves the pending preview and unpublished draf
   await expect(page.locator("#headerLogo-error")).toHaveText(
     "Logo dimensions must be between 32×32 and 4096×4096 pixels."
   );
-  await expect(page.getByText("Selected: tiny-valid.png")).toBeVisible();
+  await expect(page.getByText("tiny-valid.png", { exact: true })).toBeVisible();
   await expect(
     page.getByAltText("Draft header logo preview")
   ).toHaveJSProperty("naturalWidth", 1);
 
   await page.getByRole("button", { name: /Save Appearance/ }).click();
   await expect(page).toHaveURL(/\/admin\/appearance$/);
-  await expect(page.getByText("Selected: tiny-valid.png")).toBeVisible();
+  await expect(page.getByText("tiny-valid.png", { exact: true })).toBeVisible();
   expect(
     await fileInput.evaluate(
       (input: HTMLInputElement) => input.validity.valid
     )
   ).toBe(false);
+});
+
+test("the shared file picker hides localized browser chrome and exposes requirements accessibly", async ({
+  page,
+}) => {
+  await page.goto("/admin/appearance");
+
+  const pickers = page.locator(".appearance-file-picker");
+  await expect(pickers).toHaveCount(6);
+  await expect(
+    page.getByRole("button", { name: "Choose file", exact: true })
+  ).toHaveCount(6);
+  await expect(page.getByText("No file selected", { exact: true })).toHaveCount(
+    6
+  );
+  await expect(page.getByText("Upload custom", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Choisir un fichier")).toHaveCount(0);
+  await expect(page.locator(".appearance-file-native")).toHaveCount(6);
+  await expect(page.locator(".field-help")).toHaveCount(0);
+
+  const requirementTrigger = page.getByRole("button", {
+    name: "File requirements for Header logo",
+    exact: true,
+  });
+  await requirementTrigger.focus();
+  await expect(
+    page.getByRole("tooltip").filter({
+      hasText:
+        "PNG, JPEG, or WebP. 32–4096 px per side. Maximum 5 MB. Image proportions are preserved.",
+    })
+  ).toBeVisible();
+
+  const firstChoose = page
+    .getByRole("button", { name: "Choose file", exact: true })
+    .first();
+  await firstChoose.focus();
+  const chooserPromise = page.waitForEvent("filechooser");
+  await firstChoose.press("Enter");
+  const chooser = await chooserPromise;
+  await chooser.setFiles(
+    path.resolve("public/images/branding/merchants-codex-logo.png")
+  );
+  await expect(
+    page.getByText("merchants-codex-logo.png", { exact: true })
+  ).toBeVisible();
+  await expect(page.getByText("Pending replacement", { exact: true })).toBeVisible();
+  await expect(page.getByText("Unsaved changes")).toBeVisible();
+});
+
+test("admin background remains draft-only, synchronizes crop controls, publishes across AdminShell, and removes to fallback", async ({
+  page,
+}) => {
+  await page.goto("/admin/appearance");
+
+  const liveShell = page.locator(".admin-shell");
+  const defaultBackground = await liveShell.evaluate(
+    (element) => getComputedStyle(element).backgroundImage
+  );
+  expect(defaultBackground).toContain(
+    "/images/admin/admin-shell-background.webp"
+  );
+
+  await page
+    .getByRole("button", { name: "Admin workspace", exact: true })
+    .click();
+  const x = page.getByLabel("X position");
+  const y = page.getByLabel("Y position");
+  await expect(x).toHaveValue("50");
+  await expect(y).toHaveValue("50");
+  await x.fill("38");
+  await y.fill("62");
+
+  const dragLayer = page.locator(".appearance-preview-drag-layer--admin");
+  const dragBox = await dragLayer.boundingBox();
+  expect(dragBox).not.toBeNull();
+  await page.mouse.move(
+    dragBox!.x + dragBox!.width / 2,
+    dragBox!.y + dragBox!.height / 2
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    dragBox!.x + dragBox!.width / 2 - 40,
+    dragBox!.y + dragBox!.height / 2 + 20
+  );
+  await page.mouse.up();
+  expect(Number.isInteger(Number(await x.inputValue()))).toBe(true);
+  expect(Number.isInteger(Number(await y.inputValue()))).toBe(true);
+
+  await x.fill("38");
+  await y.fill("62");
+  await page
+    .locator('input[name="adminBackgroundFile"]')
+    .setInputFiles(path.resolve("public/images/admin/admin-shell-background.webp"));
+  await expect(
+    page.locator(".appearance-admin-shell-preview")
+  ).toHaveAttribute("style", /blob:/);
+
+  const unchangedLiveBackground = await liveShell.evaluate(
+    (element) => getComputedStyle(element).backgroundImage
+  );
+  expect(unchangedLiveBackground).toBe(defaultBackground);
+
+  await page.getByRole("button", { name: /Save Appearance/ }).click();
+  await expect(page.getByRole("status")).toHaveText("Appearance published");
+
+  for (const route of ["/admin", "/admin/items"]) {
+    await page.goto(route);
+    const style = await page.locator(".admin-shell").evaluate((element) => {
+      const computed = getComputedStyle(element);
+      return {
+        image: computed.backgroundImage,
+        position: computed.backgroundPosition,
+      };
+    });
+    expect(style.image).toMatch(/appearance\/admin-background\/.+\.webp\?v=/);
+    expect(style.position).toContain("38% 62%");
+  }
+
+  await page.goto("/");
+  await expect(page.locator(".admin-shell")).toHaveCount(0);
+  const publicBodyBackground = await page.evaluate(
+    () => getComputedStyle(document.body).backgroundImage
+  );
+  expect(publicBodyBackground).not.toContain("admin-background");
+
+  await page.goto("/admin/appearance");
+  await page
+    .getByRole("button", { name: "Remove custom", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Admin workspace", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Restore default position", exact: true })
+    .click();
+  await page.getByRole("button", { name: /Save Appearance/ }).click();
+  await expect(page.getByRole("status")).toHaveText("Appearance published");
+  const restored = await page.locator(".admin-shell").evaluate((element) => ({
+    image: getComputedStyle(element).backgroundImage,
+    position: getComputedStyle(element).backgroundPosition,
+  }));
+  expect(restored.image).toContain(
+    "/images/admin/admin-shell-background.webp"
+  );
+  expect(restored.position).toContain("50% 50%");
 });
 
 test("the editor remains usable without horizontal overflow at every supported admin width", async ({

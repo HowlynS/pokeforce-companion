@@ -46,7 +46,7 @@ const loadPublishedSiteAppearance = unstable_cache(
       return DEFAULT_SITE_APPEARANCE;
     }
   },
-  ["published-site-appearance"],
+  ["published-site-appearance-v2"],
   { tags: [SITE_APPEARANCE_CACHE_TAG] }
 );
 

@@ -269,6 +269,10 @@ same focused commit.
   contract without timezone conversion. Optional dates provide a clear action.
 - Keep `createdAt`, `updatedAt`, and verification timestamps read-only; they
   are not contributor date fields.
+- The shared admin shell alone owns the managed scenic background. It resolves
+  a cache-busted custom asset and desktop X/Y crop, falling back to
+  `/images/admin/admin-shell-background.webp` at `50% 50%`. Public routes and
+  login never inherit it; central work surfaces remain opaque.
 
 ## Workflow
 
@@ -305,12 +309,14 @@ buttons are prohibited: the shared sticky Save action is the only publication
 surface and atomically publishes every pending asset and position.
 
 The live preview is always labelled as an unpublished draft. It reuses public
-header/scenic classes and layers, provides Homepage, Items catalogue, and Item
-detail modes, and exposes Desktop 1920×1080, Ultrawide 3440×1440, and Mobile
-390×844 presets. Crop inputs are exact integer percentages from 0–100. Pointer
+header/scenic classes and layers for Homepage, Items catalogue, and Item detail,
+and renders a representative opaque AdminShell proof for Admin workspace.
+Public modes expose Desktop 1920×1080, Ultrawide 3440×1440, and Mobile 390×844
+presets; Admin workspace is desktop/ultrawide only and owns one desktop crop
+shared by both. Crop inputs are exact integer percentages from 0–100. Pointer
 dragging and numeric input update the same value, with visible active, focus,
-and disabled states. Desktop and mobile values are independent; ultrawide
-shares desktop. Provide Reset to published and Restore default crop actions.
+and disabled states. Provide Reset to published and Restore default position
+actions.
 
 Preview content is representative structure only and must not invent gameplay
 facts. Scenic backgrounds are decorative and absent from the accessibility

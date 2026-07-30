@@ -7,7 +7,8 @@ export type AppearanceAssetKind =
   | "favicon"
   | "home-background"
   | "catalogue-background"
-  | "item-detail-background";
+  | "item-detail-background"
+  | "admin-background";
 
 export type AppearanceAssetDimensions = {
   width: number;
@@ -44,12 +45,13 @@ export class AppearanceAssetStorageError extends Error {
 }
 
 const APPEARANCE_PATH_PATTERN =
-  /^appearance\/(header-logo|favicon|home-background|catalogue-background|item-detail-background)\/[0-9a-f-]+\.(png|jpg|webp|ico)$/;
+  /^appearance\/(header-logo|favicon|home-background|catalogue-background|item-detail-background|admin-background)\/[0-9a-f-]+\.(png|jpg|webp|ico)$/;
 
 const WALLPAPER_KINDS = new Set<AppearanceAssetKind>([
   "home-background",
   "catalogue-background",
   "item-detail-background",
+  "admin-background",
 ]);
 
 function readUint24LE(bytes: Uint8Array, offset: number): number {

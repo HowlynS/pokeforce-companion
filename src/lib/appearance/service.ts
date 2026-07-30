@@ -29,6 +29,11 @@ export type SiteAppearanceWrite = {
   itemDetailDesktopPositionY: number | null;
   itemDetailMobilePositionX: number | null;
   itemDetailMobilePositionY: number | null;
+  adminBackgroundPath: string | null;
+  adminBackgroundWidth: number | null;
+  adminBackgroundHeight: number | null;
+  adminDesktopPositionX: number | null;
+  adminDesktopPositionY: number | null;
 };
 
 /**

@@ -239,11 +239,13 @@ export async function resetE2eSiteAppearance(): Promise<void> {
       homeBackgroundPath: string | null;
       catalogueBackgroundPath: string | null;
       itemDetailBackgroundPath: string | null;
+      adminBackgroundPath: string | null;
     }>(
       `delete from "SiteAppearance"
        where "id" = 'site'
        returning "headerLogoPath", "faviconPath", "homeBackgroundPath",
-                 "catalogueBackgroundPath", "itemDetailBackgroundPath"`
+                 "catalogueBackgroundPath", "itemDetailBackgroundPath",
+                 "adminBackgroundPath"`
     );
     const row = result.rows[0];
     return row
@@ -253,6 +255,7 @@ export async function resetE2eSiteAppearance(): Promise<void> {
           row.homeBackgroundPath,
           row.catalogueBackgroundPath,
           row.itemDetailBackgroundPath,
+          row.adminBackgroundPath,
         ].filter((path): path is string => Boolean(path))
       : [];
   });

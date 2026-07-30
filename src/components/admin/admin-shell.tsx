@@ -18,6 +18,9 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminSuccessToast } from "@/components/admin/admin-success-toast";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { signOutAction } from "@/app/admin/actions";
+import { getPublishedSiteAppearance } from "@/lib/appearance/public";
+import { serializeScenicPosition } from "@/lib/appearance/position";
+import { DEFAULT_SITE_APPEARANCE } from "@/lib/appearance/defaults";
 
 type AdminShellProps = {
   children: React.ReactNode;
@@ -27,9 +30,23 @@ export async function AdminShell({ children }: AdminShellProps) {
   // Cached (React cache()) so this repeats no Supabase lookup beyond the
   // one the /admin layout's own gate already performs for this request.
   const user = await requireAdminUser();
+  const appearance = await getPublishedSiteAppearance();
+  const adminAppearance =
+    appearance.admin ?? DEFAULT_SITE_APPEARANCE.admin;
+  const adminBackgroundUrl =
+    adminAppearance.background.url ??
+    "/images/admin/admin-shell-background.webp";
 
   return (
-    <div className="admin-shell">
+    <div
+      className="admin-shell"
+      style={{
+        "--admin-shell-background-image": `url("${adminBackgroundUrl}")`,
+        "--admin-shell-background-position": serializeScenicPosition(
+          adminAppearance.desktop
+        ),
+      } as React.CSSProperties}
+    >
       {/* The combined application frame (Shell Composition Correction
           pass): sidebar and content used to be direct children of
           .admin-shell itself, so the sidebar sat flush at the true

@@ -1,4 +1,4 @@
-import { ImageIcon, Mountain, Palette } from "lucide-react";
+import { ImageIcon, Mountain, Palette, PanelsTopLeft } from "lucide-react";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { prisma } from "@/lib/db";
 import {
@@ -99,6 +99,29 @@ export default async function AppearancePage({
               accept="image/png,image/x-icon,image/vnd.microsoft.icon,.ico"
               requirements="PNG or ICO. 16–512 px per side. Maximum 1 MB. Image proportions are preserved."
               validation="favicon"
+            />
+          </div>
+          </EditorSection>
+
+          <EditorSection
+          title="Admin workspace"
+          icon={PanelsTopLeft}
+          description="The shared scenic framing behind every authenticated admin page."
+        >
+          <div className="appearance-asset-stack">
+            <AppearanceAssetField
+              name="adminBackground"
+              label="Admin shell background"
+              description="Shown behind the bounded sidebar and workspace frame on authenticated admin pages."
+              currentUrl={appearance.admin.background.url}
+              currentWidth={appearance.admin.background.width}
+              currentHeight={appearance.admin.background.height}
+              custom={Boolean(record?.adminBackgroundPath)}
+              defaultUrl={DEFAULT_SITE_APPEARANCE.admin.background.url}
+              accept="image/png,image/jpeg,image/webp"
+              requirements="PNG, JPEG, or WebP. 640×360–8192×8192 px. Maximum 5 MB. Image proportions are preserved."
+              fit="cover"
+              validation="wallpaper"
             />
           </div>
           </EditorSection>

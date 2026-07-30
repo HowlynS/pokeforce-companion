@@ -423,10 +423,11 @@ surface conflicts—not infer a replacement aesthetic.
 ## Admin Appearance Governance
 
 The Appearance workspace is the authoritative admin workflow for the public
-header logo, favicon, and the three approved scenic wallpapers: homepage,
-Items catalogue, and Item detail. It changes those visual assets and their crop
-positions; it is not a general theme editor and must not expose typography,
-color-token, component-style, or arbitrary-page controls.
+header logo, favicon, the three approved public scenic wallpapers (homepage,
+Items catalogue, and Item detail), and the shared authenticated admin-shell
+background. It changes those visual assets and their crop positions; it is not
+a general theme editor and must not expose typography, color-token,
+component-style, or arbitrary-page controls.
 
 Committed brand and scenic assets remain safe defaults. Published custom assets
 use cache-busted public URLs, while missing records, malformed values, and
@@ -447,3 +448,11 @@ shared accessible info-tooltip beside `Replacement file`. Selecting or dropping
 a file validates and stages its draft immediately; there is no per-asset upload
 action because the page-level guarded Save remains the only atomic publication
 boundary.
+
+The admin background is applied only at the shared `AdminShell` boundary.
+Desktop and ultrawide share one exact integer X/Y crop; the committed
+`/images/admin/admin-shell-background.webp` at `50% 50%` remains the fallback.
+The existing dark overlay and opaque sidebar, central workspace, panels, forms,
+and dialogs remain authoritative for readability. Draft files and positions
+appear only in the representative admin-shell preview until Save publishes the
+complete snapshot. Public routes and login never receive the admin background.

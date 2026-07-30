@@ -30,6 +30,7 @@ type AssetConfig = {
     | "homeBackgroundPath"
     | "catalogueBackgroundPath"
     | "itemDetailBackgroundPath"
+    | "adminBackgroundPath"
   >;
   widthKey: keyof Pick<
     SiteAppearanceWrite,
@@ -38,6 +39,7 @@ type AssetConfig = {
     | "homeBackgroundWidth"
     | "catalogueBackgroundWidth"
     | "itemDetailBackgroundWidth"
+    | "adminBackgroundWidth"
   >;
   heightKey: keyof Pick<
     SiteAppearanceWrite,
@@ -46,6 +48,7 @@ type AssetConfig = {
     | "homeBackgroundHeight"
     | "catalogueBackgroundHeight"
     | "itemDetailBackgroundHeight"
+    | "adminBackgroundHeight"
   >;
 };
 
@@ -84,6 +87,13 @@ const ASSETS: readonly AssetConfig[] = [
     pathKey: "itemDetailBackgroundPath",
     widthKey: "itemDetailBackgroundWidth",
     heightKey: "itemDetailBackgroundHeight",
+  },
+  {
+    formName: "adminBackground",
+    kind: "admin-background",
+    pathKey: "adminBackgroundPath",
+    widthKey: "adminBackgroundWidth",
+    heightKey: "adminBackgroundHeight",
   },
 ] as const;
 
@@ -198,6 +208,18 @@ export async function saveAppearanceAction(formData: FormData) {
       existing?.itemDetailMobilePositionY ??
         DEFAULT_SITE_APPEARANCE.itemDetail.mobile.y
     ),
+    adminDesktopPositionX: positionValue(
+      formData,
+      "adminDesktopPositionX",
+      existing?.adminDesktopPositionX ??
+        DEFAULT_SITE_APPEARANCE.admin.desktop.x
+    ),
+    adminDesktopPositionY: positionValue(
+      formData,
+      "adminDesktopPositionY",
+      existing?.adminDesktopPositionY ??
+        DEFAULT_SITE_APPEARANCE.admin.desktop.y
+    ),
   };
   if (!restoreAll && Object.values(positions).some((value) => value === null)) {
     redirect("/admin/appearance?error=invalid_position");
@@ -236,6 +258,9 @@ export async function saveAppearanceAction(formData: FormData) {
     itemDetailBackgroundPath: existing?.itemDetailBackgroundPath ?? null,
     itemDetailBackgroundWidth: existing?.itemDetailBackgroundWidth ?? null,
     itemDetailBackgroundHeight: existing?.itemDetailBackgroundHeight ?? null,
+    adminBackgroundPath: existing?.adminBackgroundPath ?? null,
+    adminBackgroundWidth: existing?.adminBackgroundWidth ?? null,
+    adminBackgroundHeight: existing?.adminBackgroundHeight ?? null,
     ...(restoreAll
       ? {
           homeDesktopPositionX: DEFAULT_SITE_APPEARANCE.home.desktop.x,
@@ -256,6 +281,8 @@ export async function saveAppearanceAction(formData: FormData) {
             DEFAULT_SITE_APPEARANCE.itemDetail.mobile.x,
           itemDetailMobilePositionY:
             DEFAULT_SITE_APPEARANCE.itemDetail.mobile.y,
+          adminDesktopPositionX: DEFAULT_SITE_APPEARANCE.admin.desktop.x,
+          adminDesktopPositionY: DEFAULT_SITE_APPEARANCE.admin.desktop.y,
         }
       : (positions as Omit<
           SiteAppearanceWrite,
@@ -274,6 +301,9 @@ export async function saveAppearanceAction(formData: FormData) {
           | "itemDetailBackgroundPath"
           | "itemDetailBackgroundWidth"
           | "itemDetailBackgroundHeight"
+          | "adminBackgroundPath"
+          | "adminBackgroundWidth"
+          | "adminBackgroundHeight"
         >)),
   };
 
@@ -326,6 +356,7 @@ export async function saveAppearanceAction(formData: FormData) {
   ]) {
     revalidatePath(path);
   }
+  revalidatePath("/admin", "layout");
   if (existing?.itemDetailBackgroundPath !== value.itemDetailBackgroundPath) {
     revalidatePath("/items/[slug]", "page");
   }

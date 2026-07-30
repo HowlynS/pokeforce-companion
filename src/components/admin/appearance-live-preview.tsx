@@ -18,7 +18,8 @@ import {
 } from "@/lib/appearance/position";
 import { dispatchFormChange } from "@/lib/admin/form-change-event";
 
-type Surface = "home" | "catalogue" | "itemDetail";
+type PublicSurface = "home" | "catalogue" | "itemDetail";
+type Surface = PublicSurface | "admin";
 type Device = "desktop" | "ultrawide" | "mobile";
 type PositionDevice = "desktop" | "mobile";
 
@@ -26,6 +27,7 @@ const SURFACES: readonly { value: Surface; label: string }[] = [
   { value: "home", label: "Homepage" },
   { value: "catalogue", label: "Items catalogue" },
   { value: "itemDetail", label: "Item detail" },
+  { value: "admin", label: "Admin workspace" },
 ];
 
 const DEVICES: readonly {
@@ -39,14 +41,14 @@ const DEVICES: readonly {
   { value: "mobile", label: "Mobile", width: 390, height: 844 },
 ];
 
-const SURFACE_FORM_PREFIX: Record<Surface, string> = {
+const SURFACE_FORM_PREFIX: Record<PublicSurface, string> = {
   home: "home",
   catalogue: "catalogue",
   itemDetail: "itemDetail",
 };
 
 type PositionDraft = Record<
-  Surface,
+  PublicSurface,
   { desktop: ScenicPosition; mobile: ScenicPosition }
 >;
 
@@ -56,6 +58,7 @@ type AssetDraft = {
   homeBackground: string | null;
   catalogueBackground: string | null;
   itemDetailBackground: string | null;
+  adminBackground: string | null;
 };
 
 function positionDraft(appearance: ResolvedSiteAppearance): PositionDraft {
@@ -82,6 +85,7 @@ function assetDraft(appearance: ResolvedSiteAppearance): AssetDraft {
     homeBackground: appearance.home.background.url,
     catalogueBackground: appearance.catalogue.background.url,
     itemDetailBackground: appearance.itemDetail.background.url,
+    adminBackground: appearance.admin.background.url,
   };
 }
 
@@ -106,6 +110,9 @@ export function AppearanceLivePreview({
   const [device, setDevice] = useState<Device>("desktop");
   const [availableWidth, setAvailableWidth] = useState(0);
   const [positions, setPositions] = useState(() => positionDraft(published));
+  const [adminPosition, setAdminPosition] = useState(() => ({
+    ...published.admin.desktop,
+  }));
   const [assets, setAssets] = useState(() => assetDraft(published));
   const [dragging, setDragging] = useState(false);
 
@@ -132,10 +139,12 @@ export function AppearanceLivePreview({
     };
     const onRestore = () => {
       setPositions(positionDraft(defaults));
+      setAdminPosition({ ...defaults.admin.desktop });
       setAssets(assetDraft(defaults));
     };
     const onReset = () => {
       setPositions(positionDraft(published));
+      setAdminPosition({ ...published.admin.desktop });
       setAssets(assetDraft(published));
     };
     window.addEventListener(APPEARANCE_ASSET_DRAFT_EVENT, onAssetDraft);
@@ -151,9 +160,14 @@ export function AppearanceLivePreview({
   const target = DEVICES.find((preset) => preset.value === device) ?? DEVICES[0];
   const scale = availableWidth > 0 ? Math.min(1, availableWidth / target.width) : 0;
   const positionDevice: PositionDevice = device === "mobile" ? "mobile" : "desktop";
-  const activePosition = positions[surface][positionDevice];
+  const activePosition =
+    surface === "admin"
+      ? adminPosition
+      : positions[surface][positionDevice];
   const scenicAssetName =
-    surface === "home"
+    surface === "admin"
+      ? "adminBackground"
+      : surface === "home"
       ? "homeBackground"
       : surface === "catalogue"
         ? "catalogueBackground"
@@ -162,7 +176,10 @@ export function AppearanceLivePreview({
 
   const positionFields = useMemo(
     () =>
-      (Object.entries(positions) as [Surface, PositionDraft[Surface]][]).flatMap(
+      (Object.entries(positions) as [
+        PublicSurface,
+        PositionDraft[PublicSurface],
+      ][]).flatMap(
         ([surfaceName, devicePositions]) =>
           (["desktop", "mobile"] as const).flatMap((deviceName) =>
             (["x", "y"] as const).map((axis) => ({
@@ -180,6 +197,11 @@ export function AppearanceLivePreview({
   );
 
   function updatePosition(next: ScenicPosition) {
+    if (surface === "admin") {
+      setAdminPosition(next);
+      requestAnimationFrame(() => dispatchFormChange(formSignalRef.current));
+      return;
+    }
     setPositions((current) => ({
       ...current,
       [surface]: {
@@ -205,10 +227,10 @@ export function AppearanceLivePreview({
       <div className="appearance-preview-heading">
         <div>
           <p className="admin-editor-eyebrow">Unpublished draft</p>
-          <h2 id="appearance-preview-title">Live public preview</h2>
+          <h2 id="appearance-preview-title">Live appearance preview</h2>
           <p>
-            Real public classes and scenic layers. Drag the canvas or enter
-            exact values; nothing becomes public until Save.
+            Representative public and admin shells. Drag the canvas or enter
+            exact values; nothing changes outside this draft until Save.
           </p>
         </div>
         <div className="appearance-preview-tab-icon">
@@ -229,7 +251,12 @@ export function AppearanceLivePreview({
               key={option.value}
               type="button"
               aria-pressed={surface === option.value}
-              onClick={() => setSurface(option.value)}
+              onClick={() => {
+                setSurface(option.value);
+                if (option.value === "admin" && device === "mobile") {
+                  setDevice("desktop");
+                }
+              }}
             >
               {option.label}
             </button>
@@ -237,7 +264,9 @@ export function AppearanceLivePreview({
         </div>
 
         <div role="group" aria-label="Preview device" className="appearance-segmented-control">
-          {DEVICES.map((preset) => (
+          {DEVICES.filter(
+            (preset) => surface !== "admin" || preset.value !== "mobile"
+          ).map((preset) => (
             <button
               key={preset.value}
               type="button"
@@ -258,7 +287,9 @@ export function AppearanceLivePreview({
       <div className="appearance-position-controls">
         {positionFields.map((field) => {
           const active =
-            field.surface === surface && field.device === positionDevice;
+            surface !== "admin" &&
+            field.surface === surface &&
+            field.device === positionDevice;
           return active ? (
             <label key={field.name}>
               <span>{field.axis.toUpperCase()} position</span>
@@ -269,8 +300,8 @@ export function AppearanceLivePreview({
                   name={field.name}
                   min={0}
                   max={100}
-                  step={0.1}
-                  value={Number(field.value.toFixed(2))}
+                  step={1}
+                  value={Math.round(field.value)}
                   onChange={(event) => {
                     const value = clampAppearancePercentage(
                       event.currentTarget.valueAsNumber,
@@ -290,21 +321,60 @@ export function AppearanceLivePreview({
               key={field.name}
               type="hidden"
               name={field.name}
-              value={Number(field.value.toFixed(2))}
+              value={Math.round(field.value)}
             />
           );
         })}
+        {(["x", "y"] as const).map((axis) =>
+          surface === "admin" ? (
+            <label key={axis}>
+              <span>{axis.toUpperCase()} position</span>
+              <span className="appearance-number-input">
+                <input
+                  ref={axis === "x" ? formSignalRef : undefined}
+                  type="number"
+                  name={`adminDesktopPosition${axis.toUpperCase()}`}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Math.round(adminPosition[axis])}
+                  onChange={(event) => {
+                    const value = clampAppearancePercentage(
+                      event.currentTarget.valueAsNumber,
+                      adminPosition[axis]
+                    );
+                    updatePosition({
+                      ...adminPosition,
+                      [axis]: Math.round(value),
+                    });
+                  }}
+                />
+                <span>%</span>
+              </span>
+            </label>
+          ) : (
+            <input
+              key={axis}
+              type="hidden"
+              name={`adminDesktopPosition${axis.toUpperCase()}`}
+              value={Math.round(adminPosition[axis])}
+            />
+          )
+        )}
 
         <div className="appearance-position-readout" aria-live="polite">
-          X {Number(activePosition.x.toFixed(1))}% · Y{" "}
-          {Number(activePosition.y.toFixed(1))}%
+          X {Math.round(activePosition.x)}% · Y {Math.round(activePosition.y)}%
         </div>
 
         <button
           type="button"
           className="btn btn-secondary btn-compact"
           onClick={() =>
-            updatePosition({ ...positionDraft(published)[surface][positionDevice] })
+            updatePosition(
+              surface === "admin"
+                ? { ...published.admin.desktop }
+                : { ...positionDraft(published)[surface][positionDevice] }
+            )
           }
         >
           <RotateCcw aria-hidden="true" />
@@ -314,10 +384,14 @@ export function AppearanceLivePreview({
           type="button"
           className="btn btn-cancel btn-compact"
           onClick={() =>
-            updatePosition({ ...positionDraft(defaults)[surface][positionDevice] })
+            updatePosition(
+              surface === "admin"
+                ? { ...defaults.admin.desktop }
+                : { ...positionDraft(defaults)[surface][positionDevice] }
+            )
           }
         >
-          Restore default crop
+          Restore default position
         </button>
       </div>
 
@@ -341,23 +415,47 @@ export function AppearanceLivePreview({
           }}
         >
           <div
-            className={`public-site-shell public-site-shell--scenic public-site-shell--scenic-${
-              surface === "itemDetail" ? "detail" : surface
-            } appearance-public-preview appearance-public-preview--${device}`}
+            className={
+              surface === "admin"
+                ? `appearance-admin-shell-preview appearance-admin-shell-preview--${device}`
+                : `public-site-shell public-site-shell--scenic public-site-shell--scenic-${
+                    surface === "itemDetail" ? "detail" : surface
+                  } appearance-public-preview appearance-public-preview--${device}`
+            }
+            style={
+              surface === "admin"
+                ? ({
+                    "--admin-preview-background-image": scenicUrl
+                      ? `url("${scenicUrl}")`
+                      : "none",
+                    "--admin-preview-background-position":
+                      serializeScenicPosition(activePosition),
+                  } as React.CSSProperties)
+                : undefined
+            }
           >
-            <div
-              className={`public-scenic-background public-scenic-background--${
-                surface === "itemDetail" ? "detail" : surface
-              }`}
-              aria-hidden="true"
-              style={{
-                "--public-scenic-image": scenicUrl ? `url("${scenicUrl}")` : "none",
-                "--public-scenic-position": serializeScenicPosition(activePosition),
-              } as React.CSSProperties}
-            />
+            {surface === "admin" ? null : (
+              <div
+                className={`public-scenic-background public-scenic-background--${
+                  surface === "itemDetail" ? "detail" : surface
+                }`}
+                aria-hidden="true"
+                style={{
+                  "--public-scenic-image": scenicUrl
+                    ? `url("${scenicUrl}")`
+                    : "none",
+                  "--public-scenic-position":
+                    serializeScenicPosition(activePosition),
+                } as React.CSSProperties}
+              />
+            )}
 
             <div
-              className="appearance-preview-drag-layer"
+              className={
+                surface === "admin"
+                  ? "appearance-preview-drag-layer appearance-preview-drag-layer--admin"
+                  : "appearance-preview-drag-layer"
+              }
               data-dragging={dragging ? "true" : "false"}
               onPointerDown={(event) => {
                 const rect = event.currentTarget.getBoundingClientRect();
@@ -396,10 +494,16 @@ export function AppearanceLivePreview({
               </span>
             </div>
 
-            <PreviewHeader logoUrl={assets.headerLogo} />
-            <main className="public-site-container public-site-main">
-              <PreviewContent surface={surface} />
-            </main>
+            {surface === "admin" ? (
+              <AdminPreviewContent />
+            ) : (
+              <>
+                <PreviewHeader logoUrl={assets.headerLogo} />
+                <main className="public-site-container public-site-main">
+                  <PreviewContent surface={surface} />
+                </main>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -407,6 +511,100 @@ export function AppearanceLivePreview({
         Target viewport: {target.width}×{target.height}
       </p>
     </section>
+  );
+}
+
+function AdminPreviewContent() {
+  return (
+    <div className="appearance-admin-preview-frame" aria-hidden="true">
+      <aside className="appearance-admin-preview-sidebar">
+        <div className="appearance-admin-preview-brand">
+          <strong>PokeForce Companion</strong>
+          <span>Admin · View public site</span>
+        </div>
+        <div className="appearance-admin-preview-account">
+          <span className="appearance-admin-preview-avatar" />
+          <span>admin@example.com</span>
+          <span className="appearance-admin-preview-signout">Sign out</span>
+        </div>
+        <div className="appearance-admin-preview-nav">
+          <div className="appearance-admin-preview-nav-primary">
+            {[
+              "Dashboard",
+              "Items",
+              "Recipes",
+              "Professions",
+              "Classes",
+              "Locations",
+              "Shops",
+            ].map((label, index) => (
+              <span
+                key={label}
+                className={
+                  index === 1 ? "appearance-admin-preview-nav-active" : undefined
+                }
+              >
+                <i />
+                {label}
+              </span>
+            ))}
+          </div>
+          <div className="appearance-admin-preview-site-group">
+            <small>Site administration</small>
+            <span>
+              <i />
+              Appearance
+            </span>
+          </div>
+        </div>
+      </aside>
+      <main className="appearance-admin-preview-content">
+        <header className="appearance-admin-preview-header">
+          <div>
+            <small>Content workspace</small>
+            <h3>Record editor</h3>
+            <p>Representative shared admin shell and editing surfaces.</p>
+          </div>
+          <span className="appearance-admin-preview-action">Save Changes</span>
+        </header>
+        <div className="appearance-admin-preview-workspace">
+          <section className="appearance-admin-preview-records">
+            <strong>Records</strong>
+            <span className="appearance-admin-preview-search" />
+            <span />
+            <span className="is-selected" />
+            <span />
+            <span />
+          </section>
+          <section className="appearance-admin-preview-editor">
+            <div className="appearance-admin-preview-panel">
+              <strong>General information</strong>
+              <p>Core authored details remain on an opaque working surface.</p>
+              <label>
+                <span>Name</span>
+                <i />
+              </label>
+              <label>
+                <span>Description</span>
+                <i className="is-textarea" />
+              </label>
+            </div>
+            <div className="appearance-admin-preview-panel appearance-admin-preview-panel--compact">
+              <strong>Publishing</strong>
+              <p>Shared actions stay readable over every scenic crop.</p>
+            </div>
+          </section>
+          <aside className="appearance-admin-preview-context">
+            <div className="appearance-admin-preview-panel">
+              <strong>Context</strong>
+              <span />
+              <span />
+              <span />
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
   );
 }
 
@@ -442,7 +640,7 @@ function PreviewHeader({ logoUrl }: { logoUrl: string | null }) {
   );
 }
 
-function PreviewContent({ surface }: { surface: Surface }) {
+function PreviewContent({ surface }: { surface: PublicSurface }) {
   if (surface === "home") {
     return (
       <div className="landing-page">

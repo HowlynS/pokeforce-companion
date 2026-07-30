@@ -19,12 +19,18 @@ export type ScenicAppearance = {
   mobile: ScenicPosition;
 };
 
+export type AdminAppearance = {
+  background: AppearanceAsset;
+  desktop: ScenicPosition;
+};
+
 export type ResolvedSiteAppearance = {
   headerLogo: AppearanceAsset;
   favicon: AppearanceAsset;
   home: ScenicAppearance;
   catalogue: ScenicAppearance;
   itemDetail: ScenicAppearance;
+  admin: AdminAppearance;
   version: string;
 };
 
@@ -78,6 +84,15 @@ export const DEFAULT_SITE_APPEARANCE: ResolvedSiteAppearance = {
     desktop: { x: 55, y: 50 },
     mobile: { x: 82, y: 50 },
   },
+  admin: {
+    background: {
+      url: "/images/admin/admin-shell-background.webp",
+      width: null,
+      height: null,
+      custom: false,
+    },
+    desktop: { x: 50, y: 50 },
+  },
   version: "default",
 };
 
@@ -110,6 +125,11 @@ export type SiteAppearanceRecord = {
   itemDetailDesktopPositionY?: unknown;
   itemDetailMobilePositionX?: unknown;
   itemDetailMobilePositionY?: unknown;
+  adminBackgroundPath?: unknown;
+  adminBackgroundWidth?: unknown;
+  adminBackgroundHeight?: unknown;
+  adminDesktopPositionX?: unknown;
+  adminDesktopPositionY?: unknown;
   updatedAt?: unknown;
 };
 
@@ -195,7 +215,14 @@ export async function resolveSiteAppearance(
   }
 
   const version = versionFrom(record.updatedAt);
-  const [headerLogo, favicon, homeBackground, catalogueBackground, itemDetailBackground] =
+  const [
+    headerLogo,
+    favicon,
+    homeBackground,
+    catalogueBackground,
+    itemDetailBackground,
+    adminBackground,
+  ] =
     await Promise.all([
       resolveAsset(
         record.headerLogoPath,
@@ -238,6 +265,15 @@ export async function resolveSiteAppearance(
         record.itemDetailBackgroundWidth,
         record.itemDetailBackgroundHeight,
         DEFAULT_SITE_APPEARANCE.itemDetail.background,
+        version,
+        publicUrlForPath,
+        false
+      ),
+      resolveAsset(
+        record.adminBackgroundPath,
+        record.adminBackgroundWidth,
+        record.adminBackgroundHeight,
+        DEFAULT_SITE_APPEARANCE.admin.background,
         version,
         publicUrlForPath,
         false
@@ -290,6 +326,19 @@ export async function resolveSiteAppearance(
       record.itemDetailMobilePositionX,
       record.itemDetailMobilePositionY
     ),
+    admin: {
+      background: adminBackground,
+      desktop: {
+        x: clampAppearancePercentage(
+          record.adminDesktopPositionX,
+          DEFAULT_SITE_APPEARANCE.admin.desktop.x
+        ),
+        y: clampAppearancePercentage(
+          record.adminDesktopPositionY,
+          DEFAULT_SITE_APPEARANCE.admin.desktop.y
+        ),
+      },
+    },
     version,
   };
 }

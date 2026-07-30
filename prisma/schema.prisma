@@ -47,6 +47,11 @@ model SiteAppearance {
   itemDetailDesktopPositionY Float?
   itemDetailMobilePositionX  Float?
   itemDetailMobilePositionY  Float?
+  adminBackgroundPath        String?
+  adminBackgroundWidth       Int?
+  adminBackgroundHeight      Int?
+  adminDesktopPositionX      Float?
+  adminDesktopPositionY      Float?
   createdAt                  DateTime @default(now())
   updatedAt                  DateTime @updatedAt
 }

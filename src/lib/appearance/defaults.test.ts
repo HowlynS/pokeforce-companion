@@ -18,6 +18,13 @@ describe("appearance defaults", () => {
     expect(DEFAULT_SITE_APPEARANCE.home.desktop).toEqual({ x: 55, y: 50 });
     expect(DEFAULT_SITE_APPEARANCE.catalogue.desktop).toEqual({ x: 55, y: 60 });
     expect(DEFAULT_SITE_APPEARANCE.itemDetail.mobile).toEqual({ x: 82, y: 50 });
+    expect(DEFAULT_SITE_APPEARANCE.admin).toMatchObject({
+      background: {
+        url: "/images/admin/admin-shell-background.webp",
+        custom: false,
+      },
+      desktop: { x: 50, y: 50 },
+    });
   });
 
   it("returns defaults when no singleton exists or the id is malformed", async () => {
@@ -93,6 +100,31 @@ describe("appearance resolution", () => {
       }
     );
     expect(resolved.home.background).toEqual(DEFAULT_SITE_APPEARANCE.home.background);
+  });
+
+  it("resolves a cache-busted admin background and clamps its desktop crop", async () => {
+    const resolved = await resolveSiteAppearance(
+      {
+        id: "site",
+        updatedAt: new Date("2026-07-30T08:00:00.000Z"),
+        adminBackgroundPath: "appearance/admin-background/workspace.webp",
+        adminBackgroundWidth: 2560,
+        adminBackgroundHeight: 1440,
+        adminDesktopPositionX: -4,
+        adminDesktopPositionY: 105,
+      },
+      async () => "https://cdn.example/workspace.webp"
+    );
+
+    expect(resolved.admin).toEqual({
+      background: {
+        url: "https://cdn.example/workspace.webp?v=1785398400000",
+        width: 2560,
+        height: 1440,
+        custom: true,
+      },
+      desktop: { x: 0, y: 100 },
+    });
   });
 });
 

@@ -63,6 +63,12 @@ describe("appearance object paths", () => {
     expect(first).not.toBe(second);
     expect(first).toMatch(/^appearance\/header-logo\/[0-9a-f-]+\.png$/);
     expect(isSafeAppearanceAssetPath(first)).toBe(true);
+
+    const admin = generateAppearanceAssetPath("admin-background", "webp");
+    expect(admin).toMatch(
+      /^appearance\/admin-background\/[0-9a-f-]+\.webp$/
+    );
+    expect(isSafeAppearanceAssetPath(admin)).toBe(true);
   });
 
   it.each([

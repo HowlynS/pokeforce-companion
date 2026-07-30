@@ -37,6 +37,11 @@ const EMPTY_APPEARANCE: SiteAppearanceWrite = {
   itemDetailDesktopPositionY: DEFAULT_SITE_APPEARANCE.itemDetail.desktop.y,
   itemDetailMobilePositionX: DEFAULT_SITE_APPEARANCE.itemDetail.mobile.x,
   itemDetailMobilePositionY: DEFAULT_SITE_APPEARANCE.itemDetail.mobile.y,
+  adminBackgroundPath: null,
+  adminBackgroundWidth: null,
+  adminBackgroundHeight: null,
+  adminDesktopPositionX: DEFAULT_SITE_APPEARANCE.admin.desktop.x,
+  adminDesktopPositionY: DEFAULT_SITE_APPEARANCE.admin.desktop.y,
 };
 
 async function removeTestSingleton() {
@@ -60,9 +65,11 @@ describe("site appearance singleton (integration)", () => {
     const created = await publishSiteAppearance(prisma, {
       ...EMPTY_APPEARANCE,
       homeDesktopPositionX: 42,
+      adminDesktopPositionX: 38,
     });
     expect(created.id).toBe(SITE_APPEARANCE_ID);
     expect(created.homeDesktopPositionX).toBe(42);
+    expect(created.adminDesktopPositionX).toBe(38);
 
     const updated = await publishSiteAppearance(prisma, {
       ...EMPTY_APPEARANCE,
@@ -70,10 +77,16 @@ describe("site appearance singleton (integration)", () => {
       headerLogoWidth: 900,
       headerLogoHeight: 300,
       homeDesktopPositionX: 67,
+      adminBackgroundPath: "appearance/admin-background/test.webp",
+      adminBackgroundWidth: 1920,
+      adminBackgroundHeight: 1080,
     });
     expect(updated.id).toBe(SITE_APPEARANCE_ID);
     expect(updated.headerLogoPath).toBe("appearance/header-logo/test.png");
     expect(updated.homeDesktopPositionX).toBe(67);
+    expect(updated.adminBackgroundPath).toBe(
+      "appearance/admin-background/test.webp"
+    );
     expect(await prisma.siteAppearance.count()).toBe(1);
   });
 
