@@ -292,11 +292,17 @@ surface.
 
 Asset controls use one bordered field group per asset with:
 
-- concise purpose and accepted-file guidance;
+- concise purpose with accepted-file guidance in the shared accessible
+  info-tooltip beside `Replacement file`;
 - side-by-side Published and Draft previews when space allows;
 - visible source/dimension metadata;
-- an ordinary, keyboard-accessible file input rather than a drop zone;
+- one shared gold `Choose file` button backed by a visually hidden native file
+  input, an explicit filename/empty state, and drop support;
 - explicit replacement/removal intent plus a per-asset reset.
+
+File selection validates and stages the draft immediately. Per-asset upload
+buttons are prohibited: the shared sticky Save action is the only publication
+surface and atomically publishes every pending asset and position.
 
 The live preview is always labelled as an unpublished draft. It reuses public
 header/scenic classes and layers, provides Homepage, Items catalogue, and Item

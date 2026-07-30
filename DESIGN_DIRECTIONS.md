@@ -439,3 +439,11 @@ Ultrawide uses the desktop crop. The admin preview uses the real public classes
 and atmosphere layers, but every preview edit remains unpublished until the
 complete draft is saved. Header-logo proportions are intrinsic and responsive;
 the logo may scale but must never stretch or be cropped.
+
+Every asset uses the same accessible gold `Choose file` control backed by a
+visually hidden native file input. The selected filename is always explicit,
+including the `No file selected` empty state, and requirements live in the
+shared accessible info-tooltip beside `Replacement file`. Selecting or dropping
+a file validates and stages its draft immediately; there is no per-asset upload
+action because the page-level guarded Save remains the only atomic publication
+boundary.

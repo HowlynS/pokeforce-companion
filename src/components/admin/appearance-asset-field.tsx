@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RotateCcw, Trash2, Upload } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
+import { AppearanceFilePicker } from "@/components/admin/appearance-file-picker";
+import { InfoTooltip } from "@/components/admin/info-tooltip";
 import { dispatchFormChange } from "@/lib/admin/form-change-event";
 
 export const APPEARANCE_RESTORE_DEFAULTS_EVENT =
@@ -19,7 +21,7 @@ type AppearanceAssetFieldProps = {
   custom: boolean;
   defaultUrl: string | null;
   accept: string;
-  helper: string;
+  requirements: string;
   fit?: "contain" | "cover";
   validation: "logo" | "favicon" | "wallpaper";
 };
@@ -92,7 +94,7 @@ export function AppearanceAssetField({
   custom,
   defaultUrl,
   accept,
-  helper,
+  requirements,
   fit = "contain",
   validation,
 }: AppearanceAssetFieldProps) {
@@ -271,17 +273,20 @@ export function AppearanceAssetField({
         </span>
       </div>
 
-      <label className="field-label" htmlFor={`${name}-file`}>
-        Replacement file
-      </label>
-      <input
-        ref={fileRef}
+      <div className="appearance-file-label">
+        <span className="field-label">Replacement file</span>
+        <InfoTooltip
+          label={`File requirements for ${label}`}
+          content={requirements}
+        />
+      </div>
+      <AppearanceFilePicker
         id={`${name}-file`}
         name={`${name}File`}
-        type="file"
         accept={accept}
-        className="appearance-file-input"
-        aria-describedby={`${name}-help${validationError ? ` ${name}-error` : ""}`}
+        fileName={fileName}
+        inputRef={fileRef}
+        describedBy={validationError ? `${name}-error` : undefined}
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
           if (!file) {
@@ -295,11 +300,9 @@ export function AppearanceAssetField({
           setPendingRemoval(false);
           setPreviewDimensions(null);
           updateValidationError(validateClientAsset(file, validation));
+          notifyProgrammaticChange();
         }}
       />
-      <p id={`${name}-help`} className="field-help">
-        {helper}
-      </p>
       {validationError ? (
         <p id={`${name}-error`} role="alert" className="appearance-field-error">
           {validationError}
@@ -307,15 +310,6 @@ export function AppearanceAssetField({
       ) : null}
 
       <div className="appearance-asset-actions">
-        <button
-          type="button"
-          className="btn btn-secondary btn-compact"
-          onClick={() => fileRef.current?.click()}
-        >
-          <Upload aria-hidden="true" />
-          {custom ? "Replace" : "Upload custom"}
-        </button>
-
         {custom && !previewUrl ? (
           <button
             type="button"
@@ -341,10 +335,6 @@ export function AppearanceAssetField({
           </button>
         ) : null}
       </div>
-
-      {fileName ? (
-        <p className="appearance-file-name">Selected: {fileName}</p>
-      ) : null}
     </fieldset>
   );
 }

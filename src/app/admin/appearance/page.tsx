@@ -83,7 +83,7 @@ export default async function AppearancePage({
               custom={Boolean(record?.headerLogoPath)}
               defaultUrl={DEFAULT_SITE_APPEARANCE.headerLogo.url}
               accept="image/png,image/jpeg,image/webp"
-              helper="PNG, JPEG, or WebP · 32–4096px per side · max 5 MB. Proportions are always preserved."
+              requirements="PNG, JPEG, or WebP. 32–4096 px per side. Maximum 5 MB. Image proportions are preserved."
               validation="logo"
             />
 
@@ -97,7 +97,7 @@ export default async function AppearancePage({
               custom={Boolean(record?.faviconPath)}
               defaultUrl={DEFAULT_SITE_APPEARANCE.favicon.url}
               accept="image/png,image/x-icon,image/vnd.microsoft.icon,.ico"
-              helper="PNG or ICO · 16–512px per side · max 1 MB."
+              requirements="PNG or ICO. 16–512 px per side. Maximum 1 MB. Image proportions are preserved."
               validation="favicon"
             />
           </div>
@@ -119,7 +119,7 @@ export default async function AppearancePage({
               custom={Boolean(record?.homeBackgroundPath)}
               defaultUrl={DEFAULT_SITE_APPEARANCE.home.background.url}
               accept="image/png,image/jpeg,image/webp"
-              helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
+              requirements="PNG, JPEG, or WebP. 640×360–8192×8192 px. Maximum 5 MB. Image proportions are preserved."
               fit="cover"
               validation="wallpaper"
             />
@@ -134,7 +134,7 @@ export default async function AppearancePage({
               custom={Boolean(record?.catalogueBackgroundPath)}
               defaultUrl={DEFAULT_SITE_APPEARANCE.catalogue.background.url}
               accept="image/png,image/jpeg,image/webp"
-              helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
+              requirements="PNG, JPEG, or WebP. 640×360–8192×8192 px. Maximum 5 MB. Image proportions are preserved."
               fit="cover"
               validation="wallpaper"
             />
@@ -149,7 +149,7 @@ export default async function AppearancePage({
               custom={Boolean(record?.itemDetailBackgroundPath)}
               defaultUrl={DEFAULT_SITE_APPEARANCE.itemDetail.background.url}
               accept="image/png,image/jpeg,image/webp"
-              helper="PNG, JPEG, or WebP · 640×360–8192×8192px · max 5 MB."
+              requirements="PNG, JPEG, or WebP. 640×360–8192×8192 px. Maximum 5 MB. Image proportions are preserved."
               fit="cover"
               validation="wallpaper"
             />
