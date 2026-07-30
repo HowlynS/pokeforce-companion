@@ -3,6 +3,7 @@ import {
   ADMIN_NAV_DESTINATIONS,
   ADMIN_NAV_ITEMS,
   ITEM_ADMIN_NAV_CHILDREN,
+  SITE_ADMIN_NAV_ITEMS,
   isAdminNavItemActive,
 } from "@/lib/admin/admin-nav";
 
@@ -21,7 +22,6 @@ describe("ADMIN_NAV_ITEMS", () => {
   it("contains the approved destinations in order", () => {
     expect(ADMIN_NAV_ITEMS.map((item) => item.label)).toEqual([
       "Dashboard",
-      "Appearance",
       "Items",
       "Recipes",
       "Professions",
@@ -33,7 +33,6 @@ describe("ADMIN_NAV_ITEMS", () => {
     ]);
     expect(ADMIN_NAV_ITEMS.map((item) => item.href)).toEqual([
       "/admin",
-      "/admin/appearance",
       "/admin/items",
       "/admin/recipes",
       "/admin/professions",
@@ -45,7 +44,6 @@ describe("ADMIN_NAV_ITEMS", () => {
     ]);
     expect(ADMIN_NAV_ITEMS.map((item) => item.icon)).toEqual([
       "dashboard",
-      "appearance",
       "items",
       "recipes",
       "professions",
@@ -55,6 +53,19 @@ describe("ADMIN_NAV_ITEMS", () => {
       "gameVersions",
       "currencies",
     ]);
+  });
+
+  it("keeps Appearance as the sole Site administration destination", () => {
+    expect(SITE_ADMIN_NAV_ITEMS).toEqual([
+      {
+        label: "Appearance",
+        href: "/admin/appearance",
+        icon: "appearance",
+      },
+    ]);
+    expect(
+      ADMIN_NAV_ITEMS.some((item) => item.href === "/admin/appearance")
+    ).toBe(false);
   });
 
   it("keeps Categories as the sole Items child destination", () => {

@@ -269,6 +269,9 @@ same focused commit.
   contract without timezone conversion. Optional dates provide a clear action.
 - Keep `createdAt`, `updatedAt`, and verification timestamps read-only; they
   are not contributor date fields.
+- Keep gameplay/content navigation in the primary sidebar flow. Site-level
+  governance lives in a bottom-anchored `Site administration` group;
+  Appearance is currently its only destination and no placeholder links render.
 - The shared admin shell alone owns the managed scenic background. It resolves
   a cache-busted custom asset and desktop X/Y crop, falling back to
   `/images/admin/admin-shell-background.webp` at `50% 50%`. Public routes and

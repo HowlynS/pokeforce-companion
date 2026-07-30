@@ -456,3 +456,9 @@ The existing dark overlay and opaque sidebar, central workspace, panels, forms,
 and dialogs remain authoritative for readability. Draft files and positions
 appear only in the representative admin-shell preview until Save publishes the
 complete snapshot. Public routes and login never receive the admin background.
+
+Admin navigation separates content work from site governance. Existing resource
+ordering remains intact in the primary group, while a bottom-anchored
+`Site administration` group contains Appearance with its existing icon, active
+state, and keyboard behavior. Do not render future Permissions or governance
+placeholders before those destinations exist.

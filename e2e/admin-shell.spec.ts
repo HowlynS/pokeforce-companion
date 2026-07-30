@@ -17,7 +17,6 @@ import { expect, test, type Page } from "@playwright/test";
 
 const PRIMARY_DESTINATIONS = [
   { label: "Dashboard", href: "/admin" },
-  { label: "Appearance", href: "/admin/appearance" },
   { label: "Items", href: "/admin/items" },
   { label: "Categories", href: "/admin/categories" },
   { label: "Recipes", href: "/admin/recipes" },
@@ -27,6 +26,7 @@ const PRIMARY_DESTINATIONS = [
   { label: "Shops", href: "/admin/shops" },
   { label: "Game Versions", href: "/admin/settings/game-versions" },
   { label: "Currencies", href: "/admin/settings/currencies" },
+  { label: "Appearance", href: "/admin/appearance" },
 ] as const;
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
@@ -74,6 +74,12 @@ test("the sidebar carries every approved destination with its target", async ({
       "true"
     );
   }
+
+  const siteAdministration = sidebar(page).locator(".admin-nav-site-group");
+  await expect(siteAdministration).toContainText("Site administration");
+  await expect(
+    siteAdministration.getByRole("link", { name: "Appearance", exact: true })
+  ).toHaveAttribute("href", "/admin/appearance");
 
   // Acquisition Sources still never joins primary navigation — it stays
   // contextual under its owning item.

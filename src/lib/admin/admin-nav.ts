@@ -32,7 +32,6 @@ export type AdminNavItem = {
 
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Dashboard", href: "/admin", icon: "dashboard" },
-  { label: "Appearance", href: "/admin/appearance", icon: "appearance" },
   { label: "Items", href: "/admin/items", icon: "items" },
   { label: "Recipes", href: "/admin/recipes", icon: "recipes" },
   { label: "Professions", href: "/admin/professions", icon: "professions" },
@@ -51,6 +50,10 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   },
 ] as const;
 
+export const SITE_ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
+  { label: "Appearance", href: "/admin/appearance", icon: "appearance" },
+] as const;
+
 // Categories remains an independent model, route, and workspace, but its
 // Item-only classification role makes it a child of Items in navigation.
 export const ITEM_ADMIN_NAV_CHILDREN: readonly AdminNavItem[] = [
@@ -60,6 +63,7 @@ export const ITEM_ADMIN_NAV_CHILDREN: readonly AdminNavItem[] = [
 export const ADMIN_NAV_DESTINATIONS: readonly AdminNavItem[] = [
   ...ADMIN_NAV_ITEMS,
   ...ITEM_ADMIN_NAV_CHILDREN,
+  ...SITE_ADMIN_NAV_ITEMS,
 ] as const;
 
 /**

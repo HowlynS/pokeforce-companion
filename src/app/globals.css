@@ -5708,8 +5708,32 @@ input[type="checkbox"] {
 }
 
 .admin-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.admin-nav-primary {
   display: grid;
   gap: 4px;
+}
+
+.admin-nav-site-group {
+  display: grid;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+}
+
+.admin-nav-section-label {
+  margin: 0;
+  padding: 0 12px 4px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .admin-nav-link {

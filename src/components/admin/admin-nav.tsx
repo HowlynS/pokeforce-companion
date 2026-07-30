@@ -25,6 +25,7 @@ import {
 import {
   ADMIN_NAV_ITEMS,
   ITEM_ADMIN_NAV_CHILDREN,
+  SITE_ADMIN_NAV_ITEMS,
   isAdminNavItemActive,
   type AdminNavIcon,
   type AdminNavItem,
@@ -79,48 +80,55 @@ export function AdminNav() {
 
   return (
     <nav aria-label="Admin navigation" className="admin-nav">
-      {ADMIN_NAV_ITEMS.map((item) => {
-        if (item.href !== "/admin/items") {
-          return renderLink(item);
-        }
+      <div className="admin-nav-primary">
+        {ADMIN_NAV_ITEMS.map((item) => {
+          if (item.href !== "/admin/items") {
+            return renderLink(item);
+          }
 
-        return (
-          <div className="admin-nav-group" key={item.href}>
-            <div className="admin-nav-group-row">
-              {renderLink(item)}
-              <button
-                type="button"
-                className="admin-nav-group-toggle"
-                aria-expanded={itemsExpanded}
-                aria-controls="admin-nav-items-children"
-                aria-label={
-                  itemsExpanded
-                    ? "Collapse Items navigation"
-                    : "Expand Items navigation"
-                }
-                onClick={() =>
-                  setManualItemsState({
-                    pathname,
-                    expanded: !itemsExpanded,
-                  })
-                }
+          return (
+            <div className="admin-nav-group" key={item.href}>
+              <div className="admin-nav-group-row">
+                {renderLink(item)}
+                <button
+                  type="button"
+                  className="admin-nav-group-toggle"
+                  aria-expanded={itemsExpanded}
+                  aria-controls="admin-nav-items-children"
+                  aria-label={
+                    itemsExpanded
+                      ? "Collapse Items navigation"
+                      : "Expand Items navigation"
+                  }
+                  onClick={() =>
+                    setManualItemsState({
+                      pathname,
+                      expanded: !itemsExpanded,
+                    })
+                  }
+                >
+                  <ChevronDown aria-hidden="true" />
+                </button>
+              </div>
+
+              <div
+                id="admin-nav-items-children"
+                className="admin-nav-children"
+                hidden={!itemsExpanded}
               >
-                <ChevronDown aria-hidden="true" />
-              </button>
+                {ITEM_ADMIN_NAV_CHILDREN.map((child) =>
+                  renderLink(child, true)
+                )}
+              </div>
             </div>
+          );
+        })}
+      </div>
 
-            <div
-              id="admin-nav-items-children"
-              className="admin-nav-children"
-              hidden={!itemsExpanded}
-            >
-              {ITEM_ADMIN_NAV_CHILDREN.map((child) =>
-                renderLink(child, true)
-              )}
-            </div>
-          </div>
-        );
-      })}
+      <div className="admin-nav-site-group">
+        <p className="admin-nav-section-label">Site administration</p>
+        {SITE_ADMIN_NAV_ITEMS.map((item) => renderLink(item))}
+      </div>
     </nav>
   );
 }

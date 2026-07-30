@@ -23,7 +23,6 @@ import { AdminNav } from "@/components/admin/admin-nav";
 
 const APPROVED_LABELS = [
   "Dashboard",
-  "Appearance",
   "Items",
   "Categories",
   "Recipes",
@@ -33,11 +32,11 @@ const APPROVED_LABELS = [
   "Shops",
   "Game Versions",
   "Currencies",
+  "Appearance",
 ];
 
 const APPROVED_HREFS = [
   "/admin",
-  "/admin/appearance",
   "/admin/items",
   "/admin/categories",
   "/admin/recipes",
@@ -47,6 +46,7 @@ const APPROVED_HREFS = [
   "/admin/shops",
   "/admin/settings/game-versions",
   "/admin/settings/currencies",
+  "/admin/appearance",
 ];
 
 function renderNav(pathname: string): string {
@@ -80,6 +80,15 @@ describe("AdminNav structure and labels", () => {
     const html = renderNav("/admin");
 
     expect(html).toMatch(/<nav [^>]*aria-label="Admin navigation"[^>]*>/);
+  });
+
+  it("renders Appearance in the separated Site administration group", () => {
+    const html = renderNav("/admin/appearance");
+
+    expect(html).toContain("Site administration");
+    expect(html).toMatch(
+      /class="admin-nav-site-group"[\s\S]*href="\/admin\/appearance"/
+    );
   });
 
   it("renders every link's href exactly as approved, in order", () => {
