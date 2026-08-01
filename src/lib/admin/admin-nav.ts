@@ -26,7 +26,8 @@ export type AdminNavIcon =
   | "locations"
   | "shops"
   | "gameVersions"
-  | "currencies";
+  | "currencies"
+  | "users";
 
 export type AdminNavItem = {
   label: string;
@@ -68,6 +69,12 @@ export const SITE_ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
     href: "/admin/design-review",
     icon: "designReview",
     requiredCapability: "designReview.access",
+  },
+  {
+    label: "Users & access",
+    href: "/admin/users",
+    icon: "users",
+    requiredCapability: "users.view",
   },
 ] as const;
 

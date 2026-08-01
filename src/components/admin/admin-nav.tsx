@@ -21,6 +21,7 @@ import {
   ScrollText,
   Shapes,
   Store,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -47,6 +48,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   shops: Store,
   gameVersions: History,
   currencies: Coins,
+  users: UsersRound,
 };
 
 export function AdminNav() {

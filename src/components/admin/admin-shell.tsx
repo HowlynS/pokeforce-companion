@@ -100,6 +100,9 @@ export async function AdminShell({ children }: AdminShellProps) {
                 Sign out
               </button>
             </form>
+            <Link href="/account/password" className="admin-sidebar-account-email">
+              Change password
+            </Link>
           </div>
 
           <AdminNav />

@@ -56,7 +56,7 @@ describe("ADMIN_NAV_ITEMS", () => {
     ]);
   });
 
-  it("keeps Appearance and Design review in Site administration", () => {
+  it("keeps site-governance destinations in Site administration", () => {
     expect(SITE_ADMIN_NAV_ITEMS).toEqual([
       {
         label: "Appearance",
@@ -70,6 +70,12 @@ describe("ADMIN_NAV_ITEMS", () => {
         icon: "designReview",
         requiredCapability: "designReview.access",
       },
+      {
+        label: "Users & access",
+        href: "/admin/users",
+        icon: "users",
+        requiredCapability: "users.view",
+      },
     ]);
     expect(
       ADMIN_NAV_ITEMS.some((item) => item.href === "/admin/appearance")
@@ -81,7 +87,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       .not.toContain("Game Versions");
     expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, "CONTRIBUTOR")).toEqual([]);
     expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, "ADMINISTRATOR").map((item) => item.label))
-      .toEqual(["Appearance", "Design review"]);
+      .toEqual(["Appearance", "Design review", "Users & access"]);
   });
 
   it("keeps Categories as the sole Items child destination", () => {
@@ -103,7 +109,7 @@ describe("ADMIN_NAV_ITEMS", () => {
     );
     const hrefs = ADMIN_NAV_DESTINATIONS.map((item) => item.href);
 
-    for (const excluded of ["acquisition", "user", "role", "audit", "route hub"]) {
+    for (const excluded of ["acquisition", "role", "audit", "route hub"]) {
       expect(labels.some((label) => label.includes(excluded))).toBe(false);
     }
     expect(hrefs.some((href) => href.includes("sources"))).toBe(false);
