@@ -125,8 +125,39 @@ export type PublicDesignFixtureKey =
 
 export type PublicDesignFixture = (typeof PUBLIC_DESIGN_FIXTURES)[number];
 
+export const PUBLIC_DESIGN_RECORD_MANIFEST = [
+  { model: "Category", slug: "design-review-category-rich", states: ["rich description", "long label", "many Items"] },
+  { model: "Category", slug: "design-review-category-sparse", states: ["empty optional description", "zero Items", "no image"] },
+  { model: "Item", slug: "design-review-item-dense", states: ["verified", "tradeable", "held item Yes", "many acquisition types", "many Recipe usages", "many Shop listings", "rich text and links"] },
+  { model: "Item", slug: "design-review-item-no-image-long-name", states: ["unverified", "non-tradeable", "held item No", "no image", "very long name", "no acquisition"] },
+  { model: "Recipe", slug: "design-review-recipe-many-ingredients", states: ["more than four ingredients", "high quantities", "yield range", "custom image", "Profession level", "EXP reward"] },
+  { model: "Recipe", slug: "design-review-recipe-inherited-image", states: ["one ingredient", "inherited result image", "single yield"] },
+  { model: "Profession", slug: "design-review-profession-dense", states: ["more than one catalogue page", "three preview Recipes", "dense craft path", "long rich description"] },
+  { model: "Profession", slug: "design-review-profession-zero", states: ["zero Recipes", "sparse", "no image"] },
+  { model: "Profession", slug: "design-review-profession-one", states: ["one Recipe", "sparse craft path"] },
+  { model: "PlayerClass", slug: "design-review-class-rich", states: ["rich description", "verified", "no image"] },
+  { model: "PlayerClass", slug: "design-review-class-sparse", states: ["empty optional description", "unverified"] },
+  { model: "Location", slug: "design-review-location-dense", states: ["deep breadcrumb", "many obtainable Items", "dense acquisition relations", "long authored description"] },
+  { model: "Location", slug: "design-review-location-region", states: ["REGION", "parent hierarchy"] },
+  { model: "Location", slug: "design-review-location-route", states: ["ROUTE", "parent/child hierarchy"] },
+  { model: "Location", slug: "design-review-location-town", states: ["TOWN", "parent/child hierarchy"] },
+  { model: "Location", slug: "design-review-location-building", states: ["BUILDING", "parent/child hierarchy"] },
+  { model: "Location", slug: "design-review-location-dungeon", states: ["DUNGEON", "parent/child hierarchy"] },
+  { model: "Location", slug: "design-review-location-sub-area", states: ["SUB_AREA", "parent/child hierarchy"] },
+  { model: "Shop", slug: "design-review-shop-sparse", states: ["no inventory", "missing image", "unverified", "long location name"] },
+  { model: "Shop", slug: "design-review-shop-dense", states: ["many listings", "multiple currencies", "verified", "long name"] },
+  { model: "Currency", slug: "design-review-currency-gold", states: ["rich description", "image", "verified"] },
+  { model: "Currency", slug: "design-review-currency-token", states: ["sparse", "no image", "unverified"] },
+] as const;
+
 export function getPublicDesignFixture(
   key: string
 ): PublicDesignFixture | undefined {
   return PUBLIC_DESIGN_FIXTURES.find((fixture) => fixture.key === key);
 }
+export const PUBLIC_DESIGN_SLUG_PREFIX = "design-review-";
+export const PUBLIC_DESIGN_NAME_PREFIX = "Design Review - ";
+export const PUBLIC_DESIGN_GAME_VERSION_NAME =
+  "Design Review - Verified Gameplay";
+export const PUBLIC_DESIGN_IMAGE_PATH =
+  "items/test-service-public-design-fixture.png";

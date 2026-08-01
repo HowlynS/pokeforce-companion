@@ -257,6 +257,13 @@ switch may be introduced.
 All fixture slugs/names use the `design-review-` / `Design Review -` prefix.
 Setup is idempotent and transactional; cleanup matches exact IDs/prefixes and
 never deletes ordinary developer data. Production seed behavior is unchanged.
+`pnpm public:design:fixtures setup` creates 2 Categories, 18 Items, 14 Recipes,
+3 Professions, 2 Classes, 7 hierarchical Locations (one of every enum type),
+2 Shops, 2 Currencies, 5 Acquisition Sources, and 13 Shop Listings in the
+guarded isolated test database. `status` reports only prefixed rows and
+`cleanup` removes them in foreign-key-safe order. One exact prefixed Storage
+object supplies deterministic genuine/custom/inherited image states; it is
+uploaded through the authenticated test client and removed by exact path.
 
 ## 15. Redesign import order
 
