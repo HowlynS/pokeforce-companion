@@ -162,6 +162,12 @@ describe("generateImageObjectPath", () => {
       expect(isSafeImageObjectPath(path)).toBe(true);
     }
   });
+
+  it("rejects confidential or unknown folders even if runtime input bypasses TypeScript", () => {
+    expect(() =>
+      generateImageObjectPath("nda-documents" as never, "image/png")
+    ).toThrow("Private or unknown assets cannot use the public image bucket.");
+  });
 });
 
 describe("isSafeImageObjectPath", () => {

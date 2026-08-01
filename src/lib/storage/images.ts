@@ -25,15 +25,24 @@ export type AllowedImageMimeType = (typeof ALLOWED_IMAGE_MIME_TYPES)[number];
  * The only resource folders an object path may start with. Callers pick one
  * of these; arbitrary folder names are never accepted.
  */
-export type ImageResourceType =
-  | "items"
-  | "recipes"
-  | "professions"
-  | "locations"
-  | "categories"
-  | "currencies"
-  | "shops"
-  | "player-classes";
+export const PUBLIC_IMAGE_RESOURCE_TYPES = [
+  "items",
+  "recipes",
+  "professions",
+  "locations",
+  "categories",
+  "currencies",
+  "shops",
+  "player-classes",
+] as const;
+
+export type ImageResourceType = (typeof PUBLIC_IMAGE_RESOURCE_TYPES)[number];
+
+export function isPublicImageResourceType(
+  value: string
+): value is ImageResourceType {
+  return (PUBLIC_IMAGE_RESOURCE_TYPES as readonly string[]).includes(value);
+}
 
 // Controlled extensions derived from the validated MIME type. The client
 // filename (and its extension) is never used for anything.
@@ -130,6 +139,12 @@ export function generateImageObjectPath(
   resourceType: ImageResourceType,
   mimeType: AllowedImageMimeType
 ): string {
+  if (!isPublicImageResourceType(resourceType)) {
+    throw new ImageStorageError(
+      "validation",
+      "Private or unknown assets cannot use the public image bucket."
+    );
+  }
   return `${resourceType}/${crypto.randomUUID()}.${MIME_EXTENSIONS[mimeType]}`;
 }
 

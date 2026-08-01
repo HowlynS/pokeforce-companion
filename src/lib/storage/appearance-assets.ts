@@ -2,13 +2,23 @@ import { createClient } from "@/lib/supabase/server";
 
 export const APPEARANCE_ASSET_BUCKET = "game-images";
 
+export const PUBLIC_APPEARANCE_ASSET_KINDS = [
+  "header-logo",
+  "favicon",
+  "home-background",
+  "catalogue-background",
+  "item-detail-background",
+  "admin-background",
+] as const;
+
 export type AppearanceAssetKind =
-  | "header-logo"
-  | "favicon"
-  | "home-background"
-  | "catalogue-background"
-  | "item-detail-background"
-  | "admin-background";
+  (typeof PUBLIC_APPEARANCE_ASSET_KINDS)[number];
+
+export function isPublicAppearanceAssetKind(
+  value: string
+): value is AppearanceAssetKind {
+  return (PUBLIC_APPEARANCE_ASSET_KINDS as readonly string[]).includes(value);
+}
 
 export type AppearanceAssetDimensions = {
   width: number;
@@ -286,6 +296,12 @@ export function generateAppearanceAssetPath(
   kind: AppearanceAssetKind,
   extension: "png" | "jpg" | "webp" | "ico"
 ): string {
+  if (!isPublicAppearanceAssetKind(kind)) {
+    throw new AppearanceAssetStorageError(
+      "validation",
+      "Private or unknown assets cannot use the public appearance bucket."
+    );
+  }
   return `appearance/${kind}/${crypto.randomUUID()}.${extension}`;
 }
 

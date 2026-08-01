@@ -71,6 +71,14 @@ describe("appearance object paths", () => {
     expect(isSafeAppearanceAssetPath(admin)).toBe(true);
   });
 
+  it("rejects confidential or unknown kinds at the runtime boundary", () => {
+    expect(() =>
+      generateAppearanceAssetPath("private-beta-art" as never, "png")
+    ).toThrow(
+      "Private or unknown assets cannot use the public appearance bucket."
+    );
+  });
+
   it.each([
     "../appearance/header-logo/file.png",
     "appearance/header-logo/nested/file.png",
