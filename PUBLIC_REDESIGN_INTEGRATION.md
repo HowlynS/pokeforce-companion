@@ -297,6 +297,33 @@ later matrix entries from being attempted; the command exits nonzero after the
 manifest is written if any entry failed. Use a unique `--run-id` when retaining
 multiple baselines; rerunning an ID intentionally replaces same-named images.
 
+### Focused redesign validation
+
+`pnpm test:public-design` is the future redesign integration gate. It runs, in
+order:
+
+1. focused Vitest coverage for the contract/acceptance/viewport/fixture/capture
+   registries, Design Review component, public content components, AppShell,
+   Appearance resolution/assets, catalogue queries, Recipe image/output,
+   safe rich text, global search, Shops, and public verification;
+2. the guarded fixture setup/idempotency/exact-cleanup integration test;
+3. guarded fixture and Storage setup;
+4. `e2e/public-design-contracts.spec.ts` in the unauthenticated Chromium
+   project and `e2e/admin-design-review.spec.ts` in the authenticated admin
+   project (including the auth setup dependency), serially against the
+   isolated test server;
+5. exact fixture and Storage cleanup in a `finally` path.
+
+The browser layer validates the shared shell, published/default Appearance
+variants, semantic rich text and broken-target 404 behavior, image/fallback and
+hide-empty contracts, dense relationships, canonical filters, explicit
+no-results, admin protection, and the Design Review allowlist. It drives every
+representative contract through every registered primary viewport for one-H1,
+landmark, nested-control, page-error, and horizontal-overflow checks, and emits
+two ignored screenshot-smoke artifacts under `test-results/public-design-smoke`.
+It intentionally does not run the complete unit, integration, service, admin
+CRUD, or E2E suites.
+
 ## 15. Redesign import order
 
 1. **Freeze/export external design:** screenshots, hierarchy, assets, fonts,

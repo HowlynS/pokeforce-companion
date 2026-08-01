@@ -481,3 +481,9 @@ dossier's baseline/import protocol and preserve its behavioral, Appearance,
 accessibility, responsive, and public/admin boundary contracts. The readiness
 harness records current behavior; it does not approve or import a new visual
 direction by itself.
+
+Use `pnpm test:public-design` as the focused behavioral gate before and after a
+public redesign slice, and `pnpm public:design:capture` for deterministic visual
+baselines. Both commands consume the application-owned contracts, fixtures,
+and viewport presets documented in `PUBLIC_REDESIGN_INTEGRATION.md`; neither is
+a substitute for explicit visual approval.

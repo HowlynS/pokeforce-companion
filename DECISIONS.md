@@ -2227,3 +2227,13 @@ no parallel rendering implementation. Contract/fixture/viewport query values
 are validated against the registries and invalid combinations fall back to a
 registered default. Checklist completion is intentionally session-only and no
 database persistence or gameplay mutation is introduced.
+
+The focused `pnpm test:public-design` command is the stable redesign gate. It
+selects only application-owned registry/component/Appearance unit tests, the
+guarded fixture lifecycle integration test, and two focused Playwright specs
+for real public contracts and the authenticated Design review workspace. It
+sets up public-design rows and the exact Storage object before the isolated
+server starts and removes them in a `finally` path. Full repository unit,
+service, admin CRUD, and E2E suites remain separate decisions. Deterministic
+capture is likewise a separate `pnpm public:design:capture` workflow so a
+routine behavioral run does not produce the full visual matrix.

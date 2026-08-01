@@ -345,3 +345,9 @@ and restrained gold only for focus/action/status. The live public iframe is the
 focal surface; selectors and contract evidence remain subordinate. It loads one
 allowlisted real route at one logical viewport, scales from the top-left, and
 keeps checklist state in memory only.
+
+Before and after importing an approved public redesign slice, run
+`pnpm test:public-design`. Use `pnpm public:design:capture` when a review needs
+retained visual evidence across the application-owned contract/fixture/viewport
+matrix. Generated screenshots and manifests stay under ignored `test-results/`
+paths and never become design tokens or committed reference assets by default.
