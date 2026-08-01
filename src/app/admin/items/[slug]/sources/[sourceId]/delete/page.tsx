@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorTabs } from "@/components/admin/editor-tabs";
 import { ItemWorkspace } from "@/components/admin/item-workspace";
@@ -26,7 +26,7 @@ export default async function DeleteAcquisitionSourcePage({
 }: DeleteAcquisitionSourcePageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
-  await requireAdminUser();
+  await requirePermission("content.delete");
 
   const { slug, sourceId } = await params;
   const { q } = await searchParams;

@@ -12,6 +12,7 @@ import { SearchableAdminSelect } from "@/components/admin/searchable-admin-selec
 import { dispatchFormChange } from "@/lib/admin/form-change-event";
 import { formatDisplayDate } from "@/lib/format-date";
 import { MAX_SUBMITTED_SHOP_INVENTORY_ROWS } from "@/lib/validation/shop-listing";
+import { useAdminPermission } from "@/components/admin/admin-authorization";
 
 const NEW_ROW_SLOT_COUNT = 20;
 
@@ -62,6 +63,7 @@ export function ShopInventoryEditor({
   currencyOptions,
   gameVersions,
 }: ShopInventoryEditorProps) {
+  const canVerify = useAdminPermission("content.verify");
   const rows = useMemo<InventoryRow[]>(
     () => [
       ...listings.map((listing) => ({
@@ -307,12 +309,14 @@ export function ShopInventoryEditor({
                     "Unverified"
                   )}
                 </p>
-                <GameVersionVerificationControls
-                  gameVersions={gameVersions}
-                  fieldPrefix={`${row.key}.`}
-                  recordNoun="listing"
-                  disabled={!active}
-                />
+                {canVerify ? (
+                  <GameVersionVerificationControls
+                    gameVersions={gameVersions}
+                    fieldPrefix={`${row.key}.`}
+                    recordNoun="listing"
+                    disabled={!active}
+                  />
+                ) : null}
               </div>
 
               {!pendingRemoval ? (

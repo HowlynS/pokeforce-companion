@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
 import { prisma } from "@/lib/db";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
 import { LocationWorkspace } from "@/components/admin/location-workspace";
@@ -28,7 +28,7 @@ export default async function DeleteLocationPage({
 }: DeleteLocationPageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
-  await requireAdminUser();
+  await requirePermission("content.delete");
 
   const { slug } = await params;
   const { q, error } = await searchParams;

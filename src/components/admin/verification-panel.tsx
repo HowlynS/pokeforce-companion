@@ -24,6 +24,7 @@ import {
 } from "@/lib/admin/verification-status";
 import { formatDisplayDate } from "@/lib/format-date";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
+import { AdminPermissionBoundary } from "@/components/admin/admin-authorization";
 
 type VerificationPanelProps = {
   /** Every Game Version, current first — the same list the picker uses. */
@@ -71,10 +72,12 @@ export function VerificationPanel({
       icon={SECTION_ICONS.verification}
       footer={
         readOnly ? null : (
-          <GameVersionVerificationControls
-            gameVersions={gameVersions}
-            formId={formId}
-          />
+          <AdminPermissionBoundary capability="content.verify">
+            <GameVersionVerificationControls
+              gameVersions={gameVersions}
+              formId={formId}
+            />
+          </AdminPermissionBoundary>
         )
       }
     >

@@ -8,7 +8,8 @@ import {
   shopCanDelete,
   shopInventoryHref,
 } from "@/lib/admin/shop-workspace";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
+import { requireContentMutation } from "@/lib/auth/content-authorization";
 import { prisma } from "@/lib/db";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
@@ -61,7 +62,7 @@ function withInventoryResult(
 }
 
 export async function createShopAction(formData: FormData) {
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.create");
   const parsed = parseShopInput(formData);
   if (!parsed.ok) {
     redirect(`${SHOP_LIST_PATH}/new?error=${parsed.error}`);
@@ -124,7 +125,7 @@ export async function createShopAction(formData: FormData) {
 }
 
 export async function updateShopAction(formData: FormData) {
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.edit");
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
   const editPath = originalSlug
@@ -226,7 +227,7 @@ export async function updateShopAction(formData: FormData) {
 }
 
 export async function updateShopInventoryAction(formData: FormData) {
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.edit");
 
   const shopId = String(formData.get("shopId") ?? "").trim();
   const query = String(formData.get("q") ?? "").trim();
@@ -418,7 +419,7 @@ export async function updateShopInventoryAction(formData: FormData) {
 }
 
 export async function deleteShopAction(formData: FormData) {
-  await requireAdminUser();
+  await requirePermission("content.delete");
   const id = String(formData.get("id") ?? "").trim();
   if (!id) {
     redirect(`${SHOP_LIST_PATH}?error=missing_shop`);

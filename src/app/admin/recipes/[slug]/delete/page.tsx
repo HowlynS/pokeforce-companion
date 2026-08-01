@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
 import { RecipeWorkspace } from "@/components/admin/recipe-workspace";
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import {
@@ -29,7 +29,7 @@ export default async function DeleteRecipePage({
 }: DeleteRecipePageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
-  await requireAdminUser();
+  await requirePermission("content.delete");
 
   const { slug } = await params;
   const { q, error } = await searchParams;

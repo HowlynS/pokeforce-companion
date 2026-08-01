@@ -20,6 +20,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminAuthorizationProvider } from "@/components/admin/admin-authorization";
 
 const APPROVED_LABELS = [
   "Dashboard",
@@ -51,9 +52,13 @@ const APPROVED_HREFS = [
   "/admin/design-review",
 ];
 
-function renderNav(pathname: string): string {
+function renderNav(pathname: string, role: "OWNER" | "CONTRIBUTOR" = "OWNER"): string {
   nav.pathname = pathname;
-  return renderToStaticMarkup(<AdminNav />);
+  return renderToStaticMarkup(
+    <AdminAuthorizationProvider role={role}>
+      <AdminNav />
+    </AdminAuthorizationProvider>
+  );
 }
 
 // Every opening <a ...> tag's own attribute string, order-independent —
@@ -94,6 +99,16 @@ describe("AdminNav structure and labels", () => {
     expect(html).toMatch(
       /class="admin-nav-site-group"[\s\S]*href="\/admin\/design-review"/
     );
+  });
+
+  it("omits restricted Site administration and Game Versions for Contributors", () => {
+    const html = renderNav("/admin/items", "CONTRIBUTOR");
+    expect(html).not.toContain("Site administration");
+    expect(html).not.toContain("Appearance");
+    expect(html).not.toContain("Design review");
+    expect(html).not.toContain("Game Versions");
+    expect(html).toContain("Items");
+    expect(html).toContain("Currencies");
   });
 
   it("renders every link's href exactly as approved, in order", () => {

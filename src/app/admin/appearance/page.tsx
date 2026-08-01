@@ -1,5 +1,5 @@
 import { ImageIcon, Mountain, Palette, PanelsTopLeft } from "lucide-react";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
 import { prisma } from "@/lib/db";
 import {
   DEFAULT_SITE_APPEARANCE,
@@ -38,7 +38,7 @@ type AppearancePageProps = {
 export default async function AppearancePage({
   searchParams,
 }: AppearancePageProps) {
-  await requireAdminUser();
+  await requirePermission("appearance.manage");
   const { error } = await searchParams;
   const errorMessage = error ? ERROR_MESSAGES[error] ?? "Appearance could not be saved." : null;
   const record = await prisma.siteAppearance.findUnique({

@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
 import { prisma } from "@/lib/db";
 import {
   DEFAULT_SITE_APPEARANCE,
@@ -132,7 +132,7 @@ async function cleanupAssets(paths: readonly (string | null | undefined)[]) {
 }
 
 export async function saveAppearanceAction(formData: FormData) {
-  await requireAdminUser();
+  await requirePermission("appearance.manage");
 
   const existing = await prisma.siteAppearance.findUnique({
     where: { id: SITE_APPEARANCE_ID },

@@ -27,10 +27,12 @@ import {
   ADMIN_NAV_ITEMS,
   ITEM_ADMIN_NAV_CHILDREN,
   SITE_ADMIN_NAV_ITEMS,
+  filterAdminNavItems,
   isAdminNavItemActive,
   type AdminNavIcon,
   type AdminNavItem,
 } from "@/lib/admin/admin-nav";
+import { useAdminRole } from "@/components/admin/admin-authorization";
 
 const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -48,7 +50,10 @@ const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
 };
 
 export function AdminNav() {
+  const role = useAdminRole();
   const pathname = usePathname() ?? "";
+  const primaryItems = role ? filterAdminNavItems(ADMIN_NAV_ITEMS, role) : [];
+  const siteItems = role ? filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, role) : [];
   const itemsRouteActive =
     isAdminNavItemActive("/admin/items", pathname) ||
     isAdminNavItemActive("/admin/categories", pathname);
@@ -83,7 +88,7 @@ export function AdminNav() {
   return (
     <nav aria-label="Admin navigation" className="admin-nav">
       <div className="admin-nav-primary">
-        {ADMIN_NAV_ITEMS.map((item) => {
+        {primaryItems.map((item) => {
           if (item.href !== "/admin/items") {
             return renderLink(item);
           }
@@ -127,10 +132,12 @@ export function AdminNav() {
         })}
       </div>
 
-      <div className="admin-nav-site-group">
-        <p className="admin-nav-section-label">Site administration</p>
-        {SITE_ADMIN_NAV_ITEMS.map((item) => renderLink(item))}
-      </div>
+      {siteItems.length > 0 ? (
+        <div className="admin-nav-site-group">
+          <p className="admin-nav-section-label">Site administration</p>
+          {siteItems.map((item) => renderLink(item))}
+        </div>
+      ) : null}
     </nav>
   );
 }

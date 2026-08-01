@@ -16,6 +16,7 @@ import { ImagePanel } from "@/components/admin/image-panel";
 import { VerificationPanel } from "@/components/admin/verification-panel";
 import { TimestampsPanel } from "@/components/admin/timestamps-panel";
 import { EditorActions } from "@/components/admin/editor-actions";
+import { AdminAuthorizationProvider } from "@/components/admin/admin-authorization";
 
 describe("EditorHeader", () => {
   it("renders the title as the page's one h1", () => {
@@ -460,11 +461,13 @@ describe("VerificationPanel", () => {
 
   it("composes the real shared picker and opt-in checkbox, defaulting the label to the current version", () => {
     const html = renderToStaticMarkup(
-      <VerificationPanel
-        gameVersions={versions}
-        verifiedAt={null}
-        verifiedGameVersion={null}
-      />
+      <AdminAuthorizationProvider role="OWNER">
+        <VerificationPanel
+          gameVersions={versions}
+          verifiedAt={null}
+          verifiedGameVersion={null}
+        />
+      </AdminAuthorizationProvider>
     );
 
     expect(html).toContain('name="verifiedGameVersionId"');
@@ -483,11 +486,13 @@ describe("VerificationPanel", () => {
   it("falls back to generic checkbox wording when no version is current", () => {
     const noCurrentVersions = [{ id: "v1", name: "Launch", isCurrent: false }];
     const html = renderToStaticMarkup(
-      <VerificationPanel
-        gameVersions={noCurrentVersions}
-        verifiedAt={null}
-        verifiedGameVersion={null}
-      />
+      <AdminAuthorizationProvider role="OWNER">
+        <VerificationPanel
+          gameVersions={noCurrentVersions}
+          verifiedAt={null}
+          verifiedGameVersion={null}
+        />
+      </AdminAuthorizationProvider>
     );
 
     expect(html).toContain("Mark as verified for the selected version");
@@ -497,12 +502,14 @@ describe("VerificationPanel", () => {
 
   it("associates the composed picker and checkbox with an external form when rendered outside it", () => {
     const html = renderToStaticMarkup(
-      <VerificationPanel
-        gameVersions={versions}
-        verifiedAt={null}
-        verifiedGameVersion={null}
-        formId="item-edit-form"
-      />
+      <AdminAuthorizationProvider role="OWNER">
+        <VerificationPanel
+          gameVersions={versions}
+          verifiedAt={null}
+          verifiedGameVersion={null}
+          formId="item-edit-form"
+        />
+      </AdminAuthorizationProvider>
     );
 
     // The Game Version picker is AdminSelect (Massive Admin Interaction
@@ -632,16 +639,19 @@ describe("DangerZonePanel", () => {
   // e2e/admin-in-editor-delete.spec.ts instead.
   it("renders a destructive trigger BUTTON (never a link) in its closed state, with no dialog markup yet", async () => {
     const { DangerZonePanel } = await import("./danger-zone-panel");
+    const { AdminAuthorizationProvider } = await import("./admin-authorization");
     const html = renderToStaticMarkup(
-      <DangerZonePanel
-        resourceLabel="item"
-        deleteLabel="Delete Item"
-        dialogTitle="Delete Item"
-        dialogDescription="You are about to permanently delete Iron Ore."
-        canDelete
-        formAction={() => {}}
-        hiddenFields={{ id: "item-1", slug: "iron-ore" }}
-      />
+      <AdminAuthorizationProvider role="OWNER">
+        <DangerZonePanel
+          resourceLabel="item"
+          deleteLabel="Delete Item"
+          dialogTitle="Delete Item"
+          dialogDescription="You are about to permanently delete Iron Ore."
+          canDelete
+          formAction={() => {}}
+          hiddenFields={{ id: "item-1", slug: "iron-ore" }}
+        />
+      </AdminAuthorizationProvider>
     );
 
     expect(html).toContain("Danger zone");
@@ -652,5 +662,23 @@ describe("DangerZonePanel", () => {
     expect(html).not.toContain("<a ");
     expect(html).not.toContain('role="dialog"');
     expect(html).not.toContain("<form");
+  });
+
+  it("does not render delete controls for Contributors", async () => {
+    const { DangerZonePanel } = await import("./danger-zone-panel");
+    const html = renderToStaticMarkup(
+      <AdminAuthorizationProvider role="CONTRIBUTOR">
+        <DangerZonePanel
+          resourceLabel="item"
+          deleteLabel="Delete Item"
+          dialogTitle="Delete Item"
+          dialogDescription="Delete Iron Ore."
+          canDelete
+          formAction={() => {}}
+          hiddenFields={{ id: "item-1", slug: "iron-ore" }}
+        />
+      </AdminAuthorizationProvider>
+    );
+    expect(html).toBe("");
   });
 });

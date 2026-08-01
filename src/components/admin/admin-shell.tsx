@@ -16,7 +16,8 @@ import { UserRound } from "lucide-react";
 import { designTokens } from "@/lib/design-tokens";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminSuccessToast } from "@/components/admin/admin-success-toast";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
+import { AdminAuthorizationProvider } from "@/components/admin/admin-authorization";
 import { signOutAction } from "@/app/admin/actions";
 import { getPublishedSiteAppearance } from "@/lib/appearance/public";
 import { serializeScenicPosition } from "@/lib/appearance/position";
@@ -29,7 +30,7 @@ type AdminShellProps = {
 export async function AdminShell({ children }: AdminShellProps) {
   // Cached (React cache()) so this repeats no Supabase lookup beyond the
   // one the /admin layout's own gate already performs for this request.
-  const user = await requireAdminUser();
+  const { identity, user } = await requirePermission("admin.access");
   const appearance = await getPublishedSiteAppearance();
   const adminAppearance =
     appearance.admin ?? DEFAULT_SITE_APPEARANCE.admin;
@@ -38,6 +39,7 @@ export async function AdminShell({ children }: AdminShellProps) {
     "/images/admin/admin-shell-background.webp";
 
   return (
+    <AdminAuthorizationProvider role={user.role}>
     <div
       className="admin-shell"
       style={{
@@ -92,7 +94,7 @@ export async function AdminShell({ children }: AdminShellProps) {
               as shell chrome rather than a piece of Dashboard content. */}
           <div className="admin-sidebar-account">
             <UserRound aria-hidden="true" className="admin-sidebar-account-icon" />
-            <p className="admin-sidebar-account-email">{user.email}</p>
+            <p className="admin-sidebar-account-email">{identity.email}</p>
             <form action={signOutAction}>
               <button type="submit" className="btn btn-secondary btn-compact admin-sidebar-account-signout">
                 Sign out
@@ -134,5 +136,6 @@ export async function AdminShell({ children }: AdminShellProps) {
           block. */}
       <div id="admin-select-portal-root" />
     </div>
+    </AdminAuthorizationProvider>
   );
 }

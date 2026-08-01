@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
 import { prisma } from "@/lib/db";
 import {
   parseGameVersionEditInput,
@@ -20,7 +20,7 @@ const LIST_PATH = "/admin/settings/game-versions";
 export async function createGameVersionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requirePermission("gameVersions.manage");
 
   const parsed = parseGameVersionInput(formData);
 
@@ -49,7 +49,7 @@ export async function createGameVersionAction(formData: FormData) {
 export async function updateGameVersionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requirePermission("gameVersions.manage");
 
   const id = String(formData.get("id") ?? "").trim();
   const editPath = id ? `${LIST_PATH}/${id}/edit` : null;
@@ -88,7 +88,7 @@ export async function updateGameVersionAction(formData: FormData) {
 export async function markGameVersionCurrentAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requirePermission("gameVersions.manage");
 
   const id = String(formData.get("id") ?? "").trim();
 
@@ -113,7 +113,7 @@ export async function markGameVersionCurrentAction(formData: FormData) {
 export async function deleteGameVersionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requirePermission("gameVersions.manage");
 
   const id = String(formData.get("id") ?? "").trim();
   const confirmPath = id ? `${LIST_PATH}/${id}/delete` : LIST_PATH;

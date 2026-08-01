@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
+import { requireContentMutation } from "@/lib/auth/content-authorization";
 import { prisma } from "@/lib/db";
 import {
   isForeignKeyError,
@@ -60,7 +61,7 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 export async function createLocationAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.create");
 
   const parsed = parseLocationInput(formData);
 
@@ -168,7 +169,7 @@ export async function createLocationAction(formData: FormData) {
 export async function updateLocationGeneralAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -325,7 +326,7 @@ export async function updateLocationGeneralAction(formData: FormData) {
 export async function updateLocationHierarchyAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -404,7 +405,7 @@ export async function updateLocationHierarchyAction(formData: FormData) {
 export async function deleteLocationAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requirePermission("content.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();

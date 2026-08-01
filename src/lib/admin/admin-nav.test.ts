@@ -4,6 +4,7 @@ import {
   ADMIN_NAV_ITEMS,
   ITEM_ADMIN_NAV_CHILDREN,
   SITE_ADMIN_NAV_ITEMS,
+  filterAdminNavItems,
   isAdminNavItemActive,
 } from "@/lib/admin/admin-nav";
 
@@ -61,16 +62,26 @@ describe("ADMIN_NAV_ITEMS", () => {
         label: "Appearance",
         href: "/admin/appearance",
         icon: "appearance",
+        requiredCapability: "appearance.manage",
       },
       {
         label: "Design review",
         href: "/admin/design-review",
         icon: "designReview",
+        requiredCapability: "designReview.access",
       },
     ]);
     expect(
       ADMIN_NAV_ITEMS.some((item) => item.href === "/admin/appearance")
     ).toBe(false);
+  });
+
+  it("filters restricted workspaces from Contributor navigation", () => {
+    expect(filterAdminNavItems(ADMIN_NAV_ITEMS, "CONTRIBUTOR").map((item) => item.label))
+      .not.toContain("Game Versions");
+    expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, "CONTRIBUTOR")).toEqual([]);
+    expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, "ADMINISTRATOR").map((item) => item.label))
+      .toEqual(["Appearance", "Design review"]);
   });
 
   it("keeps Categories as the sole Items child destination", () => {

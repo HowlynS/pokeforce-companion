@@ -7,7 +7,8 @@ import {
   currencyCanDelete,
 } from "@/lib/admin/currency-workspace";
 import { isCurrencyNameTaken } from "@/lib/admin/record-name";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
+import { requireContentMutation } from "@/lib/auth/content-authorization";
 import { prisma } from "@/lib/db";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
@@ -45,7 +46,7 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 }
 
 export async function createCurrencyAction(formData: FormData) {
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.create");
   const parsed = parseCurrencyInput(formData);
 
   if (!parsed.ok) {
@@ -101,7 +102,7 @@ export async function createCurrencyAction(formData: FormData) {
 }
 
 export async function updateCurrencyAction(formData: FormData) {
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.edit");
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
   const editPath = originalSlug
@@ -191,7 +192,7 @@ export async function updateCurrencyAction(formData: FormData) {
 }
 
 export async function deleteCurrencyAction(formData: FormData) {
-  await requireAdminUser();
+  await requirePermission("content.delete");
   const id = String(formData.get("id") ?? "").trim();
 
   if (!id) {

@@ -27,6 +27,7 @@ import { useEffect, useState } from "react";
 import { ContextPanel } from "@/components/admin/context-panel";
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
+import { useAdminPermission } from "@/components/admin/admin-authorization";
 import {
   EDITOR_DIRTY_STATE_EVENT,
   dispatchDeleteDialogState,
@@ -65,6 +66,7 @@ export function DangerZonePanel({
   formAction,
   hiddenFields,
 }: DangerZonePanelProps) {
+  const mayDelete = useAdminPermission("content.delete");
   const [open, setOpen] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
 
@@ -87,6 +89,10 @@ export function DangerZonePanel({
   function closeDialog() {
     setOpen(false);
     dispatchDeleteDialogState(false);
+  }
+
+  if (!mayDelete) {
+    return null;
   }
 
   return (

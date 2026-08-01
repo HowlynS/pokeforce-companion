@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DesignReviewWorkspace } from "@/components/admin/design-review-workspace";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { getPublishedSiteAppearance } from "@/lib/appearance/public";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
 import {
   PUBLIC_DESIGN_CONTRACTS,
   getPublicDesignContract,
@@ -36,7 +36,7 @@ function first(value: string | string[] | undefined): string | undefined {
 export default async function DesignReviewPage({
   searchParams,
 }: DesignReviewPageProps) {
-  await requireAdminUser();
+  await requirePermission("designReview.access");
   const query = await searchParams;
   const contract =
     getPublicDesignContract(first(query.contract) ?? "") ??

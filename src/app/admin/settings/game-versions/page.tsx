@@ -5,7 +5,7 @@ import { EditorSection } from "@/components/admin/editor-section";
 import { AdminFormGuard } from "@/components/admin/admin-form-guard";
 import { RichDescriptionEditor } from "@/components/admin/rich-description-editor";
 import { GameVersionDeleteAction } from "@/components/admin/game-version-delete-action";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
@@ -57,7 +57,7 @@ export default async function GameVersionSettingsPage({
 }: GameVersionSettingsPageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
-  await requireAdminUser();
+  await requirePermission("gameVersions.manage");
 
   const { error, success } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;

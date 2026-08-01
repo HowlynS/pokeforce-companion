@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { requirePermission } from "@/lib/auth/authorization";
+import { requireContentMutation } from "@/lib/auth/content-authorization";
 import { prisma } from "@/lib/db";
 import {
   isForeignKeyError,
@@ -43,7 +44,7 @@ async function findInvalidRelationError(
 export async function createAcquisitionSourceAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.create");
 
   const itemId = String(formData.get("itemId") ?? "").trim();
   const itemSlug = String(formData.get("itemSlug") ?? "").trim();
@@ -117,7 +118,7 @@ export async function createAcquisitionSourceAction(formData: FormData) {
 export async function updateAcquisitionSourceAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const itemSlug = String(formData.get("itemSlug") ?? "").trim();
@@ -221,7 +222,7 @@ export async function updateAcquisitionSourceAction(formData: FormData) {
 export async function deleteAcquisitionSourceAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireAdminUser();
+  await requirePermission("content.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const itemSlug = String(formData.get("itemSlug") ?? "").trim();
