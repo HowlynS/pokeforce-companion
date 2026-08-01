@@ -331,23 +331,42 @@ configuration.
 
 ## Public Redesign Readiness
 
-The verified public route, component, data, hide-empty, responsive, and
-Appearance inventory is maintained in `PUBLIC_REDESIGN_INTEGRATION.md`. Shared
-logical review widths are application data in
-`src/lib/public-design/viewports.ts`, not duplicated values in new tooling.
-Readiness infrastructure must not restyle the public application; it reviews
-real routes and preserves the current system until an approved redesign is
-ready for an explicit import branch.
+`PUBLIC_REDESIGN_INTEGRATION.md` is the authoritative public-redesign
+integration dossier. The typed contract, viewport, fixture, acceptance, and
+capture registries live under `src/lib/public-design`; shared logical review
+widths are application data there, not duplicated values in new tooling.
+Readiness infrastructure must not restyle the public application. This
+milestone intentionally left the current public visual design unchanged while
+establishing review and regression infrastructure for a future explicit
+redesign import branch.
 
-The Design review workspace uses the existing dense admin identity: 4px base
-spacing, 16–24px workbench gaps, quiet bordered surfaces, Manrope hierarchy,
-and restrained gold only for focus/action/status. The live public iframe is the
-focal surface; selectors and contract evidence remain subordinate. It loads one
-allowlisted real route at one logical viewport, scales from the top-left, and
-keeps checklist state in memory only.
+`/admin/design-review` is the protected admin workspace for reviewing real
+public routes against deterministic fixtures and viewport contracts. It uses
+the existing dense admin identity: 4px base spacing, 16–24px workbench gaps,
+quiet bordered surfaces, Manrope hierarchy, and restrained gold only for
+focus/action/status. The live public iframe is the focal surface; selectors and
+contract evidence remain subordinate. It loads one allowlisted real route at
+one logical viewport, scales from the top-left, and keeps checklist state in
+memory only.
 
-Before and after importing an approved public redesign slice, run
-`pnpm test:public-design`. Use `pnpm public:design:capture` when a review needs
-retained visual evidence across the application-owned contract/fixture/viewport
-matrix. Generated screenshots and manifests stay under ignored `test-results/`
-paths and never become design tokens or committed reference assets by default.
+- `pnpm public:design:fixtures setup|status|cleanup` manages the redesign
+  fixture lifecycle.
+- `pnpm public:design:capture` captures the registered public design matrix and
+  writes Git-ignored screenshots plus a manifest.
+- `pnpm test:public-design` is the focused public-redesign regression gate; run
+  it before and after importing an approved redesign slice.
+
+Future redesign import sequence:
+
+1. Capture the current baseline.
+2. Introduce tokens and primitives.
+3. Migrate the shared shell.
+4. Validate one representative catalogue and one detail page.
+5. Roll out remaining public resources.
+6. Perform accessibility and responsive hardening.
+7. Run final redesign regression and capture.
+
+Known replaceable redesign issue: a one-result filtered Item catalogue can
+stretch its single card across the generic auto-fit grid.
+
+Latest clean baseline commit: `8ec557e`.
