@@ -78,8 +78,8 @@ model AuditEvent {
   @@index([targetType, createdAt])
 }
 
-// Singleton runtime access setting. The initial migration creates the row in
-// PRIVATE_BETA mode so a missing deployment step can never expose the beta.
+// Singleton runtime access setting. A dedicated forward seed migration creates
+// the row in PRIVATE_BETA mode so a missing deployment step cannot expose beta.
 model SiteAccessSettings {
   id         String         @id @default("site")
   visibility SiteVisibility @default(PRIVATE_BETA)
