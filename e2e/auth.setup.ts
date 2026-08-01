@@ -25,9 +25,9 @@ setup("authenticate as the test admin", async ({ page }) => {
   // fail-closed environment guard before touching the database.)
   await ensureCurrentGameVersionFixture();
 
-  await page.goto("/login");
+  await page.goto("/login?next=/admin");
   await expect(
-    page.getByRole("heading", { level: 1, name: "Admin sign-in" })
+    page.getByRole("heading", { level: 1, name: "Private beta sign-in" })
   ).toBeVisible();
 
   await page.getByLabel("Email").fill(adminEmail);

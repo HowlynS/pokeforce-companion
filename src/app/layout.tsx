@@ -2,6 +2,7 @@
 import { DM_Serif_Display, Manrope } from "next/font/google";
 import "./globals.css";
 import { getPublishedSiteAppearance } from "@/lib/appearance/public";
+import { canExposePublicContent } from "@/lib/access/require-site-access";
 
 // Site-wide interface typeface (Visual Pass sub-slice 1): a restrained
 // weight set covers body copy through headings without needing extreme
@@ -24,6 +25,14 @@ const dmSerifDisplay = DM_Serif_Display({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (!(await canExposePublicContent())) {
+    return {
+      title: "Merchants Codex — Private beta",
+      description: "Restricted private beta access.",
+      robots: { index: false, follow: false },
+    };
+  }
+
   const appearance = await getPublishedSiteAppearance();
   return {
     title: "PokeForce Companion",

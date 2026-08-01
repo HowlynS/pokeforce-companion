@@ -27,7 +27,9 @@ export async function updateSession(request: NextRequest) {
 
   // Refreshes the session cookie when needed. Route protection itself is
   // enforced server-side in the admin layout, not here.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return response;
+  return { response, user };
 }

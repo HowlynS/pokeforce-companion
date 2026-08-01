@@ -19,6 +19,7 @@ import {
 import { formatPublicVerification } from "@/lib/public-verification";
 import { resolveRichTextValue } from "@/lib/rich-text";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
+import { canExposePublicContent } from "@/lib/access/require-site-access";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,14 @@ const loadPublicShop = cache((slug: string) =>
 export async function generateMetadata({
   params,
 }: ShopDetailPageProps): Promise<Metadata> {
+  if (!(await canExposePublicContent())) {
+    return {
+      title: "Merchants Codex — Private beta",
+      description: "Restricted private beta access.",
+      robots: { index: false, follow: false },
+    };
+  }
+
   const { slug } = await params;
   const shop = await loadPublicShop(slug);
 

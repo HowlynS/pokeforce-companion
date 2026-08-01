@@ -10,11 +10,12 @@ import {
   hasPermission,
   type Capability,
 } from "./permissions";
+import { loginPathFor } from "./return-path";
 
-export async function requireSignedInUser() {
+export async function requireSignedInUser(returnTo?: string) {
   const identity = await getAuthenticatedIdentity();
   if (!identity) {
-    redirect("/login");
+    redirect(loginPathFor(returnTo));
   }
   return identity;
 }
@@ -36,7 +37,7 @@ export async function requireActiveSiteUser() {
 export async function requirePermission(capability: Capability) {
   const current = await requireActiveSiteUser();
   if (!hasPermission(current.user.role, capability)) {
-    redirect("/login?error=insufficient_permission");
+    redirect("/access-denied");
   }
   return current;
 }
@@ -46,7 +47,7 @@ export async function requireAnyPermission(
 ) {
   const current = await requireActiveSiteUser();
   if (!hasAnyPermission(current.user.role, capabilities)) {
-    redirect("/login?error=insufficient_permission");
+    redirect("/access-denied");
   }
   return current;
 }

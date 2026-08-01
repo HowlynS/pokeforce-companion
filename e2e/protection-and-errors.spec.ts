@@ -121,9 +121,9 @@ test.describe("unauthenticated admin protection", () => {
     test(`${route} redirects to the login page`, async ({ page }) => {
       await page.goto(route);
 
-      await expect(page).toHaveURL("/login");
+      await expect(page).toHaveURL(/\/login\?next=/);
       await expect(
-        page.getByRole("heading", { level: 1, name: "Admin sign-in" })
+        page.getByRole("heading", { level: 1, name: "Private beta sign-in" })
       ).toBeVisible();
     });
   }
@@ -137,10 +137,10 @@ test.describe("login page", () => {
     await page.goto("/login");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "Admin sign-in" })
+      page.getByRole("heading", { level: 1, name: "Private beta sign-in" })
     ).toBeVisible();
     await expect(
-      page.getByText("Sign in with the authorized administrator account.")
+      page.getByText(/restricted during private beta/i)
     ).toBeVisible();
 
     // Form controls, located by their accessible labels only.

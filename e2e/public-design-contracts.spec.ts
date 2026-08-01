@@ -234,8 +234,8 @@ test("Design review remains protected from unauthenticated public sessions", asy
   page,
 }) => {
   await page.goto("/admin/design-review");
-  await expect(page).toHaveURL("/login");
+  await expect(page).toHaveURL(/\/login\?next=/);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Admin sign-in" })
+    page.getByRole("heading", { level: 1, name: "Private beta sign-in" })
   ).toBeVisible();
 });

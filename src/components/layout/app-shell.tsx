@@ -7,6 +7,7 @@ import {
   DEFAULT_HEADER_LOGO_WIDTH,
 } from "@/lib/appearance/defaults";
 import { getPublishedSiteAppearance } from "@/lib/appearance/public";
+import { requireOrdinarySiteAccess } from "@/lib/access/require-site-access";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -21,6 +22,9 @@ export async function AppShell({
   scenic,
   wide = false,
 }: AppShellProps) {
+  // The proxy improves anonymous redirects, but this server boundary is the
+  // authority protecting every real public route and its rendered content.
+  await requireOrdinarySiteAccess();
   const appearance = await getPublishedSiteAppearance();
   const scenicAppearance = scenic
     ? appearance[scenic === "detail" ? "itemDetail" : scenic]
