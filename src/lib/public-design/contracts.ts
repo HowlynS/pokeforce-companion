@@ -74,6 +74,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/items",
     pageFamily: "catalogue",
     representativeFixture: "items-populated",
+    fixtures: ["items-populated", "items-sparse"],
     scenicVariant: "catalogue",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "page heading", "Category filter", "Item grid"],
@@ -83,7 +84,10 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     richTextRequirement: "Descriptions do not render in Item cards",
     accessibility: [...shellA11y, "active filter uses aria-current", "pagination is labelled"],
     focusedTests: ["e2e/public-recipe-catalogues.spec.ts", "src/components/content/content-image.test.tsx"],
-    knownCaveats: ["Invalid Category redirects to the unfiltered canonical route"],
+    knownCaveats: [
+      "Invalid Category redirects to the unfiltered canonical route",
+      "A one-card filtered result currently expands its auto-fit track; this is replaceable layout behavior, not the redesign target",
+    ],
   },
   {
     id: "item-detail",

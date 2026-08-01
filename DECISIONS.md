@@ -2237,3 +2237,8 @@ server starts and removes them in a `finally` path. Full repository unit,
 service, admin CRUD, and E2E suites remain separate decisions. Deterministic
 capture is likewise a separate `pnpm public:design:capture` workflow so a
 routine behavioral run does not produce the full visual matrix.
+
+Playwright's disposable traces and failure artifacts use
+`test-results/playwright/`. Named public capture, smoke, and workspace-evidence
+directories sit beside it and are not erased when a later focused browser run
+starts. All remain covered by the existing `test-results/` Git ignore rule.

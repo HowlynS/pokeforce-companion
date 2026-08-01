@@ -14,6 +14,18 @@ export const PUBLIC_DESIGN_FIXTURES = [
     states: ["normal records", "no image", "long names", "sparse final row"],
   },
   {
+    key: "items-sparse",
+    label: "Sparse Item catalogue",
+    family: "catalogue",
+    path: "/items?category=design-review-category-sparse",
+    states: [
+      "one Item",
+      "single-card width audit",
+      "Category filter",
+      "legacy auto-fit expansion",
+    ],
+  },
+  {
     key: "item-dense",
     label: "Dense Item detail",
     family: "detail",

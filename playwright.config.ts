@@ -13,6 +13,9 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: "list",
+  // Keep Playwright's automatically cleared traces/failure artifacts away
+  // from the named public-design capture and workspace-evidence directories.
+  outputDir: "test-results/playwright",
   // Dev-server compilation on first visit to each route is slow; give every
   // test generous room without hiding real hangs.
   timeout: 60_000,

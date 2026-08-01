@@ -153,8 +153,11 @@ stretch, crop to fill, or expose a storage secret.
   with an accessible disclosure for additional ingredients.
 - Remaining catalogue grids use shared linked `Card` components. Empty data is
   explicit on catalogue pages; contextual detail sections hide instead.
-- A sparse final row stays grid-aligned and does not stretch through custom
-  positional hacks.
+- Sparse rows remain inside the bounded catalogue grid without document
+  overflow. The current generic auto-fit grid expands a one-card filtered
+  result across its available track; `items-sparse` captures that known legacy
+  behavior so a redesign can replace it with deliberate grid alignment rather
+  than inherit it accidentally.
 
 ## 8. Detail-page contracts
 
@@ -260,6 +263,12 @@ hierarchy, Shop inventory/currencies, Class/Category/Currency sparsity, empty
 catalogues/filters/search, invalid filters, and not-found slugs. Loading/error
 states are included only where they exist safely; no production-only failure
 switch may be introduced.
+
+The selectable Item catalogue states include both the normal unfiltered route
+and a one-card `design-review-category-sparse` filter, so current single-track
+expansion and future sparse-row alignment can be reviewed without a parallel
+preview implementation. The Shop search no-result fixture supplies the
+explicit no-result catalogue state.
 
 All fixture slugs/names use the `design-review-` / `Design Review -` prefix.
 Setup is idempotent and transactional; cleanup matches exact IDs/prefixes and
@@ -400,6 +409,9 @@ over-fetching is a known replaceable implementation, not a behavior contract.
 - Managed asset URLs can resolve but later fail in the browser; logo has a
   second fallback, scenic CSS relies on its committed fallback layer.
 - Rich external links are safe but do not currently open a new tab.
+- The generic auto-fit catalogue grid expands a single filtered Item card
+  across the available track; the sparse fixture records this replaceable
+  layout behavior for redesign review.
 - Fixture density can stress the shared isolated test database; cleanup and
   serial execution are mandatory.
 - Next development/build commands rewrite `next-env.d.ts`; restore it before
@@ -429,21 +441,44 @@ over-fetching is a known replaceable implementation, not a behavior contract.
 
 ## 22. Final merge-readiness checklist
 
-- [ ] Dossier, contracts, acceptance matrix, viewports, and fixture manifest
+- [x] Dossier, contracts, acceptance matrix, viewports, and fixture manifest
   agree on IDs/routes.
-- [ ] Fixture setup/cleanup integration tests pass against the guarded test DB.
-- [ ] Admin authentication and preview allowlist tests pass.
-- [ ] Focused unit/component/browser/Appearance/overflow checks pass through
+- [x] Fixture setup/cleanup integration tests pass against the guarded test DB.
+- [x] Admin authentication and preview allowlist tests pass.
+- [x] Focused unit/component/browser/Appearance/overflow checks pass through
   `pnpm test:public-design`.
-- [ ] One filtered and one representative multi-route capture completed; output
+- [x] One filtered and one representative multi-route capture completed; output
   and credentials are absent from Git.
-- [ ] Targeted ESLint, `pnpm exec tsc --noEmit`, production build, Prisma
+- [x] Targeted ESLint, `pnpm exec tsc --noEmit`, production build, Prisma
   validation, and `git diff --check` pass.
-- [ ] `next-env.d.ts` is restored; tracked tree is clean; nothing is staged;
+- [x] `next-env.d.ts` is restored; tracked tree is clean; nothing is staged;
   `.claude/` is untouched.
-- [ ] HEAD, local origin, and live origin are aligned after every pushed slice.
-- [ ] Public visual design did not change during readiness work.
-- [ ] The complete E2E suite was intentionally not run.
+- [x] HEAD, local origin, and live origin are aligned after every pushed slice.
+- [x] Public visual design did not change during readiness work.
+- [x] The complete E2E suite was intentionally not run.
+
+### Milestone verification record â€” 2026-08-01
+
+- Registry: 17 public contracts, 27 selectable public fixture routes, five
+  primary viewports, and one optional 768px transition viewport.
+- Focused gate: 147 unit/component tests, two guarded fixture integration
+  tests, and 11 serial Playwright tests passed. The browser matrix visits all
+  17 representative contracts at all five primary viewports (85 combinations).
+- Public captures: `test-results/public-design-review/final-representative/`
+  contains 27 successful desktop captures; the filtered long-name/no-image
+  mobile result is in
+  `test-results/public-design-review/final-filtered-mobile/`. Both manifests
+  report zero failures and zero horizontal-overflow results.
+- Workspace evidence:
+  `test-results/public-design-review/workspace-milestone/` contains the
+  1920px, 3440px, 1000px/mobile-preview, loading, and error-state reviews. The
+  screenshot style hides the test-admin email and Next development portal.
+- Tooling/build: targeted ESLint, TypeScript, Prisma schema validation,
+  production build, and whitespace validation passed. `next-env.d.ts` was
+  restored after generated drift.
+- Scope: screenshots/manifests remain ignored, public styling/layout code was
+  not changed, `.claude/` was untouched, and the complete E2E suite was not
+  run.
 
 The current reusable foundations are classified as follows:
 
