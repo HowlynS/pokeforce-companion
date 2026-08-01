@@ -74,11 +74,11 @@ async function main(): Promise<void> {
         "test",
         "e2e/public-design-contracts.spec.ts",
         "e2e/admin-design-review.spec.ts",
-        "--project=chromium",
+        "--project=chromium-private-beta",
         "--project=chromium-admin",
         "--workers=1",
       ],
-      "focused public contracts and authenticated Design Review browser tests"
+      "focused authenticated public contracts and Owner Design Review browser tests"
     );
   } finally {
     await runPnpm(

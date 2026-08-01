@@ -231,11 +231,17 @@ test("every representative contract is semantic and overflow-free at primary vie
 });
 
 test("Design review remains protected from unauthenticated public sessions", async ({
-  page,
+  browser,
 }) => {
+  const context = await browser.newContext({
+    baseURL: "http://localhost:3100",
+    storageState: { cookies: [], origins: [] },
+  });
+  const page = await context.newPage();
   await page.goto("/admin/design-review");
   await expect(page).toHaveURL(/\/login\?next=/);
   await expect(
     page.getByRole("heading", { level: 1, name: "Private beta sign-in" })
   ).toBeVisible();
+  await context.close();
 });

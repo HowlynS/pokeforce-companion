@@ -17,6 +17,10 @@ vi.mock("@/lib/appearance/public", () => ({
   getPublishedSiteAppearance: vi.fn(async () => state.appearance),
 }));
 
+vi.mock("@/lib/access/require-site-access", () => ({
+  requireOrdinarySiteAccess: vi.fn(async () => undefined),
+}));
+
 import { AppShell } from "@/components/layout/app-shell";
 
 describe("AppShell managed appearance", () => {

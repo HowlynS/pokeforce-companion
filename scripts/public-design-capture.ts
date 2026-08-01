@@ -61,7 +61,7 @@ async function main(): Promise<void> {
         "playwright",
         "test",
         "e2e/public-design-capture.spec.ts",
-        "--project=chromium",
+        "--project=chromium-private-beta",
         "--workers=1",
       ],
       {

@@ -35,15 +35,27 @@ export default defineConfig({
     // run as an ordinary browser test.
     {
       name: "setup",
-      testMatch: /auth\.setup\.ts/,
+      testMatch: /(^|[\\/])auth\.setup\.ts$/,
       use: { ...devices["Desktop Chrome"] },
     },
     // Public and protection tests: always unauthenticated, so the admin
     // specs are explicitly excluded from this project.
     {
       name: "chromium",
-      testIgnore: /admin-.+\.spec\.ts/,
+      testIgnore: [
+        /admin-.+\.spec\.ts/,
+        /public-design-(contracts|capture)\.spec\.ts/,
+      ],
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "chromium-private-beta",
+      dependencies: ["setup"],
+      testMatch: /public-design-(contracts|capture)\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/admin.json",
+      },
     },
     // Authenticated admin tests: reuse the storage state saved by setup.
     {
