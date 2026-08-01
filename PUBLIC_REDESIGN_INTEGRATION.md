@@ -286,7 +286,10 @@ uploaded through the authenticated test client and removed by exact path.
 `pnpm public:design:capture` prepares the guarded fixtures, starts the isolated
 test server, captures every registered contract/fixture/primary-viewport tuple
 sequentially, writes a manifest, stops the server, and cleans up the fixture
-rows and exact Storage object. It never signs in or visits an admin route.
+rows and exact Storage object. In `PRIVATE_BETA`, the Playwright project uses
+the isolated Git-ignored admin storage state so real fixture routes remain
+reachable without weakening the global gate. It does not visit an admin route
+during matrix capture, and credentials/cookies are never written to manifests.
 Output is ignored by Git under
 `test-results/public-design-review/<run-id>/`; filenames are deterministic:
 `<contract>--<fixture>--<viewport>.png`.
@@ -317,10 +320,11 @@ order:
    safe rich text, global search, Shops, and public verification;
 2. the guarded fixture setup/idempotency/exact-cleanup integration test;
 3. guarded fixture and Storage setup;
-4. `e2e/public-design-contracts.spec.ts` in the unauthenticated Chromium
-   project and `e2e/admin-design-review.spec.ts` in the authenticated admin
+4. `e2e/public-design-contracts.spec.ts` in the authenticated private-beta
+   project and `e2e/admin-design-review.spec.ts` in the authenticated Owner
    project (including the auth setup dependency), serially against the
-   isolated test server;
+   isolated test server; the Design Review protection check creates an
+   explicitly cookie-free context;
 5. exact fixture and Storage cleanup in a `finally` path.
 
 The browser layer validates the shared shell, published/default Appearance
@@ -332,6 +336,18 @@ landmark, nested-control, page-error, and horizontal-overflow checks, and emits
 two ignored screenshot-smoke artifacts under `test-results/public-design-smoke`.
 It intentionally does not run the complete unit, integration, service, admin
 CRUD, or E2E suites.
+
+### Private-beta access boundary
+
+The public-design registries and fixture paths are not an authentication
+bypass. While Site visibility is `PRIVATE_BETA`, real public fixture routes
+require an active application account in capture and contract tests, and the
+Design Review iframe inherits its protected Administrator/Owner session.
+`/admin/design-review` remains `designReview.access`-guarded, accepts only
+registered route combinations, and exposes no arbitrary URL proxy. When Site
+visibility becomes `PUBLIC`, ordinary fixture-shaped public routes follow the
+same anonymous access rule as all other reference routes; the admin workspace
+remains protected. See `PRIVATE_BETA_ACCESS.md` for the operational switch.
 
 ## 15. Redesign import order
 

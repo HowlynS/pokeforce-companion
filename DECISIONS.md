@@ -2242,3 +2242,44 @@ Playwright's disposable traces and failure artifacts use
 `test-results/playwright/`. Named public capture, smoke, and workspace-evidence
 directories sit beside it and are not erased when a later focused browser run
 starts. All remain covered by the existing `test-results/` Git ignore rule.
+
+---
+
+### 2026-08-01 — Private-beta access is database-driven and fail-closed
+
+Whole-site access has exactly two database modes: `PRIVATE_BETA` and `PUBLIC`.
+The singleton `SiteAccessSettings` row is the operator-controlled source; an
+optional `FORCE_PRIVATE_BETA=true` environment value may only make the
+effective state more restrictive. Missing settings or database failures fail
+closed. Public mode removes the ordinary browsing requirement but never
+weakens Admin, account, Design Review, or Audit log authorization.
+
+Supabase Auth remains the identity/password/session authority. Prisma owns the
+four application roles, active/disabled status, creator relationships,
+visibility, and audit attribution. Accounts are manually created—there is no
+signup, invitation, approval, request-access, NDA, or permanent-delete state.
+Cross-system creation compensates a failed Prisma write by removing the new
+Auth user, and audit history is written only after a valid final state.
+
+Capabilities are centralized and checked by server routes and mutations.
+Members browse only; Contributors create/edit content and images; Administrators
+also delete/verify, administer the site, view audit history, and manage
+non-administrator accounts; Owners alone manage Administrators/Owners and Site
+visibility. The final active Owner invariant and initial `ADMIN_EMAIL` Owner
+bootstrap use PostgreSQL advisory-lock transactions to remain safe under
+concurrency.
+
+Administrative history is append-only. Actor email/display-name snapshots
+preserve readable attribution after account changes. Metadata stores bounded
+field names and intent summaries, never passwords, tokens, cookies, raw Auth
+payloads, bytes, storage paths, rich-text bodies, signed URLs, or service
+credentials. Access/visibility writes share a Prisma transaction with their
+audit rows where practical; Supabase operations audit only after the final
+cross-system result.
+
+Private mode is not asset confidentiality. Repository `public/` files and the
+Supabase `game-images` bucket are intentionally public and restricted to
+published branding, appearance, and gameplay imagery. No present feature
+requires confidential storage, so no unused signing endpoint was introduced.
+Future confidential assets require a separate non-public bucket and
+authorization-before-short-lived-signing design.

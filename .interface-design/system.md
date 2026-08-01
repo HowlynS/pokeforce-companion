@@ -271,8 +271,8 @@ same focused commit.
   are not contributor date fields.
 - Keep gameplay/content navigation in the primary sidebar flow. Site-level
   governance lives in a bottom-anchored `Site administration` group;
-  Appearance and Design review are its only destinations and no placeholder
-  links render.
+  Appearance, Design review, Users & access, and Audit log render only when
+  the current role owns their capability. No placeholder links render.
 - The shared admin shell alone owns the managed scenic background. It resolves
   a cache-busted custom asset and desktop X/Y crop, falling back to
   `/images/admin/admin-shell-background.webp` at `50% 50%`. Public routes and
@@ -369,4 +369,13 @@ Future redesign import sequence:
 Known replaceable redesign issue: a one-result filtered Item catalogue can
 stretch its single card across the generic auto-fit grid.
 
-Latest clean baseline commit: `8ec557e`.
+Private-beta access UI extends the existing dense admin workbench without
+restyling public routes. Login is a restrained single-purpose surface with no
+signup, invitation, approval, or request-access affordance. Users & access
+uses bounded tables, explicit confirmations for dangerous actions, and an
+Owner-only visibility control that states both stored and effective mode.
+Audit log is append-only, newest first, filterable, and presents readable
+field summaries instead of raw JSON as its primary interface.
+
+Latest clean visual baseline commit: `8ec557e`. Later access-control commits
+intentionally leave the current public visual design unchanged.

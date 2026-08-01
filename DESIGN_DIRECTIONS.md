@@ -467,9 +467,19 @@ complete snapshot. Public routes and login never receive the admin background.
 
 Admin navigation separates content work from site governance. Existing resource
 ordering remains intact in the primary group, while a bottom-anchored
-`Site administration` group contains Appearance followed by Design review,
-with existing active-state and keyboard behavior. Do not render future
-Permissions or governance placeholders before those destinations exist.
+`Site administration` group contains Appearance, Design review, Users & access,
+and Audit log when permitted by the current role, with existing active-state
+and keyboard behavior. Do not render inaccessible destinations or future
+governance placeholders.
+
+Private-beta access UX is deliberately operational rather than promotional.
+Login contains only email, password, safe return-path handling, and concise
+access-state feedback—never signup, invitation, approval, or request-access
+controls. Users & access uses the established bounded admin tables and explicit
+confirmation checkboxes for role, status, password-reset, and visibility
+changes. The Owner-only visibility panel must show both stored and effective
+mode when the emergency forced-private override is active. Audit history stays
+readable and append-only; raw JSON is not its primary interface.
 
 ## Public Redesign Integration
 
