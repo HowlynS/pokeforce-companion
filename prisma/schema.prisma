@@ -12,6 +12,58 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  MEMBER
+  CONTRIBUTOR
+  ADMINISTRATOR
+  OWNER
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum SiteVisibility {
+  PRIVATE_BETA
+  PUBLIC
+}
+
+// Application authorization is keyed to the immutable Supabase Auth user ID.
+// Supabase continues to own passwords, sessions, and authentication identity;
+// this table owns only Codex access, roles, lifecycle state, and attribution.
+model AppUser {
+  id                String     @id @default(cuid())
+  authUserId        String     @unique
+  email             String     @unique
+  displayName       String?
+  role              UserRole   @default(MEMBER)
+  status            UserStatus @default(ACTIVE)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  createdById       String?
+  createdBy         AppUser?   @relation("AppUserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers      AppUser[]  @relation("AppUserCreatedBy")
+  disabledAt        DateTime?
+  disabledById      String?
+  disabledBy        AppUser?   @relation("AppUserDisabledBy", fields: [disabledById], references: [id], onDelete: SetNull)
+  disabledUsers     AppUser[]  @relation("AppUserDisabledBy")
+  lastKnownSignInAt DateTime?
+
+  @@index([role, status])
+  @@index([createdById])
+  @@index([disabledById])
+}
+
+// Singleton runtime access setting. The initial migration creates the row in
+// PRIVATE_BETA mode so a missing deployment step can never expose the beta.
+model SiteAccessSettings {
+  id         String         @id @default("site")
+  visibility SiteVisibility @default(PRIVATE_BETA)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
 // One application-owned public appearance record. Custom assets are stored as
 // Supabase object paths (matching every other image-bearing model); the public
 // resolver turns them into cache-busted URLs and falls back to committed
