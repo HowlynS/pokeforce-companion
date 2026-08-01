@@ -272,6 +272,31 @@ guarded isolated test database. `status` reports only prefixed rows and
 object supplies deterministic genuine/custom/inherited image states; it is
 uploaded through the authenticated test client and removed by exact path.
 
+### Deterministic screenshot capture
+
+`pnpm public:design:capture` prepares the guarded fixtures, starts the isolated
+test server, captures every registered contract/fixture/primary-viewport tuple
+sequentially, writes a manifest, stops the server, and cleans up the fixture
+rows and exact Storage object. It never signs in or visits an admin route.
+Output is ignored by Git under
+`test-results/public-design-review/<run-id>/`; filenames are deterministic:
+`<contract>--<fixture>--<viewport>.png`.
+
+Narrow a run with any compatible combination of the registry-backed filters:
+
+```text
+pnpm public:design:capture --contract item-detail --fixture item-no-image --viewport mobile-390 --run-id item-mobile-review
+pnpm public:design:capture --family catalogue --viewport intermediate-1000 --run-id catalogue-intermediate
+```
+
+The run fails before browser startup for unknown or incompatible filters. Its
+`manifest.json` records routes, logical viewport dimensions, HTTP status,
+screenshot path, document/client dimensions, horizontal overflow, console and
+page errors, and per-capture success/failure. Browser failures do not prevent
+later matrix entries from being attempted; the command exits nonzero after the
+manifest is written if any entry failed. Use a unique `--run-id` when retaining
+multiple baselines; rerunning an ID intentionally replaces same-named images.
+
 ## 15. Redesign import order
 
 1. **Freeze/export external design:** screenshots, hierarchy, assets, fonts,

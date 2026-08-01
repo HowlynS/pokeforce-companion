@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "public:design:fixtures": "tsx scripts/public-design-fixtures.ts",
+    "public:design:capture": "tsx scripts/public-design-capture.ts",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
