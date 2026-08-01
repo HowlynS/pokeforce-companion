@@ -49,10 +49,33 @@ model AppUser {
   disabledBy        AppUser?   @relation("AppUserDisabledBy", fields: [disabledById], references: [id], onDelete: SetNull)
   disabledUsers     AppUser[]  @relation("AppUserDisabledBy")
   lastKnownSignInAt DateTime?
+  auditEvents       AuditEvent[]
 
   @@index([role, status])
   @@index([createdById])
   @@index([disabledById])
+}
+
+// Append-only administrative history. Actor and target snapshots preserve a
+// readable record even after a related application user or gameplay row is
+// gone. No application route exposes update or delete operations.
+model AuditEvent {
+  id                       String   @id @default(cuid())
+  actorUserId              String?
+  actorUser                AppUser? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorEmailSnapshot       String
+  actorDisplayNameSnapshot String?
+  action                   String
+  targetType               String
+  targetId                 String?
+  targetLabelSnapshot      String
+  metadata                 Json?
+  createdAt                DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, createdAt])
 }
 
 // Singleton runtime access setting. The initial migration creates the row in

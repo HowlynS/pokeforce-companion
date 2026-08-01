@@ -12,6 +12,7 @@ import {
 import { parseCategoryInput } from "@/lib/validation/category";
 import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import { isCategoryNameTaken } from "@/lib/admin/record-name";
+import { writeContentAudit } from "@/lib/audit/content";
 import {
   deleteImage,
   uploadImage,
@@ -54,7 +55,10 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 export async function createCategoryAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.create");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.create"
+  );
 
   const parsed = parseCategoryInput(formData);
 
@@ -106,6 +110,14 @@ export async function createCategoryAction(formData: FormData) {
 
   revalidatePath("/admin/categories");
   revalidatePath("/categories");
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "create",
+    targetType: "CATEGORY",
+    targetId: createdCategory.id,
+    targetLabel: createdCategory.name,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 2: straight to the new record's own
   // canonical editor, using the ACTUAL persisted slug from the created
@@ -118,7 +130,7 @@ export async function createCategoryAction(formData: FormData) {
 export async function updateCategoryAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -233,6 +245,14 @@ export async function updateCategoryAction(formData: FormData) {
   if (parsed.value.slug !== originalSlug) {
     revalidatePath(`/categories/${parsed.value.slug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "CATEGORY",
+    targetId: id,
+    targetLabel: parsed.value.name,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
   // deliberately built from parsed.value.slug (the slug just PERSISTED),
@@ -251,7 +271,7 @@ export async function updateCategoryAction(formData: FormData) {
 export async function deleteCategoryAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
@@ -299,6 +319,13 @@ export async function deleteCategoryAction(formData: FormData) {
   revalidatePath(confirmPath);
   revalidatePath("/categories");
   revalidatePath(`/categories/${category.slug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "delete",
+    targetType: "CATEGORY",
+    targetId: category.id,
+    targetLabel: category.name,
+  });
 
   redirect(
     imageCleanupFailed

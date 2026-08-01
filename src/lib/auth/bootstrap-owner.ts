@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { writeAuditEvent } from "@/lib/audit/writer";
 
 export const SITE_ACCESS_SETTINGS_ID = "site";
 const OWNER_BOOTSTRAP_LOCK_ID = 1_946_608_011;
@@ -55,7 +56,7 @@ export async function resolveApplicationUserForIdentity(
       where: { email: normalizedEmail },
     });
     if (byEmail) {
-      return tx.appUser.update({
+      const reconciled = await tx.appUser.update({
         where: { id: byEmail.id },
         data: {
           authUserId: identity.id,
@@ -65,6 +66,15 @@ export async function resolveApplicationUserForIdentity(
           disabledById: null,
         },
       });
+      await writeAuditEvent(tx, {
+        actor: null,
+        action: "access.owner_bootstrap",
+        targetType: "USER",
+        targetId: reconciled.id,
+        targetLabel: reconciled.email,
+        metadata: { reconciled: true },
+      });
+      return reconciled;
     }
 
     await tx.siteAccessSettings.upsert({
@@ -76,7 +86,7 @@ export async function resolveApplicationUserForIdentity(
       },
     });
 
-    return tx.appUser.create({
+    const owner = await tx.appUser.create({
       data: {
         authUserId: identity.id,
         email: normalizedEmail,
@@ -84,5 +94,14 @@ export async function resolveApplicationUserForIdentity(
         status: "ACTIVE",
       },
     });
+    await writeAuditEvent(tx, {
+      actor: null,
+      action: "access.owner_bootstrap",
+      targetType: "USER",
+      targetId: owner.id,
+      targetLabel: owner.email,
+      metadata: { reconciled: false },
+    });
+    return owner;
   });
 }

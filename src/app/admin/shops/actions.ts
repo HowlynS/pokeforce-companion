@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isShopNameTaken } from "@/lib/admin/record-name";
+import { writeContentAudit } from "@/lib/audit/content";
 import {
   SHOP_LIST_PATH,
   shopCanDelete,
@@ -62,7 +63,10 @@ function withInventoryResult(
 }
 
 export async function createShopAction(formData: FormData) {
-  await requireContentMutation(formData, "content.create");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.create"
+  );
   const parsed = parseShopInput(formData);
   if (!parsed.ok) {
     redirect(`${SHOP_LIST_PATH}/new?error=${parsed.error}`);
@@ -121,11 +125,19 @@ export async function createShopAction(formData: FormData) {
 
   revalidatePath(SHOP_LIST_PATH);
   revalidatePath("/shops");
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "create",
+    targetType: "SHOP",
+    targetId: shop.id,
+    targetLabel: shop.name,
+    formData,
+  });
   redirect(`${SHOP_LIST_PATH}/${shop.slug}/edit?success=shop_created`);
 }
 
 export async function updateShopAction(formData: FormData) {
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
   const editPath = originalSlug
@@ -218,6 +230,14 @@ export async function updateShopAction(formData: FormData) {
   revalidatePath("/shops");
   revalidatePath(`/locations/${existing.location.slug}`);
   revalidatePath(`/locations/${location.slug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "SHOP",
+    targetId: id,
+    targetLabel: parsed.value.name,
+    formData,
+  });
   const destination = `${SHOP_LIST_PATH}/${parsed.value.slug}/edit`;
   redirect(
     cleanupFailed
@@ -227,7 +247,7 @@ export async function updateShopAction(formData: FormData) {
 }
 
 export async function updateShopInventoryAction(formData: FormData) {
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const shopId = String(formData.get("shopId") ?? "").trim();
   const query = String(formData.get("q") ?? "").trim();
@@ -407,6 +427,15 @@ export async function updateShopInventoryAction(formData: FormData) {
   for (const itemSlug of itemSlugs) {
     revalidatePath(`/items/${itemSlug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "SHOP",
+    targetId: shop.id,
+    targetLabel: shop.name,
+    formData,
+    changedArea: "inventory",
+  });
 
   redirect(
     withInventoryResult(
@@ -419,7 +448,7 @@ export async function updateShopInventoryAction(formData: FormData) {
 }
 
 export async function deleteShopAction(formData: FormData) {
-  await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.delete");
   const id = String(formData.get("id") ?? "").trim();
   if (!id) {
     redirect(`${SHOP_LIST_PATH}?error=missing_shop`);
@@ -456,6 +485,13 @@ export async function deleteShopAction(formData: FormData) {
   revalidatePath(SHOP_LIST_PATH);
   revalidatePath("/shops");
   revalidatePath(`/locations/${shop.location.slug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "delete",
+    targetType: "SHOP",
+    targetId: shop.id,
+    targetLabel: shop.name,
+  });
   redirect(
     cleanupFailed
       ? `${SHOP_LIST_PATH}?success=shop_deleted_image_cleanup`

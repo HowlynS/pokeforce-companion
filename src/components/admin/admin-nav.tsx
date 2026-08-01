@@ -22,6 +22,7 @@ import {
   Shapes,
   Store,
   UsersRound,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -49,6 +50,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   gameVersions: History,
   currencies: Coins,
   users: UsersRound,
+  audit: ClipboardList,
 };
 
 export function AdminNav() {

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/authorization";
+import { auditActor, writeAuditEvent } from "@/lib/audit/writer";
 import { prisma } from "@/lib/db";
 import {
   parseGameVersionEditInput,
@@ -20,7 +21,7 @@ const LIST_PATH = "/admin/settings/game-versions";
 export async function createGameVersionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("gameVersions.manage");
+  const { user: actor } = await requirePermission("gameVersions.manage");
 
   const parsed = parseGameVersionInput(formData);
 
@@ -38,6 +39,14 @@ export async function createGameVersionAction(formData: FormData) {
   }
 
   revalidatePath(LIST_PATH);
+  await writeAuditEvent(prisma, {
+    actor: auditActor(actor),
+    action: "site.game_version_create",
+    targetType: "GAME_VERSION",
+    targetId: result.version.id,
+    targetLabel: result.version.name,
+    metadata: { madeCurrent: result.madeCurrent },
+  });
 
   redirect(
     result.madeCurrent
@@ -49,7 +58,7 @@ export async function createGameVersionAction(formData: FormData) {
 export async function updateGameVersionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("gameVersions.manage");
+  const { user: actor } = await requirePermission("gameVersions.manage");
 
   const id = String(formData.get("id") ?? "").trim();
   const editPath = id ? `${LIST_PATH}/${id}/edit` : null;
@@ -81,6 +90,14 @@ export async function updateGameVersionAction(formData: FormData) {
   if (editPath) {
     revalidatePath(editPath);
   }
+  await writeAuditEvent(prisma, {
+    actor: auditActor(actor),
+    action: "site.game_version_edit",
+    targetType: "GAME_VERSION",
+    targetId: result.version.id,
+    targetLabel: result.version.name,
+    metadata: { submittedFields: [...formData.keys()].slice(0, 20) },
+  });
 
   redirect(`${LIST_PATH}?success=updated`);
 }
@@ -88,7 +105,7 @@ export async function updateGameVersionAction(formData: FormData) {
 export async function markGameVersionCurrentAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("gameVersions.manage");
+  const { user: actor } = await requirePermission("gameVersions.manage");
 
   const id = String(formData.get("id") ?? "").trim();
 
@@ -106,6 +123,13 @@ export async function markGameVersionCurrentAction(formData: FormData) {
   }
 
   revalidatePath(LIST_PATH);
+  await writeAuditEvent(prisma, {
+    actor: auditActor(actor),
+    action: "site.game_version_mark_current",
+    targetType: "GAME_VERSION",
+    targetId: result.version.id,
+    targetLabel: result.version.name,
+  });
 
   redirect(`${LIST_PATH}?success=marked_current`);
 }
@@ -113,12 +137,18 @@ export async function markGameVersionCurrentAction(formData: FormData) {
 export async function deleteGameVersionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("gameVersions.manage");
+  const { user: actor } = await requirePermission("gameVersions.manage");
 
   const id = String(formData.get("id") ?? "").trim();
   const confirmPath = id ? `${LIST_PATH}/${id}/delete` : LIST_PATH;
 
   if (!id) {
+    redirect(`${LIST_PATH}?error=missing_version`);
+  }
+
+  const version = await prisma.gameVersion.findUnique({ where: { id } });
+
+  if (!version) {
     redirect(`${LIST_PATH}?error=missing_version`);
   }
 
@@ -136,6 +166,13 @@ export async function deleteGameVersionAction(formData: FormData) {
 
   revalidatePath(LIST_PATH);
   revalidatePath(confirmPath);
+  await writeAuditEvent(prisma, {
+    actor: auditActor(actor),
+    action: "site.game_version_delete",
+    targetType: "GAME_VERSION",
+    targetId: version.id,
+    targetLabel: version.name,
+  });
 
   // Admin Polish Pass 2, Part 3: the shared success toast's namespaced
   // code (Game Versions keep their own list-oriented create/update

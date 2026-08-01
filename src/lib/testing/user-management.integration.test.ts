@@ -14,6 +14,9 @@ const USERS = [
 
 async function cleanup() {
   const prisma = await getVerifiedTestPrisma();
+  await prisma.auditEvent.deleteMany({
+    where: { targetId: { in: USERS.map((user) => user.id) } },
+  });
   await prisma.appUser.deleteMany({ where: { id: { in: USERS.map((user) => user.id) } } });
 }
 

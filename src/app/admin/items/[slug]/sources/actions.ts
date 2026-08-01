@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/authorization";
 import { requireContentMutation } from "@/lib/auth/content-authorization";
+import { writeContentAudit } from "@/lib/audit/content";
 import { prisma } from "@/lib/db";
 import {
   isForeignKeyError,
@@ -44,7 +45,10 @@ async function findInvalidRelationError(
 export async function createAcquisitionSourceAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.create");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.create"
+  );
 
   const itemId = String(formData.get("itemId") ?? "").trim();
   const itemSlug = String(formData.get("itemSlug") ?? "").trim();
@@ -106,6 +110,14 @@ export async function createAcquisitionSourceAction(formData: FormData) {
 
   revalidatePath(sourcesPath);
   revalidatePath(`/items/${itemSlug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "create",
+    targetType: "ACQUISITION_SOURCE",
+    targetId: createdSource.id,
+    targetLabel: `${item.name} · ${createdSource.sourceLabel ?? createdSource.type}`,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 2: straight to the new source's own
   // canonical editor inside the same Item workspace, using the ACTUAL
@@ -118,7 +130,7 @@ export async function createAcquisitionSourceAction(formData: FormData) {
 export async function updateAcquisitionSourceAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const itemSlug = String(formData.get("itemSlug") ?? "").trim();
@@ -212,6 +224,14 @@ export async function updateAcquisitionSourceAction(formData: FormData) {
     revalidatePath(editPath);
   }
   revalidatePath(`/items/${itemSlug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "ACQUISITION_SOURCE",
+    targetId: id,
+    targetLabel: `${item.name} · ${parsed.value.sourceLabel ?? parsed.value.type}`,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 1: back to the SAME canonical source editor
   // URL (never the sources list) so a save keeps the contributor where
@@ -222,7 +242,7 @@ export async function updateAcquisitionSourceAction(formData: FormData) {
 export async function deleteAcquisitionSourceAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const itemSlug = String(formData.get("itemSlug") ?? "").trim();
@@ -262,6 +282,13 @@ export async function deleteAcquisitionSourceAction(formData: FormData) {
 
   revalidatePath(sourcesPath);
   revalidatePath(`/items/${itemSlug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "delete",
+    targetType: "ACQUISITION_SOURCE",
+    targetId: existing.id,
+    targetLabel: `${item.name} · ${existing.sourceLabel ?? existing.type}`,
+  });
 
   redirect(`${sourcesPath}?success=source_deleted`);
 }

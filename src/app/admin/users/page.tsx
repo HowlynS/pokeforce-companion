@@ -8,6 +8,8 @@ import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { assignableRoles, canManageUser } from "@/lib/users/policy";
+import { resolveSiteVisibility } from "@/lib/access/visibility";
+import { changeSiteVisibilityAction } from "./visibility-actions";
 import {
   changeUserRoleAction,
   createUserAction,
@@ -35,6 +37,8 @@ const errorMessages: Record<string, string> = {
   reenable_failed: "The account could not be re-enabled in authentication.",
   password_reset_failed: "The temporary password could not be set.",
   operation_failed: "The account change could not be completed.",
+  invalid_visibility: "Select Private beta or Public.",
+  visibility_update_failed: "Site visibility could not be changed.",
 };
 
 const successMessages: Record<string, string> = {
@@ -45,6 +49,8 @@ const successMessages: Record<string, string> = {
     "Account disabled. Existing requests are blocked, but authentication session revocation needs attention.",
   user_reenabled: "Account re-enabled.",
   password_reset: "Temporary password updated. Share it outside the application.",
+  visibility_private_beta: "Site visibility changed to Private beta.",
+  visibility_public: "Site visibility changed to Public.",
 };
 
 type UsersPageProps = {
@@ -68,8 +74,8 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
     ? params.status
     : null;
 
-  const users = await prisma.appUser.findMany({
-    where: {
+  const [users, settings, recentAccessEvents] = await Promise.all([
+    prisma.appUser.findMany({ where: {
       ...(query
         ? {
             OR: [
@@ -81,9 +87,21 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
       ...(role ? { role } : {}),
       ...(status ? { status } : {}),
     },
-    include: { createdBy: { select: { email: true, displayName: true } } },
-    orderBy: [{ status: "asc" }, { role: "desc" }, { email: "asc" }],
-  });
+      include: { createdBy: { select: { email: true, displayName: true } } },
+      orderBy: [{ status: "asc" }, { role: "desc" }, { email: "asc" }],
+    }),
+    prisma.siteAccessSettings.findUnique({ where: { id: "site" } }),
+    prisma.auditEvent.findMany({
+      where: { action: { startsWith: "access." } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+  const storedVisibility = settings?.visibility ?? "PRIVATE_BETA";
+  const effectiveVisibility = resolveSiteVisibility(
+    storedVisibility,
+    process.env.FORCE_PRIVATE_BETA
+  );
   const roles = assignableRoles(actor.role);
   const errorMessage = params.error
     ? errorMessages[params.error] ?? "The account operation failed."
@@ -188,6 +206,51 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
             <label className="form-field"><span className="form-field-label">Temporary password</span><input className="form-input" type="password" name="temporaryPassword" minLength={12} maxLength={128} required autoComplete="new-password" /><span className="form-help">Share outside the application and ask the user to change it immediately.</span></label>
             <button type="submit" className="btn btn-primary">Create approved account</button>
           </form>
+        </EditorSection>
+
+        {actor.role === "OWNER" ? (
+          <EditorSection title="Site visibility" icon={SECTION_ICONS.verification}>
+            <p className="text-muted">
+              Stored mode: {storedVisibility === "PUBLIC" ? "Public" : "Private beta"}.
+              Effective mode: {effectiveVisibility === "PUBLIC" ? "Public" : "Private beta"}.
+              {storedVisibility !== effectiveVisibility
+                ? " The server-level forced-private override is active."
+                : ""}
+            </p>
+            <form action={changeSiteVisibilityAction} className="form-grid">
+              <input type="hidden" name="visibility" value={storedVisibility === "PUBLIC" ? "PRIVATE_BETA" : "PUBLIC"} />
+              <p>
+                {storedVisibility === "PUBLIC"
+                  ? "Switching to Private beta immediately removes anonymous access to ordinary reference content."
+                  : "Switching to Public makes ordinary reference content anonymously accessible. Admin and account pages remain protected."}
+              </p>
+              <label className="form-checkbox-field">
+                <input type="checkbox" name="confirmed" required />
+                <span>I understand this site-wide access change</span>
+              </label>
+              <button type="submit" className="btn btn-primary">
+                Switch to {storedVisibility === "PUBLIC" ? "Private beta" : "Public"}
+              </button>
+            </form>
+          </EditorSection>
+        ) : null}
+
+        <EditorSection title="Recent access history" icon={SECTION_ICONS.timestamps}>
+          {recentAccessEvents.length ? (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead>
+                <tbody>{recentAccessEvents.map((event) => (
+                  <tr key={event.id}>
+                    <td>{formatDisplayDate(event.createdAt)}</td>
+                    <td>{event.actorDisplayNameSnapshot || event.actorEmailSnapshot}</td>
+                    <td>{event.action.replaceAll(".", " · ")}</td>
+                    <td>{event.targetLabelSnapshot}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          ) : <EmptyState title="No access events yet" description="Account and visibility changes will appear here." />}
         </EditorSection>
       </div>
     </>

@@ -16,6 +16,7 @@ import {
   parseRecipeInput,
 } from "@/lib/validation/recipe";
 import { isRecipeNameTaken } from "@/lib/admin/record-name";
+import { writeContentAudit } from "@/lib/audit/content";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
   deleteImage,
@@ -59,7 +60,10 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 export async function createRecipeAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.create");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.create"
+  );
 
   const parsed = parseRecipeInput(formData);
 
@@ -188,6 +192,14 @@ export async function createRecipeAction(formData: FormData) {
   if (profession) {
     revalidatePath(`/professions/${profession.slug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "create",
+    targetType: "RECIPE",
+    targetId: createdRecipe.id,
+    targetLabel: createdRecipe.name,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 2: straight to the new record's own
   // canonical editor, using the ACTUAL persisted slug from the created
@@ -204,7 +216,7 @@ export async function createRecipeAction(formData: FormData) {
 export async function updateRecipeGeneralAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -396,6 +408,14 @@ export async function updateRecipeGeneralAction(formData: FormData) {
   for (const professionSlug of professionSlugsToRevalidate) {
     revalidatePath(`/professions/${professionSlug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "RECIPE",
+    targetId: id,
+    targetLabel: parsed.value.name,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
   // deliberately built from parsed.value.slug (the slug just PERSISTED),
@@ -419,7 +439,7 @@ export async function updateRecipeGeneralAction(formData: FormData) {
 export async function updateRecipeIngredientsAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -524,6 +544,15 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
   if (existingRecipe.profession) {
     revalidatePath(`/professions/${existingRecipe.profession.slug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "RECIPE",
+    targetId: id,
+    targetLabel: existingRecipe.name,
+    formData,
+    changedArea: "ingredients",
+  });
 
   // Admin Polish Pass 2, Part 1: back to the SAME canonical Ingredients
   // tab URL (never the list) so a save keeps the contributor where they
@@ -534,7 +563,7 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
 export async function deleteRecipeAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
@@ -600,6 +629,13 @@ export async function deleteRecipeAction(formData: FormData) {
   if (recipe.profession) {
     revalidatePath(`/professions/${recipe.profession.slug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "delete",
+    targetType: "RECIPE",
+    targetId: recipe.id,
+    targetLabel: recipe.name,
+  });
 
   redirect(
     imageCleanupFailed

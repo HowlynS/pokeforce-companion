@@ -9,6 +9,7 @@ import {
 import { isCurrencyNameTaken } from "@/lib/admin/record-name";
 import { requirePermission } from "@/lib/auth/authorization";
 import { requireContentMutation } from "@/lib/auth/content-authorization";
+import { writeContentAudit } from "@/lib/audit/content";
 import { prisma } from "@/lib/db";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
@@ -46,7 +47,10 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 }
 
 export async function createCurrencyAction(formData: FormData) {
-  await requireContentMutation(formData, "content.create");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.create"
+  );
   const parsed = parseCurrencyInput(formData);
 
   if (!parsed.ok) {
@@ -96,13 +100,21 @@ export async function createCurrencyAction(formData: FormData) {
   }
 
   revalidatePath(CURRENCY_LIST_PATH);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "create",
+    targetType: "CURRENCY",
+    targetId: currency.id,
+    targetLabel: currency.name,
+    formData,
+  });
   redirect(
     `${CURRENCY_LIST_PATH}/${currency.slug}/edit?success=currency_created`
   );
 }
 
 export async function updateCurrencyAction(formData: FormData) {
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
   const editPath = originalSlug
@@ -182,6 +194,14 @@ export async function updateCurrencyAction(formData: FormData) {
   revalidatePath(editPath);
   revalidatePath("/shops");
   revalidatePath("/items");
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "CURRENCY",
+    targetId: id,
+    targetLabel: parsed.value.name,
+    formData,
+  });
 
   const destination = `${CURRENCY_LIST_PATH}/${parsed.value.slug}/edit`;
   redirect(
@@ -192,7 +212,7 @@ export async function updateCurrencyAction(formData: FormData) {
 }
 
 export async function deleteCurrencyAction(formData: FormData) {
-  await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.delete");
   const id = String(formData.get("id") ?? "").trim();
 
   if (!id) {
@@ -232,6 +252,13 @@ export async function deleteCurrencyAction(formData: FormData) {
   revalidatePath(CURRENCY_LIST_PATH);
   revalidatePath("/shops");
   revalidatePath("/items");
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "delete",
+    targetType: "CURRENCY",
+    targetId: currency.id,
+    targetLabel: currency.name,
+  });
   redirect(
     cleanupFailed
       ? `${CURRENCY_LIST_PATH}?success=currency_deleted_image_cleanup`

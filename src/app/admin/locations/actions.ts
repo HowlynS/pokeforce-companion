@@ -16,6 +16,7 @@ import {
   parseLocationInput,
 } from "@/lib/validation/location";
 import { isLocationNameTaken } from "@/lib/admin/record-name";
+import { writeContentAudit } from "@/lib/audit/content";
 import { wouldCreateLocationCycle } from "@/lib/locations/location-hierarchy";
 import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import { resolveVerificationStamp } from "@/lib/game-versions";
@@ -61,7 +62,10 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 export async function createLocationAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.create");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.create"
+  );
 
   const parsed = parseLocationInput(formData);
 
@@ -153,6 +157,14 @@ export async function createLocationAction(formData: FormData) {
 
   revalidatePath("/admin/locations");
   revalidatePath("/locations");
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "create",
+    targetType: "LOCATION",
+    targetId: createdLocation.id,
+    targetLabel: createdLocation.name,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 2: straight to the new record's own
   // canonical editor, using the ACTUAL persisted slug from the created
@@ -169,7 +181,7 @@ export async function createLocationAction(formData: FormData) {
 export async function updateLocationGeneralAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -302,6 +314,14 @@ export async function updateLocationGeneralAction(formData: FormData) {
   if (parsed.value.slug !== originalSlug) {
     revalidatePath(`/locations/${parsed.value.slug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "LOCATION",
+    targetId: id,
+    targetLabel: parsed.value.name,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
   // deliberately built from parsed.value.slug (the slug just PERSISTED),
@@ -326,7 +346,7 @@ export async function updateLocationGeneralAction(formData: FormData) {
 export async function updateLocationHierarchyAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -396,6 +416,15 @@ export async function updateLocationHierarchyAction(formData: FormData) {
   }
   revalidatePath("/locations");
   revalidatePath(`/locations/${existingLocation.slug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "LOCATION",
+    targetId: id,
+    targetLabel: existingLocation.name,
+    formData,
+    changedArea: "hierarchy",
+  });
 
   // Admin Polish Pass 2, Part 1: back to the SAME canonical Hierarchy tab
   // URL (never the list) so a save keeps the contributor where they were.
@@ -405,7 +434,7 @@ export async function updateLocationHierarchyAction(formData: FormData) {
 export async function deleteLocationAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
@@ -464,6 +493,13 @@ export async function deleteLocationAction(formData: FormData) {
   revalidatePath(confirmPath);
   revalidatePath("/locations");
   revalidatePath(`/locations/${locationSlug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "delete",
+    targetType: "LOCATION",
+    targetId: location.id,
+    targetLabel: location.name,
+  });
 
   redirect(
     imageCleanupFailed

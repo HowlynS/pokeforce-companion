@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth/authorization";
+import { auditActor, writeAuditEvent } from "@/lib/audit/writer";
 import { prisma } from "@/lib/db";
 import {
   DEFAULT_SITE_APPEARANCE,
@@ -132,7 +133,7 @@ async function cleanupAssets(paths: readonly (string | null | undefined)[]) {
 }
 
 export async function saveAppearanceAction(formData: FormData) {
-  await requirePermission("appearance.manage");
+  const { user: actor } = await requirePermission("appearance.manage");
 
   const existing = await prisma.siteAppearance.findUnique({
     where: { id: SITE_APPEARANCE_ID },
@@ -341,6 +342,26 @@ export async function saveAppearanceAction(formData: FormData) {
     await cleanupAssets(uploadedPaths);
     throw error;
   }
+
+  const uploadedAssets = ASSETS.filter((asset) => files.has(asset.formName)).map(
+    (asset) => asset.kind
+  );
+  const removedAssets = ASSETS.filter(
+    (asset) => formData.get(`${asset.formName}Intent`) === "remove"
+  ).map((asset) => asset.kind);
+  await writeAuditEvent(prisma, {
+    actor: auditActor(actor),
+    action: restoreAll ? "site.appearance_reset" : "site.appearance_publish",
+    targetType: "SITE_APPEARANCE",
+    targetId: SITE_APPEARANCE_ID,
+    targetLabel: "Published site appearance",
+    metadata: {
+      restoreAll,
+      uploadedAssets,
+      removedAssets,
+      positionsChanged: !restoreAll,
+    },
+  });
 
   const oldPathsToClean = ASSETS.flatMap((asset) => {
     const oldPath = existing?.[asset.pathKey] ?? null;

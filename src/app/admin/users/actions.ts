@@ -19,6 +19,7 @@ import {
   validatePasswordReset,
   validateUserCreation,
 } from "@/lib/users/service";
+import { auditActor, writeAuditEvent } from "@/lib/audit/writer";
 
 const USERS_PATH = "/admin/users";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -64,7 +65,7 @@ export async function createUserAction(formData: FormData) {
   }
 
   try {
-    await createManagedUserAccount(
+    const created = await createManagedUserAccount(
       {
         createAuthUser: async (input) => {
           const { data, error } = await admin.auth.admin.createUser({
@@ -97,6 +98,14 @@ export async function createUserAction(formData: FormData) {
         createdById: actor.id,
       }
     );
+    await writeAuditEvent(prisma, {
+      actor: auditActor(actor),
+      action: "access.user_create",
+      targetType: "USER",
+      targetId: created.id,
+      targetLabel: created.email,
+      metadata: { role: created.role },
+    });
   } catch (error) {
     if (
       error instanceof ManagedAccountCreationError &&
@@ -223,6 +232,15 @@ export async function resetUserPasswordAction(formData: FormData) {
     password,
   });
   if (error) redirect(`${USERS_PATH}?error=password_reset_failed`);
+
+  await writeAuditEvent(prisma, {
+    actor: auditActor(actor),
+    action: "access.password_reset",
+    targetType: "USER",
+    targetId: target.id,
+    targetLabel: target.email,
+    metadata: { administrative: true },
+  });
 
   revalidatePath(USERS_PATH);
   redirect(`${USERS_PATH}?success=password_reset`);

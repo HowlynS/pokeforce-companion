@@ -12,6 +12,7 @@ import {
 import { parseProfessionInput } from "@/lib/validation/profession";
 import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import { isProfessionNameTaken } from "@/lib/admin/record-name";
+import { writeContentAudit } from "@/lib/audit/content";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
   deleteImage,
@@ -55,7 +56,10 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 export async function createProfessionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.create");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.create"
+  );
 
   const parsed = parseProfessionInput(formData);
 
@@ -125,6 +129,14 @@ export async function createProfessionAction(formData: FormData) {
 
   revalidatePath("/admin/professions");
   revalidatePath("/professions");
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "create",
+    targetType: "PROFESSION",
+    targetId: createdProfession.id,
+    targetLabel: createdProfession.name,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 2: straight to the new record's own
   // canonical editor, using the ACTUAL persisted slug from the created
@@ -137,7 +149,7 @@ export async function createProfessionAction(formData: FormData) {
 export async function updateProfessionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -273,6 +285,14 @@ export async function updateProfessionAction(formData: FormData) {
   if (parsed.value.slug !== originalSlug) {
     revalidatePath(`/professions/${parsed.value.slug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "PROFESSION",
+    targetId: id,
+    targetLabel: parsed.value.name,
+    formData,
+  });
 
   // Admin Polish Pass 2, Part 1: back to the SAME canonical editor —
   // deliberately built from parsed.value.slug (the slug just PERSISTED),
@@ -291,7 +311,7 @@ export async function updateProfessionAction(formData: FormData) {
 export async function deleteProfessionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
@@ -342,6 +362,13 @@ export async function deleteProfessionAction(formData: FormData) {
   revalidatePath(confirmPath);
   revalidatePath("/professions");
   revalidatePath(`/professions/${profession.slug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "delete",
+    targetType: "PROFESSION",
+    targetId: profession.id,
+    targetLabel: profession.name,
+  });
 
   redirect(
     imageCleanupFailed

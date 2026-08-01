@@ -12,6 +12,7 @@ import {
 import { parsePlayerClassInput } from "@/lib/validation/player-class";
 import { toPrismaRichDescription } from "@/lib/rich-text-prisma";
 import { isPlayerClassNameTaken } from "@/lib/admin/record-name";
+import { writeContentAudit } from "@/lib/audit/content";
 import { resolveVerificationStamp } from "@/lib/game-versions";
 import {
   deleteImage,
@@ -55,7 +56,10 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 export async function createPlayerClassAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.create");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.create"
+  );
 
   const parsed = parsePlayerClassInput(formData);
 
@@ -125,6 +129,14 @@ export async function createPlayerClassAction(formData: FormData) {
 
   revalidatePath("/admin/classes");
   revalidatePath("/classes");
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "create",
+    targetType: "PLAYER_CLASS",
+    targetId: createdPlayerClass.id,
+    targetLabel: createdPlayerClass.name,
+    formData,
+  });
 
   // Straight to the new record's own canonical editor, using the ACTUAL
   // persisted slug from the created row — never parsed.value.slug
@@ -137,7 +149,7 @@ export async function createPlayerClassAction(formData: FormData) {
 export async function updatePlayerClassAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(formData, "content.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -269,6 +281,14 @@ export async function updatePlayerClassAction(formData: FormData) {
   if (parsed.value.slug !== originalSlug) {
     revalidatePath(`/classes/${parsed.value.slug}`);
   }
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "edit",
+    targetType: "PLAYER_CLASS",
+    targetId: id,
+    targetLabel: parsed.value.name,
+    formData,
+  });
   redirect(
     oldImageCleanupFailed
       ? `/admin/classes/${parsed.value.slug}/edit?success=player_class_saved_image_cleanup`
@@ -279,7 +299,7 @@ export async function updatePlayerClassAction(formData: FormData) {
 export async function deletePlayerClassAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
@@ -318,6 +338,13 @@ export async function deletePlayerClassAction(formData: FormData) {
   revalidatePath(confirmPath);
   revalidatePath("/classes");
   revalidatePath(`/classes/${playerClass.slug}`);
+  await writeContentAudit(prisma, {
+    actor,
+    operation: "delete",
+    targetType: "PLAYER_CLASS",
+    targetId: playerClass.id,
+    targetLabel: playerClass.name,
+  });
 
   redirect(
     imageCleanupFailed

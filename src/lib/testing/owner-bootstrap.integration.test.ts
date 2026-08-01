@@ -10,6 +10,15 @@ const AUTH_USER_ID = "test-owner-bootstrap-auth-user";
 
 async function cleanup() {
   const prisma = await getVerifiedTestPrisma();
+  await prisma.auditEvent.deleteMany({
+    where: {
+      OR: [
+        { actorEmailSnapshot: EMAIL },
+        { targetLabelSnapshot: EMAIL },
+        { targetId: AUTH_USER_ID },
+      ],
+    },
+  });
   await prisma.appUser.deleteMany({
     where: { OR: [{ email: EMAIL }, { authUserId: AUTH_USER_ID }] },
   });

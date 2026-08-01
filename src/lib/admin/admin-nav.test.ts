@@ -76,6 +76,12 @@ describe("ADMIN_NAV_ITEMS", () => {
         icon: "users",
         requiredCapability: "users.view",
       },
+      {
+        label: "Audit log",
+        href: "/admin/audit-log",
+        icon: "audit",
+        requiredCapability: "audit.view",
+      },
     ]);
     expect(
       ADMIN_NAV_ITEMS.some((item) => item.href === "/admin/appearance")
@@ -87,7 +93,7 @@ describe("ADMIN_NAV_ITEMS", () => {
       .not.toContain("Game Versions");
     expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, "CONTRIBUTOR")).toEqual([]);
     expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, "ADMINISTRATOR").map((item) => item.label))
-      .toEqual(["Appearance", "Design review", "Users & access"]);
+      .toEqual(["Appearance", "Design review", "Users & access", "Audit log"]);
   });
 
   it("keeps Categories as the sole Items child destination", () => {
@@ -109,7 +115,7 @@ describe("ADMIN_NAV_ITEMS", () => {
     );
     const hrefs = ADMIN_NAV_DESTINATIONS.map((item) => item.href);
 
-    for (const excluded of ["acquisition", "role", "audit", "route hub"]) {
+    for (const excluded of ["acquisition", "role", "route hub"]) {
       expect(labels.some((label) => label.includes(excluded))).toBe(false);
     }
     expect(hrefs.some((href) => href.includes("sources"))).toBe(false);

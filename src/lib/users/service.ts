@@ -2,6 +2,7 @@ import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { UserRole } from "@/lib/auth/roles";
 import { hasPermission } from "@/lib/auth/permissions";
 import { canCreateRole, canManageUser } from "./policy";
+import { auditActor, writeAuditEvent } from "@/lib/audit/writer";
 
 const OWNER_MUTATION_LOCK_ID = 1_946_608_012;
 
@@ -81,7 +82,19 @@ export async function changeUserRole(
     if (target.role === "OWNER" && role !== "OWNER" && target.status === "ACTIVE") {
       await ensureAnotherActiveOwner(tx);
     }
-    return tx.appUser.update({ where: { id: target.id }, data: { role } });
+    const updated = await tx.appUser.update({
+      where: { id: target.id },
+      data: { role },
+    });
+    await writeAuditEvent(tx, {
+      actor: auditActor(actor),
+      action: "access.role_change",
+      targetType: "USER",
+      targetId: target.id,
+      targetLabel: target.email,
+      metadata: { previous: target.role, next: role },
+    });
+    return updated;
   });
 }
 
@@ -101,13 +114,23 @@ export async function setUserStatus(
     if (target.role === "OWNER" && target.status === "ACTIVE" && status === "DISABLED") {
       await ensureAnotherActiveOwner(tx);
     }
-    return tx.appUser.update({
+    const updated = await tx.appUser.update({
       where: { id: target.id },
       data:
         status === "DISABLED"
           ? { status, disabledAt: new Date(), disabledById: actor.id }
           : { status, disabledAt: null, disabledById: null },
     });
+    await writeAuditEvent(tx, {
+      actor: auditActor(actor),
+      action:
+        status === "DISABLED" ? "access.user_disable" : "access.user_reenable",
+      targetType: "USER",
+      targetId: target.id,
+      targetLabel: target.email,
+      metadata: { previous: target.status, next: status },
+    });
+    return updated;
   });
 }
 

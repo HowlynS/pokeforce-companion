@@ -36,6 +36,7 @@ const APPROVED_LABELS = [
   "Appearance",
   "Design review",
   "Users &amp; access",
+  "Audit log",
 ];
 
 const APPROVED_HREFS = [
@@ -52,6 +53,7 @@ const APPROVED_HREFS = [
   "/admin/appearance",
   "/admin/design-review",
   "/admin/users",
+  "/admin/audit-log",
 ];
 
 function renderNav(pathname: string, role: "OWNER" | "CONTRIBUTOR" = "OWNER"): string {
@@ -110,6 +112,7 @@ describe("AdminNav structure and labels", () => {
     expect(html).not.toContain("Design review");
     expect(html).not.toContain("Game Versions");
     expect(html).not.toContain("Users & access");
+    expect(html).not.toContain("Audit log");
     expect(html).toContain("Items");
     expect(html).toContain("Currencies");
   });

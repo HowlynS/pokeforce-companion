@@ -35,11 +35,6 @@ CREATE TABLE "SiteAccessSettings" (
     CONSTRAINT "SiteAccessSettings_pkey" PRIMARY KEY ("id")
 );
 
--- Start fail-closed. Runtime code also upserts this singleton defensively,
--- but the migration itself must never leave a fresh deployment public.
-INSERT INTO "SiteAccessSettings" ("id", "visibility", "createdAt", "updatedAt")
-VALUES ('site', 'PRIVATE_BETA', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "AppUser_authUserId_key" ON "AppUser"("authUserId");
 
