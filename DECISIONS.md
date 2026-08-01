@@ -2201,3 +2201,21 @@ not faithfully model cover behavior across all three target ratios. Header
 logo dimensions are stored to reserve its intrinsic aspect ratio, and CSS
 always leaves height automatic. Wallpapers are `aria-hidden` decorative layers
 and carry no required information.
+
+---
+
+### 2026-08-01 — Public redesign readiness is application-owned metadata
+
+The future public redesign is integrated against a verified repository dossier
+and typed application-owned viewport/contract metadata, rather than against a
+parallel mock application or copied external markup. `PUBLIC_REDESIGN_INTEGRATION.md`
+records the current route, data, hide-empty, Appearance, responsive,
+accessibility, and public/admin boundaries. New review and capture tooling must
+consume the registries under `src/lib/public-design/` so the tested routes and
+logical viewport dimensions cannot drift between documentation, admin preview,
+and Playwright.
+
+The readiness milestone does not approve a visual redesign. It preserves the
+current public output and builds read-only review infrastructure around real
+routes. External design markup enters only through the documented staged import
+protocol after the baseline command and screenshot matrix are captured.

@@ -462,3 +462,14 @@ ordering remains intact in the primary group, while a bottom-anchored
 `Site administration` group contains Appearance with its existing icon, active
 state, and keyboard behavior. Do not render future Permissions or governance
 placeholders before those destinations exist.
+
+## Public Redesign Integration
+
+`PUBLIC_REDESIGN_INTEGRATION.md` is the implementation-grade inventory and
+acceptance dossier for the future externally authored public redesign. Its
+application-owned viewport registry lives in
+`src/lib/public-design/viewports.ts`. Future redesign work must begin with the
+dossier's baseline/import protocol and preserve its behavioral, Appearance,
+accessibility, responsive, and public/admin boundary contracts. The readiness
+harness records current behavior; it does not approve or import a new visual
+direction by itself.

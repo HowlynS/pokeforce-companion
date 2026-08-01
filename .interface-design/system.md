@@ -327,3 +327,13 @@ tree. Logo previews always preserve the uploaded intrinsic ratio. Pending
 files may use authenticated in-memory object URLs in the protected admin
 client, but do not become public until Save publishes the whole appearance
 configuration.
+
+## Public Redesign Readiness
+
+The verified public route, component, data, hide-empty, responsive, and
+Appearance inventory is maintained in `PUBLIC_REDESIGN_INTEGRATION.md`. Shared
+logical review widths are application data in
+`src/lib/public-design/viewports.ts`, not duplicated values in new tooling.
+Readiness infrastructure must not restyle the public application; it reviews
+real routes and preserves the current system until an approved redesign is
+ready for an explicit import branch.
