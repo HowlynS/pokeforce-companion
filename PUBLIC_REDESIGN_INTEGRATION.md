@@ -48,6 +48,13 @@ files for Items, Recipes, Professions, Classes, Categories, Locations, and
 Shops all delegate to `PublicNotFound`. Missing detail records call
 `notFound()`. The root Next.js not-found/error behavior remains framework-owned.
 
+The reusable redesign metadata lives in `src/lib/public-design/`: `contracts.ts`
+owns page contracts and allowlisted route resolution, `acceptance.ts` expands
+those contracts across logical viewports, `fixtures.ts` owns deterministic
+fixture identities/states, and `viewports.ts` owns dimensions. Their focused
+unit tests validate IDs, references, routes, metadata, and complete matrix
+coverage without importing public pages or touching a database.
+
 ## 3. Complete route inventory
 
 The table is exhaustive for non-admin, non-auth application routes at the
