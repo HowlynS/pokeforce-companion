@@ -420,6 +420,14 @@ For a new or changed public page:
 Once this direction is loaded, Interface Design should enforce consistency and
 surface conflicts—not infer a replacement aesthetic.
 
+The authenticated `/admin/design-review` workbench is the operational form of
+this checklist. It renders exactly one registered ordinary public fixture
+route in a sandboxed logical viewport, beside application-owned contract
+expectations. Its selectors, refresh/copy/open controls, and session-only
+checklist use the established admin charcoal/gold system. It is read-only,
+allowlisted, never embeds arbitrary URLs, and never copies public markup into
+an admin-only substitute.
+
 ## Admin Appearance Governance
 
 The Appearance workspace is the authoritative admin workflow for the public
@@ -459,9 +467,9 @@ complete snapshot. Public routes and login never receive the admin background.
 
 Admin navigation separates content work from site governance. Existing resource
 ordering remains intact in the primary group, while a bottom-anchored
-`Site administration` group contains Appearance with its existing icon, active
-state, and keyboard behavior. Do not render future Permissions or governance
-placeholders before those destinations exist.
+`Site administration` group contains Appearance followed by Design review,
+with existing active-state and keyboard behavior. Do not render future
+Permissions or governance placeholders before those destinations exist.
 
 ## Public Redesign Integration
 

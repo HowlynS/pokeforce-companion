@@ -26,6 +26,7 @@ export type PublicDesignContract = {
   routePattern: string;
   pageFamily: PublicPageFamily;
   representativeFixture: PublicDesignFixtureKey;
+  fixtures?: readonly PublicDesignFixtureKey[];
   scenicVariant: PublicScenicVariant;
   viewports: readonly PublicDesignViewportId[];
   requiredRegions: readonly string[];
@@ -90,6 +91,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/items/[slug]",
     pageFamily: "detail",
     representativeFixture: "item-dense",
+    fixtures: ["item-dense", "item-no-image"],
     scenicVariant: "detail",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "breadcrumb", "Item identity", "Held item", "Item details", "Verification"],
@@ -124,6 +126,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/recipes/[slug]",
     pageFamily: "detail",
     representativeFixture: "recipe-many-ingredients",
+    fixtures: ["recipe-many-ingredients", "recipe-inherited-image"],
     scenicVariant: "none",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "breadcrumb", "Recipe identity", "Crafted result", "Recipe details", "Verification"],
@@ -158,6 +161,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/professions/[slug]",
     pageFamily: "detail",
     representativeFixture: "profession-dense",
+    fixtures: ["profession-dense", "profession-zero"],
     scenicVariant: "none",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "breadcrumb", "Profession identity", "Recipe/result counts", "Verification"],
@@ -192,6 +196,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/classes/[slug]",
     pageFamily: "detail",
     representativeFixture: "class-rich",
+    fixtures: ["class-rich", "class-sparse"],
     scenicVariant: "none",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "breadcrumb", "Class identity", "Verification"],
@@ -226,6 +231,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/categories/[slug]",
     pageFamily: "detail",
     representativeFixture: "category-rich",
+    fixtures: ["category-rich", "category-sparse"],
     scenicVariant: "none",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "page heading", "Category image", "Item count"],
@@ -277,6 +283,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/shops",
     pageFamily: "catalogue",
     representativeFixture: "shops-populated",
+    fixtures: ["shops-populated", "shops-no-results"],
     scenicVariant: "none",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "page heading", "Shop search", "Shop grid"],
@@ -294,6 +301,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/shops/[slug]",
     pageFamily: "detail",
     representativeFixture: "shop-sparse",
+    fixtures: ["shop-sparse", "shop-dense"],
     scenicVariant: "none",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "hierarchy breadcrumb", "Shop identity", "Location"],
@@ -311,6 +319,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     routePattern: "/search?q=[query]",
     pageFamily: "utility",
     representativeFixture: "search-results",
+    fixtures: ["search-results", "search-empty", "search-no-results"],
     scenicVariant: "none",
     viewports: allPrimaryViewports,
     requiredRegions: [...shellRegions, "search form", "result summary"],
@@ -350,11 +359,17 @@ export function getPublicDesignContract(
   return PUBLIC_DESIGN_CONTRACTS.find((contract) => contract.id === id);
 }
 
+export function getPublicDesignContractFixtures(
+  contract: PublicDesignContract
+): readonly PublicDesignFixtureKey[] {
+  return contract.fixtures ?? [contract.representativeFixture];
+}
+
 export function resolvePublicDesignRoute(
   contract: PublicDesignContract,
   fixture: PublicDesignFixture
 ): string {
-  if (fixture.key !== contract.representativeFixture) {
+  if (!getPublicDesignContractFixtures(contract).includes(fixture.key)) {
     throw new Error(
       `Fixture ${fixture.key} is not registered for contract ${contract.id}.`
     );
@@ -376,6 +391,9 @@ export function validatePublicDesignContracts(): string[] {
     if (!contract.label.trim() || !contract.routePattern.startsWith("/")) errors.push(`Missing contract metadata: ${contract.id}`);
     if (!families.has(contract.pageFamily)) errors.push(`Unsupported page family: ${contract.id}`);
     if (!fixtureKeys.has(contract.representativeFixture)) errors.push(`Unknown fixture: ${contract.id}`);
+    const contractFixtures = getPublicDesignContractFixtures(contract);
+    if (!contractFixtures.includes(contract.representativeFixture)) errors.push(`Representative fixture is not selectable: ${contract.id}`);
+    if (new Set(contractFixtures).size !== contractFixtures.length || contractFixtures.some((key) => !fixtureKeys.has(key))) errors.push(`Invalid fixture options: ${contract.id}`);
     if (contract.viewports.length === 0 || contract.viewports.some((id) => !viewportIds.has(id))) errors.push(`Invalid viewports: ${contract.id}`);
     if (contract.requiredRegions.length === 0 || contract.accessibility.length === 0 || contract.focusedTests.length === 0) errors.push(`Incomplete contract metadata: ${contract.id}`);
 

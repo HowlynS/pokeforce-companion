@@ -55,6 +55,13 @@ fixture identities/states, and `viewports.ts` owns dimensions. Their focused
 unit tests validate IDs, references, routes, metadata, and complete matrix
 coverage without importing public pages or touching a database.
 
+`/admin/design-review` is protected by the shared admin layout and an explicit
+page-level `requireAdminUser()` check. Its client workbench accepts only
+contract, fixture, and viewport IDs from those registries, writes canonical
+selections back to the query string, and embeds the selected ordinary public
+fixture route. The iframe cannot accept a user-supplied URL. Review checklist
+state is memory-only and the page exposes no mutation action.
+
 ## 3. Complete route inventory
 
 The table is exhaustive for non-admin, non-auth application routes at the

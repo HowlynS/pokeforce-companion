@@ -33,6 +33,7 @@ const APPROVED_LABELS = [
   "Game Versions",
   "Currencies",
   "Appearance",
+  "Design review",
 ];
 
 const APPROVED_HREFS = [
@@ -47,6 +48,7 @@ const APPROVED_HREFS = [
   "/admin/settings/game-versions",
   "/admin/settings/currencies",
   "/admin/appearance",
+  "/admin/design-review",
 ];
 
 function renderNav(pathname: string): string {
@@ -82,12 +84,15 @@ describe("AdminNav structure and labels", () => {
     expect(html).toMatch(/<nav [^>]*aria-label="Admin navigation"[^>]*>/);
   });
 
-  it("renders Appearance in the separated Site administration group", () => {
+  it("renders Appearance and Design review in the separated Site administration group", () => {
     const html = renderNav("/admin/appearance");
 
     expect(html).toContain("Site administration");
     expect(html).toMatch(
       /class="admin-nav-site-group"[\s\S]*href="\/admin\/appearance"/
+    );
+    expect(html).toMatch(
+      /class="admin-nav-site-group"[\s\S]*href="\/admin\/design-review"/
     );
   });
 

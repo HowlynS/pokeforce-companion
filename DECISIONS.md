@@ -2219,3 +2219,11 @@ The readiness milestone does not approve a visual redesign. It preserves the
 current public output and builds read-only review infrastructure around real
 routes. External design markup enters only through the documented staged import
 protocol after the baseline command and screenshot matrix are captured.
+
+The authenticated Design review workspace lives beside Appearance in the
+bottom Site administration group. It uses one sandboxed iframe for an
+allowlisted ordinary public fixture route; there is no arbitrary URL proxy and
+no parallel rendering implementation. Contract/fixture/viewport query values
+are validated against the registries and invalid combinations fall back to a
+registered default. Checklist completion is intentionally session-only and no
+database persistence or gameplay mutation is introduced.

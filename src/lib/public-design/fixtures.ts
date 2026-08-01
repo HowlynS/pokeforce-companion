@@ -21,6 +21,13 @@ export const PUBLIC_DESIGN_FIXTURES = [
     states: ["many acquisition sources", "recipe uses", "shop listings", "verified"],
   },
   {
+    key: "item-no-image",
+    label: "No-image Item detail",
+    family: "detail",
+    path: "/items/design-review-item-no-image-long-name",
+    states: ["no image", "very long name", "unverified", "hide empty"],
+  },
+  {
     key: "recipes-dense",
     label: "Dense Recipe catalogue",
     family: "catalogue",
@@ -33,6 +40,13 @@ export const PUBLIC_DESIGN_FIXTURES = [
     family: "detail",
     path: "/recipes/design-review-recipe-many-ingredients",
     states: ["custom image", "quantity range", "required level", "EXP reward"],
+  },
+  {
+    key: "recipe-inherited-image",
+    label: "Inherited-image Recipe detail",
+    family: "detail",
+    path: "/recipes/design-review-recipe-inherited-image",
+    states: ["one ingredient", "inherited result image", "zero EXP", "no required level"],
   },
   {
     key: "professions-populated",
@@ -49,6 +63,13 @@ export const PUBLIC_DESIGN_FIXTURES = [
     states: ["three previews", "browse all", "rich description", "verified"],
   },
   {
+    key: "profession-zero",
+    label: "Zero-Recipe Profession detail",
+    family: "detail",
+    path: "/professions/design-review-profession-zero",
+    states: ["zero Recipes", "no image", "empty optional description", "hide preview"],
+  },
+  {
     key: "classes-populated",
     label: "Populated Class catalogue",
     family: "catalogue",
@@ -63,6 +84,13 @@ export const PUBLIC_DESIGN_FIXTURES = [
     states: ["rich description", "no image", "verified"],
   },
   {
+    key: "class-sparse",
+    label: "Sparse Class detail",
+    family: "detail",
+    path: "/classes/design-review-class-sparse",
+    states: ["empty optional description", "no image", "unverified"],
+  },
+  {
     key: "categories-populated",
     label: "Populated Category catalogue",
     family: "catalogue",
@@ -75,6 +103,13 @@ export const PUBLIC_DESIGN_FIXTURES = [
     family: "detail",
     path: "/categories/design-review-category-rich",
     states: ["rich description", "long name", "filtered Items link"],
+  },
+  {
+    key: "category-sparse",
+    label: "Sparse Category detail",
+    family: "detail",
+    path: "/categories/design-review-category-sparse",
+    states: ["zero Items", "no image", "hide browse link"],
   },
   {
     key: "locations-populated",
@@ -105,11 +140,39 @@ export const PUBLIC_DESIGN_FIXTURES = [
     states: ["no inventory", "no image", "unverified", "hide empty"],
   },
   {
+    key: "shop-dense",
+    label: "Dense Shop detail",
+    family: "detail",
+    path: "/shops/design-review-shop-dense",
+    states: ["many listings", "multiple currencies", "rich description", "verified"],
+  },
+  {
+    key: "shops-no-results",
+    label: "Shop search with no results",
+    family: "catalogue",
+    path: "/shops?q=Design%20Review%20No%20Matches",
+    states: ["no result", "query feedback", "clear action"],
+  },
+  {
     key: "search-results",
     label: "Grouped search results",
     family: "utility",
     path: "/search?q=Design%20Review",
     states: ["seven groups", "relationship context", "bounded results"],
+  },
+  {
+    key: "search-empty",
+    label: "Empty global search",
+    family: "utility",
+    path: "/search",
+    states: ["blank query", "no database search", "guidance"],
+  },
+  {
+    key: "search-no-results",
+    label: "Global search with no results",
+    family: "utility",
+    path: "/search?q=Design%20Review%20No%20Matches",
+    states: ["no result", "escaped query", "actionable guidance"],
   },
   {
     key: "not-found-item",

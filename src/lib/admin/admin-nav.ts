@@ -14,6 +14,7 @@
 export type AdminNavIcon =
   | "dashboard"
   | "appearance"
+  | "designReview"
   | "items"
   | "recipes"
   | "professions"
@@ -52,6 +53,11 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
 
 export const SITE_ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Appearance", href: "/admin/appearance", icon: "appearance" },
+  {
+    label: "Design review",
+    href: "/admin/design-review",
+    icon: "designReview",
+  },
 ] as const;
 
 // Categories remains an independent model, route, and workspace, but its

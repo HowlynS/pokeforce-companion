@@ -271,7 +271,8 @@ same focused commit.
   are not contributor date fields.
 - Keep gameplay/content navigation in the primary sidebar flow. Site-level
   governance lives in a bottom-anchored `Site administration` group;
-  Appearance is currently its only destination and no placeholder links render.
+  Appearance and Design review are its only destinations and no placeholder
+  links render.
 - The shared admin shell alone owns the managed scenic background. It resolves
   a cache-busted custom asset and desktop X/Y crop, falling back to
   `/images/admin/admin-shell-background.webp` at `50% 50%`. Public routes and
@@ -337,3 +338,10 @@ logical review widths are application data in
 Readiness infrastructure must not restyle the public application; it reviews
 real routes and preserves the current system until an approved redesign is
 ready for an explicit import branch.
+
+The Design review workspace uses the existing dense admin identity: 4px base
+spacing, 16–24px workbench gaps, quiet bordered surfaces, Manrope hierarchy,
+and restrained gold only for focus/action/status. The live public iframe is the
+focal surface; selectors and contract evidence remain subordinate. It loads one
+allowlisted real route at one logical viewport, scales from the top-left, and
+keeps checklist state in memory only.

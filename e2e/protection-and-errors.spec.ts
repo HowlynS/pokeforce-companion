@@ -46,6 +46,7 @@ test.describe("unauthenticated admin protection", () => {
   // stored session.
   const PROTECTED_ROUTES = [
     "/admin",
+    "/admin/design-review",
     "/admin/items",
     // The Slice 9B.4 dedicated creation route inside the Item workspace.
     "/admin/items/new",

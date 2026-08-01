@@ -55,12 +55,17 @@ describe("ADMIN_NAV_ITEMS", () => {
     ]);
   });
 
-  it("keeps Appearance as the sole Site administration destination", () => {
+  it("keeps Appearance and Design review in Site administration", () => {
     expect(SITE_ADMIN_NAV_ITEMS).toEqual([
       {
         label: "Appearance",
         href: "/admin/appearance",
         icon: "appearance",
+      },
+      {
+        label: "Design review",
+        href: "/admin/design-review",
+        icon: "designReview",
       },
     ]);
     expect(
@@ -121,6 +126,7 @@ describe("isAdminNavItemActive", () => {
 
   it("marks each remaining resource active on its list and child routes", () => {
     expect(activeHrefFor("/admin/appearance")).toBe("/admin/appearance");
+    expect(activeHrefFor("/admin/design-review")).toBe("/admin/design-review");
 
     expect(activeHrefFor("/admin/recipes")).toBe("/admin/recipes");
     expect(activeHrefFor("/admin/recipes/iron-sword/edit")).toBe("/admin/recipes");

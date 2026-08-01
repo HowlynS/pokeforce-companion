@@ -15,6 +15,7 @@ import {
   History,
   LayoutDashboard,
   MapPinned,
+  MonitorCheck,
   Package,
   Palette,
   ScrollText,
@@ -34,6 +35,7 @@ import {
 const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   dashboard: LayoutDashboard,
   appearance: Palette,
+  designReview: MonitorCheck,
   items: Package,
   recipes: ScrollText,
   professions: Hammer,
