@@ -1,0 +1,242 @@
+{
+  "checkpointId": "claude-public-redesign-01",
+  "title": "Merchants Codex — Claude Public Redesign Checkpoint 1",
+  "creationDate": "2026-08-03",
+  "sourceDescription": "User-identified extracted Claude Design First Iteration project archive, copied byte-for-byte. The bundled .dc.html documents are also used only to render visual-reference screenshots.",
+  "branchName": "design/claude-public-redesign-checkpoint-1",
+  "sourceBaselineCommit": "88cd538906d1bb54acf0318f36ef352e11701a2d",
+  "status": "unfinished",
+  "archive": {
+    "path": "source/project-archive",
+    "fileCount": 38,
+    "byteCount": 23194771,
+    "copyVerification": "Exact relative-path and SHA-256 match against supplied source directory",
+    "classification": "archival-only"
+  },
+  "routesRepresented": [
+    {
+      "designDocument": "Items Directory.dc.html",
+      "likelyRoute": "/items",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "designDocument": "Item Detail.dc.html",
+      "likelyRoute": "/items/[slug]",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "designDocument": "Recipes Directory.dc.html",
+      "likelyRoute": "/recipes",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "designDocument": "Professions Directory.dc.html",
+      "likelyRoute": "/professions",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "designDocument": "Classes Directory.dc.html",
+      "likelyRoute": "/classes",
+      "classification": "requires-reinterpretation"
+    }
+  ],
+  "viewportStatesRepresented": [
+    {
+      "viewport": "1920x1080",
+      "pages": ["Items Directory", "Item Detail", "Recipes Directory", "Professions Directory", "Classes Directory"],
+      "classification": "archival-only"
+    },
+    {
+      "viewport": "2560x1440",
+      "pages": ["Items Directory"],
+      "classification": "archival-only"
+    },
+    {
+      "viewport": "3440x1440",
+      "pages": ["Recipes Directory"],
+      "classification": "archival-only"
+    },
+    {
+      "viewport": "1000x900",
+      "pages": ["Items Directory"],
+      "classification": "archival-only"
+    },
+    {
+      "viewport": "390x844",
+      "pages": ["Item Detail"],
+      "classification": "archival-only"
+    }
+  ],
+  "componentsRepresented": [
+    {
+      "name": "Scenic public shell with floating header, logo, nav, and global search",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "name": "Breadcrumb and compact directory heading",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "name": "Directory search, filter popover, and grid/list toggle",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "name": "Item, Recipe, Profession, and Class grid/list cards",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "name": "Directory overview and explanatory side panels",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "name": "Recipe ingredient chips, quantities, hover disclosure, yield, and EXP presentation",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "name": "Item identity, factual chip row, detail sidebar, merchant note, Used In cards, and Related Items cards",
+      "classification": "requires-reinterpretation"
+    },
+    {
+      "name": "Charcoal, warm-border, ivory, and restrained-gold color roles",
+      "classification": "reusable"
+    },
+    {
+      "name": "Bounded centered desktop composition and scenic outer gutters",
+      "classification": "reusable"
+    }
+  ],
+  "assetsIncluded": [
+    {
+      "group": "Normalized runtime assets",
+      "items": ["assets/background.png", "assets/merchants-logo.png", "assets/sprites/*.png"],
+      "classification": "archival-only"
+    },
+    {
+      "group": "Original upload collection",
+      "items": ["uploads/*.png"],
+      "classification": "archival-only"
+    },
+    {
+      "group": "Generated rendered captures",
+      "items": ["screenshots/*.png"],
+      "classification": "archival-only"
+    },
+    {
+      "group": "Background and logo concepts already identical to tracked application masters",
+      "items": ["assets/background.png", "assets/merchants-logo.png"],
+      "classification": "reusable"
+    }
+  ],
+  "assetInventory": "notes/asset-inventory.md",
+  "assetsMissing": [
+    "Font files",
+    "Favicon",
+    "Responsive-specific imagery",
+    "Distinct Class and Profession artwork",
+    "Asset provenance and license metadata",
+    "Approved public-use status for sprites and uploaded visual references"
+  ],
+  "fontsReferenced": [
+    {
+      "name": "Manrope",
+      "weights": [400, 500, 600, 700],
+      "source": "Google Fonts CSS reference",
+      "classification": "reusable"
+    },
+    {
+      "name": "Cormorant Garamond",
+      "weights": [500, 600, 700],
+      "source": "Google Fonts CSS reference",
+      "classification": "requires-reinterpretation"
+    }
+  ],
+  "externalDependenciesReferenced": [
+    {
+      "name": "React UMD",
+      "version": "18.3.1",
+      "source": "unpkg.com",
+      "classification": "archival-only"
+    },
+    {
+      "name": "ReactDOM UMD",
+      "version": "18.3.1",
+      "source": "unpkg.com",
+      "classification": "archival-only"
+    },
+    {
+      "name": "Babel standalone",
+      "version": "7.29.0",
+      "source": "unpkg.com",
+      "classification": "archival-only"
+    },
+    {
+      "name": "Claude Design DCLogic/support runtime",
+      "version": "not stated",
+      "source": "bundled support.js",
+      "classification": "archival-only"
+    },
+    {
+      "name": "Google Fonts CSS",
+      "version": "not stated",
+      "source": "fonts.googleapis.com",
+      "classification": "archival-only"
+    }
+  ],
+  "staticMockDataPresent": [
+    "37 Items",
+    "68 Recipes",
+    "9 Professions",
+    "5 Classes",
+    "one Potion detail",
+    "invented counts, descriptions, sources, class bonuses, levels, yields, EXP, ingredients, and relations",
+    "placeholder navigation links"
+  ],
+  "inaccessibleOrMissingSource": [
+    "Original Claude Design session/history",
+    "Separate compressed archive container",
+    "Production React/Next.js source",
+    "Standalone design-token source",
+    "Source maps and package manifest",
+    "Asset provenance/licensing records",
+    "Explicit design rationale and approval record"
+  ],
+  "responsiveGaps": [
+    "No media queries in any design document",
+    "No explicit tablet composition",
+    "390x844 Item detail has overlapping side panels and unusably narrow prose",
+    "Header/navigation wrapping and mobile controls are undefined",
+    "Fixed 100vh and overflow-hidden shells rely on internal scrolling"
+  ],
+  "accessibilityGaps": [
+    "Navigation and breadcrumb links are placeholders",
+    "Search controls lack explicit labels",
+    "Hover-only disclosure has no equivalent complete keyboard contract",
+    "No documented visible focus system",
+    "No reduced-motion rule despite entrance animation",
+    "Mobile overlap and narrow text prevent usable reading",
+    "No footer landmark is represented"
+  ],
+  "implementationGaps": [
+    "No canonical routing",
+    "No Prisma-backed data",
+    "No Appearance resolver",
+    "No authentication/private-public access integration",
+    "No safe rich-text renderer",
+    "No real global search",
+    "No canonical filter query strings or pagination",
+    "No loading/error/not-found implementation",
+    "No production dependency or build integration"
+  ],
+  "conflictsWithCurrentApplicationArchitecture": [
+    "Duplicates AppShell and bypasses Appearance-managed assets",
+    "Applies one scenic background to route families that are currently deliberately atmosphere-free",
+    "Uses static client arrays instead of bounded RSC/Prisma queries",
+    "Uses infinite loading instead of canonical page-based catalogue pagination",
+    "Introduces Recipe-to-Class requirements even though PlayerClass is an independent domain",
+    "Adds non-schema Class bonuses/types/max levels and Profession types/max levels",
+    "Adds Item card descriptions/sources that conflict with the restrained current Item card contract",
+    "Uses Cormorant Garamond where the accepted application display face is DM Serif Display",
+    "Uses placeholder links and noncanonical interaction state",
+    "Does not satisfy current mobile, accessibility, hide-empty, verification, or rich-text contracts"
+  ]
+}
