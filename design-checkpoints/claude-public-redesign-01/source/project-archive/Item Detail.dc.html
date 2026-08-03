@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  ::selection{background:#c39a4b;color:#111514;}
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;background:#111514;overflow-x:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;">
+    <div style="position:sticky;top:0;z-index:50;padding:14px 28px 0;">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+        <img src="./assets/merchants-logo.png" alt="Merchants Codex" style="height:40px;width:auto;flex:none;justify-self:start;">
+        <nav style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow-x:auto;">
+          <a href="#" style="font-size:12.5px;font-weight:600;color:#d8b562;padding-bottom:4px;border-bottom:2px solid #c39a4b;white-space:nowrap;">Items</a>
+          <a href="#" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Recipes</a>
+          <a href="#" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Professions</a>
+          <a href="#" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Classes</a>
+          <a href="#" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Locations</a>
+          <a href="#" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Shops</a>
+        </nav>
+        <div style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:1760px;margin:0 auto;padding:28px 28px 80px;display:flex;gap:28px;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:20px;">
+          <a href="#" style="color:#aaa69c;">Home</a>
+          <span style="color:#3a3528;">/</span>
+          <a href="#" style="color:#aaa69c;">Items</a>
+          <span style="color:#3a3528;">/</span>
+          <span style="color:#d8b562;">{{ item.name }}</span>
+        </div>
+
+        <div style="display:flex;gap:28px;align-items:flex-start;margin-bottom:32px;">
+          <div style="width:180px;height:180px;flex:none;border-radius:14px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(90,160,210,0.2), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+            <img src="{{ item.image }}" alt="{{ item.name }}" style="width:128px;height:128px;image-rendering:pixelated;">
+          </div>
+          <div style="flex:1;min-width:0;padding-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;margin-bottom:8px;">{{ item.category }}</div>
+            <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:40px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;">{{ item.name }}</h1>
+            <div style="font-size:14.5px;line-height:1.7;color:#aaa69c;max-width:640px;margin-bottom:18px;">{{ item.description }}</div>
+            <div style="display:flex;gap:10px;">
+              <div style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Source&nbsp;<strong style="color:#eee7d8;">{{ item.source }}</strong></div>
+              <div style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Value&nbsp;<strong style="color:#d8b562;">{{ item.value }}g</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:32px;">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#eee7d8;margin-bottom:14px;">Used In</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:14px;">
+            <sc-for list="{{ usedInRecipes }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:18px;background:#171b19;border:1px solid #262b27;border-radius:14px;padding:20px;cursor:pointer;" style-hover="border-color #c39a4b;">
+                <div style="position:relative;width:96px;height:96px;flex:none;border-radius:11px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(195,154,75,0.14), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                  <img src="{{ r.image }}" alt="{{ r.name }}" style="width:78px;height:78px;image-rendering:pixelated;">
+                  <div style="position:absolute;right:6px;bottom:6px;background:rgba(17,21,20,0.35);backdrop-filter:blur(2px);border:1px solid #3a3528;border-radius:6px;padding:4px 8px;text-align:center;">
+                    <div style="font-size:7px;font-weight:700;letter-spacing:0.06em;color:#8a8579;text-transform:uppercase;line-height:1;">Yields</div>
+                    <div style="font-size:12.5px;font-weight:700;color:#d8b562;line-height:1.3;">{{ r.outputRange }}</div>
+                  </div>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:14.5px;font-weight:700;color:#eee7d8;margin-bottom:3px;">{{ r.name }}</div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ r.profession }}</span>
+                    <span style="font-size:10.5px;color:#8a8579;">Lvl {{ r.level }}</span>
+                  </div>
+                </div>
+                <div style="font-size:11px;color:#7d796f;flex:none;">Needs ×{{ r.qty }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#eee7d8;margin-bottom:14px;">Related Items</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(148px, 1fr));gap:12px;">
+            <sc-for list="{{ relatedItems }}" as="ri" hint-placeholder-count="4">
+              <div style="background:#171b19;border:1px solid #262b27;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px;cursor:pointer;" style-hover="border-color #c39a4b; background #1c201e;">
+                <div style="width:100%;aspect-ratio:1;border-radius:7px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(90,160,210,0.18), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                  <img src="{{ ri.image }}" alt="{{ ri.name }}" style="width:60px;height:60px;image-rendering:pixelated;">
+                </div>
+                <div style="font-size:12.5px;font-weight:700;color:#eee7d8;line-height:1.25;">{{ ri.name }}</div>
+                <div style="font-size:10px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ ri.category }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:272px;flex:none;position:sticky;top:88px;display:flex;flex-direction:column;gap:16px;">
+        <div style="background:#171b19;border:1px solid #3a3528;border-radius:12px;padding:18px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:14px;">Item Details</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+              <span style="color:#aaa69c;">Category</span>
+              <span style="color:#eee7d8;font-weight:700;">{{ item.category }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+              <span style="color:#aaa69c;">Source</span>
+              <span style="color:#eee7d8;font-weight:700;">{{ item.source }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+              <span style="color:#aaa69c;">Stack Size</span>
+              <span style="color:#eee7d8;font-weight:700;">{{ item.stackSize }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+              <span style="color:#aaa69c;">Sell Value</span>
+              <span style="color:#d8b562;font-weight:700;">{{ item.value }}g</span>
+            </div>
+          </div>
+        </div>
+        <div style="background:#171b19;border:1px solid #3a3528;border-radius:12px;padding:18px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:10px;">Merchant's Note</div>
+          <div style="font-size:12.5px;line-height:1.6;color:#aaa69c;">Prices fluctuate by shop and region. Check the Shops directory for current buy and sell rates near you.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SPR = {
+  pot: { image: "./assets/sprites/chipped-pot.png" },
+  shard: { image: "./assets/sprites/comet-shard.png" },
+  dusk: { image: "./assets/sprites/dusk.png" },
+  ether: { image: "./assets/sprites/ether.png" },
+  giga: { image: "./assets/sprites/gigaton.png" },
+  net: { image: "./assets/sprites/net.png" },
+  para: { image: "./assets/sprites/paralyze-heal.png" },
+  xspd: { image: "./assets/sprites/x-speed.png" },
+};
+
+const ITEM = {
+  name: "Potion",
+  category: "Consumables",
+  description: "A basic healing tonic brewed from oran berries, restoring 20 HP to any weary party member. Sold in nearly every Poké Mart across Johto, it's the first thing most trainers stock before setting out on a route.",
+  source: "Purchased",
+  value: 200,
+  stackSize: 99,
+  image: SPR.ether.image,
+};
+
+const USED_IN = [
+  { name: "Minor Healing Potion", profession: "Crafting", level: 6, qty: 2, outputRange: "2-3", image: SPR.ether.image },
+  { name: "Herbal Salve", profession: "Crafting", level: 7, qty: 1, outputRange: "3-4", image: SPR.pot.image },
+  { name: "Lantern Oil Flask", profession: "Crafting", level: 6, qty: 1, outputRange: "3", image: SPR.ether.image },
+];
+
+const RELATED = [
+  { name: "Antidote", category: "Consumables", image: SPR.para.image },
+  { name: "Ether", category: "Consumables", image: SPR.ether.image },
+  { name: "Revive", category: "Consumables", image: SPR.net.image },
+  { name: "Fresh Water", category: "Consumables", image: SPR.xspd.image },
+];
+
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      item: ITEM,
+      usedInRecipes: USED_IN,
+      relatedItems: RELATED,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

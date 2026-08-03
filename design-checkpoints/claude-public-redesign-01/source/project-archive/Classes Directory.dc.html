@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  ::selection{background:#c39a4b;color:#111514;}
+  input::placeholder{color:#6f6b61;}
+  .cx-scroll::-webkit-scrollbar{display:none;}
+  .cx-scroll{scrollbar-width:none;-ms-overflow-style:none;}
+  @keyframes cx-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="position:relative;height:100vh;background:#111514;overflow:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;">
+    <div style="flex:none;padding:14px 28px 0;">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+        <img src="./assets/merchants-logo.png" alt="Merchants Codex" style="height:40px;width:auto;flex:none;justify-self:start;">
+        <nav class="cx-scroll" style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow-x:auto;">
+          <sc-for list="{{ navItems }}" as="nav" hint-placeholder-count="6">
+            <a href="{{ nav.href }}" style="font-size:12.5px;font-weight:600;color:{{ nav.activeColor }};padding-bottom:4px;border-bottom:2px solid {{ nav.borderColor }};white-space:nowrap;">{{ nav.label }}</a>
+          </sc-for>
+        </nav>
+        <div style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;" style-focus-within="border-color #c39a4b;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." value="{{ searchQuery }}" onInput="{{ onSearchInput }}" style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;box-sizing:border-box;max-width:1760px;width:100%;margin:0 auto;padding:16px 28px 16px;display:flex;gap:28px;align-items:stretch;">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:10px;flex:none;">
+          <a href="#" style="color:#aaa69c;">Home</a>
+          <span style="color:#3a3528;">/</span>
+          <span style="color:#d8b562;">Classes</span>
+        </div>
+
+        <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:22px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;flex:none;">Classes</h1>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex:none;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:7px 12px;width:220px;" style-focus-within="border-color #c39a4b;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+              <input type="text" placeholder="Find a class by name..." value="{{ searchQuery }}" onInput="{{ onSearchInput }}" style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:12.5px;width:100%;">
+            </div>
+            <div data-filter-menu style="position:relative;">
+              <button onClick="{{ toggleFilterMenu }}" style="display:flex;align-items:center;gap:7px;background:{{ filterBtnBg }};border:1px solid {{ filterBtnBorder }};color:{{ filterBtnColor }};border-radius:8px;padding:7px 14px;font-family:Manrope,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+                Filter
+                <sc-if value="{{ filterCount }}" hint-placeholder-val="{{ 0 }}">
+                  <span style="background:#c39a4b;color:#111514;border-radius:999px;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ filterCount }}</span>
+                </sc-if>
+              </button>
+              <sc-if value="{{ filterOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:calc(100% + 8px);left:0;z-index:40;background:#1c201e;border:1px solid #3a3528;border-radius:10px;padding:12px;min-width:260px;box-shadow:0 10px 24px rgba(0,0,0,0.45);">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid #3a3528;">Class Focus</div>
+                  <div style="display:flex;flex-direction:column;gap:9px;">
+                    <sc-for list="{{ typeChecks }}" as="tc" hint-placeholder-count="5">
+                      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;color:#eee7d8;">
+                        <input type="checkbox" checked="{{ tc.checked }}" onChange="{{ tc.toggle }}" style="width:15px;height:15px;accent-color:#c39a4b;cursor:pointer;flex:none;">
+                        {{ tc.label }}
+                      </label>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:3px;">
+            <button onClick="{{ setGridView }}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:{{ viewGridBg }};color:{{ viewGridColor }};font-family:Manrope,sans-serif;font-size:12px;font-weight:600;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect></svg>
+              Grid
+            </button>
+            <button onClick="{{ setListView }}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:{{ viewListBg }};color:{{ viewListColor }};font-family:Manrope,sans-serif;font-size:12px;font-weight:600;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+              List
+            </button>
+          </div>
+        </div>
+
+        <div ref="{{ scrollRef }}" class="cx-scroll" style="flex:1;min-height:0;overflow-y:auto;padding-right:2px;">
+        <sc-if value="{{ isGridView }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:20px;">
+            <sc-for list="{{ pagedItems }}" as="item" hint-placeholder-count="5">
+              <div style="position:relative;min-width:0;background:#171b19;border:1px solid #262b27;border-radius:14px;padding:20px;display:flex;gap:20px;cursor:pointer;animation:cx-fade .3s ease both;z-index:{{ item.cardZ }};" style-hover="border-color #c39a4b; background #1c201e;">
+                <div style="width:130px;height:130px;flex:none;border-radius:10px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(168,138,206,0.18), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                  <img src="{{ item.image }}" alt="{{ item.name }}" style="width:88px;height:88px;image-rendering:pixelated;">
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;">
+                  <div>
+                    <div style="font-size:19px;font-weight:700;color:#eee7d8;margin-bottom:4px;line-height:1.25;">{{ item.name }}</div>
+                    <div style="font-size:12px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ item.type }}</div>
+                  </div>
+                  <div style="position:relative;flex:1;">
+                    <div ref="{{ item.descRef }}" onMouseEnter="{{ item.onDescEnter }}" onMouseLeave="{{ item.onDescLeave }}" style="font-size:13px;line-height:1.5;color:#aaa69c;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{{ item.description }}</div>
+                    <sc-if value="{{ item.showDescTip }}" hint-placeholder-val="{{ false }}">
+                      <div style="position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:40;background:#1c201e;border:1px solid #3a3528;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.5;color:#eee7d8;box-shadow:0 10px 24px rgba(0,0,0,0.45);pointer-events:none;">{{ item.description }}</div>
+                    </sc-if>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#7d796f;border-top:1px solid #262b27;padding-top:10px;">
+                    <span style="white-space:nowrap;">{{ item.bonus }}</span><span style="white-space:nowrap;">Max Lvl {{ item.maxLevel }}</span>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isListView }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ pagedItems }}" as="item" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:14px;background:#171b19;border:1px solid #262b27;border-radius:9px;padding:10px 14px;cursor:pointer;" style-hover="border-color #c39a4b;">
+                <div style="width:44px;height:44px;flex:none;border-radius:6px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(168,138,206,0.18), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                  <img src="{{ item.image }}" alt="{{ item.name }}" style="width:32px;height:32px;image-rendering:pixelated;">
+                </div>
+                <div style="width:150px;flex:none;font-size:13.5px;font-weight:700;color:#eee7d8;">{{ item.name }}</div>
+                <div style="width:110px;flex:none;font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ item.type }}</div>
+                <div style="flex:1;min-width:0;font-size:12px;color:#aaa69c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.description }}</div>
+                <div style="width:130px;flex:none;font-size:11px;color:#7d796f;">{{ item.bonus }}</div>
+                <div style="width:80px;flex:none;text-align:right;font-size:11px;color:#7d796f;">Max Lvl {{ item.maxLevel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:80px 20px;color:#7d796f;">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:24px;color:#aaa69c;margin-bottom:8px;">No classes found</div>
+            <div style="font-size:13px;margin-bottom:16px;">Try a different search term or reset your filters.</div>
+            <button onClick="{{ resetFilters }}" style="background:transparent;border:1px solid #c39a4b;color:#d8b562;padding:9px 18px;border-radius:8px;font-family:Manrope,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;">Reset filters</button>
+          </div>
+        </sc-if>
+
+        <div ref="{{ sentinelRef }}" style="height:1px;"></div>
+        </div>
+      </div>
+
+      <div style="width:272px;flex:none;margin-top:67px;display:flex;flex-direction:column;gap:16px;">
+        <div style="background:#171b19;border:1px solid #3a3528;border-radius:12px;padding:18px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="#c39a4b" stroke-width="2"></rect><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="#c39a4b" stroke-width="2"></rect><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="#c39a4b" stroke-width="2"></rect><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="#c39a4b" stroke-width="2"></rect></svg>
+            <span style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;">Classes Overview</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <sc-for list="{{ overviewStats }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+                <span style="color:#aaa69c;">{{ s.label }}</span>
+                <span style="color:#eee7d8;font-weight:700;">{{ s.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#171b19;border:1px solid #3a3528;border-radius:12px;padding:18px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:10px;">About Classes</div>
+          <div style="font-size:12.5px;line-height:1.6;color:#aaa69c;">A character's class shapes their strengths outside of battle, gating access to certain recipes and granting passive bonuses to matching professions.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SPR = {
+  pot: { image: "./assets/sprites/chipped-pot.png" },
+  shard: { image: "./assets/sprites/comet-shard.png" },
+  dusk: { image: "./assets/sprites/dusk.png" },
+  ether: { image: "./assets/sprites/ether.png" },
+  giga: { image: "./assets/sprites/gigaton.png" },
+};
+
+const RAW_ITEMS = [
+  {name:"Artisan", type:"Crafting", description:"Skilled crafters who turn raw materials into potions, tools, and everyday goods with practiced, steady hands.", bonus:"+15% Craft Yield", maxLevel:99, image:SPR.ether.image},
+  {name:"Trainer", type:"Battle", description:"Battle-focused trainers who raise and command creatures, sharpening technique through disciplined study.", bonus:"+10% Battle XP", maxLevel:99, image:SPR.pot.image},
+  {name:"Ranger", type:"Gathering", description:"Woodland rangers skilled at foraging and fishing, moving quietly through routes that others overlook.", bonus:"+15% Gather Speed", maxLevel:99, image:SPR.dusk.image},
+  {name:"Rancher", type:"Husbandry", description:"A rancher class devoted to raising livestock and mining alongside them, at home on farms and in quarries.", bonus:"+10% Mining Yield", maxLevel:99, image:SPR.giga.image},
+  {name:"Farmhand", type:"Agriculture", description:"Farmhands tend crops and construction alike, forming the backbone labor of Johto's growing towns.", bonus:"+15% Farming Yield", maxLevel:99, image:SPR.shard.image},
+];
+
+const TYPE_LIST = ["Crafting","Battle","Gathering","Husbandry","Agriculture"];
+const NAV = [
+  {label:"Items", href:"#"},
+  {label:"Recipes", href:"#"},
+  {label:"Professions", href:"#"},
+  {label:"Classes", href:"#"},
+  {label:"Locations", href:"#"},
+  {label:"Shops", href:"#"},
+];
+const BATCH_SIZE = 24;
+
+class Component extends DCLogic {
+  state = {
+    viewMode: "grid",
+    searchQuery: "",
+    loadedCount: BATCH_SIZE,
+    selectedTypes: [],
+    filterOpen: false,
+    hoveredDesc: null,
+    truncatedByName: {},
+  };
+
+  registerDescEl = (name, el) => {
+    if (!el) return;
+    if (!this._descRO) {
+      this._descMap = new Map();
+      this._descRO = new ResizeObserver(entries => {
+        let changed = false;
+        const next = { ...this.state.truncatedByName };
+        entries.forEach(en => {
+          const key = this._descMap.get(en.target);
+          if (!key) return;
+          const trunc = en.target.scrollHeight > en.target.clientHeight + 1;
+          if (next[key] !== trunc) { next[key] = trunc; changed = true; }
+        });
+        if (changed) this.setState({ truncatedByName: next });
+      });
+    }
+    if (this._descMap.get(el) !== name) {
+      this._descMap.set(el, name);
+      this._descRO.observe(el);
+      const trunc = el.scrollHeight > el.clientHeight + 1;
+      if (this.state.truncatedByName[name] !== trunc) {
+        this.setState(s => ({ truncatedByName: { ...s.truncatedByName, [name]: trunc } }));
+      }
+    }
+  };
+
+  componentDidMount() {
+    this._onFilterDocClick = (e) => {
+      if (!this.state.filterOpen) return;
+      if (e.target.closest && e.target.closest('[data-filter-menu]')) return;
+      this.setState({ filterOpen: false });
+    };
+    document.addEventListener('click', this._onFilterDocClick, true);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('click', this._onFilterDocClick, true);
+    if (this._io) this._io.disconnect();
+    if (this._descRO) this._descRO.disconnect();
+  }
+
+  scrollRef = (el) => {
+    this._scrollEl = el;
+    this._maybeSetupObserver();
+  };
+
+  sentinelRef = (el) => {
+    if (el === this._sentinelEl) return;
+    this._sentinelEl = el;
+    this._maybeSetupObserver();
+  };
+
+  _maybeSetupObserver() {
+    if (!this._scrollEl || !this._sentinelEl) return;
+    if (!this._io) {
+      this._io = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) this.loadMore();
+      }, { root: this._scrollEl, rootMargin: "400px" });
+    } else {
+      this._io.disconnect();
+    }
+    this._io.observe(this._sentinelEl);
+  }
+
+  loadMore = () => {
+    this.setState(s => ({ loadedCount: s.loadedCount + BATCH_SIZE }));
+  };
+
+  filteredItems() {
+    const q = this.state.searchQuery.trim().toLowerCase();
+    const selected = this.state.selectedTypes;
+    return RAW_ITEMS.filter(it => {
+      const matchesType = selected.length === 0 || selected.includes(it.type);
+      const matchesQ = !q || it.name.toLowerCase().includes(q);
+      return matchesType && matchesQ;
+    });
+  }
+
+  renderVals() {
+    const items = this.filteredItems();
+    const hoveredDesc = this.state.hoveredDesc;
+    const pagedItemsRaw = items.slice(0, Math.min(this.state.loadedCount, items.length));
+    const pagedItems = pagedItemsRaw.map(it => {
+      const isTruncated = !!this.state.truncatedByName[it.name];
+      const showDescTip = hoveredDesc === it.name && isTruncated;
+      return {
+        ...it,
+        showDescTip,
+        cardZ: showDescTip ? 40 : 1,
+        descRef: (el) => this.registerDescEl(it.name, el),
+        onDescEnter: () => this.setState({ hoveredDesc: it.name }),
+        onDescLeave: () => this.setState(s => (s.hoveredDesc === it.name ? { hoveredDesc: null } : null)),
+      };
+    });
+
+    const typeChecks = TYPE_LIST.map(label => {
+      const checked = this.state.selectedTypes.includes(label);
+      return {
+        label,
+        checked,
+        toggle: () => this.setState(s => ({
+          selectedTypes: checked ? s.selectedTypes.filter(t => t !== label) : [...s.selectedTypes, label],
+          loadedCount: BATCH_SIZE,
+        })),
+      };
+    });
+
+    const navItems = NAV.map(n => ({
+      label: n.label,
+      href: n.href,
+      activeColor: n.label === "Classes" ? "#d8b562" : "#eee7d8",
+      borderColor: n.label === "Classes" ? "#c39a4b" : "transparent",
+    }));
+
+    const hasActiveFilters = this.state.selectedTypes.length > 0;
+
+    return {
+      navItems,
+      typeChecks,
+      filterOpen: this.state.filterOpen,
+      filterCount: this.state.selectedTypes.length,
+      toggleFilterMenu: () => this.setState(s => ({ filterOpen: !s.filterOpen })),
+      filterBtnBg: hasActiveFilters ? "#23281f" : "#171b19",
+      filterBtnBorder: hasActiveFilters ? "#c39a4b" : "#3a3528",
+      filterBtnColor: hasActiveFilters ? "#d8b562" : "#aaa69c",
+      searchQuery: this.state.searchQuery,
+      onSearchInput: (e) => this.setState({ searchQuery: e.target.value, loadedCount: BATCH_SIZE }),
+      isGridView: this.state.viewMode === "grid",
+      isListView: this.state.viewMode === "list",
+      viewGridBg: this.state.viewMode === "grid" ? "#23281f" : "transparent",
+      viewGridColor: this.state.viewMode === "grid" ? "#d8b562" : "#aaa69c",
+      viewListBg: this.state.viewMode === "list" ? "#23281f" : "transparent",
+      viewListColor: this.state.viewMode === "list" ? "#d8b562" : "#aaa69c",
+      setGridView: () => this.setState({ viewMode: "grid" }),
+      setListView: () => this.setState({ viewMode: "list" }),
+      scrollRef: this.scrollRef,
+      sentinelRef: this.sentinelRef,
+      pagedItems,
+      isEmpty: items.length === 0,
+      resetFilters: () => this.setState({ searchQuery: "", loadedCount: BATCH_SIZE, selectedTypes: [] }),
+      overviewStats: [
+        { label: "Total Classes", value: RAW_ITEMS.length },
+        { label: "Max Level", value: 99 },
+        { label: "Gating Recipes", value: 68 },
+        { label: "Recently Updated", value: 2 },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>
