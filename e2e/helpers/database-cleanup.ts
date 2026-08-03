@@ -3250,6 +3250,73 @@ export async function ensureCurrentGameVersionFixture(): Promise<void> {
   });
 }
 
+export type E2ETestApplicationRole =
+  | "MEMBER"
+  | "CONTRIBUTOR"
+  | "ADMINISTRATOR"
+  | "OWNER";
+
+/**
+ * Changes only the configured isolated-test admin's application role. The
+ * Supabase identity and saved browser session stay unchanged, so focused
+ * authorization specs exercise the real server-side role lookup on every
+ * request. Callers must restore OWNER in cleanup.
+ */
+export async function setE2eTestAdminRole(
+  role: E2ETestApplicationRole
+): Promise<void> {
+  await withVerifiedDatabase(async (client) => {
+    const result = await client.query(
+      `update "AppUser"
+       set role = $1::"UserRole", "updatedAt" = now()
+       where lower(email) = lower($2)`,
+      [role, process.env.ADMIN_EMAIL]
+    );
+    if (result.rowCount !== 1) {
+      throw new Error(
+        "Expected exactly one isolated-test admin application row to change role."
+      );
+    }
+  });
+}
+
+/** Reads the persisted verification pair for one prefix-scoped Item. */
+export async function readE2eItemVerification(slug: string): Promise<{
+  verifiedAt: string | null;
+  verifiedGameVersionId: string | null;
+  verifiedGameVersionName: string | null;
+}> {
+  if (!slug.startsWith(E2E_ITEM_SLUG_PREFIX)) {
+    throw new Error(
+      "Refusing to read Item verification outside the browser-test prefix."
+    );
+  }
+
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query<{
+      verifiedAt: Date | null;
+      verifiedGameVersionId: string | null;
+      verifiedGameVersionName: string | null;
+    }>(
+      `select i."verifiedAt", i."verifiedGameVersionId",
+              gv.name as "verifiedGameVersionName"
+       from "Item" i
+       left join "GameVersion" gv on gv.id = i."verifiedGameVersionId"
+       where i.slug = $1`,
+      [slug]
+    );
+    if (result.rowCount !== 1) {
+      throw new Error("Expected exactly one browser-test Item verification row.");
+    }
+    const row = result.rows[0];
+    return {
+      verifiedAt: row.verifiedAt?.toISOString() ?? null,
+      verifiedGameVersionId: row.verifiedGameVersionId,
+      verifiedGameVersionName: row.verifiedGameVersionName,
+    };
+  });
+}
+
 /**
  * Deletes ONLY the browser-test Game Version rows (test-e2e-gv- name
  * prefix) and the temporary stamped Item rows created for the

@@ -2262,10 +2262,13 @@ Cross-system creation compensates a failed Prisma write by removing the new
 Auth user, and audit history is written only after a valid final state.
 
 Capabilities are centralized and checked by server routes and mutations.
-Members browse only; Contributors create/edit content and images; Administrators
-also delete/verify, administer the site, view audit history, and manage
-non-administrator accounts; Owners alone manage Administrators/Owners and Site
-visibility. The final active Owner invariant and initial `ADMIN_EMAIL` Owner
+Members browse only; Contributors create/edit content and images and may
+explicitly verify gameplay data; Administrators also delete, administer the
+site, view audit history, and manage non-administrator accounts; Owners alone
+manage Administrators/Owners and Site visibility. Contributor verification is
+the only preset correction: Game Versions, Appearance, Design Review, Users &
+access, Audit log, Site visibility, Owner management, and deletion remain
+denied. The final active Owner invariant and initial `ADMIN_EMAIL` Owner
 bootstrap use PostgreSQL advisory-lock transactions to remain safe under
 concurrency.
 

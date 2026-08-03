@@ -28,7 +28,8 @@ metadata.
 | Browse while Private beta | Yes | Yes | Yes | Yes |
 | Open Admin | No | Yes | Yes | Yes |
 | Create/edit gameplay content and images | No | Yes | Yes | Yes |
-| Delete or verify gameplay content | No | No | Yes | Yes |
+| Verify gameplay content | No | Yes | Yes | Yes |
+| Delete gameplay content | No | No | Yes | Yes |
 | Manage Game Versions and Appearance | No | No | Yes | Yes |
 | Open Design Review and Audit log | No | No | Yes | Yes |
 | Manage Members and Contributors | No | No | Yes | Yes |
@@ -37,10 +38,12 @@ metadata.
 
 Every route and mutation rechecks the current active application user on the
 server. Navigation filtering is convenience only, never authorization.
-Contributor verification requests are rejected server-side. Administrators
-cannot create, promote, demote, disable, or reset an Owner. The final active
-Owner cannot be demoted or disabled; advisory-lock transactions make the
-invariant safe under concurrent requests.
+Contributors may explicitly stamp gameplay data through the verification
+checkbox, but ordinary edits leave existing verification metadata unchanged.
+Members and unauthenticated users cannot forge verification requests.
+Administrators cannot create, promote, demote, disable, or reset an Owner. The
+final active Owner cannot be demoted or disabled; advisory-lock transactions
+make the invariant safe under concurrent requests.
 
 ## Owner bootstrap
 

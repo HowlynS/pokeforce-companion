@@ -30,12 +30,12 @@ const CONTRIBUTOR_CAPABILITIES = [
   "admin.access",
   "content.create",
   "content.edit",
+  "content.verify",
   "content.images.manage",
 ] as const;
 const ADMINISTRATOR_CAPABILITIES = [
   ...CONTRIBUTOR_CAPABILITIES,
   "content.delete",
-  "content.verify",
   "gameVersions.manage",
   "appearance.manage",
   "designReview.access",

@@ -10,15 +10,26 @@ describe("role capability presets", () => {
     expect(hasPermission("MEMBER", "site.access.private")).toBe(true);
     expect(hasPermission("MEMBER", "admin.access")).toBe(false);
     expect(hasPermission("MEMBER", "content.edit")).toBe(false);
+    expect(hasPermission("MEMBER", "content.verify")).toBe(false);
   });
 
-  it("allows Contributors to create and edit without delete or verify", () => {
-    expect(hasPermission("CONTRIBUTOR", "admin.access")).toBe(true);
-    expect(hasPermission("CONTRIBUTOR", "content.create")).toBe(true);
-    expect(hasPermission("CONTRIBUTOR", "content.edit")).toBe(true);
+  it("allows Contributors to verify without granting delete or Site administration", () => {
+    expect(permissionsForRole("CONTRIBUTOR")).toEqual([
+      "site.access.private",
+      "admin.access",
+      "content.create",
+      "content.edit",
+      "content.verify",
+      "content.images.manage",
+    ]);
     expect(hasPermission("CONTRIBUTOR", "content.delete")).toBe(false);
-    expect(hasPermission("CONTRIBUTOR", "content.verify")).toBe(false);
+    expect(hasPermission("CONTRIBUTOR", "gameVersions.manage")).toBe(false);
     expect(hasPermission("CONTRIBUTOR", "appearance.manage")).toBe(false);
+    expect(hasPermission("CONTRIBUTOR", "designReview.access")).toBe(false);
+    expect(hasPermission("CONTRIBUTOR", "users.view")).toBe(false);
+    expect(hasPermission("CONTRIBUTOR", "audit.view")).toBe(false);
+    expect(hasPermission("CONTRIBUTOR", "visibility.change")).toBe(false);
+    expect(hasPermission("CONTRIBUTOR", "owners.manage")).toBe(false);
   });
 
   it("keeps Administrator account management below Owner authority", () => {

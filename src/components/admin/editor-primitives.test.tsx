@@ -483,6 +483,22 @@ describe("VerificationPanel", () => {
     expect(html).toMatch(/name="verifiedGameVersionId" value="v2"/);
   });
 
+  it("renders the verification picker and opt-in checkbox for Contributors", () => {
+    const html = renderToStaticMarkup(
+      <AdminAuthorizationProvider role="CONTRIBUTOR">
+        <VerificationPanel
+          gameVersions={versions}
+          verifiedAt={null}
+          verifiedGameVersion={null}
+        />
+      </AdminAuthorizationProvider>
+    );
+
+    expect(html).toContain('name="verifiedGameVersionId"');
+    expect(html).toContain('name="markVerified"');
+    expect(html).toContain("Mark as verified for Summer Update");
+  });
+
   it("falls back to generic checkbox wording when no version is current", () => {
     const noCurrentVersions = [{ id: "v1", name: "Launch", isCurrent: false }];
     const html = renderToStaticMarkup(
