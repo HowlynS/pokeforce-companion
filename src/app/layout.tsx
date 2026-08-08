@@ -1,5 +1,5 @@
 ﻿import type { Metadata } from "next";
-import { DM_Serif_Display, Manrope } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
 import { getPublishedSiteAppearance } from "@/lib/appearance/public";
 import { canExposePublicContent } from "@/lib/access/require-site-access";
@@ -17,9 +17,13 @@ const manrope = Manrope({
   display: "swap",
 });
 
-const dmSerifDisplay = DM_Serif_Display({
+// Public display serif, per the Claude Design handoff (Cormorant Garamond
+// 700). Bound to the same --font-resource-title variable the previous
+// DM Serif Display used, since consumers only ever reference it through
+// the .public-resource-title class — no admin surface uses this class.
+const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: "400",
+  weight: "700",
   variable: "--font-resource-title",
   display: "swap",
 });
@@ -64,7 +68,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${manrope.variable} ${dmSerifDisplay.variable}`}
+      className={`${manrope.variable} ${cormorantGaramond.variable}`}
     >
       <body>{children}</body>
     </html>

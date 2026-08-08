@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Archived design-handoff reference material (prototype runtime code,
+    // never imported by any production route) — not production source.
+    "design-checkpoints/**",
   ]),
 ]);
 

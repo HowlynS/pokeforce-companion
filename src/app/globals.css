@@ -9,10 +9,22 @@
   --color-surface: #171b19;
   --color-surface-soft: #1c201e;
   --color-border: #3a3528;
+  --color-border-muted: #262b27;
+  --color-border-hover: #4a4536;
+  --color-divider-menu: #2a2f28;
   --color-text: #eee7d8;
+  --color-text-body: #c8c2b4;
   --color-text-muted: #aaa69c;
+  --color-text-meta: #8a8579;
+  --color-text-meta-dim: #7d796f;
+  --color-text-placeholder: #6f6b61;
   --color-accent: #c39a4b;
   --color-accent-soft: #d8b562;
+  --color-accent-bright: #f4c542;
+  --color-accent-hover: #e0c079;
+  --color-menu-surface: #191d1b;
+  --color-inset-surface: #0f1210;
+  --color-art-frame-surface: #141715;
   --color-success: #22c55e;
   --color-warning: #f97316;
   --color-danger: #ef4444;
@@ -2015,19 +2027,41 @@ select:focus-visible {
   background: var(--color-surface-soft);
 }
 
-/* Public breadcrumb links (Slice 10D): muted and underlined so they read
-   as interactive without relying on hover alone; gold on hover only,
-   matching the same restrained, hover-only accent every other public
-   interactive element already uses (.public-nav-link, .interactive-card). A CSS
-   class instead of an inline style object because inline styles cannot
-   express :hover. */
+/* Public breadcrumb links (Slice 10D, sweep hover added Slice 1 of the
+   Claude Design redesign): muted, no underline at rest; gold on hover
+   only, matching the same restrained, hover-only accent every other
+   public interactive element already uses (.public-nav-link,
+   .interactive-card), plus a 1px gold underline that sweeps in from the
+   left via ::after (the handoff's specified breadcrumb hover treatment).
+   A CSS class instead of an inline style object because inline styles
+   cannot express :hover. */
 .breadcrumb-link {
+  position: relative;
   color: var(--color-text-muted);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
-.breadcrumb-link:hover {
+.breadcrumb-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: var(--color-accent-soft);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+
+.breadcrumb-link:hover,
+.breadcrumb-link:focus-visible {
   color: var(--color-accent);
+}
+
+.breadcrumb-link:hover::after,
+.breadcrumb-link:focus-visible::after {
+  transform: scaleX(1);
 }
 
 /* Linked cards lift slightly and pick up the accent border so they read
@@ -2446,8 +2480,8 @@ select:focus-visible {
   color: var(--color-text);
   font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
   font-size: clamp(43px, 3.35vw, 60px);
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1;
   overflow-wrap: anywhere;
 }
@@ -7987,4 +8021,174 @@ input[type="checkbox"] {
   .shop-inventory-row-footer > .btn {
     justify-self: start;
   }
+}
+
+/* ---- Public: Claude Design shared motion primitives (Slice 1) --------
+   Restrained entrance/hover motion shared across the redesigned public
+   surface (directory cards, detail sections, nav popovers, section
+   rules). Every animated class is opted into only under
+   prefers-reduced-motion:no-preference — under reduced motion the
+   element simply renders in its resting state, matching the existing
+   .admin-toast-in precedent above.
+
+   Stagger rule: entrance delay comes from each item's own INDEX in its
+   data array (Math.min(index * 30, 330)ms, 45ms step on the landing
+   page), set as an inline `animation-delay` style by the consuming
+   component — never from :nth-child, which desyncs when a filtered
+   list remounts (this is a documented gap in the design handoff itself,
+   not a rule invented here). These classes intentionally carry no
+   :nth-child delay rules. */
+@media (prefers-reduced-motion: no-preference) {
+  .cx-item-in {
+    animation: cx-item-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+
+  .cx-fade-in-stagger {
+    animation: cx-fade-in-stagger 320ms ease both;
+  }
+
+  .cx-menu-in {
+    animation: cx-menu-in 200ms ease both;
+  }
+
+  .cx-menu-out {
+    animation: cx-menu-out 180ms ease both;
+  }
+
+  .cx-panel-in {
+    animation: cx-panel-in 200ms ease both;
+  }
+
+  .cx-panel-out {
+    animation: cx-panel-out 180ms ease both;
+  }
+
+  .cx-rise {
+    animation: cx-rise 500ms ease both;
+  }
+
+  .cx-logo-breathe:hover {
+    animation: cx-logo-breathe 3.2s ease-in-out infinite;
+  }
+
+  .cx-search-pulse:hover {
+    animation: cx-search-pulse 1.6s ease-out infinite;
+  }
+}
+
+@keyframes cx-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cx-fade-in-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cx-menu-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes cx-menu-out {
+  from {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0.92);
+  }
+}
+
+@keyframes cx-panel-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes cx-panel-out {
+  from {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0.92);
+  }
+}
+
+@keyframes cx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cx-logo-breathe {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(216, 181, 98, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(216, 181, 98, 0.45));
+  }
+}
+
+@keyframes cx-search-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(195, 154, 75, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(195, 154, 75, 0);
+  }
+}
+
+/* Section heading gold sweep rule (used beside section headings on
+   directory/detail pages): a 1px line that grows in from the left. */
+@media (prefers-reduced-motion: no-preference) {
+  .cx-line-sweep {
+    animation: cx-line-sweep 350ms ease both;
+  }
+}
+
+@keyframes cx-line-sweep {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.cx-line-sweep {
+  transform-origin: left;
 }
