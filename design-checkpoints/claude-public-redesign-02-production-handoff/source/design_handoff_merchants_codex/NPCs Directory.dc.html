@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#0b0d0c;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  .cx-nav-link{transition:border-color .18s ease, text-shadow .18s ease;}
+  .cx-nav-link:hover{border-color:#c39a4b !important;text-shadow:0 0 10px rgba(216,181,98,0.65);}
+  .cx-menu-item{transition:background .15s ease;}
+  .cx-menu-item:hover{background:#23281f;}
+  .cx-search{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;}
+  .cx-search:focus-within{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 3px rgba(195,154,75,0.14), 0 0 18px rgba(216,181,98,0.22);}
+  .cx-search svg *{transition:stroke .2s ease;}
+  .cx-search:focus-within svg *{stroke:#d8b562;}
+  .cx-search:hover{border-color:#4a4536 !important;animation:cx-search-pulse 1.6s ease-in-out infinite;}
+  @keyframes cx-search-pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,181,98,0.18);}50%{box-shadow:0 0 0 5px rgba(216,181,98,0.06);}}
+  .cx-search:focus-within{animation:none;}
+  .cx-item-card{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;}
+  .cx-item-card:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-logo{transition:filter .2s ease;}
+  .cx-logo:hover{animation:cx-logo-breathe 3.2s ease-in-out infinite;}
+  @keyframes cx-logo-breathe{0%,100%{filter:drop-shadow(0 0 3px rgba(216,181,98,0.4)) drop-shadow(0 0 7px rgba(195,154,75,0.22));}50%{filter:drop-shadow(0 0 5px rgba(216,181,98,0.6)) drop-shadow(0 0 11px rgba(195,154,75,0.32));}}
+  .cx-icon-btn{transition:background-color .2s ease, border-color .2s ease;}
+  .cx-icon-btn:hover{background:#23281f !important;}
+  ::selection{background:#c39a4b;color:#111514;}
+  input::placeholder{color:#6f6b61;}
+  input{user-select:text;}
+  .cx-scroll::-webkit-scrollbar{display:none;}
+  .cx-scroll{scrollbar-width:none;-ms-overflow-style:none;}
+  @keyframes cx-menu-in{from{opacity:0;transform:translate(-50%,0) scaleY(.92) scaleX(.98);}to{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}}
+  @keyframes cx-menu-out{from{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}to{opacity:0;transform:translate(-50%,0) scaleY(.94) scaleX(.99);}}
+  @keyframes cx-item-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes cx-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-3px);}}
+  .cx-item-open{animation:cx-item-in .22s cubic-bezier(.2,.9,.3,1) both;}
+  .cx-item-open:nth-child(1){animation-delay:0ms;}
+  .cx-item-open:nth-child(2){animation-delay:30ms;}
+  .cx-item-open:nth-child(3){animation-delay:60ms;}
+  .cx-item-open:nth-child(4){animation-delay:90ms;}
+  .cx-item-open:nth-child(5){animation-delay:120ms;}
+  .cx-item-open:nth-child(6){animation-delay:150ms;}
+  .cx-item-open:nth-child(7){animation-delay:180ms;}
+  .cx-item-open:nth-child(8){animation-delay:210ms;}
+  .cx-item-open:nth-child(9){animation-delay:240ms;}
+  .cx-item-open:nth-child(10){animation-delay:270ms;}
+  .cx-item-open:nth-child(11){animation-delay:300ms;}
+  .cx-item-open:nth-child(12){animation-delay:330ms;}
+  .cx-item-open:nth-child(13){animation-delay:330ms;}
+  .cx-item-open:nth-child(14){animation-delay:330ms;}
+  .cx-item-open:nth-child(15){animation-delay:330ms;}
+  .cx-item-open:nth-child(16){animation-delay:330ms;}
+  .cx-item-open:nth-child(17){animation-delay:330ms;}
+  .cx-item-open:nth-child(18){animation-delay:330ms;}
+  .cx-item-open:nth-child(19){animation-delay:330ms;}
+  .cx-item-open:nth-child(20){animation-delay:330ms;}
+  .cx-item-open:nth-child(21){animation-delay:330ms;}
+  .cx-item-open:nth-child(22){animation-delay:330ms;}
+  .cx-item-open:nth-child(23){animation-delay:330ms;}
+  .cx-item-open:nth-child(24){animation-delay:330ms;}
+  .cx-item-closing{animation:cx-item-out .12s ease both;}
+  .cx-breadcrumb-link{transition:color .18s ease;}
+  .cx-breadcrumb-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:#d8b562;transform:scaleX(0);transform-origin:left;transition:transform .18s ease;}
+  .cx-breadcrumb-link:hover{color:#d8b562 !important;}
+  .cx-breadcrumb-link:hover::after{transform:scaleX(1);}
+</style>
+</helmet>
+
+  <div style="position:relative;height:100vh;background:#111514;overflow:hidden;">
+    <div style="position:fixed;inset:0;z-index:0;">
+      <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+    </div>
+
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;">
+      <div style="flex:none;padding:14px 28px 0;">
+        <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:relative;z-index:100;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);user-select:none;">
+          <a href="./Landing%20Page.dc.html" style="justify-self:start;flex:none;display:flex;"><img src="./assets/merchants-logo.png" alt="Merchants Codex" class="cx-logo" style="height:66px;width:auto;flex:none;margin:-13px 0;"></a>
+          <nav class="cx-scroll" style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow:visible;">
+            <sc-for list="{{ navItems }}" as="nav" hint-placeholder-count="4">
+              <a href="{{ nav.href }}" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:{{ nav.activeColor }};padding-bottom:4px;border-bottom:2px solid {{ nav.borderColor }};white-space:nowrap;">{{ nav.label }}</a>
+            </sc-for>
+            <div data-world-menu style="position:relative;">
+              <div onClick="{{ toggleWorldMenu }}" style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#d8b562;padding-bottom:4px;border-bottom:2px solid #c39a4b;white-space:nowrap;cursor:pointer;transition:color .15s;">
+                World
+                <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ worldChevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+              </div>
+              <sc-if value="{{ worldMenuOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,0);z-index:60;background:#191d1b;border:1px solid #3a3528;border-radius:12px;padding:8px;min-width:230px;box-shadow:0 16px 32px rgba(0,0,0,0.5);animation:{{ panelAnim }};">
+                  <a href="./World%20Navigation.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                    <span style="display:flex;align-items:center;gap:7px;">
+                      <span style="font-size:12.5px;font-weight:700;color:#d8b562;">World Navigation</span>
+                      <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;color:#111514;background:#d8b562;border-radius:4px;padding:2px 6px;text-transform:uppercase;">Recommended</span>
+                    </span>
+                    <span style="font-size:10px;color:#8a8579;">Region tree &amp; overview</span>
+                  </a>
+                  <a href="./Locations%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;border-top:1px solid #2a2f28;margin-top:6px;padding-top:11px;">
+                    <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Locations</span>
+                    <span style="font-size:10px;color:#8a8579;">Cities, routes &amp; landmarks</span>
+                  </a>
+                  <a href="./Shops%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                    <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Shops</span>
+                    <span style="font-size:10px;color:#8a8579;">Vendors &amp; trade goods</span>
+                  </a>
+                  <a href="./NPCs%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                    <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">NPCs</span>
+                    <span style="font-size:10px;color:#8a8579;">Notable people &amp; townsfolk</span>
+                  </a>
+                </div>
+              </sc-if>
+            </div>
+          </nav>
+          <div class="cx-search" style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+            <input type="text" placeholder="Search the Codex..." style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-height:0;box-sizing:border-box;max-width:1760px;width:100%;margin:0 auto;padding:16px 28px 16px;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:10px;flex:none;">
+          <a href="./Landing%20Page.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Home</a>
+          <span style="color:#3a3528;">/</span>
+          <a href="./World%20Navigation.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">World</a>
+          <span style="color:#3a3528;">/</span>
+          <span style="color:#d8b562;">NPCs</span>
+        </div>
+
+        <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:22px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;flex:none;">NPCs</h1>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex:none;">
+            <div class="cx-search" style="display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:7px 12px;width:220px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+              <input type="text" placeholder="Find an NPC by name..." value="{{ searchQuery }}" onInput="{{ onSearchInput }}" style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:12.5px;width:100%;">
+            </div>
+            <div data-filter-menu style="position:relative;">
+              <button onClick="{{ toggleFilterMenu }}" class="cx-icon-btn" style="display:flex;align-items:center;gap:7px;background:{{ filterBtnBg }};border:1px solid {{ filterBtnBorder }};color:{{ filterBtnColor }};border-radius:8px;padding:7px 14px;font-family:Manrope,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+                Filter
+                <sc-if value="{{ filterCount }}" hint-placeholder-val="{{ 0 }}">
+                  <span style="background:#c39a4b;color:#111514;border-radius:999px;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ filterCount }}</span>
+                </sc-if>
+              </button>
+              <sc-if value="{{ filterOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:calc(100% + 8px);left:0;z-index:40;background:#1c201e;border:1px solid #3a3528;border-radius:10px;padding:12px;min-width:280px;box-shadow:0 10px 24px rgba(0,0,0,0.45);">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid #3a3528;">Role</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;max-height:260px;overflow-y:auto;">
+                    <sc-for list="{{ roleChecks }}" as="cc" hint-placeholder-count="6">
+                      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;color:#eee7d8;">
+                        <input type="checkbox" checked="{{ cc.checked }}" onChange="{{ cc.toggle }}" style="width:15px;height:15px;accent-color:#c39a4b;cursor:pointer;flex:none;">
+                        {{ cc.label }}
+                      </label>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+        </div>
+
+        <div class="cx-scroll" style="flex:1;min-height:0;overflow-y:auto;padding-right:2px;display:flex;flex-direction:column;gap:26px;">
+          <sc-for list="{{ regionGroups }}" as="grp" hint-placeholder-count="2">
+            <div>
+              <div onClick="{{ grp.toggle }}" style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none;">
+                <svg width="10" height="10" viewBox="0 0 24 24" style="flex:none;transform:{{ grp.chevronRotate }};transition:transform .15s;position:relative;top:1px;"><path d="M6 9l6 6 6-6" stroke="#d8b562" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+                <span style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:19px;color:#d8b562;">{{ grp.name }}</span>
+                <span style="font-size:11.5px;color:#7d796f;">{{ grp.count }} NPCs</span>
+              </div>
+              <sc-if value="{{ grp.expanded }}" hint-placeholder-val="{{ true }}">
+                <div class="{{ grp.contentClass }}">
+                  <sc-for list="{{ grp.roleGroups }}" as="rg" hint-placeholder-count="3">
+                    <div style="margin-bottom:18px;">
+                      <div onClick="{{ rg.toggle }}" style="display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;user-select:none;">
+                        <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ rg.chevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="#aaa69c" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+                        <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#aaa69c;text-transform:uppercase;">{{ rg.role }}</span>
+                        <span style="flex:1;height:1px;background:#262b27;"></span>
+                      </div>
+                      <sc-if value="{{ rg.expanded }}" hint-placeholder-val="{{ true }}">
+                        <div class="{{ rg.contentClass }}" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:12px;">
+                          <sc-for list="{{ rg.npcs }}" as="npc" hint-placeholder-count="4">
+                            <a href="{{ npc.href }}" class="cx-item-card cx-item-open" style="text-decoration:none;background:#171b19;border:1px solid #262b27;border-radius:10px;padding:11px;display:flex;gap:10px;cursor:pointer;">
+                              <div style="width:52px;height:52px;flex:none;border-radius:8px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(122,168,110,0.2), transparent 62%), #111514;display:flex;align-items:center;justify-content:center;">
+                                <div role="img" aria-label="{{ npc.name }}" style="width:34px;height:34px;background-image:url({{ npc.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                              </div>
+                              <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;">
+                                <div style="font-size:{{ npc.titleSize }};font-weight:700;color:#eee7d8;margin-bottom:2px;line-height:1.25;min-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ npc.name }}</div>
+                                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;margin-bottom:5px;">{{ npc.role }}</div>
+                                <div style="display:flex;gap:8px;font-size:10.5px;color:#7d796f;min-height:13px;">
+                                  <span>{{ npc.location }}</span>
+                                </div>
+                              </div>
+                            </a>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+
+          <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:80px 20px;color:#7d796f;">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:24px;color:#aaa69c;margin-bottom:8px;">No NPCs found</div>
+              <div style="font-size:13px;margin-bottom:16px;">Try a different search term or reset your filters.</div>
+              <button onClick="{{ resetFilters }}" style="background:transparent;border:1px solid #c39a4b;color:#d8b562;padding:9px 18px;border-radius:8px;font-family:Manrope,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;">Reset filters</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const SPR = {
+  pot: "./assets/sprites/chipped-pot.png",
+  shard: "./assets/sprites/comet-shard.png",
+  dusk: "./assets/sprites/dusk.png",
+  ether: "./assets/sprites/ether.png",
+  giga: "./assets/sprites/gigaton.png",
+  net: "./assets/sprites/net.png",
+  para: "./assets/sprites/paralyze-heal.png",
+  xspd: "./assets/sprites/x-speed.png",
+};
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+function npcHref(n) {
+  return "./NPC%20Detail.dc.html?npc=" + encodeURIComponent(slugify(n.name));
+}
+
+const RAW_NPCS = [
+  {name:"Prof. Elm", region:"Johto", location:"New Bark Town", role:"Professor", image:SPR.dusk},
+  {name:"Mr. Pokémon", region:"Johto", location:"Route 30", role:"Villager", image:SPR.para},
+  {name:"Falkner", region:"Johto", location:"Violet City", role:"Gym Leader", image:SPR.shard},
+  {name:"Bugsy", region:"Johto", location:"Azalea Town", role:"Gym Leader", image:SPR.giga},
+  {name:"Whitney", region:"Johto", location:"Goldenrod City", role:"Gym Leader", image:SPR.net},
+  {name:"Goldenrod Nurse", region:"Johto", location:"Goldenrod City", role:"Nurse", image:SPR.ether},
+  {name:"Morty", region:"Johto", location:"Ecruteak City", role:"Gym Leader", image:SPR.shard},
+  {name:"Dancing Theatre Host", region:"Johto", location:"Ecruteak City", role:"Villager", image:SPR.dusk},
+  {name:"Jasmine", region:"Johto", location:"Olivine City", role:"Gym Leader", image:SPR.giga},
+  {name:"Chuck", region:"Johto", location:"Cianwood City", role:"Gym Leader", image:SPR.para},
+  {name:"Pryce", region:"Johto", location:"Mahogany Town", role:"Gym Leader", image:SPR.ether},
+  {name:"Clair", region:"Johto", location:"Blackthorn City", role:"Gym Leader", image:SPR.shard},
+  {name:"Silver", region:"Johto", location:"Route 29", role:"Rival", image:SPR.xspd},
+  {name:"Prof. Oak", region:"Kanto", location:"Pallet Town", role:"Professor", image:SPR.dusk},
+  {name:"Blue", region:"Kanto", location:"Pallet Town", role:"Rival", image:SPR.xspd},
+  {name:"Brock", region:"Kanto", location:"Pewter City", role:"Gym Leader", image:SPR.giga},
+  {name:"Misty", region:"Kanto", location:"Cerulean City", role:"Gym Leader", image:SPR.net},
+  {name:"Cerulean Nurse", region:"Kanto", location:"Cerulean City", role:"Nurse", image:SPR.ether},
+  {name:"Lt. Surge", region:"Kanto", location:"Vermilion City", role:"Gym Leader", image:SPR.shard},
+  {name:"Erika", region:"Kanto", location:"Celadon City", role:"Gym Leader", image:SPR.para},
+  {name:"Celadon Merchant", region:"Kanto", location:"Celadon City", role:"Villager", image:SPR.dusk},
+];
+
+const ROLE_LIST = ["Gym Leader","Professor","Nurse","Rival","Villager"];
+const NAV = [
+  {label:"Items", href:"./Items%20Directory.dc.html"},
+  {label:"Recipes", href:"./Recipes%20Directory.dc.html"},
+  {label:"Professions", href:"./Professions%20Directory.dc.html"},
+  {label:"Classes", href:"./Classes%20Directory.dc.html"},
+];
+
+class Component extends DCLogic {
+  state = {
+    searchQuery: "",
+    selectedRoles: [],
+    filterOpen: false,
+    worldMenuOpen: false,
+    worldMenuClosing: false,
+    collapsedFolds: {},
+    closingFolds: {},
+  };
+
+  toggleFold = (key) => {
+    if (this.state.collapsedFolds[key]) {
+      this.setState(s => { const c = { ...s.collapsedFolds }; delete c[key]; return { collapsedFolds: c }; });
+      return;
+    }
+    this.setState(s => ({ closingFolds: { ...s.closingFolds, [key]: true } }));
+    if (!this._foldTimers) this._foldTimers = {};
+    clearTimeout(this._foldTimers[key]);
+    this._foldTimers[key] = setTimeout(() => {
+      this.setState(s => {
+        const cl = { ...s.closingFolds };
+        delete cl[key];
+        return { collapsedFolds: { ...s.collapsedFolds, [key]: true }, closingFolds: cl };
+      });
+    }, 130);
+  };
+
+  closeWorldMenu = () => {
+    if (!this.state.worldMenuOpen || this.state.worldMenuClosing) return;
+    this.setState({ worldMenuClosing: true });
+    clearTimeout(this._worldCloseTimer);
+    this._worldCloseTimer = setTimeout(() => this.setState({ worldMenuOpen: false, worldMenuClosing: false }), 180);
+  };
+
+  componentDidMount() {
+    this._onDocClick = (e) => {
+      if (this.state.filterOpen && !(e.target.closest && e.target.closest('[data-filter-menu]'))) {
+        this.setState({ filterOpen: false });
+      }
+      if (this.state.worldMenuOpen && !this.state.worldMenuClosing && !(e.target.closest && e.target.closest('[data-world-menu]'))) {
+        this.closeWorldMenu();
+      }
+    };
+    document.addEventListener('click', this._onDocClick, true);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._worldCloseTimer);
+    document.removeEventListener('click', this._onDocClick, true);
+    if (this._foldTimers) Object.values(this._foldTimers).forEach(clearTimeout);
+  }
+
+  filteredNpcs() {
+    const q = this.state.searchQuery.trim().toLowerCase();
+    const selected = this.state.selectedRoles;
+    return RAW_NPCS.filter(n => {
+      const matchesRole = selected.length === 0 || selected.includes(n.role);
+      const matchesQ = !q || n.name.toLowerCase().includes(q);
+      return matchesRole && matchesQ;
+    });
+  }
+
+  renderVals() {
+    const items = this.filteredNpcs();
+
+    const roleChecks = ROLE_LIST.map(label => {
+      const checked = this.state.selectedRoles.includes(label);
+      return {
+        label,
+        checked,
+        toggle: () => this.setState(s => ({
+          selectedRoles: checked ? s.selectedRoles.filter(c => c !== label) : [...s.selectedRoles, label],
+        })),
+      };
+    });
+
+    const foldMeta = (key) => {
+      const collapsed = !!this.state.collapsedFolds[key];
+      const closing = !!this.state.closingFolds[key];
+      return {
+        expanded: !collapsed,
+        chevronRotate: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
+        contentClass: closing ? "cx-item-closing" : "cx-item-open",
+        toggle: () => this.toggleFold(key),
+      };
+    };
+
+    const REGION_ORDER = ["Johto", "Kanto"];
+    const regionGroups = REGION_ORDER.map(region => {
+      const npcs = items.filter(n => n.region === region);
+      const titleSize = (name) => name.length >= 20 ? "11px" : name.length >= 16 ? "12px" : "13.5px";
+      const roleGroups = ROLE_LIST
+        .map(role => ({ role, count: npcs.filter(n => n.role === role).length, npcs: npcs.filter(n => n.role === role).map(n => ({ ...n, titleSize: titleSize(n.name), href: npcHref(n) })), ...foldMeta("t:" + region + "|" + role) }))
+        .filter(rg => rg.count > 0);
+      return { name: region, count: npcs.length, roleGroups, ...foldMeta("r:" + region) };
+    }).filter(g => g.count > 0);
+
+    const navItems = NAV.map(n => ({ label: n.label, href: n.href, activeColor: "#eee7d8", borderColor: "transparent" }));
+
+    return {
+      navItems,
+      worldMenuOpen: this.state.worldMenuOpen,
+      toggleWorldMenu: () => { if (this.state.worldMenuOpen) this.closeWorldMenu(); else { clearTimeout(this._worldCloseTimer); this.setState({ worldMenuOpen: true, worldMenuClosing: false }); } },
+      worldChevronRotate: (this.state.worldMenuOpen && !this.state.worldMenuClosing) ? "rotate(180deg)" : "rotate(0deg)",
+      panelAnim: this.state.worldMenuClosing ? "cx-menu-out .18s ease both" : "cx-menu-in .2s cubic-bezier(.2,.9,.3,1) both",
+      itemClass: this.state.worldMenuClosing ? "cx-item-closing" : "cx-item-open",
+      roleChecks,
+      filterOpen: this.state.filterOpen,
+      filterCount: this.state.selectedRoles.length,
+      toggleFilterMenu: () => this.setState(s => ({ filterOpen: !s.filterOpen })),
+      filterBtnBg: this.state.selectedRoles.length ? "#23281f" : "#171b19",
+      filterBtnBorder: this.state.selectedRoles.length ? "#c39a4b" : "#3a3528",
+      filterBtnColor: this.state.selectedRoles.length ? "#d8b562" : "#aaa69c",
+      searchQuery: this.state.searchQuery,
+      onSearchInput: (e) => this.setState({ searchQuery: e.target.value }),
+      regionGroups,
+      isEmpty: items.length === 0,
+      resetFilters: () => this.setState({ searchQuery: "", selectedRoles: [] }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

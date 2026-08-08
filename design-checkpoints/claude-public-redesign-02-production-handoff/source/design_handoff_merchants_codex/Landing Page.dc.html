@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  .cx-nav-link{transition:border-color .18s ease, text-shadow .18s ease;}
+  .cx-nav-link:hover{border-color:#c39a4b !important;text-shadow:0 0 10px rgba(216,181,98,0.65);}
+  .cx-menu-item{transition:background .15s ease;}
+  .cx-menu-item:hover{background:#23281f;}
+  .cx-search{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;}
+  .cx-search:focus-within{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 3px rgba(195,154,75,0.14), 0 0 18px rgba(216,181,98,0.22);}
+  .cx-search svg *{transition:stroke .2s ease;}
+  .cx-search:focus-within svg *{stroke:#d8b562;}
+  .cx-search:hover{border-color:#4a4536 !important;animation:cx-search-pulse 1.6s ease-in-out infinite;}
+  @keyframes cx-search-pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,181,98,0.18);}50%{box-shadow:0 0 0 5px rgba(216,181,98,0.06);}}
+  .cx-search:focus-within{animation:none;}
+  .cx-item-card{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease, transform .2s ease;}
+  .cx-item-card:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-pillar:hover{transform:translateY(-2px);}
+  .cx-pillar .cx-pillar-arrow{transition:transform .22s ease, opacity .22s ease;opacity:0;transform:translateX(-4px);}
+  .cx-pillar:hover .cx-pillar-arrow{opacity:1;transform:translateX(0);}
+  .cx-logo{transition:filter .2s ease;}
+  .cx-logo:hover{animation:cx-logo-breathe 3.2s ease-in-out infinite;}
+  @keyframes cx-logo-breathe{0%,100%{filter:drop-shadow(0 0 3px rgba(216,181,98,0.4)) drop-shadow(0 0 7px rgba(195,154,75,0.22));}50%{filter:drop-shadow(0 0 5px rgba(216,181,98,0.6)) drop-shadow(0 0 11px rgba(195,154,75,0.32));}}
+  .cx-cta{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease, color .2s ease;}
+  .cx-cta-primary:hover{background:#e0c079 !important;box-shadow:0 0 24px rgba(216,181,98,0.35);color:#111514 !important;}
+  .cx-cta-ghost:hover{border-color:#c39a4b !important;background:rgba(195,154,75,0.08) !important;color:#eee7d8 !important;}
+  ::selection{background:#c39a4b;color:#111514;}
+  input::placeholder{color:#6f6b61;}
+  input{user-select:text;}
+  .cx-scroll::-webkit-scrollbar{display:none;}
+  .cx-scroll{scrollbar-width:none;-ms-overflow-style:none;}
+  @keyframes cx-menu-in{from{opacity:0;transform:translate(-50%,0) scaleY(.92) scaleX(.98);}to{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}}
+  @keyframes cx-menu-out{from{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}to{opacity:0;transform:translate(-50%,0) scaleY(.94) scaleX(.99);}}
+  @keyframes cx-item-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes cx-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-3px);}}
+  .cx-item-open{animation:cx-item-in .22s cubic-bezier(.2,.9,.3,1) both;}
+  .cx-item-closing{animation:cx-item-out .12s ease both;}
+  @keyframes cx-rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .cx-rise{animation:cx-rise .5s cubic-bezier(.2,.9,.3,1) both;}
+  @keyframes cx-line-sweep{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  .cx-breadcrumb-link{transition:color .18s ease;}
+  .cx-breadcrumb-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:#d8b562;transform:scaleX(0);transform-origin:left;transition:transform .18s ease;}
+  .cx-breadcrumb-link:hover{color:#d8b562 !important;}
+  .cx-breadcrumb-link:hover::after{transform:scaleX(1);}
+  .cx-promo-card{transition:border-color .2s ease, box-shadow .2s ease;}
+  .cx-promo-card:hover{border-color:#c39a4b !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-recent-row{transition:background-color .18s ease, border-color .18s ease, padding-left .18s ease;}
+  .cx-recent-row:hover{background:#1c201e !important;border-color:#c39a4b !important;padding-left:16px !important;}
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;background:#111514;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.55) 0%, rgba(17,21,20,0.5) 24%, rgba(17,21,20,0.88) 66%, #111514 92%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 62% 46% at 50% 6%, rgba(17,21,20,0.1), rgba(17,21,20,0.72) 72%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh;">
+    <div style="flex:none;position:sticky;top:0;z-index:200;padding:14px 28px 14px;background:linear-gradient(180deg, #111514 0%, rgba(17,21,20,0.96) 72%, rgba(17,21,20,0) 100%);backdrop-filter:blur(6px);">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:relative;z-index:100;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);user-select:none;">
+        <a href="./Landing%20Page.dc.html" style="justify-self:start;flex:none;display:flex;"><img src="./assets/merchants-logo.png" alt="Merchants Codex" class="cx-logo" style="height:66px;width:auto;flex:none;margin:-13px 0;"></a>
+        <nav class="cx-scroll" style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow:visible;">
+          <sc-for list="{{ navItems }}" as="nav" hint-placeholder-count="4">
+            <a href="{{ nav.href }}" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">{{ nav.label }}</a>
+          </sc-for>
+          <div data-world-menu style="position:relative;">
+            <div onClick="{{ toggleWorldMenu }}" class="cx-nav-link" style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;">
+              World
+              <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ worldChevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <sc-if value="{{ worldMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,0);z-index:60;background:#191d1b;border:1px solid #3a3528;border-radius:12px;padding:8px;min-width:230px;box-shadow:0 16px 32px rgba(0,0,0,0.5);animation:{{ panelAnim }};">
+                <a href="./World%20Navigation.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">World Navigation</span>
+                    <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;color:#111514;background:#d8b562;border-radius:4px;padding:2px 6px;text-transform:uppercase;">Recommended</span>
+                  </span>
+                  <span style="font-size:10px;color:#8a8579;">Region tree &amp; overview</span>
+                </a>
+                <a href="./Locations%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;border-top:1px solid #2a2f28;margin-top:6px;padding-top:11px;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Locations</span>
+                  <span style="font-size:10px;color:#8a8579;">Cities, routes &amp; landmarks</span>
+                </a>
+                <a href="./Shops%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Shops</span>
+                  <span style="font-size:10px;color:#8a8579;">Vendors &amp; trade goods</span>
+                </a>
+                <a href="./NPCs%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">NPCs</span>
+                  <span style="font-size:10px;color:#8a8579;">Notable characters</span>
+                </a>
+              </div>
+            </sc-if>
+          </div>
+        </nav>
+        <div class="cx-search" style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." value="{{ searchQuery }}" onInput="{{ onSearchInput }}" onKeyDown="{{ onSearchKey }}" style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="box-sizing:border-box;max-width:1760px;width:100%;margin:0 auto;padding:0 28px 64px;">
+
+      <div class="cx-rise" style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:96px 20px 84px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="width:38px;height:1px;background:linear-gradient(90deg, transparent, #c39a4b);display:block;"></span>
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:0.22em;color:#c39a4b;text-transform:uppercase;">A Trader's Field Guide to Johto</span>
+          <span style="width:38px;height:1px;background:linear-gradient(90deg, #c39a4b, transparent);display:block;"></span>
+        </div>
+        <h1 style="margin:0;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:92px;line-height:1;letter-spacing:-0.01em;color:#eee7d8;text-shadow:0 2px 24px rgba(0,0,0,0.6);">Merchants Codex</h1>
+        <p style="margin:0;max-width:660px;font-size:15.5px;line-height:1.65;color:#c8c2b4;text-wrap:pretty;">Every item, recipe, profession and vendor in the region — cross-referenced, priced, and traced back to the hands that craft them.</p>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+          <a href="./Items%20Directory.dc.html" class="cx-cta cx-cta-primary" style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;letter-spacing:0.02em;color:#111514;background:#d8b562;border:1px solid #d8b562;border-radius:9px;padding:12px 22px;">
+            Browse the Codex
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex:none;"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </a>
+          <a href="./World%20Navigation.dc.html" class="cx-cta cx-cta-ghost" style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#c8c2b4;background:rgba(23,27,25,0.72);border:1px solid #3a3528;border-radius:9px;padding:12px 22px;">Explore the World</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px;margin-top:26px;flex-wrap:wrap;justify-content:center;">
+          <sc-for list="{{ heroStats }}" as="st" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+              <span style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#d8b562;line-height:1;">{{ st.value }}</span>
+              <span style="font-size:9.5px;font-weight:700;letter-spacing:0.12em;color:#8a8579;text-transform:uppercase;">{{ st.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#eee7d8;">Start Anywhere</span>
+        <span style="flex:1;height:1px;background:linear-gradient(90deg, #3a3528, transparent);transform-origin:left;animation:cx-line-sweep .5s ease both;"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:14px;margin-bottom:60px;">
+        <sc-for list="{{ pillars }}" as="p" hint-placeholder-count="7">
+          <a href="{{ p.href }}" class="cx-item-card cx-pillar cx-item-open" style="animation-delay:{{ p.entryDelay }}ms;display:flex;align-items:center;gap:16px;background:#171b19;border:1px solid #262b27;border-radius:14px;padding:16px 18px;text-decoration:none;">
+            <div style="position:relative;width:66px;height:66px;flex:none;border-radius:11px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(195,154,75,0.16), transparent 62%), #141715;display:flex;align-items:center;justify-content:center;">
+              <div role="img" aria-label="{{ p.title }}" style="width:44px;height:44px;background-image:url({{ p.image }});background-size:44px 44px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:15px;font-weight:700;color:#eee7d8;">{{ p.title }}</span>
+                <span style="font-size:10px;font-weight:700;letter-spacing:0.05em;color:#d8b562;background:rgba(195,154,75,0.12);border:1px solid rgba(195,154,75,0.35);border-radius:999px;padding:2px 8px;">{{ p.count }}</span>
+              </div>
+              <span style="font-size:12px;line-height:1.5;color:#aaa69c;text-wrap:pretty;">{{ p.blurb }}</span>
+            </div>
+            <svg class="cx-pillar-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:none;color:#d8b562;"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </a>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:28px;align-items:start;">
+        <div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+            <span style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#eee7d8;">Recently Updated</span>
+            <span style="flex:1;height:1px;background:linear-gradient(90deg, #3a3528, transparent);"></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ recent }}" as="e" hint-placeholder-count="6">
+              <a href="{{ e.href }}" class="cx-recent-row cx-item-open" style="animation-delay:{{ e.entryDelay }}ms;display:flex;align-items:center;gap:14px;background:#171b19;border:1px solid #262b27;border-radius:10px;padding:9px 14px;text-decoration:none;">
+                <div style="width:44px;height:44px;flex:none;border-radius:8px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(195,154,75,0.14), transparent 62%), #141715;display:flex;align-items:center;justify-content:center;">
+                  <div role="img" aria-label="{{ e.name }}" style="width:26px;height:26px;background-image:url({{ e.image }});background-size:26px 26px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-size:13.5px;font-weight:700;color:#eee7d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ e.name }}</span>
+                  <span style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ e.kind }}</span>
+                </div>
+                <span style="flex:none;font-size:11.5px;color:#7d796f;">{{ e.note }}</span>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="background:rgba(23,27,25,0.86);border:1px solid #3a3528;border-radius:14px;padding:20px;">
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:#d8b562;text-transform:uppercase;margin-bottom:14px;">How the Codex Works</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <sc-for list="{{ howItWorks }}" as="h" hint-placeholder-count="3">
+                <div style="display:flex;gap:12px;">
+                  <span style="flex:none;width:22px;height:22px;border-radius:6px;border:1px solid rgba(195,154,75,0.4);background:rgba(195,154,75,0.1);color:#d8b562;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ h.step }}</span>
+                  <div style="display:flex;flex-direction:column;gap:3px;">
+                    <span style="font-size:13px;font-weight:700;color:#eee7d8;">{{ h.title }}</span>
+                    <span style="font-size:11.5px;line-height:1.55;color:#aaa69c;text-wrap:pretty;">{{ h.body }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <a href="./Recipes%20Directory.dc.html" class="cx-promo-card" style="display:flex;flex-direction:column;gap:8px;background:radial-gradient(circle at 82% 12%, rgba(195,154,75,0.14), transparent 58%), #171b19;border:1px solid #262b27;border-radius:14px;padding:20px;text-decoration:none;">
+            <span style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#eee7d8;">Crafting Chains</span>
+            <span style="font-size:12px;line-height:1.55;color:#aaa69c;text-wrap:pretty;">Follow any ingredient upward through every recipe that consumes it, and downward to the vendor who stocks it.</span>
+            <span style="font-size:12px;font-weight:700;color:#d8b562;margin-top:4px;">Open the recipe index →</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:none;border-top:1px solid #262b27;background:rgba(17,21,20,0.9);">
+      <div style="max-width:1760px;margin:0 auto;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+        <span style="font-size:11.5px;color:#7d796f;">Merchants Codex — a fan-maintained trade reference. Prices reflect base vendor rates.</span>
+        <div style="display:flex;align-items:center;gap:18px;">
+          <sc-for list="{{ navItems }}" as="nav" hint-placeholder-count="4">
+            <a href="{{ nav.href }}" class="cx-breadcrumb-link" style="font-size:11.5px;color:#aaa69c;position:relative;text-decoration:none;">{{ nav.label }}</a>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SPR = {
+  pot: "./assets/sprites/rendered/pot-44.png",
+  ether: "./assets/sprites/rendered/ether-44.png",
+  shard: "./assets/sprites/rendered/shard-44.png",
+  net: "./assets/sprites/rendered/net-44.png",
+  giga: "./assets/sprites/rendered/giga-44.png",
+  para: "./assets/sprites/rendered/para-44.png",
+  xspd: "./assets/sprites/rendered/xspd-44.png",
+  dusk: "./assets/sprites/rendered/dusk-44.png",
+};
+const SPR26 = {
+  pot: "./assets/sprites/rendered/pot-26.png",
+  ether: "./assets/sprites/rendered/ether-26.png",
+  shard: "./assets/sprites/rendered/shard-26.png",
+  net: "./assets/sprites/rendered/net-26.png",
+  giga: "./assets/sprites/rendered/giga-26.png",
+  xspd: "./assets/sprites/rendered/xspd-26.png",
+};
+
+const NAV = [
+  { label: "Items", href: "./Items%20Directory.dc.html" },
+  { label: "Recipes", href: "./Recipes%20Directory.dc.html" },
+  { label: "Professions", href: "./Professions%20Directory.dc.html" },
+  { label: "Classes", href: "./Classes%20Directory.dc.html" },
+];
+
+const PILLARS = [
+  { title: "Items", count: "37 entries", href: "./Items%20Directory.dc.html", image: SPR.pot, blurb: "Consumables, materials and tools with sources, prices and crafting uses." },
+  { title: "Recipes", count: "68 entries", href: "./Recipes%20Directory.dc.html", image: SPR.ether, blurb: "Ingredient lists, yields and experience for every craftable good." },
+  { title: "Professions", count: "9 entries", href: "./Professions%20Directory.dc.html", image: SPR.shard, blurb: "Gathering and production trades, with the recipes each one unlocks." },
+  { title: "Classes", count: "5 entries", href: "./Classes%20Directory.dc.html", image: SPR.giga, blurb: "Roles, progression and the professions that pair best with each." },
+  { title: "Locations", count: "30 entries", href: "./Locations%20Directory.dc.html", image: SPR.net, blurb: "Cities, routes and landmarks grouped by region, with local trade." },
+  { title: "Shops", count: "18 entries", href: "./Shops%20Directory.dc.html", image: SPR.xspd, blurb: "Vendor inventories, stock rotations and who runs the counter." },
+  { title: "NPCs", count: "21 entries", href: "./NPCs%20Directory.dc.html", image: SPR.para, blurb: "Merchants, trainers and quest-givers, and where to find them." },
+];
+
+const RECENT = [
+  { name: "Herbal Salve", kind: "Recipe — Crafting", note: "yield revised", image: SPR26.pot, href: "./Recipe%20Detail.dc.html?recipe=herbal-salve" },
+  { name: "Comet Shard", kind: "Item — Materials", note: "price checked", image: SPR26.shard, href: "./Item%20Detail.dc.html?item=comet-shard" },
+  { name: "Foraging", kind: "Profession — Gathering", note: "3 recipes added", image: SPR26.ether, href: "./Profession%20Detail.dc.html?profession=foraging" },
+  { name: "Iron Nails", kind: "Recipe — Smithing", note: "ingredients fixed", image: SPR26.giga, href: "./Recipe%20Detail.dc.html?recipe=iron-nails" },
+  { name: "Reinforced Fishing Rod", kind: "Recipe — Fishing", note: "new entry", image: SPR26.net, href: "./Recipe%20Detail.dc.html?recipe=reinforced-fishing-rod" },
+  { name: "Berry Compote", kind: "Recipe — Cooking", note: "exp corrected", image: SPR26.xspd, href: "./Recipe%20Detail.dc.html?recipe=berry-compote" },
+];
+
+const HOW = [
+  { step: "1", title: "Find an entry", body: "Search by name or browse a directory — every list filters by category, profession or region." },
+  { step: "2", title: "Follow the links", body: "Chips on every page jump to the profession, vendor, location or NPC behind an entry." },
+  { step: "3", title: "Trace the chain", body: "Recipes list what they consume and what consumes them, all the way to the shop counter." },
+];
+
+class Component extends DCLogic {
+  state = { worldMenuOpen: false, worldMenuClosing: false, searchQuery: "" };
+
+  closeWorldMenu = () => {
+    if (!this.state.worldMenuOpen || this.state.worldMenuClosing) return;
+    this.setState({ worldMenuClosing: true });
+    clearTimeout(this._worldCloseTimer);
+    this._worldCloseTimer = setTimeout(() => this.setState({ worldMenuOpen: false, worldMenuClosing: false }), 180);
+  };
+
+  componentDidMount() {
+    this._onDocClick = (e) => {
+      if (this.state.worldMenuOpen && !this.state.worldMenuClosing && !(e.target.closest && e.target.closest('[data-world-menu]'))) {
+        this.closeWorldMenu();
+      }
+    };
+    document.addEventListener('click', this._onDocClick, true);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._worldCloseTimer);
+    document.removeEventListener('click', this._onDocClick, true);
+  }
+
+  renderVals() {
+    return {
+      navItems: NAV,
+      searchQuery: this.state.searchQuery,
+      onSearchInput: (e) => this.setState({ searchQuery: e.target.value }),
+      onSearchKey: (e) => {
+        if (e.key === "Enter" && this.state.searchQuery.trim()) {
+          window.location.href = "./Items%20Directory.dc.html";
+        }
+      },
+      worldMenuOpen: this.state.worldMenuOpen,
+      toggleWorldMenu: () => {
+        if (this.state.worldMenuOpen) this.closeWorldMenu();
+        else { clearTimeout(this._worldCloseTimer); this.setState({ worldMenuOpen: true, worldMenuClosing: false }); }
+      },
+      worldChevronRotate: (this.state.worldMenuOpen && !this.state.worldMenuClosing) ? "rotate(180deg)" : "rotate(0deg)",
+      panelAnim: this.state.worldMenuClosing ? "cx-menu-out .18s ease both" : "cx-menu-in .2s cubic-bezier(.2,.9,.3,1) both",
+      itemClass: this.state.worldMenuClosing ? "cx-item-closing" : "cx-item-open",
+      heroStats: [
+        { value: String(37 + 68 + 9 + 5 + 30 + 18 + 21), label: "Entries" },
+        { value: "68", label: "Recipes" },
+        { value: "18", label: "Vendors" },
+        { value: "2", label: "Regions" },
+      ],
+      pillars: PILLARS.map((p, i) => ({ ...p, entryDelay: Math.min(i * 45, 330) })),
+      recent: RECENT.map((e, i) => ({ ...e, entryDelay: Math.min(i * 45, 330) })),
+      howItWorks: HOW,
+    };
+  }
+}
+</script>
+</body>
+</html>

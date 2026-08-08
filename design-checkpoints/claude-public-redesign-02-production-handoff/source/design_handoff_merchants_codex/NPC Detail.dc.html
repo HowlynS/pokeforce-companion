@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  .cx-nav-link{transition:border-color .18s ease, text-shadow .18s ease;}
+  .cx-nav-link:hover{border-color:#c39a4b !important;text-shadow:0 0 10px rgba(216,181,98,0.65);}
+  .cx-menu-item{transition:background .15s ease;}
+  .cx-menu-item:hover{background:#23281f;}
+  .cx-search{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;}
+  .cx-search:focus-within{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 3px rgba(195,154,75,0.14), 0 0 18px rgba(216,181,98,0.22);}
+  .cx-search svg *{transition:stroke .2s ease;}
+  .cx-search:focus-within svg *{stroke:#d8b562;}
+  .cx-search:hover{border-color:#4a4536 !important;animation:cx-search-pulse 1.6s ease-in-out infinite;}
+  @keyframes cx-search-pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,181,98,0.18);}50%{box-shadow:0 0 0 5px rgba(216,181,98,0.06);}}
+  .cx-search:focus-within{animation:none;}
+  .cx-item-card{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;}
+  .cx-item-card:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-logo{transition:filter .2s ease;}
+  .cx-logo:hover{animation:cx-logo-breathe 3.2s ease-in-out infinite;}
+  @keyframes cx-logo-breathe{0%,100%{filter:drop-shadow(0 0 3px rgba(216,181,98,0.4)) drop-shadow(0 0 7px rgba(195,154,75,0.22));}50%{filter:drop-shadow(0 0 5px rgba(216,181,98,0.6)) drop-shadow(0 0 11px rgba(195,154,75,0.32));}}
+  ::selection{background:#c39a4b;color:#111514;}
+  @keyframes cx-menu-in{from{opacity:0;transform:translate(-50%,0) scaleY(.92) scaleX(.98);}to{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}}
+  @keyframes cx-menu-out{from{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}to{opacity:0;transform:translate(-50%,0) scaleY(.94) scaleX(.99);}}
+  @keyframes cx-item-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes cx-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-3px);}}
+  .cx-item-open{animation:cx-item-in .22s cubic-bezier(.2,.9,.3,1) both;}
+  .cx-item-open:nth-child(1){animation-delay:0ms;}
+  .cx-item-open:nth-child(2){animation-delay:30ms;}
+  .cx-item-open:nth-child(3){animation-delay:60ms;}
+  .cx-item-open:nth-child(4){animation-delay:90ms;}
+  .cx-item-open:nth-child(5){animation-delay:120ms;}
+  .cx-item-open:nth-child(6){animation-delay:150ms;}
+  .cx-item-open:nth-child(7){animation-delay:180ms;}
+  .cx-item-open:nth-child(8){animation-delay:210ms;}
+  .cx-item-open:nth-child(9){animation-delay:240ms;}
+  .cx-item-open:nth-child(10){animation-delay:270ms;}
+  .cx-item-open:nth-child(11){animation-delay:300ms;}
+  .cx-item-open:nth-child(12){animation-delay:330ms;}
+  .cx-item-open:nth-child(13){animation-delay:330ms;}
+  .cx-item-open:nth-child(14){animation-delay:330ms;}
+  .cx-item-open:nth-child(15){animation-delay:330ms;}
+  .cx-item-open:nth-child(16){animation-delay:330ms;}
+  .cx-item-open:nth-child(17){animation-delay:330ms;}
+  .cx-item-open:nth-child(18){animation-delay:330ms;}
+  .cx-item-open:nth-child(19){animation-delay:330ms;}
+  .cx-item-open:nth-child(20){animation-delay:330ms;}
+  .cx-item-open:nth-child(21){animation-delay:330ms;}
+  .cx-item-open:nth-child(22){animation-delay:330ms;}
+  .cx-item-open:nth-child(23){animation-delay:330ms;}
+  .cx-item-open:nth-child(24){animation-delay:330ms;}
+  .cx-item-closing{animation:cx-item-out .12s ease both;}
+  .cx-chip{transition:border-color .18s ease, background-color .18s ease, box-shadow .18s ease;text-decoration:none;display:inline-block;}
+  .cx-chip:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 14px rgba(216,181,98,0.25);}
+  @keyframes cx-line-sweep{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  @keyframes cx-line-sweep-out{from{transform:scaleX(1);}to{transform:scaleX(0);}}
+  .cx-breadcrumb-link{transition:color .18s ease;}
+  .cx-breadcrumb-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:#d8b562;transform:scaleX(0);transform-origin:left;transition:transform .18s ease;}
+  .cx-breadcrumb-link:hover{color:#d8b562 !important;}
+  .cx-breadcrumb-link:hover::after{transform:scaleX(1);}
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;background:#111514;overflow-x:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;">
+    <div style="position:sticky;top:0;z-index:50;padding:14px 28px 0;">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:relative;z-index:100;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);user-select:none;">
+        <a href="./Landing%20Page.dc.html" style="justify-self:start;flex:none;display:flex;"><img src="./assets/merchants-logo.png" alt="Merchants Codex" class="cx-logo" style="height:66px;width:auto;flex:none;margin:-13px 0;"></a>
+        <nav style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow:visible;">
+          <a href="./Items%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Items</a>
+          <a href="./Recipes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Recipes</a>
+          <a href="./Professions%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Professions</a>
+          <a href="./Classes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Classes</a>
+          <div data-world-menu style="position:relative;">
+            <div onClick="{{ toggleWorldMenu }}" class="cx-nav-link" style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;">
+              World
+              <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ worldChevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <sc-if value="{{ worldMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,0);z-index:60;background:#191d1b;border:1px solid #3a3528;border-radius:12px;padding:8px;min-width:230px;box-shadow:0 16px 32px rgba(0,0,0,0.5);animation:{{ panelAnim }};">
+                <a href="./World%20Navigation.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">World Navigation</span>
+                    <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;color:#111514;background:#d8b562;border-radius:4px;padding:2px 6px;text-transform:uppercase;">Recommended</span>
+                  </span>
+                  <span style="font-size:10px;color:#8a8579;">Region tree &amp; overview</span>
+                </a>
+                <a href="./Locations%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;border-top:1px solid #2a2f28;margin-top:6px;padding-top:11px;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Locations</span>
+                  <span style="font-size:10px;color:#8a8579;">Cities, routes &amp; landmarks</span>
+                </a>
+                <a href="./Shops%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Shops</span>
+                  <span style="font-size:10px;color:#8a8579;">Vendors &amp; trade goods</span>
+                </a>
+                <a href="./NPCs%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">NPCs</span>
+                  <span style="font-size:10px;color:#8a8579;">Notable people &amp; townsfolk</span>
+                </a>
+              </div>
+            </sc-if>
+          </div>
+        </nav>
+        <div class="cx-search" style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:1760px;margin:0 auto;padding:28px 28px 80px;">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:20px;">
+        <a href="./Landing%20Page.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Home</a>
+        <span style="color:#3a3528;">/</span>
+        <a href="./NPCs%20Directory.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">NPCs</a>
+        <span style="color:#3a3528;">/</span>
+        <span style="color:#d8b562;">{{ npc.name }}</span>
+      </div>
+
+      <div style="display:flex;gap:28px;align-items:flex-start;margin-bottom:32px;">
+        <div style="width:180px;height:180px;flex:none;border-radius:14px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(122,168,110,0.2), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+          <div role="img" aria-label="{{ npc.name }}" style="width:128px;height:128px;background-image:url({{ npc.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+        </div>
+        <div style="flex:1;min-width:0;padding-top:6px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;margin-bottom:8px;">{{ npc.role }}</div>
+          <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:40px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;">{{ npc.name }}</h1>
+          <div style="font-size:14.5px;line-height:1.7;color:#aaa69c;max-width:640px;margin-bottom:18px;">{{ npc.description }}</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="{{ npc.regionHref }}" class="cx-chip" style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Region:&nbsp;<strong style="color:#eee7d8;">{{ npc.region }}</strong></a>
+            <a href="{{ npc.locationHref }}" class="cx-chip" style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Location:&nbsp;<strong style="color:#eee7d8;">{{ npc.location }}</strong></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const SPR = {
+  pot: "./assets/sprites/chipped-pot.png",
+  shard: "./assets/sprites/comet-shard.png",
+  dusk: "./assets/sprites/dusk.png",
+  ether: "./assets/sprites/ether.png",
+  giga: "./assets/sprites/gigaton.png",
+  net: "./assets/sprites/net.png",
+  para: "./assets/sprites/paralyze-heal.png",
+  xspd: "./assets/sprites/x-speed.png",
+};
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+const RAW_NPCS = [
+  {name:"Prof. Elm", region:"Johto", location:"New Bark Town", role:"Professor", image:SPR.dusk},
+  {name:"Mr. Pokémon", region:"Johto", location:"Route 30", role:"Villager", image:SPR.para},
+  {name:"Falkner", region:"Johto", location:"Violet City", role:"Gym Leader", image:SPR.shard},
+  {name:"Bugsy", region:"Johto", location:"Azalea Town", role:"Gym Leader", image:SPR.giga},
+  {name:"Whitney", region:"Johto", location:"Goldenrod City", role:"Gym Leader", image:SPR.net},
+  {name:"Goldenrod Nurse", region:"Johto", location:"Goldenrod City", role:"Nurse", image:SPR.ether},
+  {name:"Morty", region:"Johto", location:"Ecruteak City", role:"Gym Leader", image:SPR.shard},
+  {name:"Dancing Theatre Host", region:"Johto", location:"Ecruteak City", role:"Villager", image:SPR.dusk},
+  {name:"Jasmine", region:"Johto", location:"Olivine City", role:"Gym Leader", image:SPR.giga},
+  {name:"Chuck", region:"Johto", location:"Cianwood City", role:"Gym Leader", image:SPR.para},
+  {name:"Pryce", region:"Johto", location:"Mahogany Town", role:"Gym Leader", image:SPR.ether},
+  {name:"Clair", region:"Johto", location:"Blackthorn City", role:"Gym Leader", image:SPR.shard},
+  {name:"Silver", region:"Johto", location:"Route 29", role:"Rival", image:SPR.xspd},
+  {name:"Prof. Oak", region:"Kanto", location:"Pallet Town", role:"Professor", image:SPR.dusk},
+  {name:"Blue", region:"Kanto", location:"Pallet Town", role:"Rival", image:SPR.xspd},
+  {name:"Brock", region:"Kanto", location:"Pewter City", role:"Gym Leader", image:SPR.giga},
+  {name:"Misty", region:"Kanto", location:"Cerulean City", role:"Gym Leader", image:SPR.net},
+  {name:"Cerulean Nurse", region:"Kanto", location:"Cerulean City", role:"Nurse", image:SPR.ether},
+  {name:"Lt. Surge", region:"Kanto", location:"Vermilion City", role:"Gym Leader", image:SPR.shard},
+  {name:"Erika", region:"Kanto", location:"Celadon City", role:"Gym Leader", image:SPR.para},
+  {name:"Celadon Merchant", region:"Kanto", location:"Celadon City", role:"Villager", image:SPR.dusk},
+];
+
+const ROLE_LIST = ["Gym Leader","Professor","Nurse","Rival","Villager"];
+
+function npcHref(n) {
+  return "./NPC%20Detail.dc.html?npc=" + encodeURIComponent(slugify(n.name));
+}
+
+const ROLE_BLURB = {
+  "Gym Leader": "leads the local Gym, testing challengers who pass through",
+  "Professor": "researches the region's creatures from a nearby laboratory",
+  "Nurse": "tends to travelers and their companions at the local Pokémon Center",
+  "Rival": "travels the region chasing the same journey as the player",
+  "Villager": "lives and works in the area, lending a hand to passing trainers",
+};
+
+class Component extends DCLogic {
+  state = {
+    worldMenuOpen: false,
+    worldMenuClosing: false,
+  };
+
+  closeWorldMenu = () => {
+    if (!this.state.worldMenuOpen || this.state.worldMenuClosing) return;
+    this.setState({ worldMenuClosing: true });
+    clearTimeout(this._worldCloseTimer);
+    this._worldCloseTimer = setTimeout(() => this.setState({ worldMenuOpen: false, worldMenuClosing: false }), 180);
+  };
+
+  componentDidMount() {
+    this._onDocClick = (e) => {
+      if (this.state.worldMenuOpen && !this.state.worldMenuClosing && !(e.target.closest && e.target.closest('[data-world-menu]'))) {
+        this.closeWorldMenu();
+      }
+    };
+    document.addEventListener('click', this._onDocClick, true);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._worldCloseTimer);
+    document.removeEventListener('click', this._onDocClick, true);
+  }
+
+  getSlug() {
+    try {
+      return new URLSearchParams(window.location.search).get('npc') || slugify(RAW_NPCS[0].name);
+    } catch (e) {
+      return slugify(RAW_NPCS[0].name);
+    }
+  }
+
+  renderVals() {
+    const slug = this.getSlug();
+    const found = RAW_NPCS.find(n => slugify(n.name) === slug) || RAW_NPCS[0];
+    const npc = {
+      ...found,
+      description: `${found.name} ${ROLE_BLURB[found.role] || "can be found here"} in ${found.location}, ${found.region}.`,
+      regionHref: "./Locations%20Directory.dc.html",
+      locationHref: "./Location%20Detail.dc.html?location=" + encodeURIComponent(slugify(found.location)),
+    };
+
+    return {
+      npc,
+      worldMenuOpen: this.state.worldMenuOpen,
+      toggleWorldMenu: () => { if (this.state.worldMenuOpen) this.closeWorldMenu(); else { clearTimeout(this._worldCloseTimer); this.setState({ worldMenuOpen: true, worldMenuClosing: false }); } },
+      worldChevronRotate: (this.state.worldMenuOpen && !this.state.worldMenuClosing) ? "rotate(180deg)" : "rotate(0deg)",
+      panelAnim: this.state.worldMenuClosing ? "cx-menu-out .18s ease both" : "cx-menu-in .2s cubic-bezier(.2,.9,.3,1) both",
+      itemClass: this.state.worldMenuClosing ? "cx-item-closing" : "cx-item-open",
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  .cx-nav-link{transition:border-color .18s ease, text-shadow .18s ease;}
+  .cx-nav-link:hover{border-color:#c39a4b !important;text-shadow:0 0 10px rgba(216,181,98,0.65);}
+  .cx-menu-item{transition:background .15s ease;}
+  .cx-menu-item:hover{background:#23281f;}
+  .cx-search{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;}
+  .cx-search:focus-within{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 3px rgba(195,154,75,0.14), 0 0 18px rgba(216,181,98,0.22);}
+  .cx-search svg *{transition:stroke .2s ease;}
+  .cx-search:focus-within svg *{stroke:#d8b562;}
+  .cx-search:hover{border-color:#4a4536 !important;animation:cx-search-pulse 1.6s ease-in-out infinite;}
+  @keyframes cx-search-pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,181,98,0.18);}50%{box-shadow:0 0 0 5px rgba(216,181,98,0.06);}}
+  .cx-search:focus-within{animation:none;}
+  .cx-item-card{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;}
+  .cx-item-card:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-logo{transition:filter .2s ease;}
+  .cx-logo:hover{animation:cx-logo-breathe 3.2s ease-in-out infinite;}
+  @keyframes cx-logo-breathe{0%,100%{filter:drop-shadow(0 0 3px rgba(216,181,98,0.4)) drop-shadow(0 0 7px rgba(195,154,75,0.22));}50%{filter:drop-shadow(0 0 5px rgba(216,181,98,0.6)) drop-shadow(0 0 11px rgba(195,154,75,0.32));}}
+  ::selection{background:#c39a4b;color:#111514;}
+  @keyframes cx-menu-in{from{opacity:0;transform:translate(-50%,0) scaleY(.92) scaleX(.98);}to{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}}
+  @keyframes cx-menu-out{from{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}to{opacity:0;transform:translate(-50%,0) scaleY(.94) scaleX(.99);}}
+  @keyframes cx-item-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes cx-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-3px);}}
+  .cx-item-open{animation:cx-item-in .22s cubic-bezier(.2,.9,.3,1) both;}
+  .cx-item-closing{animation:cx-item-out .12s ease both;}
+  .cx-icon-btn{transition:background-color .2s ease, border-color .2s ease;}
+  .cx-icon-btn:hover{background:#23281f !important;}
+  @keyframes cx-line-sweep{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  @keyframes cx-line-sweep-out{from{transform:scaleX(1);}to{transform:scaleX(0);}}
+  .cx-breadcrumb-link{transition:color .18s ease;}
+  .cx-breadcrumb-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:#d8b562;transform:scaleX(0);transform-origin:left;transition:transform .18s ease;}
+  .cx-breadcrumb-link:hover{color:#d8b562 !important;}
+  .cx-breadcrumb-link:hover::after{transform:scaleX(1);}
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;background:#111514;overflow-x:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;">
+    <div style="position:sticky;top:0;z-index:50;padding:14px 28px 0;">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:relative;z-index:100;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);user-select:none;">
+        <a href="./Landing%20Page.dc.html" style="justify-self:start;flex:none;display:flex;"><img src="./assets/merchants-logo.png" alt="Merchants Codex" class="cx-logo" style="height:66px;width:auto;flex:none;margin:-13px 0;"></a>
+        <nav style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow:visible;">
+          <a href="./Items%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Items</a>
+          <a href="./Recipes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Recipes</a>
+          <a href="./Professions%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Professions</a>
+          <a href="./Classes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Classes</a>
+          <div data-world-menu style="position:relative;">
+            <div onClick="{{ toggleWorldMenu }}" style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#d8b562;padding-bottom:4px;border-bottom:2px solid #c39a4b;white-space:nowrap;cursor:pointer;">
+              World
+              <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ worldChevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <sc-if value="{{ worldMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,0);z-index:60;background:#191d1b;border:1px solid #3a3528;border-radius:12px;padding:8px;min-width:230px;box-shadow:0 16px 32px rgba(0,0,0,0.5);animation:{{ panelAnim }};">
+                <a href="./World%20Navigation.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="font-size:12.5px;font-weight:700;color:#d8b562;">World Navigation</span>
+                    <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;color:#111514;background:#d8b562;border-radius:4px;padding:2px 6px;text-transform:uppercase;">Recommended</span>
+                  </span>
+                  <span style="font-size:10px;color:#8a8579;">Region tree &amp; overview</span>
+                </a>
+                <a href="./Locations%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;border-top:1px solid #2a2f28;margin-top:6px;padding-top:11px;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Locations</span>
+                  <span style="font-size:10px;color:#8a8579;">Cities, routes &amp; landmarks</span>
+                </a>
+                <a href="./Shops%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Shops</span>
+                  <span style="font-size:10px;color:#8a8579;">Vendors &amp; trade goods</span>
+                </a>
+                <a href="./NPCs%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">NPCs</span>
+                  <span style="font-size:10px;color:#8a8579;">Notable people &amp; townsfolk</span>
+                </a>
+              </div>
+            </sc-if>
+          </div>
+        </nav>
+        <div class="cx-search" style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:1760px;margin:0 auto;padding:28px 28px 80px;display:flex;gap:28px;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:20px;flex-wrap:wrap;">
+          <a href="./Landing%20Page.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Home</a>
+          <span style="color:#3a3528;">/</span>
+          <a href="./Locations%20Directory.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Locations</a>
+          <span style="color:#3a3528;">/</span>
+          <sc-if value="{{ isSubLocation }}" hint-placeholder-val="{{ false }}">
+            <a href="{{ regionHref }}" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">{{ regionName }}</a>
+            <span style="color:#3a3528;">/</span>
+          </sc-if>
+          <span style="color:#d8b562;">{{ pageName }}</span>
+        </div>
+
+        <div style="display:flex;gap:28px;align-items:flex-start;margin-bottom:32px;">
+          <div style="width:180px;height:180px;flex:none;border-radius:14px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(122,168,110,0.2), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+            <div role="img" aria-label="{{ pageName }}" style="width:128px;height:128px;background-image:url({{ pageImage }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+          </div>
+          <div style="flex:1;min-width:0;padding-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;margin-bottom:8px;">{{ pageKind }}</div>
+            <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:40px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;">{{ pageName }}</h1>
+            <div style="font-size:14.5px;line-height:1.7;color:#aaa69c;max-width:640px;margin-bottom:18px;">{{ pageDescription }}</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <sc-for list="{{ pageChips }}" as="chip" hint-placeholder-count="2">
+                <div style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">{{ chip.label }}:&nbsp;<strong style="color:{{ chip.color }};">{{ chip.value }}</strong></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="user-select:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+            <div onClick="{{ toggleLocations }}" style="position:relative;display:flex;align-items:center;gap:9px;cursor:pointer;padding-bottom:8px;flex:1;">
+              <svg width="13" height="13" viewBox="0 0 24 24" style="flex:none;transform:{{ locationsChevron }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="#d8b562" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#eee7d8;">{{ locationsHeading }}</div>
+              <sc-if value="{{ locationsOpen }}" hint-placeholder-val="{{ true }}">
+                <div style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:linear-gradient(90deg, #c39a4b, transparent);transform-origin:left center;animation:{{ locationsLineAnim }};"></div>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:3px;flex:none;">
+              <button onClick="{{ setLocationsGrid }}" class="cx-icon-btn" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:{{ locationsGridBg }};color:{{ locationsGridColor }};font-family:Manrope,sans-serif;font-size:12px;font-weight:600;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect></svg>
+                Grid
+              </button>
+              <button onClick="{{ setLocationsList }}" class="cx-icon-btn" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:{{ locationsListBg }};color:{{ locationsListColor }};font-family:Manrope,sans-serif;font-size:12px;font-weight:600;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+                List
+              </button>
+            </div>
+          </div>
+          <sc-if value="{{ locationsVisible }}" hint-placeholder-val="{{ true }}">
+            <div class="{{ locationsContentClass }}" style="display:flex;flex-direction:column;gap:16px;">
+              <sc-for list="{{ typeGroups }}" as="tg" hint-placeholder-count="3">
+                <div>
+                  <div onClick="{{ tg.toggle }}" style="display:flex;align-items:center;gap:8px;margin-bottom:9px;cursor:pointer;user-select:none;">
+                    <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ tg.chevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="#aaa69c" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+                    <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#aaa69c;text-transform:uppercase;">{{ tg.type }}</span>
+                    <span style="flex:1;height:1px;background:#262b27;"></span>
+                  </div>
+                  <sc-if value="{{ tg.expanded }}" hint-placeholder-val="{{ true }}">
+                    <sc-if value="{{ isLocationsGrid }}" hint-placeholder-val="{{ true }}">
+                    <div class="{{ tg.contentClass }}" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:12px;">
+                      <sc-for list="{{ tg.locations }}" as="loc" hint-placeholder-count="4">
+                        <a href="{{ loc.href }}" class="cx-item-card cx-item-open" style="text-decoration:none;position:relative;background:#171b19;border:1px solid #262b27;border-radius:10px;padding:14px;display:flex;gap:12px;cursor:pointer;">
+                          <div style="width:52px;height:52px;flex:none;border-radius:8px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(122,168,110,0.2), transparent 62%), #111514;display:flex;align-items:center;justify-content:center;">
+                            <div role="img" aria-label="{{ loc.name }}" style="width:34px;height:34px;background-image:url({{ loc.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                          </div>
+                          <div style="flex:1;min-width:0;">
+                            <div style="font-size:13.5px;font-weight:700;color:#eee7d8;margin-bottom:2px;">{{ loc.name }}</div>
+                            <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;margin-bottom:5px;">{{ loc.type }}</div>
+                            <div style="display:flex;gap:8px;font-size:10.5px;color:#7d796f;">
+                              <span>{{ loc.npcCount }} NPCs</span>
+                              <span>&middot;</span>
+                              <span>{{ loc.shopLabel }}</span>
+                            </div>
+                          </div>
+                        </a>
+                      </sc-for>
+                    </div>
+                    </sc-if>
+                    <sc-if value="{{ isLocationsList }}" hint-placeholder-val="{{ false }}">
+                    <div class="{{ tg.contentClass }}" style="display:flex;flex-direction:column;gap:8px;">
+                      <div style="display:flex;align-items:center;gap:14px;padding:0 14px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#7d796f;text-transform:uppercase;">
+                        <div style="width:36px;flex:none;"></div>
+                        <div style="width:160px;flex:none;">Location</div>
+                        <div style="width:70px;flex:none;">Type</div>
+                        <div style="flex:1;min-width:0;">Details</div>
+                      </div>
+                      <sc-for list="{{ tg.locations }}" as="loc" hint-placeholder-count="4">
+                        <a href="{{ loc.href }}" class="cx-item-card cx-item-open" style="text-decoration:none;display:flex;align-items:center;gap:14px;background:#171b19;border:1px solid #262b27;border-radius:9px;padding:6px 14px;cursor:pointer;">
+                          <div style="width:36px;height:36px;flex:none;border-radius:6px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(122,168,110,0.2), transparent 62%), #111514;display:flex;align-items:center;justify-content:center;">
+                            <div role="img" aria-label="{{ loc.name }}" style="width:26px;height:26px;background-image:url({{ loc.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                          </div>
+                          <div style="width:160px;flex:none;font-size:13.5px;font-weight:700;color:#eee7d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ loc.name }}</div>
+                          <div style="width:70px;flex:none;font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ loc.type }}</div>
+                          <div style="flex:1;min-width:0;font-size:11px;color:#7d796f;">{{ loc.npcCount }} NPCs &middot; {{ loc.shopLabel }}</div>
+                        </a>
+                      </sc-for>
+                    </div>
+                    </sc-if>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="width:272px;flex:none;position:sticky;top:88px;display:flex;flex-direction:column;gap:16px;">
+        <div style="background:#171b19;border:1px solid #3a3528;border-radius:12px;padding:18px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:14px;">{{ detailsHeading }}</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <sc-for list="{{ detailRows }}" as="row" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+                <span style="color:#aaa69c;">{{ row.label }}</span>
+                <span style="color:{{ row.color }};font-weight:700;">{{ row.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#171b19;border:1px solid #3a3528;border-radius:12px;padding:18px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:10px;">Traveler's Note</div>
+          <div style="font-size:12.5px;line-height:1.6;color:#aaa69c;">{{ travelerNote }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const SPR = {
+  pot: "./assets/sprites/chipped-pot.png",
+  shard: "./assets/sprites/comet-shard.png",
+  dusk: "./assets/sprites/dusk.png",
+  ether: "./assets/sprites/ether.png",
+  giga: "./assets/sprites/gigaton.png",
+  net: "./assets/sprites/net.png",
+  para: "./assets/sprites/paralyze-heal.png",
+  xspd: "./assets/sprites/x-speed.png",
+};
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+const RAW_LOCATIONS = [
+  {name:"New Bark Town", region:"Johto", type:"Town", description:"A tiny town where fresh winds blow, home to Professor Elm's laboratory and Johto's newest trainers.", npcCount:3, hasShop:false, image:SPR.dusk},
+  {name:"Route 29", region:"Johto", type:"Route", description:"A quiet dirt path connecting New Bark Town to Cherrygrove City, lined with tall grass.", npcCount:2, hasShop:false, image:SPR.dusk},
+  {name:"Cherrygrove City", region:"Johto", type:"City", description:"The first city most Johto trainers visit, known for its welcoming Pokémon Center and coastal breeze.", npcCount:4, hasShop:true, image:SPR.giga},
+  {name:"Route 30", region:"Johto", type:"Route", description:"A winding route past Mr. Pokémon's house, popular with early berry foragers.", npcCount:2, hasShop:false, image:SPR.para},
+  {name:"Violet City", region:"Johto", type:"City", description:"A city of ancient towers and academic tradition, home to the Sprout Tower.", npcCount:5, hasShop:true, image:SPR.giga},
+  {name:"Sprout Tower", region:"Johto", type:"Landmark", description:"A wooden tower swaying atop a pillar, where monks train alongside Bellsprout.", npcCount:6, hasShop:false, image:SPR.shard},
+  {name:"Dark Cave", region:"Johto", type:"Cave", description:"A pitch-black cavern connecting Route 31 and Route 45, nearly impossible without a light source.", npcCount:0, hasShop:false, image:SPR.xspd},
+  {name:"Azalea Town", region:"Johto", type:"Town", description:"A rural town bordered by the Ilex Forest, known for its Slowpoke Well.", npcCount:3, hasShop:true, image:SPR.dusk},
+  {name:"Ilex Forest", region:"Johto", type:"Forest", description:"A dense, ancient forest said to house a shrine to the forest spirit.", npcCount:1, hasShop:false, image:SPR.para},
+  {name:"Goldenrod City", region:"Johto", type:"City", description:"Johto's largest city, famous for its sprawling Department Store and radio tower.", npcCount:8, hasShop:true, image:SPR.giga},
+  {name:"National Park", region:"Johto", type:"Landmark", description:"A well-kept park hosting the annual Bug-Catching Contest under open skies.", npcCount:2, hasShop:false, image:SPR.ether},
+  {name:"Ecruteak City", region:"Johto", type:"City", description:"A city steeped in legend, home to the Burned Tower and the Dance Theatre.", npcCount:4, hasShop:true, image:SPR.net},
+  {name:"Burned Tower", region:"Johto", type:"Landmark", description:"The scorched ruins of a once-great tower, said to be the origin of the legendary beasts.", npcCount:1, hasShop:false, image:SPR.shard},
+  {name:"Olivine City", region:"Johto", type:"City", description:"A harbor city with a working lighthouse that guides ships safely to port.", npcCount:5, hasShop:true, image:SPR.pot},
+  {name:"Whirl Islands", region:"Johto", type:"Landmark", description:"A cluster of sea caves battered by whirlpools, resting place of a legendary guardian.", npcCount:0, hasShop:false, image:SPR.xspd},
+  {name:"Cianwood City", region:"Johto", type:"Town", description:"A remote coastal town reachable only by boat, known for its secret medicine shop.", npcCount:3, hasShop:true, image:SPR.dusk},
+  {name:"Mahogany Town", region:"Johto", type:"Town", description:"A small mountain town overlooking the Lake of Rage, rumored to hide a criminal hideout.", npcCount:2, hasShop:true, image:SPR.para},
+  {name:"Lake of Rage", region:"Johto", type:"Lake", description:"A misty lake said to stir with unusual energy during certain seasons.", npcCount:1, hasShop:false, image:SPR.ether},
+  {name:"Ice Path", region:"Johto", type:"Cave", description:"A frozen cavern of slick floors and hidden chambers leading toward Blackthorn City.", npcCount:0, hasShop:false, image:SPR.xspd},
+  {name:"Blackthorn City", region:"Johto", type:"City", description:"A mountain city of dragon tamers, nestled at the foot of the Dragon's Den.", npcCount:4, hasShop:true, image:SPR.net},
+  {name:"Pallet Town", region:"Kanto", type:"Town", description:"A peaceful town of few houses, famed as the starting point of many great journeys.", npcCount:2, hasShop:false, image:SPR.dusk},
+  {name:"Route 1", region:"Kanto", type:"Route", description:"The well-trodden road linking Pallet Town to Viridian City.", npcCount:1, hasShop:false, image:SPR.dusk},
+  {name:"Viridian City", region:"Kanto", type:"City", description:"A quiet city known as the perpetually calm gateway to Kanto's forests.", npcCount:3, hasShop:true, image:SPR.giga},
+  {name:"Viridian Forest", region:"Kanto", type:"Forest", description:"A maze-like forest thick with bug trainers and rustling leaves.", npcCount:2, hasShop:false, image:SPR.para},
+  {name:"Pewter City", region:"Kanto", type:"City", description:"A city built from stone, home to a renowned Gym and natural history museum.", npcCount:4, hasShop:true, image:SPR.giga},
+  {name:"Mt. Moon", region:"Kanto", type:"Cave", description:"A moonlit mountain cave prized by fossil hunters and stargazers alike.", npcCount:2, hasShop:false, image:SPR.shard},
+  {name:"Cerulean City", region:"Kanto", type:"City", description:"A city built around clear blue waterways, known for its Cape and Gym.", npcCount:5, hasShop:true, image:SPR.net},
+  {name:"Lavender Town", region:"Kanto", type:"Town", description:"A somber town shrouded in mist, home to the Pokémon Tower.", npcCount:2, hasShop:false, image:SPR.pot},
+  {name:"Pokémon Tower", region:"Kanto", type:"Landmark", description:"A tower of rest for departed Pokémon, said to be haunted after dark.", npcCount:3, hasShop:false, image:SPR.shard},
+  {name:"Celadon City", region:"Kanto", type:"City", description:"A bustling metropolis famed for its department store and hidden game corner.", npcCount:6, hasShop:true, image:SPR.giga},
+];
+
+const REGIONS = [
+  { name: "Johto", description: "A region of ancient towers and quiet mountain towns, bridging tradition with the trials of new trainers.", image: SPR.shard },
+  { name: "Kanto", description: "The original heartland of the league, from the woods of Viridian Forest to the neon streets of Celadon City.", image: SPR.giga },
+];
+
+const TYPE_LIST = ["City","Town","Route","Cave","Forest","Landmark","Lake"];
+const REGION_SLUGS = REGIONS.map(r => slugify(r.name));
+
+function locationHref(loc) {
+  return "./Location%20Detail.dc.html?loc=" + encodeURIComponent(slugify(loc.name));
+}
+function regionHref(region) {
+  return "./Location%20Detail.dc.html?loc=" + encodeURIComponent(slugify(region));
+}
+
+class Component extends DCLogic {
+  state = {
+    worldMenuOpen: false,
+    worldMenuClosing: false,
+    locationsOpen: true,
+    locationsClosing: false,
+    locationsView: "grid",
+    collapsedTypes: {},
+    closingTypes: {},
+  };
+
+  closeWorldMenu = () => {
+    if (!this.state.worldMenuOpen || this.state.worldMenuClosing) return;
+    this.setState({ worldMenuClosing: true });
+    clearTimeout(this._worldCloseTimer);
+    this._worldCloseTimer = setTimeout(() => this.setState({ worldMenuOpen: false, worldMenuClosing: false }), 180);
+  };
+
+  toggleLocationsSection = () => {
+    if (this.state.locationsOpen) {
+      this.setState({ locationsClosing: true });
+      clearTimeout(this._locTimer);
+      this._locTimer = setTimeout(() => this.setState({ locationsOpen: false, locationsClosing: false }), 220);
+    } else {
+      clearTimeout(this._locTimer);
+      this.setState({ locationsOpen: true, locationsClosing: false });
+    }
+  };
+
+  toggleType = (key) => {
+    if (this.state.collapsedTypes[key]) {
+      this.setState(s => { const c = { ...s.collapsedTypes }; delete c[key]; return { collapsedTypes: c }; });
+      return;
+    }
+    this.setState(s => ({ closingTypes: { ...s.closingTypes, [key]: true } }));
+    if (!this._typeTimers) this._typeTimers = {};
+    clearTimeout(this._typeTimers[key]);
+    this._typeTimers[key] = setTimeout(() => {
+      this.setState(s => {
+        const cl = { ...s.closingTypes };
+        delete cl[key];
+        return { collapsedTypes: { ...s.collapsedTypes, [key]: true }, closingTypes: cl };
+      });
+    }, 130);
+  };
+
+  componentDidMount() {
+    this._onDocClick = (e) => {
+      if (this.state.worldMenuOpen && !this.state.worldMenuClosing && !(e.target.closest && e.target.closest('[data-world-menu]'))) {
+        this.closeWorldMenu();
+      }
+    };
+    document.addEventListener('click', this._onDocClick, true);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._worldCloseTimer);
+    clearTimeout(this._locTimer);
+    if (this._typeTimers) Object.values(this._typeTimers).forEach(clearTimeout);
+    document.removeEventListener('click', this._onDocClick, true);
+  }
+
+  getSlug() {
+    try {
+      return new URLSearchParams(window.location.search).get('loc') || slugify(REGIONS[0].name);
+    } catch (e) {
+      return slugify(REGIONS[0].name);
+    }
+  }
+
+  renderVals() {
+    const slug = this.getSlug();
+    const isRegion = REGION_SLUGS.includes(slug);
+    const region = isRegion ? REGIONS.find(r => slugify(r.name) === slug) : null;
+    const loc = !isRegion ? RAW_LOCATIONS.find(l => slugify(l.name) === slug) : null;
+    const activeRegionName = isRegion ? region.name : (loc ? loc.region : REGIONS[0].name);
+
+    const withMeta = (l) => ({ ...l, image: l.image || SPR.dusk, shopLabel: l.hasShop ? "Shop present" : "No shop", href: locationHref(l) });
+
+    let listSource, listHeading, excludeName;
+    if (isRegion) {
+      listSource = RAW_LOCATIONS.filter(l => l.region === region.name);
+      listHeading = "Locations in " + region.name;
+      excludeName = null;
+    } else if (loc) {
+      listSource = RAW_LOCATIONS.filter(l => l.region === loc.region);
+      listHeading = "Nearby Locations";
+      excludeName = loc.name;
+    } else {
+      listSource = [];
+      listHeading = "Locations";
+      excludeName = null;
+    }
+
+    const typeGroups = TYPE_LIST.map(type => {
+      const locs = listSource.filter(l => l.type === type && l.name !== excludeName).map(withMeta);
+      const key = "t:" + activeRegionName + "|" + type;
+      const collapsed = !!this.state.collapsedTypes[key];
+      const closing = !!this.state.closingTypes[key];
+      return {
+        type,
+        count: locs.length,
+        locations: locs,
+        expanded: !collapsed,
+        chevronRotate: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
+        contentClass: closing ? "cx-item-closing" : "cx-item-open",
+        toggle: () => this.toggleType(key),
+      };
+    }).filter(tg => tg.count > 0);
+
+    let pageName, pageKind, pageDescription, pageImage, pageChips, detailsHeading, detailRows, travelerNote;
+
+    if (isRegion && region) {
+      const regionLocs = RAW_LOCATIONS.filter(l => l.region === region.name);
+      pageName = region.name;
+      pageKind = "Region";
+      pageDescription = region.description;
+      pageImage = region.image;
+      pageChips = [
+        { label: "Locations", value: regionLocs.length, color: "#d8b562" },
+        { label: "Cities", value: regionLocs.filter(l => l.type === "City").length, color: "#eee7d8" },
+      ];
+      detailsHeading = "Region Details";
+      detailRows = [
+        { label: "Total Locations", value: regionLocs.length, color: "#eee7d8" },
+        { label: "Cities", value: regionLocs.filter(l => l.type === "City").length, color: "#eee7d8" },
+        { label: "Towns", value: regionLocs.filter(l => l.type === "Town").length, color: "#eee7d8" },
+        { label: "Routes", value: regionLocs.filter(l => l.type === "Route").length, color: "#eee7d8" },
+        { label: "Shops Present", value: regionLocs.filter(l => l.hasShop).length, color: "#d8b562" },
+      ];
+      travelerNote = "Browse locations by category below, or visit the Locations directory to filter across all regions.";
+    } else if (loc) {
+      pageName = loc.name;
+      pageKind = loc.type;
+      pageDescription = loc.description;
+      pageImage = loc.image;
+      pageChips = [
+        { label: "NPCs", value: loc.npcCount, color: "#eee7d8" },
+        { label: "Shop", value: loc.hasShop ? "Present" : "None", color: loc.hasShop ? "#d8b562" : "#7d796f" },
+      ];
+      detailsHeading = "Location Details";
+      detailRows = [
+        { label: "Region", value: loc.region, color: "#eee7d8" },
+        { label: "Type", value: loc.type, color: "#eee7d8" },
+        { label: "NPCs", value: loc.npcCount, color: "#eee7d8" },
+        { label: "Shop", value: loc.hasShop ? "Present" : "None", color: loc.hasShop ? "#d8b562" : "#7d796f" },
+      ];
+      travelerNote = "Prices and shop stock fluctuate by location. Check the Shops directory for current buy and sell rates here.";
+    } else {
+      pageName = "Location Not Found";
+      pageKind = "Unknown";
+      pageDescription = "This location could not be found. Return to the Locations directory to browse the Codex.";
+      pageImage = SPR.dusk;
+      pageChips = [];
+      detailsHeading = "Details";
+      detailRows = [];
+      travelerNote = "";
+    }
+
+    return {
+      pageName,
+      pageKind,
+      pageDescription,
+      pageImage,
+      pageChips,
+      detailsHeading,
+      detailRows,
+      travelerNote,
+      isSubLocation: !!loc,
+      regionName: loc ? loc.region : "",
+      regionHref: loc ? regionHref(loc.region) : "",
+      locationsHeading: listHeading,
+      typeGroups,
+      locationsOpen: this.state.locationsOpen,
+      locationsVisible: this.state.locationsOpen || this.state.locationsClosing,
+      locationsChevron: this.state.locationsOpen ? "rotate(180deg)" : "rotate(0deg)",
+      locationsLineAnim: this.state.locationsClosing ? "cx-line-sweep-out .22s ease both" : "cx-line-sweep .35s ease both",
+      locationsContentClass: this.state.locationsClosing ? "cx-item-closing" : "cx-item-open",
+      toggleLocations: this.toggleLocationsSection,
+      isLocationsGrid: this.state.locationsView === "grid",
+      isLocationsList: this.state.locationsView === "list",
+      locationsGridBg: this.state.locationsView === "grid" ? "#23281f" : "transparent",
+      locationsGridColor: this.state.locationsView === "grid" ? "#d8b562" : "#aaa69c",
+      locationsListBg: this.state.locationsView === "list" ? "#23281f" : "transparent",
+      locationsListColor: this.state.locationsView === "list" ? "#d8b562" : "#aaa69c",
+      setLocationsGrid: () => this.setState({ locationsView: "grid" }),
+      setLocationsList: () => this.setState({ locationsView: "list" }),
+      worldMenuOpen: this.state.worldMenuOpen,
+      toggleWorldMenu: () => { if (this.state.worldMenuOpen) this.closeWorldMenu(); else { clearTimeout(this._worldCloseTimer); this.setState({ worldMenuOpen: true, worldMenuClosing: false }); } },
+      worldChevronRotate: (this.state.worldMenuOpen && !this.state.worldMenuClosing) ? "rotate(180deg)" : "rotate(0deg)",
+      panelAnim: this.state.worldMenuClosing ? "cx-menu-out .18s ease both" : "cx-menu-in .2s cubic-bezier(.2,.9,.3,1) both",
+      itemClass: this.state.worldMenuClosing ? "cx-item-closing" : "cx-item-open",
+    };
+  }
+}
+
+</script>
+</body>
+</html>

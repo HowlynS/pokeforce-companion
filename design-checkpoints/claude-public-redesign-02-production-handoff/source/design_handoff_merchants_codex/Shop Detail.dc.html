@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  .cx-nav-link{transition:border-color .18s ease, text-shadow .18s ease;}
+  .cx-nav-link:hover{border-color:#c39a4b !important;text-shadow:0 0 10px rgba(216,181,98,0.65);}
+  .cx-menu-item{transition:background .15s ease;}
+  .cx-menu-item:hover{background:#23281f;}
+  .cx-search{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;}
+  .cx-search:focus-within{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 3px rgba(195,154,75,0.14), 0 0 18px rgba(216,181,98,0.22);}
+  .cx-search svg *{transition:stroke .2s ease;}
+  .cx-search:focus-within svg *{stroke:#d8b562;}
+  .cx-search:hover{border-color:#4a4536 !important;animation:cx-search-pulse 1.6s ease-in-out infinite;}
+  @keyframes cx-search-pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,181,98,0.18);}50%{box-shadow:0 0 0 5px rgba(216,181,98,0.06);}}
+  .cx-search:focus-within{animation:none;}
+  .cx-item-card{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;}
+  .cx-item-card:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-logo{transition:filter .2s ease;}
+  .cx-logo:hover{animation:cx-logo-breathe 3.2s ease-in-out infinite;}
+  @keyframes cx-logo-breathe{0%,100%{filter:drop-shadow(0 0 3px rgba(216,181,98,0.4)) drop-shadow(0 0 7px rgba(195,154,75,0.22));}50%{filter:drop-shadow(0 0 5px rgba(216,181,98,0.6)) drop-shadow(0 0 11px rgba(195,154,75,0.32));}}
+  ::selection{background:#c39a4b;color:#111514;}
+  @keyframes cx-menu-in{from{opacity:0;transform:translate(-50%,0) scaleY(.92) scaleX(.98);}to{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}}
+  @keyframes cx-menu-out{from{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}to{opacity:0;transform:translate(-50%,0) scaleY(.94) scaleX(.99);}}
+  @keyframes cx-item-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes cx-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-3px);}}
+  .cx-item-open{animation:cx-item-in .22s cubic-bezier(.2,.9,.3,1) both;}
+  .cx-item-open:nth-child(1){animation-delay:0ms;}
+  .cx-item-open:nth-child(2){animation-delay:30ms;}
+  .cx-item-open:nth-child(3){animation-delay:60ms;}
+  .cx-item-open:nth-child(4){animation-delay:90ms;}
+  .cx-item-open:nth-child(5){animation-delay:120ms;}
+  .cx-item-open:nth-child(6){animation-delay:150ms;}
+  .cx-item-open:nth-child(7){animation-delay:180ms;}
+  .cx-item-open:nth-child(8){animation-delay:210ms;}
+  .cx-item-open:nth-child(9){animation-delay:240ms;}
+  .cx-item-open:nth-child(10){animation-delay:270ms;}
+  .cx-item-open:nth-child(11){animation-delay:300ms;}
+  .cx-item-open:nth-child(12){animation-delay:330ms;}
+  .cx-item-open:nth-child(13){animation-delay:330ms;}
+  .cx-item-open:nth-child(14){animation-delay:330ms;}
+  .cx-item-open:nth-child(15){animation-delay:330ms;}
+  .cx-item-open:nth-child(16){animation-delay:330ms;}
+  .cx-item-open:nth-child(17){animation-delay:330ms;}
+  .cx-item-open:nth-child(18){animation-delay:330ms;}
+  .cx-item-open:nth-child(19){animation-delay:330ms;}
+  .cx-item-open:nth-child(20){animation-delay:330ms;}
+  .cx-item-open:nth-child(21){animation-delay:330ms;}
+  .cx-item-open:nth-child(22){animation-delay:330ms;}
+  .cx-item-open:nth-child(23){animation-delay:330ms;}
+  .cx-item-open:nth-child(24){animation-delay:330ms;}
+  .cx-item-closing{animation:cx-item-out .12s ease both;}
+  @keyframes cx-line-sweep{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  @keyframes cx-line-sweep-out{from{transform:scaleX(1);}to{transform:scaleX(0);}}
+  @keyframes cx-fade-in-stagger{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .cx-fade-stagger{animation:cx-fade-in-stagger .32s ease both;}
+  .cx-fade-stagger:nth-child(1){animation-delay:0ms;}
+  .cx-fade-stagger:nth-child(2){animation-delay:40ms;}
+  .cx-fade-stagger:nth-child(3){animation-delay:80ms;}
+  .cx-fade-stagger:nth-child(4){animation-delay:120ms;}
+  .cx-fade-stagger:nth-child(5){animation-delay:160ms;}
+  .cx-fade-stagger:nth-child(6){animation-delay:200ms;}
+  .cx-fade-stagger:nth-child(7){animation-delay:240ms;}
+  .cx-fade-stagger:nth-child(8){animation-delay:280ms;}
+  .cx-fade-stagger:nth-child(9){animation-delay:320ms;}
+  .cx-fade-stagger:nth-child(10){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(11){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(12){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(13){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(14){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(15){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(16){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(17){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(18){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(19){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(20){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(21){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(22){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(23){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(24){animation-delay:360ms;}
+  @keyframes cx-fade-out-stagger{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-6px);}}
+  .cx-fade-stagger-out{animation:cx-fade-out-stagger .2s ease both;}
+  .cx-filter-btn{transition:background-color .15s ease, border-color .15s ease, color .15s ease;}
+  .cx-inv-row{transition:background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;cursor:pointer;}
+  .cx-inv-row:hover{background:#171b19 !important;border-color:#c39a4b !important;transform:translateX(4px);box-shadow:0 0 16px rgba(216,181,98,0.18), inset 0 0 0 1px rgba(195,154,75,0.25);}
+  .cx-inv-row:hover .cx-inv-cursor{opacity:1;transform:translateX(0);}
+  .cx-inv-row:hover .cx-inv-icon{transform:scale(1.12);}
+  .cx-inv-row:hover .cx-inv-price{color:#f4c542;text-shadow:0 0 8px rgba(244,197,66,0.5);}
+  .cx-inv-cursor{opacity:0;transform:translateX(-4px);transition:opacity .18s ease, transform .18s ease;}
+  .cx-inv-icon{transition:transform .18s ease;}
+  .cx-inv-price{transition:color .18s ease, text-shadow .18s ease;}
+  .cx-inv-row-selected{background:#1c201e !important;border-color:#c39a4b !important;box-shadow:0 0 16px rgba(216,181,98,0.22), inset 0 0 0 1px rgba(195,154,75,0.3);}
+  .cx-chip{transition:border-color .18s ease, background-color .18s ease, box-shadow .18s ease;text-decoration:none;display:inline-block;}
+  .cx-chip:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 14px rgba(216,181,98,0.25);}
+  .cx-breadcrumb-link{transition:color .18s ease;}
+  .cx-breadcrumb-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:#d8b562;transform:scaleX(0);transform-origin:left;transition:transform .18s ease;}
+  .cx-breadcrumb-link:hover{color:#d8b562 !important;}
+  .cx-breadcrumb-link:hover::after{transform:scaleX(1);}
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;background:#111514;overflow-x:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;">
+    <div style="position:sticky;top:0;z-index:50;padding:14px 28px 0;">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:relative;z-index:100;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);user-select:none;">
+        <a href="./Landing%20Page.dc.html" style="justify-self:start;flex:none;display:flex;"><img src="./assets/merchants-logo.png" alt="Merchants Codex" class="cx-logo" style="height:66px;width:auto;flex:none;margin:-13px 0;"></a>
+        <nav style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow:visible;">
+          <a href="./Items%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Items</a>
+          <a href="./Recipes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Recipes</a>
+          <a href="./Professions%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Professions</a>
+          <a href="./Classes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Classes</a>
+          <div data-world-menu style="position:relative;">
+            <div onClick="{{ toggleWorldMenu }}" class="cx-nav-link" style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;">
+              World
+              <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ worldChevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <sc-if value="{{ worldMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,0);z-index:60;background:#191d1b;border:1px solid #3a3528;border-radius:12px;padding:8px;min-width:230px;box-shadow:0 16px 32px rgba(0,0,0,0.5);animation:{{ panelAnim }};">
+                <a href="./World%20Navigation.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">World Navigation</span>
+                    <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;color:#111514;background:#d8b562;border-radius:4px;padding:2px 6px;text-transform:uppercase;">Recommended</span>
+                  </span>
+                  <span style="font-size:10px;color:#8a8579;">Region tree &amp; overview</span>
+                </a>
+                <a href="./Locations%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;border-top:1px solid #2a2f28;margin-top:6px;padding-top:11px;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Locations</span>
+                  <span style="font-size:10px;color:#8a8579;">Cities, routes &amp; landmarks</span>
+                </a>
+                <a href="./Shops%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Shops</span>
+                  <span style="font-size:10px;color:#8a8579;">Vendors &amp; trade goods</span>
+                </a>
+                <a href="./NPCs%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">NPCs</span>
+                  <span style="font-size:10px;color:#8a8579;">Notable people &amp; townsfolk</span>
+                </a>
+              </div>
+            </sc-if>
+          </div>
+        </nav>
+        <div class="cx-search" style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:1760px;margin:0 auto;padding:28px 28px 80px;">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:20px;">
+        <a href="./Landing%20Page.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Home</a>
+        <span style="color:#3a3528;">/</span>
+        <a href="./Shops%20Directory.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Shops</a>
+        <span style="color:#3a3528;">/</span>
+        <span style="color:#d8b562;">{{ shop.name }}</span>
+      </div>
+
+      <div style="display:flex;gap:28px;align-items:flex-start;margin-bottom:32px;">
+        <div style="width:180px;height:180px;flex:none;border-radius:14px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(195,154,75,0.2), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+          <div role="img" aria-label="{{ shop.name }}" style="width:128px;height:128px;background-image:url({{ shop.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+        </div>
+        <div style="flex:1;min-width:0;padding-top:6px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;margin-bottom:8px;">{{ shop.type }}</div>
+          <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:40px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;">{{ shop.name }}</h1>
+          <div style="font-size:14.5px;line-height:1.7;color:#aaa69c;max-width:640px;margin-bottom:18px;">{{ shop.description }}</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Type:&nbsp;<strong style="color:#eee7d8;">{{ shop.type }}</strong></div>
+            <a href="{{ shop.regionHref }}" class="cx-chip" style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Region:&nbsp;<strong style="color:#eee7d8;">{{ shop.region }}</strong></a>
+            <a href="{{ shop.locationHref }}" class="cx-chip" style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Location:&nbsp;<strong style="color:#eee7d8;">{{ shop.location }}</strong></a>
+            <a href="{{ shop.keeperHref }}" class="cx-chip" style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">NPC:&nbsp;<strong style="color:#eee7d8;">{{ shop.keeper }}</strong></a>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:32px;user-select:none;">
+        <div onClick="{{ toggleInventory }}" style="position:relative;display:flex;align-items:center;gap:9px;cursor:pointer;margin-bottom:14px;padding-bottom:8px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" style="flex:none;transform:{{ inventoryChevron }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="#d8b562" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#eee7d8;">Inventory</div>
+          <span style="font-size:11.5px;color:#7d796f;">{{ shop.inventoryCount }} items</span>
+          <sc-if value="{{ inventoryOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:linear-gradient(90deg, #c39a4b, transparent);transform-origin:left center;animation:{{ inventoryLineAnim }};"></div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ inventoryVisible }}" hint-placeholder-val="{{ true }}">
+        <div style="max-width:520px;background:#171b19;border:3px solid #d8b562;border-radius:14px;padding:16px;">
+          <div style="display:flex;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #3a3528;">
+            <div style="width:76px;height:76px;flex:none;border-radius:10px;border:2px solid #d8b562;background:#0f1210;display:flex;align-items:center;justify-content:center;">
+              <div role="img" aria-label="{{ shop.selected.name }}" style="width:72px;height:72px;background-image:url({{ shop.selected.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+            </div>
+            <div style="flex:1;background:#0f1210;border:1px solid #3a3528;border-radius:10px;padding:8px 12px;">
+              <div style="font-size:11px;font-weight:700;color:#d8b562;margin-bottom:2px;">{{ shop.selected.name }}</div>
+              <div style="font-size:12px;color:#cfc9ba;line-height:1.4;">{{ shop.selected.description }}</div>
+            </div>
+          </div>
+          <div class="{{ inventoryAnimClass }}" style="display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ visibleInventory }}" as="inv" hint-placeholder-count="5">
+              <div onClick="{{ inv.select }}" class="cx-inv-row cx-item-open {{ inv.rowClass }}" style="display:flex;align-items:center;gap:10px;background:#0f1210;border:1px solid #262b27;border-radius:8px;padding:8px 10px;">
+                <span class="cx-inv-cursor" style="font-size:11px;color:#d8b562;flex:none;">▶</span>
+                <div role="img" aria-label="{{ inv.name }}" class="cx-inv-icon" style="width:28px;height:28px;flex:none;background-image:url({{ inv.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                <span style="flex:1;font-size:12.5px;color:#eee7d8;font-weight:600;">{{ inv.name }}</span>
+                <span class="cx-inv-price" style="font-size:11.5px;color:#d8b562;font-weight:700;">{{ inv.price }}G</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const SPR = {
+  pot: { image: "./assets/sprites/chipped-pot.png", name: "Chipped Pot", category: "Ingredients" },
+  shard: { image: "./assets/sprites/comet-shard.png", name: "Comet Shard", category: "Materials" },
+  dusk: { image: "./assets/sprites/dusk.png", name: "Dusk Ball", category: "Gear" },
+  ether: { image: "./assets/sprites/ether.png", name: "Ether", category: "Consumables" },
+  giga: { image: "./assets/sprites/gigaton.png", name: "Gigaton Ore", category: "Materials" },
+  net: { image: "./assets/sprites/net.png", name: "Net Ball", category: "Gear" },
+  para: { image: "./assets/sprites/paralyze-heal.png", name: "Paralyze Heal", category: "Consumables" },
+  xspd: { image: "./assets/sprites/x-speed.png", name: "X Speed", category: "Consumables" },
+};
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+const SINGULAR_CATEGORY = { Consumables: "consumable", Gear: "piece of gear", Materials: "material", Ingredients: "ingredient" };
+function inv(key, price, stock, description) {
+  const label = SINGULAR_CATEGORY[SPR[key].category] || SPR[key].category.toLowerCase();
+  return { ...SPR[key], price, stock, description: description || ("A trusted " + label + " favored by trainers passing through.") };
+}
+
+const RAW_SHOPS = [
+  {
+    name: "Cherrygrove Outfitters", region: "Johto", location: "Cherrygrove City", type: "General Store",
+    keeper: "Merchant Dale", image: SPR.dusk.image,
+    description: "A cozy shop just off the beach path, stocked with the basics every trainer needs before heading inland.",
+    inventory: [inv("dusk", 300, 12), inv("net", 350, 8), inv("ether", 250, 20), inv("para", 150, 15), inv("pot", 100, 30)],
+  },
+  {
+    name: "Violet Herbalist", region: "Johto", location: "Violet City", type: "Apothecary",
+    keeper: "Herbalist Rosa", image: SPR.ether.image,
+    description: "Tucked beside the Sprout Tower, this apothecary blends tonics from local herbs and berries.",
+    inventory: [inv("ether", 220, 25), inv("para", 140, 18), inv("xspd", 300, 10)],
+  },
+  {
+    name: "Goldenrod Department Store", region: "Johto", location: "Goldenrod City", type: "General Store",
+    keeper: "Floor Manager Wren", image: SPR.giga.image,
+    description: "A six-floor emporium selling everything from evolution stones to festival souvenirs.",
+    inventory: [inv("giga", 900, 5), inv("dusk", 320, 14), inv("net", 380, 9), inv("ether", 260, 22), inv("para", 160, 16), inv("xspd", 310, 12), inv("shard", 1200, 3), inv("pot", 110, 40)],
+  },
+  {
+    name: "Olivine Forge", region: "Johto", location: "Olivine City", type: "Blacksmith",
+    keeper: "Smith Corin", image: SPR.giga.image,
+    description: "The clang of hammers rings out from this harbor-side forge, known for sturdy travel gear.",
+    inventory: [inv("giga", 850, 6), inv("shard", 1100, 2)],
+  },
+  {
+    name: "Viridian Trading Post", region: "Kanto", location: "Viridian City", type: "General Store",
+    keeper: "Trader Voss", image: SPR.dusk.image,
+    description: "The last stop for supplies before the long road north out of Viridian Forest.",
+    inventory: [inv("dusk", 290, 13), inv("net", 340, 10), inv("ether", 240, 24), inv("pot", 95, 28)],
+  },
+  {
+    name: "Celadon Department Store", region: "Kanto", location: "Celadon City", type: "General Store",
+    keeper: "Floor Manager Iris", image: SPR.giga.image,
+    description: "Celadon's largest store, five floors deep with a rooftop garden café up top.",
+    inventory: [inv("giga", 920, 4), inv("dusk", 330, 15), inv("net", 390, 11), inv("ether", 270, 23), inv("para", 170, 17), inv("xspd", 320, 13), inv("shard", 1250, 3)],
+  },
+];
+
+const GREETING_BY_TYPE = {
+  "General Store": "Welcome, traveler. Take a look at what I've got.",
+  "Apothecary": "Welcome, traveler. Fresh tonics, brewed this morning.",
+  "Blacksmith": "Welcome, traveler. Sturdy goods, forged to last.",
+  "Tailor": "Welcome, traveler. Something sharp for the road, perhaps?",
+  "Bait & Tackle": "Welcome, traveler. Best tackle this side of the coast.",
+  "Game Corner": "Welcome, traveler. Try your luck while you're here.",
+  "Bookstore": "Welcome, traveler. Quiet in here — feel free to browse.",
+};
+
+class Component extends DCLogic {
+  state = {
+    worldMenuOpen: false, worldMenuClosing: false,
+    inventoryOpen: true, inventoryClosing: false,
+    selectedItem: null,
+  };
+
+  closeWorldMenu = () => {
+    if (!this.state.worldMenuOpen || this.state.worldMenuClosing) return;
+    this.setState({ worldMenuClosing: true });
+    clearTimeout(this._worldCloseTimer);
+    this._worldCloseTimer = setTimeout(() => this.setState({ worldMenuOpen: false, worldMenuClosing: false }), 180);
+  };
+
+  toggleSection = (openKey, closingKey, timerKey) => {
+    if (this.state[openKey]) {
+      this.setState({ [closingKey]: true });
+      clearTimeout(this[timerKey]);
+      this[timerKey] = setTimeout(() => this.setState({ [openKey]: false, [closingKey]: false }), 220);
+    } else {
+      clearTimeout(this[timerKey]);
+      this.setState({ [openKey]: true, [closingKey]: false });
+    }
+  };
+
+  componentDidMount() {
+    this._onDocClick = (e) => {
+      if (this.state.worldMenuOpen && !this.state.worldMenuClosing && !(e.target.closest && e.target.closest('[data-world-menu]'))) {
+        this.closeWorldMenu();
+      }
+    };
+    document.addEventListener('click', this._onDocClick, true);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._worldCloseTimer);
+    clearTimeout(this._inventoryTimer);
+    document.removeEventListener('click', this._onDocClick, true);
+  }
+
+  getSlug() {
+    try {
+      return new URLSearchParams(window.location.search).get('shop') || slugify(RAW_SHOPS[0].name);
+    } catch (e) {
+      return slugify(RAW_SHOPS[0].name);
+    }
+  }
+
+  renderVals() {
+    const slug = this.getSlug();
+    const found = RAW_SHOPS.find(s => slugify(s.name) === slug) || RAW_SHOPS[0];
+    const shop = {
+      ...found,
+      inventoryCount: found.inventory.length,
+      greeting: GREETING_BY_TYPE[found.type] || "Welcome, traveler. Take a look at what I've got.",
+      regionHref: "./Locations%20Directory.dc.html",
+      locationHref: "./Location%20Detail.dc.html?location=" + encodeURIComponent(slugify(found.location)),
+      keeperHref: "./NPC%20Detail.dc.html?npc=" + encodeURIComponent(slugify(found.keeper)),
+    };
+
+    const visibleInventory = shop.inventory.map(it => {
+      const isSelected = this.state.selectedItem === it.name;
+      return {
+        ...it,
+        isSelected,
+        rowClass: isSelected ? "cx-inv-row-selected" : "",
+        select: () => this.setState({ selectedItem: it.name }),
+      };
+    });
+    const selected = shop.inventory.find(it => it.name === this.state.selectedItem) || shop.inventory[0];
+    shop.selected = selected;
+
+    return {
+      shop,
+      visibleInventory,
+      inventoryAnimClass: this.state.inventoryClosing ? "cx-fade-stagger-out" : "cx-fade-stagger",
+      inventoryOpen: this.state.inventoryOpen,
+      inventoryVisible: this.state.inventoryOpen || this.state.inventoryClosing,
+      inventoryChevron: this.state.inventoryOpen ? "rotate(180deg)" : "rotate(0deg)",
+      inventoryLineAnim: this.state.inventoryClosing ? "cx-line-sweep-out .22s ease both" : "cx-line-sweep .35s ease both",
+      toggleInventory: () => this.toggleSection("inventoryOpen", "inventoryClosing", "_inventoryTimer"),
+      worldMenuOpen: this.state.worldMenuOpen,
+      toggleWorldMenu: () => { if (this.state.worldMenuOpen) this.closeWorldMenu(); else { clearTimeout(this._worldCloseTimer); this.setState({ worldMenuOpen: true, worldMenuClosing: false }); } },
+      worldChevronRotate: (this.state.worldMenuOpen && !this.state.worldMenuClosing) ? "rotate(180deg)" : "rotate(0deg)",
+      panelAnim: this.state.worldMenuClosing ? "cx-menu-out .18s ease both" : "cx-menu-in .2s cubic-bezier(.2,.9,.3,1) both",
+      itemClass: this.state.worldMenuClosing ? "cx-item-closing" : "cx-item-open",
+    };
+  }
+}
+
+</script>
+</body>
+</html>

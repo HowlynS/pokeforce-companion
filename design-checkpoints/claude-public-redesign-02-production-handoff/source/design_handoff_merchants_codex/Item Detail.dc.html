@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  .cx-nav-link{transition:border-color .18s ease, text-shadow .18s ease;}
+  .cx-nav-link:hover{border-color:#c39a4b !important;text-shadow:0 0 10px rgba(216,181,98,0.65);}
+  .cx-menu-item{transition:background .15s ease;}
+  .cx-menu-item:hover{background:#23281f;}
+  @keyframes cx-line-sweep{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  @keyframes cx-fade-in-stagger{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .cx-fade-stagger{animation:cx-fade-in-stagger .32s ease both;}
+  .cx-fade-stagger:nth-child(1){animation-delay:0ms;}
+  .cx-fade-stagger:nth-child(2){animation-delay:40ms;}
+  .cx-fade-stagger:nth-child(3){animation-delay:80ms;}
+  .cx-fade-stagger:nth-child(4){animation-delay:120ms;}
+  .cx-fade-stagger:nth-child(5){animation-delay:160ms;}
+  .cx-fade-stagger:nth-child(6){animation-delay:200ms;}
+  .cx-fade-stagger:nth-child(7){animation-delay:240ms;}
+  .cx-fade-stagger:nth-child(8){animation-delay:280ms;}
+  .cx-fade-stagger:nth-child(9){animation-delay:320ms;}
+  .cx-fade-stagger:nth-child(10){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(11){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(12){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(13){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(14){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(15){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(16){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(17){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(18){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(19){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(20){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(21){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(22){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(23){animation-delay:360ms;}
+  .cx-fade-stagger:nth-child(24){animation-delay:360ms;}
+  @keyframes cx-line-sweep-out{from{transform:scaleX(1);}to{transform:scaleX(0);}}
+  @keyframes cx-fade-out-stagger{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-6px);}}
+  .cx-fade-stagger-out{animation:cx-fade-out-stagger .2s ease both;}
+  .cx-search{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;}
+  .cx-search:focus-within{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 3px rgba(195,154,75,0.14), 0 0 18px rgba(216,181,98,0.22);}
+  .cx-search svg *{transition:stroke .2s ease;}
+  .cx-search:focus-within svg *{stroke:#d8b562;}
+  .cx-search:hover{border-color:#4a4536 !important;animation:cx-search-pulse 1.6s ease-in-out infinite;}
+  @keyframes cx-search-pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,181,98,0.18);}50%{box-shadow:0 0 0 5px rgba(216,181,98,0.06);}}
+  .cx-search:focus-within{animation:none;}
+  .cx-item-card{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;}
+  .cx-item-card:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-icon-btn{transition:background-color .2s ease, border-color .2s ease;}
+  .cx-icon-btn:hover{background:#23281f !important;}
+  .cx-logo{transition:filter .2s ease;}
+  .cx-logo:hover{animation:cx-logo-breathe 3.2s ease-in-out infinite;}
+  @keyframes cx-logo-breathe{0%,100%{filter:drop-shadow(0 0 3px rgba(216,181,98,0.4)) drop-shadow(0 0 7px rgba(195,154,75,0.22));}50%{filter:drop-shadow(0 0 5px rgba(216,181,98,0.6)) drop-shadow(0 0 11px rgba(195,154,75,0.32));}}
+  ::selection{background:#c39a4b;color:#111514;}
+  @keyframes cx-menu-in{from{opacity:0;transform:translate(-50%,0) scaleY(.92) scaleX(.98);}to{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}}
+  @keyframes cx-menu-out{from{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}to{opacity:0;transform:translate(-50%,0) scaleY(.94) scaleX(.99);}}
+  @keyframes cx-item-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes cx-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-3px);}}
+  .cx-item-open{animation:cx-item-in .22s cubic-bezier(.2,.9,.3,1) both;}
+  .cx-item-open:nth-child(1){animation-delay:0ms;}
+  .cx-item-open:nth-child(2){animation-delay:30ms;}
+  .cx-item-open:nth-child(3){animation-delay:60ms;}
+  .cx-item-open:nth-child(4){animation-delay:90ms;}
+  .cx-item-open:nth-child(5){animation-delay:120ms;}
+  .cx-item-open:nth-child(6){animation-delay:150ms;}
+  .cx-item-open:nth-child(7){animation-delay:180ms;}
+  .cx-item-open:nth-child(8){animation-delay:210ms;}
+  .cx-item-open:nth-child(9){animation-delay:240ms;}
+  .cx-item-open:nth-child(10){animation-delay:270ms;}
+  .cx-item-open:nth-child(11){animation-delay:300ms;}
+  .cx-item-open:nth-child(12){animation-delay:330ms;}
+  .cx-item-open:nth-child(13){animation-delay:330ms;}
+  .cx-item-open:nth-child(14){animation-delay:330ms;}
+  .cx-item-open:nth-child(15){animation-delay:330ms;}
+  .cx-item-open:nth-child(16){animation-delay:330ms;}
+  .cx-item-open:nth-child(17){animation-delay:330ms;}
+  .cx-item-open:nth-child(18){animation-delay:330ms;}
+  .cx-item-open:nth-child(19){animation-delay:330ms;}
+  .cx-item-open:nth-child(20){animation-delay:330ms;}
+  .cx-item-open:nth-child(21){animation-delay:330ms;}
+  .cx-item-open:nth-child(22){animation-delay:330ms;}
+  .cx-item-open:nth-child(23){animation-delay:330ms;}
+  .cx-item-open:nth-child(24){animation-delay:330ms;}
+  .cx-item-closing{animation:cx-item-out .12s ease both;}
+  @keyframes cx-panel-in{from{opacity:0;transform:scaleY(.92) scaleX(.98);}to{opacity:1;transform:scaleY(1) scaleX(1);}}
+  @keyframes cx-panel-out{from{opacity:1;transform:scaleY(1) scaleX(1);}to{opacity:0;transform:scaleY(.94) scaleX(.99);}}
+  .cx-breadcrumb-link{transition:color .18s ease;}
+  .cx-breadcrumb-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:#d8b562;transform:scaleX(0);transform-origin:left;transition:transform .18s ease;}
+  .cx-breadcrumb-link:hover{color:#d8b562 !important;}
+  .cx-breadcrumb-link:hover::after{transform:scaleX(1);}
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;background:#111514;overflow-x:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;">
+    <div style="position:sticky;top:0;z-index:50;padding:14px 28px 0;">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:relative;z-index:100;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);user-select:none;">
+        <a href="./Landing%20Page.dc.html" style="justify-self:start;flex:none;display:flex;"><img src="./assets/merchants-logo.png" alt="Merchants Codex" class="cx-logo" style="height:66px;width:auto;flex:none;margin:-13px 0;"></a>
+        <nav style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow:visible;">
+          <a href="./Items%20Directory.dc.html" style="font-size:12.5px;font-weight:600;color:#d8b562;padding-bottom:4px;border-bottom:2px solid #c39a4b;white-space:nowrap;text-shadow:0 0 10px rgba(216,181,98,0.5);">Items</a>
+          <a href="./Recipes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Recipes</a>
+          <a href="./Professions%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Professions</a>
+          <a href="./Classes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Classes</a>
+          <div data-world-menu style="position:relative;">
+            <div onClick="{{ toggleWorldMenu }}" class="cx-nav-link" style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;">
+              World
+              <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ worldChevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <sc-if value="{{ worldMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,0);z-index:60;background:#191d1b;border:1px solid #3a3528;border-radius:12px;padding:8px;min-width:230px;box-shadow:0 16px 32px rgba(0,0,0,0.5);animation:{{ panelAnim }};">
+                <a href="./World%20Navigation.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">World Navigation</span>
+                    <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;color:#111514;background:#d8b562;border-radius:4px;padding:2px 6px;text-transform:uppercase;">Recommended</span>
+                  </span>
+                  <span style="font-size:10px;color:#8a8579;">Region tree &amp; overview</span>
+                </a>
+                <a href="./Locations%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;border-top:1px solid #2a2f28;margin-top:6px;padding-top:11px;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Locations</span>
+                  <span style="font-size:10px;color:#8a8579;">Cities, routes &amp; landmarks</span>
+                </a>
+                <a href="./Shops%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Shops</span>
+                  <span style="font-size:10px;color:#8a8579;">Vendors &amp; trade goods</span>
+                </a>
+                <a href="./NPCs%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">NPCs</span>
+                  <span style="font-size:10px;color:#8a8579;">Notable characters</span>
+                </a>
+              </div>
+            </sc-if>
+          </div>
+        </nav>
+        <div class="cx-search" style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:1760px;margin:0 auto;padding:28px 28px 80px;display:flex;gap:28px;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:20px;">
+          <a href="./Landing%20Page.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Home</a>
+          <span style="color:#3a3528;">/</span>
+          <a href="./Items%20Directory.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Items</a>
+          <span style="color:#3a3528;">/</span>
+          <span style="color:#d8b562;">{{ item.name }}</span>
+        </div>
+
+        <div style="display:flex;gap:28px;align-items:flex-start;margin-bottom:32px;">
+          <div style="width:180px;height:180px;flex:none;border-radius:14px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(90,160,210,0.2), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+            <div role="img" aria-label="{{ item.name }}" style="width:128px;height:128px;background-image:url({{ item.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+          </div>
+          <div style="flex:1;min-width:0;padding-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;margin-bottom:8px;">{{ item.category }}</div>
+            <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:40px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;">{{ item.name }}</h1>
+            <div style="font-size:14.5px;line-height:1.7;color:#aaa69c;max-width:640px;margin-bottom:18px;">{{ item.description }}</div>
+            <div style="display:flex;gap:10px;">
+              <div style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Source:&nbsp;<strong style="color:#eee7d8;">{{ item.source }}</strong></div>
+              <div style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Value:&nbsp;<strong style="color:#d8b562;">{{ item.value }}g</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:32px;user-select:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+            <div onClick="{{ toggleUsedIn }}" style="position:relative;display:flex;align-items:center;gap:9px;cursor:pointer;padding-bottom:8px;flex:1;">
+              <svg width="13" height="13" viewBox="0 0 24 24" style="flex:none;transform:{{ usedInChevron }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="#d8b562" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#eee7d8;">Used In</div>
+              <sc-if value="{{ usedInOpen }}" hint-placeholder-val="{{ true }}">
+                <div style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:linear-gradient(90deg, #c39a4b, transparent);transform-origin:left center;animation:{{ usedInLineAnim }};"></div>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:3px;flex:none;">
+              <button onClick="{{ setUsedInGrid }}" class="cx-icon-btn" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:{{ usedInGridBg }};color:{{ usedInGridColor }};font-family:Manrope,sans-serif;font-size:12px;font-weight:600;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect></svg>
+                Grid
+              </button>
+              <button onClick="{{ setUsedInList }}" class="cx-icon-btn" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:{{ usedInListBg }};color:{{ usedInListColor }};font-family:Manrope,sans-serif;font-size:12px;font-weight:600;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+                List
+              </button>
+            </div>
+          </div>
+          <sc-if value="{{ usedInVisible }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ isUsedInGrid }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:14px;">
+            <sc-for list="{{ usedInRecipes }}" as="r" hint-placeholder-count="3">
+              <div data-recipe-name="{{ r.name }}" class="cx-item-card {{ usedInCardClass }}" style="display:flex;align-items:center;gap:16px;background:#171b19;border:1px solid #262b27;border-radius:14px;padding:14px 20px 14px 12px;cursor:pointer;position:relative;z-index:{{ r.cardZ }};">
+                <div style="position:relative;width:78px;height:78px;flex:none;border-radius:11px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(195,154,75,0.14), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                  <div role="img" aria-label="{{ r.name }}" style="width:64px;height:64px;flex:none;background-image:url({{ r.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                  <div style="position:absolute;right:6px;bottom:6px;background:rgba(15,18,16,0.58);border:1px solid rgba(58,53,40,0.75);border-radius:6px;padding:4px 8px;text-align:center;">
+                    <div style="font-size:7px;font-weight:800;letter-spacing:0.06em;color:#eee7d8;text-transform:uppercase;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.7);">Yields</div>
+                    <div style="font-size:12.5px;font-weight:800;color:#f4c542;line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.7);">{{ r.outputRange }}</div>
+                  </div>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;">
+                  <div>
+                    <div style="font-size:{{ r.titleSize }};font-weight:700;color:#eee7d8;margin-bottom:3px;line-height:1.25;min-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }}</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ r.profession }}</span>
+                      <span style="font-size:10.5px;color:#8a8579;">Lvl {{ r.level }}</span>
+                    </div>
+                  </div>
+                  <div style="position:relative;display:flex;align-items:center;gap:6px;">
+                    <sc-for list="{{ r.visibleIngredientsGrid }}" as="ing" hint-placeholder-count="3">
+                      <div onMouseEnter="{{ ing.onEnter }}" onMouseLeave="{{ ing.onLeave }}" style="position:relative;width:36px;height:36px;flex:none;">
+                        <div role="img" aria-label="{{ ing.name }}" style="width:36px;height:36px;flex:none;border-radius:7px;border:1px solid #3a3528;background-color:#1c201e;padding:2px;box-sizing:border-box;background-image:url({{ ing.image36 }});background-size:36px 36px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                        <span style="position:absolute;right:-5px;bottom:-5px;min-width:14px;height:14px;padding:0 3px;background:rgba(15,18,16,0.94);border:1px solid rgba(195,154,75,0.55);border-radius:999px;box-shadow:0 0 0 2px #171b19;font-size:9.5px;font-weight:800;color:#f7dfa0;display:flex;align-items:center;justify-content:center;line-height:1;">{{ ing.qty }}</span>
+                        <sc-if value="{{ ing.tipVisible }}" hint-placeholder-val="{{ false }}">
+                          <div style="position:absolute;bottom:calc(100% + 7px);left:{{ ing.tipLeft }};transform:{{ ing.tipTransform }};background:#1c201e;border:1px solid #3a3528;border-radius:5px;padding:4px 8px;font-size:11px;font-weight:600;color:#eee7d8;white-space:nowrap;z-index:40;box-shadow:0 6px 14px rgba(0,0,0,0.4);pointer-events:none;">{{ ing.name }}</div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ r.hasMoreGrid }}" hint-placeholder-val="{{ false }}">
+                      <div style="width:24px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;">
+                        <button onClick="{{ r.toggleExpand }}" style="width:24px;height:24px;flex:none;box-sizing:border-box;margin:0;padding:0;display:flex;align-items:center;justify-content:center;line-height:1;border-radius:6px;border:1px solid #3a3528;background:#1c201e;color:#d8b562;font-size:10.5px;font-weight:700;cursor:pointer;">+{{ r.moreCountGrid }}</button>
+                      </div>
+                      <sc-if value="{{ r.ingVisible }}" hint-placeholder-val="{{ false }}">
+                        <div style="position:absolute;top:calc(100% + 8px);left:0;z-index:30;background:#1c201e;border:1px solid #3a3528;border-radius:8px;padding:10px;min-width:200px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 24px rgba(0,0,0,0.45);transform-origin:top left;animation:{{ r.ingPanelAnim }};">
+                          <div style="text-align:center;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;margin-bottom:2px;">Recipe Ingredients</div>
+                          <sc-for list="{{ r.ingredients }}" as="ing2" hint-placeholder-count="5">
+                            <div class="{{ r.ingItemClass }}" style="display:flex;align-items:center;gap:8px;">
+                              <div role="img" aria-label="{{ ing2.name }}" style="width:24px;height:24px;flex:none;border-radius:5px;border:1px solid #3a3528;background-color:#171b19;padding:2px;box-sizing:border-box;background-image:url({{ ing2.image24 }});background-size:24px 24px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                              <span style="font-size:12.5px;color:#eee7d8;">{{ ing2.name }}</span>
+                              <span style="font-size:12.5px;font-weight:700;color:#d8b562;margin-left:auto;">×{{ ing2.qty }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </sc-if>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ isUsedInList }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:14px;padding:0 14px 8px;">
+              <div style="width:48px;flex:none;"></div>
+              <div style="width:110px;flex:none;font-size:10.5px;font-weight:700;letter-spacing:0.06em;color:#7d796f;text-transform:uppercase;">Recipe</div>
+              <div style="width:80px;flex:none;font-size:10.5px;font-weight:700;letter-spacing:0.06em;color:#7d796f;text-transform:uppercase;">Profession</div>
+              <div style="width:55px;flex:none;margin-left:10px;font-size:10.5px;font-weight:700;letter-spacing:0.06em;color:#7d796f;text-transform:uppercase;">EXP</div>
+              <div style="flex:1;min-width:0;font-size:10.5px;font-weight:700;letter-spacing:0.06em;color:#7d796f;text-transform:uppercase;">Ingredients</div>
+            </div>
+            <sc-for list="{{ usedInRecipes }}" as="r" hint-placeholder-count="3">
+              <div data-recipe-name="{{ r.name }}" class="cx-item-card {{ usedInCardClass }}" style="display:flex;align-items:center;gap:14px;background:#171b19;border:1px solid #262b27;border-radius:9px;padding:6px 14px;cursor:pointer;position:relative;z-index:{{ r.cardZ }};">
+                <div style="position:relative;width:48px;height:48px;flex:none;border-radius:8px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(195,154,75,0.14), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                  <div role="img" aria-label="{{ r.name }}" style="width:44px;height:44px;flex:none;background-image:url({{ r.image44 }});background-size:44px 44px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                  <span style="position:absolute;right:-5px;bottom:-5px;min-width:17px;height:16px;padding:0 4px;background:rgba(15,18,16,0.94);border:1px solid rgba(195,154,75,0.55);border-radius:999px;box-shadow:0 0 0 2px #171b19;font-size:9.5px;font-weight:800;color:#f7dfa0;display:flex;align-items:center;justify-content:center;line-height:1;">{{ r.outputRange }}</span>
+                </div>
+                <div style="width:110px;flex:none;font-size:{{ r.titleSize }};font-weight:700;color:#eee7d8;line-height:1.25;min-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:center;">{{ r.name }}</div>
+                <div style="width:80px;flex:none;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ r.profession }}</span>
+                  <span style="font-size:11px;color:#8a8579;">Lvl {{ r.level }}</span>
+                </div>
+                <div style="width:55px;flex:none;margin-left:10px;font-size:11.5px;font-weight:700;color:#d8b562;">+{{ r.exp }} XP</div>
+                <div style="position:relative;flex:1;min-width:0;display:flex;align-items:center;gap:12px;">
+                  <div style="position:relative;display:flex;align-items:center;gap:8px;width:fit-content;">
+                    <sc-for list="{{ r.visibleIngredients }}" as="ing" hint-placeholder-count="4">
+                      <div onMouseEnter="{{ ing.onEnter }}" onMouseLeave="{{ ing.onLeave }}" style="position:relative;width:40px;height:40px;flex:none;">
+                        <div role="img" aria-label="{{ ing.name }}" style="width:40px;height:40px;flex:none;border-radius:7px;border:1px solid #3a3528;background-color:#1c201e;padding:2px;box-sizing:border-box;background-image:url({{ ing.image40 }});background-size:40px 40px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                        <span style="position:absolute;right:-5px;bottom:-5px;min-width:15px;height:15px;padding:0 3px;background:rgba(15,18,16,0.94);border:1px solid rgba(195,154,75,0.55);border-radius:999px;box-shadow:0 0 0 2px #171b19;font-size:9.5px;font-weight:800;color:#f7dfa0;display:flex;align-items:center;justify-content:center;line-height:1;">{{ ing.qty }}</span>
+                        <sc-if value="{{ ing.tipVisible }}" hint-placeholder-val="{{ false }}">
+                          <div style="position:absolute;bottom:calc(100% + 7px);left:{{ ing.tipLeft }};transform:{{ ing.tipTransform }};background:#1c201e;border:1px solid #3a3528;border-radius:5px;padding:4px 8px;font-size:11px;font-weight:600;color:#eee7d8;white-space:nowrap;z-index:40;box-shadow:0 6px 14px rgba(0,0,0,0.4);pointer-events:none;">{{ ing.name }}</div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ r.hasMoreIng }}" hint-placeholder-val="{{ false }}">
+                      <div style="width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;">
+                        <button onClick="{{ r.toggleExpand }}" style="width:28px;height:28px;flex:none;box-sizing:border-box;margin:0;padding:0;display:flex;align-items:center;justify-content:center;line-height:1;border-radius:6px;border:1px solid #3a3528;background:#1c201e;color:#d8b562;font-size:11.5px;font-weight:700;cursor:pointer;">+{{ r.moreIngCount }}</button>
+                      </div>
+                      <sc-if value="{{ r.ingVisible }}" hint-placeholder-val="{{ false }}">
+                        <div style="position:absolute;top:50px;left:0;width:200px;z-index:30;background:#1c201e;border:1px solid #3a3528;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 24px rgba(0,0,0,0.45);transform-origin:top left;animation:{{ r.ingPanelAnim }};">
+                          <div style="text-align:center;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;margin-bottom:2px;">Recipe Ingredients</div>
+                          <sc-for list="{{ r.ingredients }}" as="ing3" hint-placeholder-count="5">
+                            <div class="{{ r.ingItemClass }}" style="display:flex;align-items:center;gap:8px;">
+                              <div role="img" aria-label="{{ ing3.name }}" style="width:24px;height:24px;flex:none;border-radius:5px;border:1px solid #3a3528;background-color:#171b19;padding:2px;box-sizing:border-box;background-image:url({{ ing3.image24 }});background-size:24px 24px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                              <span style="font-size:12.5px;color:#eee7d8;">{{ ing3.name }}</span>
+                              <span style="font-size:12.5px;font-weight:700;color:#d8b562;margin-left:auto;">×{{ ing3.qty }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </sc-if>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+        </div>
+
+        <div style="user-select:none;">
+          <div onClick="{{ toggleRelated }}" style="position:relative;display:flex;align-items:center;gap:9px;cursor:pointer;margin-bottom:14px;padding-bottom:8px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" style="flex:none;transform:{{ relatedChevron }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="#d8b562" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#eee7d8;">Related Items</div>
+            <sc-if value="{{ relatedOpen }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:linear-gradient(90deg, #c39a4b, transparent);transform-origin:left center;animation:{{ relatedLineAnim }};"></div>
+            </sc-if>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:3px;flex:none;margin-left:auto;margin-bottom:14px;width:fit-content;">
+            <button onClick="{{ setRelatedGrid }}" class="cx-icon-btn" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:{{ relatedGridBg }};color:{{ relatedGridColor }};font-family:Manrope,sans-serif;font-size:12px;font-weight:600;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"></rect></svg>
+              Grid
+            </button>
+            <button onClick="{{ setRelatedList }}" class="cx-icon-btn" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:{{ relatedListBg }};color:{{ relatedListColor }};font-family:Manrope,sans-serif;font-size:12px;font-weight:600;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+              List
+            </button>
+          </div>
+          <sc-if value="{{ relatedVisible }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ isRelatedGrid }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(148px, 1fr));gap:12px;">
+            <sc-for list="{{ relatedItems }}" as="ri" hint-placeholder-count="4">
+              <div class="cx-item-card {{ relatedCardClass }}" style="background:#171b19;border:1px solid #262b27;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px;cursor:pointer;">
+                <div style="width:100%;aspect-ratio:1;border-radius:7px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(90,160,210,0.18), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                  <div role="img" aria-label="{{ ri.name }}" style="width:60px;height:60px;flex:none;background-image:url({{ ri.image60 }});background-size:60px 60px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                </div>
+                <div style="font-size:{{ ri.titleSize }};font-weight:700;color:#eee7d8;line-height:1.25;min-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ ri.name }}</div>
+                <div style="font-size:10px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ ri.category }}</div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ isRelatedList }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:14px;padding:0 14px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#7d796f;text-transform:uppercase;">
+              <div style="width:36px;flex:none;"></div>
+              <div style="width:220px;flex:none;">Item</div>
+              <div style="flex:1;min-width:0;">Category</div>
+            </div>
+            <sc-for list="{{ relatedItems }}" as="ri2" hint-placeholder-count="4">
+              <div class="cx-item-card {{ relatedCardClass }}" style="display:flex;align-items:center;gap:14px;background:#171b19;border:1px solid #262b27;border-radius:9px;padding:6px 14px;cursor:pointer;">
+                <div style="width:36px;height:36px;flex:none;border-radius:6px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(90,160,210,0.18), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                  <div role="img" aria-label="{{ ri2.name }}" style="width:26px;height:26px;flex:none;background-image:url({{ ri2.image26 }});background-size:26px 26px;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                </div>
+                <div style="width:220px;flex:none;font-size:13.5px;font-weight:700;color:#eee7d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ ri2.name }}</div>
+                <div style="flex:1;min-width:0;font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;">{{ ri2.category }}</div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="width:272px;flex:none;position:sticky;top:88px;display:flex;flex-direction:column;gap:16px;">
+        <div style="background:#171b19;border:1px solid #3a3528;border-radius:12px;padding:18px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:14px;">Item Details</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+              <span style="color:#aaa69c;">Category</span>
+              <span style="color:#eee7d8;font-weight:700;">{{ item.category }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+              <span style="color:#aaa69c;">Source</span>
+              <span style="color:#eee7d8;font-weight:700;">{{ item.source }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+              <span style="color:#aaa69c;">Stack Size</span>
+              <span style="color:#eee7d8;font-weight:700;">{{ item.stackSize }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+              <span style="color:#aaa69c;">Sell Value</span>
+              <span style="color:#d8b562;font-weight:700;">{{ item.value }}g</span>
+            </div>
+          </div>
+        </div>
+        <div style="background:#171b19;border:1px solid #3a3528;border-radius:12px;padding:18px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:10px;">Merchant's Note</div>
+          <div style="font-size:12.5px;line-height:1.6;color:#aaa69c;">Prices fluctuate by shop and region. Check the Shops directory for current buy and sell rates near you.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SPR = {
+  pot: { image: "./assets/sprites/chipped-pot.png", name: "Chipped Pot" },
+  shard: { image: "./assets/sprites/comet-shard.png", name: "Comet Shard" },
+  dusk: { image: "./assets/sprites/dusk.png", name: "Dusk" },
+  ether: { image: "./assets/sprites/ether.png", name: "Potion" },
+  giga: { image: "./assets/sprites/gigaton.png", name: "Gigaton" },
+  net: { image: "./assets/sprites/net.png", name: "Net" },
+  para: { image: "./assets/sprites/paralyze-heal.png", name: "Paralyze Heal" },
+  xspd: { image: "./assets/sprites/x-speed.png", name: "X Speed" },
+};
+const RENDERED = {
+  pot: { 24:"./assets/sprites/rendered/pot-24.png", 26:"./assets/sprites/rendered/pot-26.png", 36:"./assets/sprites/rendered/pot-36.png", 40:"./assets/sprites/rendered/pot-40.png", 44:"./assets/sprites/rendered/pot-44.png", 60:"./assets/sprites/rendered/pot-60.png" },
+  shard: { 24:"./assets/sprites/rendered/shard-24.png", 26:"./assets/sprites/rendered/shard-26.png", 36:"./assets/sprites/rendered/shard-36.png", 40:"./assets/sprites/rendered/shard-40.png", 44:"./assets/sprites/rendered/shard-44.png", 60:"./assets/sprites/rendered/shard-60.png" },
+  dusk: { 24:"./assets/sprites/rendered/dusk-24.png", 26:"./assets/sprites/rendered/dusk-26.png", 36:"./assets/sprites/rendered/dusk-36.png", 40:"./assets/sprites/rendered/dusk-40.png", 44:"./assets/sprites/rendered/dusk-44.png", 60:"./assets/sprites/rendered/dusk-60.png" },
+  ether: { 24:"./assets/sprites/rendered/ether-24.png", 26:"./assets/sprites/rendered/ether-26.png", 36:"./assets/sprites/rendered/ether-36.png", 40:"./assets/sprites/rendered/ether-40.png", 44:"./assets/sprites/rendered/ether-44.png", 60:"./assets/sprites/rendered/ether-60.png" },
+  giga: { 24:"./assets/sprites/rendered/giga-24.png", 26:"./assets/sprites/rendered/giga-26.png", 36:"./assets/sprites/rendered/giga-36.png", 40:"./assets/sprites/rendered/giga-40.png", 44:"./assets/sprites/rendered/giga-44.png", 60:"./assets/sprites/rendered/giga-60.png" },
+  net: { 24:"./assets/sprites/rendered/net-24.png", 26:"./assets/sprites/rendered/net-26.png", 36:"./assets/sprites/rendered/net-36.png", 40:"./assets/sprites/rendered/net-40.png", 44:"./assets/sprites/rendered/net-44.png", 60:"./assets/sprites/rendered/net-60.png" },
+  para: { 24:"./assets/sprites/rendered/para-24.png", 26:"./assets/sprites/rendered/para-26.png", 36:"./assets/sprites/rendered/para-36.png", 40:"./assets/sprites/rendered/para-40.png", 44:"./assets/sprites/rendered/para-44.png", 60:"./assets/sprites/rendered/para-60.png" },
+  xspd: { 24:"./assets/sprites/rendered/xspd-24.png", 26:"./assets/sprites/rendered/xspd-26.png", 36:"./assets/sprites/rendered/xspd-36.png", 40:"./assets/sprites/rendered/xspd-40.png", 44:"./assets/sprites/rendered/xspd-44.png", 60:"./assets/sprites/rendered/xspd-60.png" }
+};
+const KEY_BY_IMAGE = {};
+Object.keys(SPR).forEach(k => { KEY_BY_IMAGE[SPR[k].image] = k; });
+const sizesFor = (url) => RENDERED[KEY_BY_IMAGE[url]] || {};
+const ing = (...specs) => specs.map(spec => {
+  const [key, q] = spec.split(":");
+  const sized = RENDERED[key] || {};
+  return { ...SPR[key], image24: sized[24], image26: sized[26], image36: sized[36], image40: sized[40], image44: sized[44], image60: sized[60], qty: q ? parseInt(q, 10) : 1 };
+});
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+const RAW_ITEMS = [
+  { name: "Potion", category: "Consumables", description: "A basic healing tonic brewed from oran berries, restoring 20 HP to any weary party member. Sold in nearly every Poké Mart across Johto, it's the first thing most trainers stock before setting out on a route.", source: "Purchased", value: 200, stackSize: 99, image: SPR.ether.image },
+  { name: "Chipped Pot", category: "Materials", description: "A dented clay pot salvaged from an old kitchen. Still holds water fine, and crafters find plenty of use for the fired clay.", source: "Found", value: 15, stackSize: 99, image: SPR.pot.image },
+  { name: "Comet Shard", category: "Materials", description: "A fragment believed to have fallen from the night sky. Collectors and archaeologists alike pay well for a clean specimen.", source: "Excavated", value: 340, stackSize: 20, image: SPR.shard.image },
+  { name: "Dusk", category: "Materials", description: "A pouch of fine, dark powder gathered at twilight. Used in a number of crafting recipes calling for a muted pigment.", source: "Foraged", value: 40, stackSize: 99, image: SPR.dusk.image },
+  { name: "Gigaton", category: "Materials", description: "A dense chunk of ore, heavier than it looks. A staple of the mining profession and a favorite among smiths.", source: "Mined", value: 280, stackSize: 50, image: SPR.giga.image },
+  { name: "Net", category: "Gear", description: "A finely woven net suited for hauling in fish or capturing small creatures without harm.", source: "Purchased", value: 350, stackSize: 99, image: SPR.net.image },
+  { name: "Paralyze Heal", category: "Consumables", description: "A tonic that clears paralysis, letting a party member move freely again. Every trainer keeps a few in reserve.", source: "Purchased", value: 150, stackSize: 99, image: SPR.para.image },
+  { name: "X Speed", category: "Consumables", description: "A vial that sharply raises Speed for a short time, single-use and consumed the moment it's drunk.", source: "Purchased", value: 300, stackSize: 99, image: SPR.xspd.image },
+];
+
+const VISIBLE_INGREDIENTS = 3;
+
+const USED_IN = [
+  { name: "Minor Healing Potion", profession: "Crafting", level: 6, outputRange: "2-3", exp: 12, image: SPR.ether.image, ingredients: ing("ether:2","shard:1","dusk:1") },
+  { name: "Herbal Salve", profession: "Crafting", level: 7, outputRange: "3-4", exp: 14, image: SPR.pot.image, ingredients: ing("pot:1","ether:1","xspd:2","net:1") },
+  { name: "Lantern Oil Flask", profession: "Crafting", level: 6, outputRange: "3", exp: 12, image: SPR.ether.image, ingredients: ing("ether:1","para:2") },
+];
+
+const RELATED = [
+  { name: "Antidote", category: "Consumables", image: SPR.para.image },
+  { name: "Ether", category: "Consumables", image: SPR.ether.image },
+  { name: "Revive", category: "Consumables", image: SPR.net.image },
+  { name: "Fresh Water", category: "Consumables", image: SPR.xspd.image },
+];
+
+class Component extends DCLogic {
+  state = { worldMenuOpen: false, worldMenuClosing: false, expandedRecipes: {}, closingRecipes: {}, hoveredIng: null, usedInOpen: true, usedInClosing: false, relatedOpen: true, relatedClosing: false, usedInView: "grid", relatedView: "grid" };
+
+  toggleIngredients = (name) => {
+    this._ingTimers = this._ingTimers || {};
+    if (this.state.expandedRecipes[name]) {
+      this.setState(s => ({ closingRecipes: { ...s.closingRecipes, [name]: true } }));
+      clearTimeout(this._ingTimers[name]);
+      this._ingTimers[name] = setTimeout(() => {
+        this.setState(s => ({
+          expandedRecipes: { ...s.expandedRecipes, [name]: false },
+          closingRecipes: { ...s.closingRecipes, [name]: false },
+        }));
+      }, 180);
+    } else {
+      clearTimeout(this._ingTimers[name]);
+      this.setState(s => ({
+        expandedRecipes: { ...s.expandedRecipes, [name]: true },
+        closingRecipes: { ...s.closingRecipes, [name]: false },
+      }));
+    }
+  };
+
+  toggleSection = (openKey, closingKey, timerKey) => {
+    if (this.state[openKey]) {
+      this.setState({ [closingKey]: true });
+      clearTimeout(this[timerKey]);
+      this[timerKey] = setTimeout(() => this.setState({ [openKey]: false, [closingKey]: false }), 220);
+    } else {
+      clearTimeout(this[timerKey]);
+      this.setState({ [openKey]: true, [closingKey]: false });
+    }
+  };
+
+  closeWorldMenu = () => {
+    if (!this.state.worldMenuOpen || this.state.worldMenuClosing) return;
+    this.setState({ worldMenuClosing: true });
+    clearTimeout(this._worldCloseTimer);
+    this._worldCloseTimer = setTimeout(() => this.setState({ worldMenuOpen: false, worldMenuClosing: false }), 180);
+  };
+
+  componentDidMount() {
+    this._onDocClick = (e) => {
+      if (this.state.worldMenuOpen && !this.state.worldMenuClosing && !(e.target.closest && e.target.closest('[data-world-menu]'))) {
+        this.closeWorldMenu();
+      }
+      const expandedNames = Object.keys(this.state.expandedRecipes).filter(k => this.state.expandedRecipes[k]);
+      if (expandedNames.length) {
+        const cardEl = e.target.closest && e.target.closest('[data-recipe-name]');
+        const clickedName = cardEl ? cardEl.getAttribute('data-recipe-name') : null;
+        const next = { ...this.state.expandedRecipes };
+        let changed = false;
+        expandedNames.forEach(n => { if (n !== clickedName) { next[n] = false; changed = true; } });
+        if (changed) this.setState({ expandedRecipes: next });
+      }
+    };
+    document.addEventListener('click', this._onDocClick, true);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._worldCloseTimer);
+    clearTimeout(this._usedInTimer);
+    clearTimeout(this._relatedTimer);
+    if (this._ingTimers) Object.values(this._ingTimers).forEach(t => clearTimeout(t));
+    document.removeEventListener('click', this._onDocClick, true);
+  }
+
+  getSlug() {
+    try {
+      return new URLSearchParams(window.location.search).get('item') || slugify(RAW_ITEMS[0].name);
+    } catch (e) {
+      return slugify(RAW_ITEMS[0].name);
+    }
+  }
+
+  titleSize(name, big, mid) {
+    return name.length >= big ? "11px" : name.length >= mid ? "12px" : null;
+  }
+
+  renderVals() {
+    const slug = this.getSlug();
+    const item = RAW_ITEMS.find(i => slugify(i.name) === slug) || RAW_ITEMS[0];
+    const hoveredIng = this.state.hoveredIng;
+    const enrichIng = (arr, prefix) => arr.map((ing, idx) => {
+      const key = prefix + "-" + idx;
+      return {
+        ...ing,
+        tipVisible: hoveredIng === key,
+        tipLeft: idx === 0 ? "0" : "50%",
+        tipTransform: idx === 0 ? "none" : "translateX(-50%)",
+        onEnter: () => this.setState({ hoveredIng: key }),
+        onLeave: () => this.setState(s => (s.hoveredIng === key ? { hoveredIng: null } : null)),
+      };
+    });
+    const usedInRecipes = USED_IN.map(r => {
+      const isExpanded = !!this.state.expandedRecipes[r.name];
+      const isClosing = !!this.state.closingRecipes[r.name];
+      const visibleIngredients = enrichIng(r.ingredients.slice(0, 3), r.name);
+      const moreIngCount = Math.max(0, r.ingredients.length - 3);
+      return {
+        ...r,
+        image44: sizesFor(r.image)[44],
+        isExpanded,
+        visibleIngredients,
+        hasMoreIng: moreIngCount > 0,
+        moreIngCount,
+        visibleIngredientsGrid: enrichIng(r.ingredients.slice(0, 3), r.name + "-g"),
+        hasMoreGrid: r.ingredients.length > 3,
+        moreCountGrid: Math.max(0, r.ingredients.length - 3),
+        ingVisible: isExpanded,
+        ingPanelAnim: isClosing ? "cx-panel-out .18s ease both" : "cx-panel-in .2s cubic-bezier(.2,.9,.3,1) both",
+        ingItemClass: isClosing ? "cx-item-closing" : "cx-item-open",
+        chevronRotate: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+        cardZ: isExpanded ? 40 : 1,
+        toggleExpand: () => this.toggleIngredients(r.name),
+        titleSize: this.titleSize(r.name, 22, 17) || "14.5px",
+      };
+    });
+    return {
+      item,
+      usedInRecipes,
+      relatedItems: (() => {
+        const seen = new Map();
+        USED_IN.forEach(r => r.ingredients.forEach(ing => {
+          if (ing.name !== item.name && !seen.has(ing.name)) seen.set(ing.name, { name: ing.name, category: "Ingredient", image: ing.image, image26: ing.image26, image60: ing.image60, titleSize: this.titleSize(ing.name, 20, 15) || "12.5px" });
+        }));
+        return [...seen.values()];
+      })(),
+      usedInOpen: this.state.usedInOpen,
+      usedInVisible: this.state.usedInOpen || this.state.usedInClosing,
+      usedInChevron: this.state.usedInOpen ? "rotate(180deg)" : "rotate(0deg)",
+      usedInLineAnim: this.state.usedInClosing ? "cx-line-sweep-out .22s ease both" : "cx-line-sweep .35s ease both",
+      usedInCardClass: this.state.usedInClosing ? "cx-fade-stagger-out" : "cx-fade-stagger",
+      toggleUsedIn: () => this.toggleSection("usedInOpen", "usedInClosing", "_usedInTimer"),
+      isUsedInGrid: this.state.usedInView === "grid",
+      isUsedInList: this.state.usedInView === "list",
+      usedInGridBg: this.state.usedInView === "grid" ? "#23281f" : "transparent",
+      usedInGridColor: this.state.usedInView === "grid" ? "#d8b562" : "#aaa69c",
+      usedInListBg: this.state.usedInView === "list" ? "#23281f" : "transparent",
+      usedInListColor: this.state.usedInView === "list" ? "#d8b562" : "#aaa69c",
+      setUsedInGrid: () => this.setState({ usedInView: "grid" }),
+      setUsedInList: () => this.setState({ usedInView: "list" }),
+      relatedOpen: this.state.relatedOpen,
+      relatedVisible: this.state.relatedOpen || this.state.relatedClosing,
+      relatedChevron: this.state.relatedOpen ? "rotate(180deg)" : "rotate(0deg)",
+      relatedLineAnim: this.state.relatedClosing ? "cx-line-sweep-out .22s ease both" : "cx-line-sweep .35s ease both",
+      relatedCardClass: this.state.relatedClosing ? "cx-fade-stagger-out" : "cx-fade-stagger",
+      toggleRelated: () => this.toggleSection("relatedOpen", "relatedClosing", "_relatedTimer"),
+      isRelatedGrid: this.state.relatedView === "grid",
+      isRelatedList: this.state.relatedView === "list",
+      relatedGridBg: this.state.relatedView === "grid" ? "#23281f" : "transparent",
+      relatedGridColor: this.state.relatedView === "grid" ? "#d8b562" : "#aaa69c",
+      relatedListBg: this.state.relatedView === "list" ? "#23281f" : "transparent",
+      relatedListColor: this.state.relatedView === "list" ? "#d8b562" : "#aaa69c",
+      setRelatedGrid: () => this.setState({ relatedView: "grid" }),
+      setRelatedList: () => this.setState({ relatedView: "list" }),
+      worldMenuOpen: this.state.worldMenuOpen,
+      toggleWorldMenu: () => { if (this.state.worldMenuOpen) this.closeWorldMenu(); else { clearTimeout(this._worldCloseTimer); this.setState({ worldMenuOpen: true, worldMenuClosing: false }); } },
+      worldChevronRotate: (this.state.worldMenuOpen && !this.state.worldMenuClosing) ? "rotate(180deg)" : "rotate(0deg)",
+      panelAnim: this.state.worldMenuClosing ? "cx-menu-out .18s ease both" : "cx-menu-in .2s cubic-bezier(.2,.9,.3,1) both",
+      itemClass: this.state.worldMenuClosing ? "cx-item-closing" : "cx-item-open",
+    };
+  }
+}
+
+</script>
+</body>
+</html>

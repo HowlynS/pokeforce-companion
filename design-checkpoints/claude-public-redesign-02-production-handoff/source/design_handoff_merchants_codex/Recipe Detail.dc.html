@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  .cx-nav-link{transition:border-color .18s ease, text-shadow .18s ease;}
+  .cx-nav-link:hover{border-color:#c39a4b !important;text-shadow:0 0 10px rgba(216,181,98,0.65);}
+  .cx-menu-item{transition:background .15s ease;}
+  .cx-menu-item:hover{background:#23281f;}
+  .cx-search{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;}
+  .cx-search:focus-within{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 3px rgba(195,154,75,0.14), 0 0 18px rgba(216,181,98,0.22);}
+  .cx-search svg *{transition:stroke .2s ease;}
+  .cx-search:focus-within svg *{stroke:#d8b562;}
+  .cx-search:hover{border-color:#4a4536 !important;animation:cx-search-pulse 1.6s ease-in-out infinite;}
+  @keyframes cx-search-pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,181,98,0.18);}50%{box-shadow:0 0 0 5px rgba(216,181,98,0.06);}}
+  .cx-search:focus-within{animation:none;}
+  .cx-item-card{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;}
+  .cx-item-card:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-logo{transition:filter .2s ease;}
+  .cx-logo:hover{animation:cx-logo-breathe 3.2s ease-in-out infinite;}
+  @keyframes cx-logo-breathe{0%,100%{filter:drop-shadow(0 0 3px rgba(216,181,98,0.4)) drop-shadow(0 0 7px rgba(195,154,75,0.22));}50%{filter:drop-shadow(0 0 5px rgba(216,181,98,0.6)) drop-shadow(0 0 11px rgba(195,154,75,0.32));}}
+  ::selection{background:#c39a4b;color:#111514;}
+  @keyframes cx-menu-in{from{opacity:0;transform:translate(-50%,0) scaleY(.92) scaleX(.98);}to{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}}
+  @keyframes cx-menu-out{from{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}to{opacity:0;transform:translate(-50%,0) scaleY(.94) scaleX(.99);}}
+  @keyframes cx-item-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes cx-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-3px);}}
+  .cx-item-open{animation:cx-item-in .22s cubic-bezier(.2,.9,.3,1) both;}
+  .cx-item-open:nth-child(1){animation-delay:0ms;}
+  .cx-item-open:nth-child(2){animation-delay:30ms;}
+  .cx-item-open:nth-child(3){animation-delay:60ms;}
+  .cx-item-open:nth-child(4){animation-delay:90ms;}
+  .cx-item-open:nth-child(5){animation-delay:120ms;}
+  .cx-item-open:nth-child(6){animation-delay:150ms;}
+  .cx-item-open:nth-child(7){animation-delay:180ms;}
+  .cx-item-open:nth-child(8){animation-delay:210ms;}
+  .cx-item-open:nth-child(9){animation-delay:240ms;}
+  .cx-item-open:nth-child(10){animation-delay:270ms;}
+  .cx-item-open:nth-child(11){animation-delay:300ms;}
+  .cx-item-open:nth-child(12){animation-delay:330ms;}
+  .cx-item-open:nth-child(13){animation-delay:330ms;}
+  .cx-item-open:nth-child(14){animation-delay:330ms;}
+  .cx-item-open:nth-child(15){animation-delay:330ms;}
+  .cx-item-open:nth-child(16){animation-delay:330ms;}
+  .cx-item-open:nth-child(17){animation-delay:330ms;}
+  .cx-item-open:nth-child(18){animation-delay:330ms;}
+  .cx-item-open:nth-child(19){animation-delay:330ms;}
+  .cx-item-open:nth-child(20){animation-delay:330ms;}
+  .cx-item-open:nth-child(21){animation-delay:330ms;}
+  .cx-item-open:nth-child(22){animation-delay:330ms;}
+  .cx-item-open:nth-child(23){animation-delay:330ms;}
+  .cx-item-open:nth-child(24){animation-delay:330ms;}
+  .cx-item-closing{animation:cx-item-out .12s ease both;}
+  .cx-chip{transition:border-color .18s ease, background-color .18s ease, box-shadow .18s ease;text-decoration:none;display:inline-block;}
+  .cx-chip:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 14px rgba(216,181,98,0.25);}
+  .cx-ing-row{transition:background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;cursor:pointer;}
+  .cx-ing-row:hover{background:#1c201e !important;border-color:#c39a4b !important;transform:translateX(4px);box-shadow:0 0 16px rgba(216,181,98,0.18), inset 0 0 0 1px rgba(195,154,75,0.25);}
+  .cx-ing-row:hover .cx-ing-cursor{opacity:1;transform:translateX(0);}
+  .cx-ing-row:hover .cx-ing-icon{filter:drop-shadow(0 0 6px rgba(216,181,98,0.6));}
+  .cx-ing-row:hover .cx-ing-qty{color:#f4c542;text-shadow:0 0 8px rgba(244,197,66,0.5);}
+  .cx-ing-cursor{opacity:0;transform:translateX(-4px);transition:opacity .18s ease, transform .18s ease;}
+  .cx-ing-icon{transition:filter .18s ease;}
+  .cx-ing-qty{transition:color .18s ease, text-shadow .18s ease;}
+  @keyframes cx-line-sweep{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  @keyframes cx-line-sweep-out{from{transform:scaleX(1);}to{transform:scaleX(0);}}
+  .cx-breadcrumb-link{transition:color .18s ease;}
+  .cx-breadcrumb-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:#d8b562;transform:scaleX(0);transform-origin:left;transition:transform .18s ease;}
+  .cx-breadcrumb-link:hover{color:#d8b562 !important;}
+  .cx-breadcrumb-link:hover::after{transform:scaleX(1);}
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;background:#111514;overflow-x:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;">
+    <div style="position:sticky;top:0;z-index:50;padding:14px 28px 0;">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:relative;z-index:100;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);user-select:none;">
+        <a href="./Landing%20Page.dc.html" style="justify-self:start;flex:none;display:flex;"><img src="./assets/merchants-logo.png" alt="Merchants Codex" class="cx-logo" style="height:66px;width:auto;flex:none;margin:-13px 0;"></a>
+        <nav style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow:visible;">
+          <a href="./Items%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Items</a>
+          <a href="./Recipes%20Directory.dc.html" style="font-size:12.5px;font-weight:600;color:#d8b562;padding-bottom:4px;border-bottom:2px solid #c39a4b;white-space:nowrap;text-shadow:0 0 10px rgba(216,181,98,0.5);">Recipes</a>
+          <a href="./Professions%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Professions</a>
+          <a href="./Classes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Classes</a>
+          <div data-world-menu style="position:relative;">
+            <div onClick="{{ toggleWorldMenu }}" class="cx-nav-link" style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;">
+              World
+              <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ worldChevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <sc-if value="{{ worldMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,0);z-index:60;background:#191d1b;border:1px solid #3a3528;border-radius:12px;padding:8px;min-width:230px;box-shadow:0 16px 32px rgba(0,0,0,0.5);animation:{{ panelAnim }};">
+                <a href="./World%20Navigation.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">World Navigation</span>
+                    <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;color:#111514;background:#d8b562;border-radius:4px;padding:2px 6px;text-transform:uppercase;">Recommended</span>
+                  </span>
+                  <span style="font-size:10px;color:#8a8579;">Region tree &amp; overview</span>
+                </a>
+                <a href="./Locations%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;border-top:1px solid #2a2f28;margin-top:6px;padding-top:11px;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Locations</span>
+                  <span style="font-size:10px;color:#8a8579;">Cities, routes &amp; landmarks</span>
+                </a>
+                <a href="./Shops%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Shops</span>
+                  <span style="font-size:10px;color:#8a8579;">Vendors &amp; trade goods</span>
+                </a>
+                <a href="./NPCs%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">NPCs</span>
+                  <span style="font-size:10px;color:#8a8579;">Notable characters</span>
+                </a>
+              </div>
+            </sc-if>
+          </div>
+        </nav>
+        <div class="cx-search" style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:1760px;margin:0 auto;padding:28px 28px 80px;display:flex;gap:28px;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:20px;">
+          <a href="./Landing%20Page.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Home</a>
+          <span style="color:#3a3528;">/</span>
+          <a href="./Recipes%20Directory.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Recipes</a>
+          <span style="color:#3a3528;">/</span>
+          <span style="color:#d8b562;">{{ recipe.name }}</span>
+        </div>
+
+        <div style="display:flex;gap:28px;align-items:flex-start;margin-bottom:32px;">
+          <div style="position:relative;width:180px;height:180px;flex:none;border-radius:14px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(195,154,75,0.14), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+            <div role="img" aria-label="{{ recipe.name }}" style="width:128px;height:128px;background-image:url({{ recipe.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+            <div style="position:absolute;right:10px;bottom:10px;background:rgba(17,21,20,0.58);border:1px solid rgba(58,53,40,0.75);border-radius:7px;padding:5px 10px;text-align:center;">
+              <div style="font-size:8.5px;font-weight:800;letter-spacing:0.06em;color:#eee7d8;text-transform:uppercase;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.7);">Yields</div>
+              <div style="font-size:14px;font-weight:800;color:#f4c542;line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.7);">{{ recipe.outputRange }}</div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0;padding-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;margin-bottom:8px;">{{ recipe.profession }} Recipe</div>
+            <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:40px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;">{{ recipe.name }}</h1>
+            <div style="font-size:14.5px;line-height:1.7;color:#aaa69c;max-width:640px;margin-bottom:18px;">{{ recipe.description }}</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <a href="{{ recipe.professionHref }}" class="cx-chip" style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Profession:&nbsp;<strong style="color:#eee7d8;">{{ recipe.profession }}</strong></a>
+              <div style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Level:&nbsp;<strong style="color:#eee7d8;">{{ recipe.level }}</strong></div>
+              <div style="background:#171b19;border:1px solid #3a3528;border-radius:8px;padding:8px 14px;font-size:12.5px;color:#aaa69c;">Reward:&nbsp;<strong style="color:#d8b562;">+{{ recipe.exp }} EXP</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:32px;user-select:none;">
+          <div onClick="{{ toggleIngredients }}" style="position:relative;display:flex;align-items:center;gap:9px;cursor:pointer;margin-bottom:14px;padding-bottom:8px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" style="flex:none;transform:{{ ingredientsChevron }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="#d8b562" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#eee7d8;">Ingredients</div>
+            <sc-if value="{{ ingredientsOpen }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute;left:0;bottom:0;height:1px;width:100%;background:linear-gradient(90deg, #c39a4b, transparent);transform-origin:left center;animation:{{ ingredientsLineAnim }};"></div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ ingredientsVisible }}" hint-placeholder-val="{{ true }}">
+            <div class="{{ ingredientsContentClass }}" style="background:#0f1210;border:1px solid #3a3528;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;max-width:520px;">
+              <sc-for list="{{ recipe.ingredients }}" as="ing" hint-placeholder-count="5">
+                <a href="{{ ing.href }}" class="cx-ing-row" style="display:flex;align-items:center;gap:10px;background:#171b19;border:1px solid #262b27;border-radius:8px;padding:8px 12px;text-decoration:none;">
+                  <span class="cx-ing-cursor" style="font-size:11px;color:#d8b562;flex:none;">▶</span>
+                  <div role="img" aria-label="{{ ing.name }}" class="cx-ing-icon" style="width:32px;height:32px;flex:none;background-image:url({{ ing.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                  <span style="flex:1;min-width:0;font-size:13px;font-weight:700;color:#eee7d8;">{{ ing.name }}</span>
+                  <span class="cx-ing-qty" style="font-size:13px;font-weight:700;color:#d8b562;flex:none;">&times;{{ ing.qty }}</span>
+                </a>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const SPR = {
+  pot: { image: "./assets/sprites/chipped-pot.png", name: "Chipped Pot" },
+  shard: { image: "./assets/sprites/comet-shard.png", name: "Comet Shard" },
+  dusk: { image: "./assets/sprites/dusk.png", name: "Dusk Ball" },
+  ether: { image: "./assets/sprites/ether.png", name: "Ether" },
+  giga: { image: "./assets/sprites/gigaton.png", name: "Gigaton Stone" },
+  net: { image: "./assets/sprites/net.png", name: "Net Ball" },
+  para: { image: "./assets/sprites/paralyze-heal.png", name: "Paralyze Heal" },
+  xspd: { image: "./assets/sprites/x-speed.png", name: "X Speed" },
+};
+const ing = (...specs) => specs.map(spec => {
+  const [key, q] = spec.split(":");
+  return { ...SPR[key], qty: q ? parseInt(q, 10) : 1, href: "./Item%20Detail.dc.html?item=" + encodeURIComponent(slugify(SPR[key].name)) };
+});
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+const RAW_ITEMS = [
+  {name:"Minor Healing Potion", profession:"Crafting", level:6, image:SPR.ether.image, ingredients:ing("pot:15","ether:1","shard:3","xspd:1","net:2"), outputRange:"2-3", exp:12},
+  {name:"Hearty Bread", profession:"Cooking", level:5, image:SPR.para.image, ingredients:ing("giga:1","net:2","dusk:1","pot:2"), outputRange:"2", exp:9},
+  {name:"Reinforced Fishing Rod", profession:"Fishing", level:9, image:SPR.net.image, ingredients:ing("shard:2","giga:1","xspd:3","ether:1","pot:1"), outputRange:"1", exp:18},
+  {name:"Herbal Salve", profession:"Crafting", level:7, image:SPR.pot.image, ingredients:ing("pot:1","dusk:2","ether:2","giga:1"), outputRange:"3-4", exp:14},
+  {name:"Bronze Pickaxe", profession:"Mining", level:10, image:SPR.giga.image, ingredients:ing("giga:2","shard:1","net:1","xspd:2","dusk:1","pot:3"), outputRange:"1", exp:20},
+  {name:"Wooden Chair", profession:"Construction", level:5, image:SPR.dusk.image, ingredients:ing("pot:2","giga:1","net:1"), outputRange:"1", exp:10},
+  {name:"Sun-Dried Tomatoes", profession:"Farming", level:4, image:SPR.xspd.image, ingredients:ing("para:3","net:1","dusk:2","giga:1"), outputRange:"3-5", exp:8},
+  {name:"Preserved Fillets", profession:"Fishing", level:6, image:SPR.para.image, ingredients:ing("net:2","xspd:1","shard:1"), outputRange:"2-3", exp:11},
+  {name:"Woven Fiber Rope", profession:"Foraging", level:7, image:SPR.dusk.image, ingredients:ing("pot:1","dusk:3","giga:1","ether:1","xspd:2"), outputRange:"2", exp:13},
+  {name:"Polished River Stone", profession:"Archaeology", level:8, image:SPR.shard.image, ingredients:ing("shard:1","pot:1"), outputRange:"1", exp:16},
+  {name:"Iron Nails", profession:"Smithing", level:5, image:SPR.giga.image, ingredients:ing("giga:2","net:1","dusk:1","shard:2"), outputRange:"5-6", exp:9},
+  {name:"Roof Tile Set", profession:"Construction", level:11, image:SPR.pot.image, ingredients:ing("pot:2","dusk:2","giga:1","shard:1","ether:1","net:2"), outputRange:"2", exp:22},
+  {name:"Lantern Oil Flask", profession:"Crafting", level:6, image:SPR.ether.image, ingredients:ing("ether:2","xspd:1","para:1"), outputRange:"3", exp:12},
+  {name:"Berry Compote", profession:"Cooking", level:5, image:SPR.para.image, ingredients:ing("para:2","dusk:1","net:1","giga:1"), outputRange:"2", exp:10},
+  {name:"Salt-Cured Fish", profession:"Cooking", level:5, image:SPR.net.image, ingredients:ing("net:1","xspd:1","pot:2"), outputRange:"2", exp:9},
+  {name:"Excavation Brush", profession:"Archaeology", level:8, image:SPR.shard.image, ingredients:ing("shard:2","giga:1","ether:1"), outputRange:"1", exp:15},
+  {name:"Silver Wire Coil", profession:"Smithing", level:9, image:SPR.xspd.image, ingredients:ing("giga:1","xspd:2","net:1","dusk:1"), outputRange:"2", exp:17},
+  {name:"Terrace Planter Box", profession:"Construction", level:10, image:SPR.dusk.image, ingredients:ing("pot:2","dusk:2","net:1","shard:1","xspd:1"), outputRange:"1", exp:19},
+  {name:"Weathered Lure", profession:"Crafting", level:4, image:SPR.giga.image, ingredients:ing("giga:3","net:1"), outputRange:"1", exp:8},
+  {name:"Moonlit Compass", profession:"Archaeology", level:11, image:SPR.shard.image, ingredients:ing("shard:1","pot:2","ether:3"), outputRange:"3-4", exp:21},
+  {name:"Woven Trellis", profession:"Farming", level:7, image:SPR.dusk.image, ingredients:ing("dusk:2","giga:3","para:1","net:2"), outputRange:"1-2", exp:14},
+  {name:"Braided Anvil", profession:"Construction", level:14, image:SPR.xspd.image, ingredients:ing("xspd:3","para:1","pot:2","dusk:3","net:1"), outputRange:"4-5", exp:27},
+  {name:"Sunlit Barrel", profession:"Fishing", level:10, image:SPR.net.image, ingredients:ing("net:1","giga:2"), outputRange:"2-3", exp:20},
+  {name:"Polished Ratchet", profession:"Cooking", level:7, image:SPR.para.image, ingredients:ing("para:2","ether:3","shard:1"), outputRange:"1", exp:13},
+  {name:"Etched Buckle", profession:"Foraging", level:13, image:SPR.pot.image, ingredients:ing("pot:3","giga:1","xspd:2","ether:3"), outputRange:"3-4", exp:26},
+  {name:"Frosted Harness", profession:"Mining", level:10, image:SPR.pot.image, ingredients:ing("pot:1","net:2","ether:3","shard:1","xspd:2"), outputRange:"1-2", exp:19},
+  {name:"Ancient Trowel", profession:"Smithing", level:6, image:SPR.para.image, ingredients:ing("para:2","net:3"), outputRange:"4-5", exp:12},
+  {name:"Glazed Pendant", profession:"Crafting", level:13, image:SPR.dusk.image, ingredients:ing("dusk:3","para:1","net:2"), outputRange:"2-3", exp:25},
+  {name:"Smoked Kettle", profession:"Archaeology", level:9, image:SPR.dusk.image, ingredients:ing("dusk:1","para:2","shard:3","giga:1"), outputRange:"1", exp:18},
+  {name:"Rustic Whistle", profession:"Farming", level:6, image:SPR.net.image, ingredients:ing("net:2","giga:3","shard:1","xspd:2","para:3"), outputRange:"3-4", exp:11},
+  {name:"Charred Tapestry", profession:"Construction", level:12, image:SPR.shard.image, ingredients:ing("shard:3","para:1"), outputRange:"1-2", exp:24},
+  {name:"Salted Flask", profession:"Fishing", level:9, image:SPR.para.image, ingredients:ing("para:1","pot:2","xspd:3"), outputRange:"4-5", exp:17},
+  {name:"Sturdy Canister", profession:"Cooking", level:5, image:SPR.dusk.image, ingredients:ing("dusk:2","para:3","pot:1","shard:2"), outputRange:"2-3", exp:10},
+  {name:"Refined Hook", profession:"Foraging", level:12, image:SPR.giga.image, ingredients:ing("giga:3","ether:1","shard:2","net:3","pot:1"), outputRange:"1", exp:23},
+  {name:"Carved Grindstone", profession:"Mining", level:8, image:SPR.pot.image, ingredients:ing("pot:1","giga:2"), outputRange:"3-4", exp:16},
+  {name:"Gilded Crate", profession:"Smithing", level:5, image:SPR.dusk.image, ingredients:ing("dusk:2","para:3","net:1"), outputRange:"1-2", exp:9},
+  {name:"Rugged Spindle", profession:"Crafting", level:11, image:SPR.dusk.image, ingredients:ing("dusk:3","pot:1","giga:2","net:3"), outputRange:"4-5", exp:22},
+  {name:"Tempered Satchel", profession:"Archaeology", level:8, image:SPR.para.image, ingredients:ing("para:1","shard:2","xspd:3","giga:1","ether:2"), outputRange:"2-3", exp:15},
+  {name:"Weathered Mallet", profession:"Farming", level:4, image:SPR.net.image, ingredients:ing("net:2","xspd:3"), outputRange:"1", exp:8},
+  {name:"Moonlit Brooch", profession:"Construction", level:11, image:SPR.ether.image, ingredients:ing("ether:3","dusk:1","shard:2"), outputRange:"3-4", exp:21},
+  {name:"Woven Basin", profession:"Fishing", level:7, image:SPR.giga.image, ingredients:ing("giga:1","ether:2","shard:3","pot:1"), outputRange:"1-2", exp:14},
+  {name:"Braided Sconce", profession:"Cooking", level:14, image:SPR.pot.image, ingredients:ing("pot:2","para:3","giga:1","net:2","shard:3"), outputRange:"4-5", exp:27},
+  {name:"Sunlit Ledger", profession:"Foraging", level:10, image:SPR.pot.image, ingredients:ing("pot:3","dusk:1"), outputRange:"2-3", exp:20},
+  {name:"Polished Locket", profession:"Mining", level:7, image:SPR.shard.image, ingredients:ing("shard:1","giga:2","xspd:3"), outputRange:"1", exp:13},
+  {name:"Etched Lantern", profession:"Smithing", level:13, image:SPR.para.image, ingredients:ing("para:2","shard:3","pot:1","dusk:2"), outputRange:"3-4", exp:26},
+  {name:"Frosted Ribbon", profession:"Crafting", level:10, image:SPR.dusk.image, ingredients:ing("dusk:3","giga:1","net:2","para:3","shard:1"), outputRange:"1-2", exp:19},
+  {name:"Ancient Awl", profession:"Archaeology", level:6, image:SPR.para.image, ingredients:ing("para:1","dusk:2"), outputRange:"4-5", exp:12},
+  {name:"Glazed Charm", profession:"Farming", level:13, image:SPR.giga.image, ingredients:ing("giga:2","xspd:3","dusk:1"), outputRange:"2-3", exp:25},
+  {name:"Smoked Lure", profession:"Construction", level:9, image:SPR.xspd.image, ingredients:ing("xspd:3","ether:1","pot:2","shard:3"), outputRange:"1", exp:18},
+  {name:"Rustic Compass", profession:"Fishing", level:6, image:SPR.dusk.image, ingredients:ing("dusk:1","ether:2","net:3","para:1","giga:2"), outputRange:"3-4", exp:11},
+  {name:"Charred Trellis", profession:"Cooking", level:12, image:SPR.xspd.image, ingredients:ing("xspd:2","ether:3"), outputRange:"1-2", exp:24},
+  {name:"Salted Anvil", profession:"Foraging", level:9, image:SPR.pot.image, ingredients:ing("pot:3","xspd:1","dusk:2"), outputRange:"4-5", exp:17},
+  {name:"Sturdy Barrel", profession:"Mining", level:5, image:SPR.xspd.image, ingredients:ing("xspd:1","para:2","ether:3","shard:1"), outputRange:"2-3", exp:10},
+  {name:"Refined Ratchet", profession:"Smithing", level:12, image:SPR.net.image, ingredients:ing("net:2","xspd:3","ether:1","pot:2","para:3"), outputRange:"1", exp:23},
+  {name:"Carved Buckle", profession:"Crafting", level:8, image:SPR.dusk.image, ingredients:ing("dusk:3","shard:1"), outputRange:"3-4", exp:16},
+  {name:"Gilded Harness", profession:"Archaeology", level:5, image:SPR.ether.image, ingredients:ing("ether:1","dusk:2","net:3"), outputRange:"1-2", exp:9},
+  {name:"Rugged Trowel", profession:"Farming", level:11, image:SPR.pot.image, ingredients:ing("pot:2","para:3","net:1","giga:2"), outputRange:"4-5", exp:22},
+  {name:"Tempered Pendant", profession:"Construction", level:8, image:SPR.dusk.image, ingredients:ing("dusk:3","ether:1","giga:2","net:3","pot:1"), outputRange:"2-3", exp:15},
+  {name:"Weathered Kettle", profession:"Fishing", level:4, image:SPR.net.image, ingredients:ing("net:1","xspd:2"), outputRange:"1", exp:8},
+  {name:"Moonlit Whistle", profession:"Cooking", level:11, image:SPR.pot.image, ingredients:ing("pot:2","net:3","giga:1"), outputRange:"3-4", exp:21},
+  {name:"Woven Tapestry", profession:"Foraging", level:7, image:SPR.ether.image, ingredients:ing("ether:3","net:1","xspd:2","giga:3"), outputRange:"1-2", exp:14},
+  {name:"Braided Flask", profession:"Mining", level:14, image:SPR.dusk.image, ingredients:ing("dusk:1","shard:2","net:3","para:1","ether:2"), outputRange:"4-5", exp:27},
+  {name:"Sunlit Canister", profession:"Smithing", level:10, image:SPR.ether.image, ingredients:ing("ether:2","para:3"), outputRange:"2-3", exp:20},
+  {name:"Polished Hook", profession:"Crafting", level:7, image:SPR.shard.image, ingredients:ing("shard:3","xspd:1","ether:2"), outputRange:"1", exp:13},
+  {name:"Etched Grindstone", profession:"Archaeology", level:13, image:SPR.net.image, ingredients:ing("net:1","shard:2","para:3","ether:1"), outputRange:"3-4", exp:26},
+  {name:"Frosted Crate", profession:"Farming", level:10, image:SPR.net.image, ingredients:ing("net:2","ether:3","pot:1","dusk:2","giga:3"), outputRange:"1-2", exp:19},
+  {name:"Ancient Spindle", profession:"Construction", level:6, image:SPR.shard.image, ingredients:ing("shard:3","para:1"), outputRange:"4-5", exp:12},
+  {name:"Glazed Satchel", profession:"Fishing", level:13, image:SPR.xspd.image, ingredients:ing("xspd:1","net:2","shard:3"), outputRange:"2-3", exp:25},
+];
+
+const PROF_LIST = ["Foraging","Fishing","Farming","Crafting","Mining","Cooking","Construction","Archaeology","Smithing"];
+
+function recipeHref(r) {
+  return "./Recipe%20Detail.dc.html?recipe=" + encodeURIComponent(slugify(r.name));
+}
+
+class Component extends DCLogic {
+  state = {
+    worldMenuOpen: false,
+    worldMenuClosing: false,
+    ingredientsOpen: true,
+    ingredientsClosing: false,
+  };
+
+  closeWorldMenu = () => {
+    if (!this.state.worldMenuOpen || this.state.worldMenuClosing) return;
+    this.setState({ worldMenuClosing: true });
+    clearTimeout(this._worldCloseTimer);
+    this._worldCloseTimer = setTimeout(() => this.setState({ worldMenuOpen: false, worldMenuClosing: false }), 180);
+  };
+
+  toggleSection = (openKey, closingKey, timerKey) => {
+    if (this.state[openKey]) {
+      this.setState({ [closingKey]: true });
+      clearTimeout(this[timerKey]);
+      this[timerKey] = setTimeout(() => this.setState({ [openKey]: false, [closingKey]: false }), 220);
+    } else {
+      clearTimeout(this[timerKey]);
+      this.setState({ [openKey]: true, [closingKey]: false });
+    }
+  };
+
+  componentDidMount() {
+    this._onDocClick = (e) => {
+      if (this.state.worldMenuOpen && !this.state.worldMenuClosing && !(e.target.closest && e.target.closest('[data-world-menu]'))) {
+        this.closeWorldMenu();
+      }
+    };
+    document.addEventListener('click', this._onDocClick, true);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._worldCloseTimer);
+    clearTimeout(this._ingTimer);
+    clearTimeout(this._relTimer);
+    document.removeEventListener('click', this._onDocClick, true);
+  }
+
+  getSlug() {
+    try {
+      return new URLSearchParams(window.location.search).get('recipe') || slugify(RAW_ITEMS[0].name);
+    } catch (e) {
+      return slugify(RAW_ITEMS[0].name);
+    }
+  }
+
+  renderVals() {
+    const slug = this.getSlug();
+    const found = RAW_ITEMS.find(r => slugify(r.name) === slug) || RAW_ITEMS[0];
+    const recipe = {
+      ...found,
+      description: `A Level ${found.level} ${found.profession} recipe. Yields ${found.outputRange} on completion.`,
+      professionHref: "./Profession%20Detail.dc.html?profession=" + encodeURIComponent(slugify(found.profession)),
+    };
+
+    return {
+      recipe,
+      ingredientsOpen: this.state.ingredientsOpen,
+      ingredientsVisible: this.state.ingredientsOpen || this.state.ingredientsClosing,
+      ingredientsChevron: this.state.ingredientsOpen ? "rotate(180deg)" : "rotate(0deg)",
+      ingredientsLineAnim: this.state.ingredientsClosing ? "cx-line-sweep-out .22s ease both" : "cx-line-sweep .35s ease both",
+      ingredientsContentClass: this.state.ingredientsClosing ? "cx-item-closing" : "cx-item-open",
+      toggleIngredients: () => this.toggleSection("ingredientsOpen", "ingredientsClosing", "_ingTimer"),
+      worldMenuOpen: this.state.worldMenuOpen,
+      toggleWorldMenu: () => { if (this.state.worldMenuOpen) this.closeWorldMenu(); else { clearTimeout(this._worldCloseTimer); this.setState({ worldMenuOpen: true, worldMenuClosing: false }); } },
+      worldChevronRotate: (this.state.worldMenuOpen && !this.state.worldMenuClosing) ? "rotate(180deg)" : "rotate(0deg)",
+      panelAnim: this.state.worldMenuClosing ? "cx-menu-out .18s ease both" : "cx-menu-in .2s cubic-bezier(.2,.9,.3,1) both",
+      itemClass: this.state.worldMenuClosing ? "cx-item-closing" : "cx-item-open",
+    };
+  }
+}
+
+</script>
+</body>
+</html>

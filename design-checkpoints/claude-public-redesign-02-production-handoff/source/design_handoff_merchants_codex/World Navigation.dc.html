@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#111514;color:#eee7d8;font-family:'Manrope',sans-serif;}
+  a{color:#d8b562;text-decoration:none;}
+  a:hover{color:#eee7d8;}
+  .cx-nav-link{transition:border-color .18s ease, text-shadow .18s ease;}
+  .cx-nav-link:hover{border-color:#c39a4b !important;text-shadow:0 0 10px rgba(216,181,98,0.65);}
+  .cx-menu-item{transition:background .15s ease;}
+  .cx-menu-item:hover{background:#23281f;}
+  .cx-search{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease;}
+  .cx-search:focus-within{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 3px rgba(195,154,75,0.14), 0 0 18px rgba(216,181,98,0.22);}
+  .cx-search svg *{transition:stroke .2s ease;}
+  .cx-search:focus-within svg *{stroke:#d8b562;}
+  .cx-search:hover{border-color:#4a4536 !important;animation:cx-search-pulse 1.6s ease-in-out infinite;}
+  @keyframes cx-search-pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,181,98,0.18);}50%{box-shadow:0 0 0 5px rgba(216,181,98,0.06);}}
+  .cx-search:focus-within{animation:none;}
+  .cx-item-card{transition:border-color .2s ease, background-color .2s ease, box-shadow .2s ease;}
+  .cx-item-card:hover{border-color:#c39a4b !important;background:#1c201e !important;box-shadow:0 0 0 1px rgba(195,154,75,0.3), 0 0 20px rgba(216,181,98,0.22);}
+  .cx-logo{transition:filter .2s ease;}
+  .cx-logo:hover{animation:cx-logo-breathe 3.2s ease-in-out infinite;}
+  @keyframes cx-logo-breathe{0%,100%{filter:drop-shadow(0 0 3px rgba(216,181,98,0.4)) drop-shadow(0 0 7px rgba(195,154,75,0.22));}50%{filter:drop-shadow(0 0 5px rgba(216,181,98,0.6)) drop-shadow(0 0 11px rgba(195,154,75,0.32));}}
+  ::selection{background:#c39a4b;color:#111514;}
+  input::placeholder{color:#6f6b61;}
+  input{user-select:text;}
+  .cx-scroll::-webkit-scrollbar{display:none;}
+  .cx-scroll{scrollbar-width:none;-ms-overflow-style:none;}
+  @keyframes cx-menu-in{from{opacity:0;transform:translate(-50%,0) scaleY(.92) scaleX(.98);}to{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}}
+  @keyframes cx-menu-out{from{opacity:1;transform:translate(-50%,0) scaleY(1) scaleX(1);}to{opacity:0;transform:translate(-50%,0) scaleY(.94) scaleX(.99);}}
+  @keyframes cx-item-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes cx-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-3px);}}
+  .cx-item-open{animation:cx-item-in .22s cubic-bezier(.2,.9,.3,1) both;}
+  .cx-item-open:nth-child(1){animation-delay:0ms;}
+  .cx-item-open:nth-child(2){animation-delay:30ms;}
+  .cx-item-open:nth-child(3){animation-delay:60ms;}
+  .cx-item-open:nth-child(4){animation-delay:90ms;}
+  .cx-item-open:nth-child(5){animation-delay:120ms;}
+  .cx-item-open:nth-child(6){animation-delay:150ms;}
+  .cx-item-open:nth-child(7){animation-delay:180ms;}
+  .cx-item-open:nth-child(8){animation-delay:210ms;}
+  .cx-item-open:nth-child(9){animation-delay:240ms;}
+  .cx-item-open:nth-child(10){animation-delay:270ms;}
+  .cx-item-open:nth-child(11){animation-delay:300ms;}
+  .cx-item-open:nth-child(12){animation-delay:330ms;}
+  .cx-item-open:nth-child(13){animation-delay:330ms;}
+  .cx-item-open:nth-child(14){animation-delay:330ms;}
+  .cx-item-open:nth-child(15){animation-delay:330ms;}
+  .cx-item-open:nth-child(16){animation-delay:330ms;}
+  .cx-item-open:nth-child(17){animation-delay:330ms;}
+  .cx-item-open:nth-child(18){animation-delay:330ms;}
+  .cx-item-open:nth-child(19){animation-delay:330ms;}
+  .cx-item-open:nth-child(20){animation-delay:330ms;}
+  .cx-item-open:nth-child(21){animation-delay:330ms;}
+  .cx-item-open:nth-child(22){animation-delay:330ms;}
+  .cx-item-open:nth-child(23){animation-delay:330ms;}
+  .cx-item-open:nth-child(24){animation-delay:330ms;}
+  .cx-item-closing{animation:cx-item-out .12s ease both;}
+  .cx-breadcrumb-link{transition:color .18s ease;}
+  .cx-breadcrumb-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:#d8b562;transform:scaleX(0);transform-origin:left;transition:transform .18s ease;}
+  .cx-breadcrumb-link:hover{color:#d8b562 !important;}
+  .cx-breadcrumb-link:hover::after{transform:scaleX(1);}
+</style>
+</helmet>
+
+<div style="position:relative;height:100vh;background:#111514;overflow:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;">
+    <img src="./assets/background.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:60% 40%;opacity:0.9;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(17,21,20,0.62) 0%, rgba(17,21,20,0.55) 30%, rgba(17,21,20,0.86) 78%, #111514 100%);"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 8%, rgba(17,21,20,0.15), rgba(17,21,20,0.7) 70%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;">
+    <div style="flex:none;padding:14px 28px 0;">
+      <div style="max-width:1760px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:28px;position:relative;z-index:100;background:rgba(17,21,20,0.92);backdrop-filter:blur(10px);border:1px solid #3a3528;border-radius:14px;padding:10px 22px;box-shadow:0 8px 24px rgba(0,0,0,0.35);user-select:none;">
+        <a href="./Landing%20Page.dc.html" style="justify-self:start;flex:none;display:flex;"><img src="./assets/merchants-logo.png" alt="Merchants Codex" class="cx-logo" style="height:66px;width:auto;flex:none;margin:-13px 0;"></a>
+        <nav class="cx-scroll" style="display:flex;align-items:center;gap:16px;justify-self:center;min-width:0;max-width:100%;overflow:visible;">
+          <a href="./Items%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Items</a>
+          <a href="./Recipes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Recipes</a>
+          <a href="./Professions%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Professions</a>
+          <a href="./Classes%20Directory.dc.html" class="cx-nav-link" style="font-size:12.5px;font-weight:600;color:#eee7d8;padding-bottom:4px;border-bottom:2px solid transparent;white-space:nowrap;">Classes</a>
+          <div data-world-menu style="position:relative;">
+            <div onClick="{{ toggleWorldMenu }}" style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:#d8b562;padding-bottom:4px;border-bottom:2px solid #c39a4b;white-space:nowrap;cursor:pointer;transition:color .15s;">
+              World
+              <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ worldChevronRotate }};transition:transform .15s;"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+            </div>
+            <sc-if value="{{ worldMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 12px);left:50%;transform:translate(-50%,0);z-index:60;background:#191d1b;border:1px solid #3a3528;border-radius:12px;padding:8px;min-width:230px;box-shadow:0 16px 32px rgba(0,0,0,0.5);animation:{{ panelAnim }};">
+                <a href="./World%20Navigation.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="font-size:12.5px;font-weight:700;color:#d8b562;">World Navigation</span>
+                    <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;color:#111514;background:#d8b562;border-radius:4px;padding:2px 6px;text-transform:uppercase;">Recommended</span>
+                  </span>
+                  <span style="font-size:10px;color:#8a8579;">Region tree &amp; overview</span>
+                </a>
+                <a href="./Locations%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;border-top:1px solid #2a2f28;margin-top:6px;padding-top:11px;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Locations</span>
+                  <span style="font-size:10px;color:#8a8579;">Cities, routes &amp; landmarks</span>
+                </a>
+                <a href="./Shops%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">Shops</span>
+                  <span style="font-size:10px;color:#8a8579;">Vendors &amp; trade goods</span>
+                </a>
+                <a href="./NPCs%20Directory.dc.html" class="{{ itemClass }} cx-menu-item" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:8px;text-decoration:none;">
+                  <span style="font-size:12.5px;font-weight:700;color:#eee7d8;">NPCs</span>
+                  <span style="font-size:10px;color:#8a8579;">Notable characters</span>
+                </a>
+              </div>
+            </sc-if>
+          </div>
+        </nav>
+        <div class="cx-search" style="flex:none;justify-self:end;min-width:0;display:flex;align-items:center;gap:8px;background:#171b19;border:1px solid #3a3528;border-radius:9px;padding:8px 12px;width:230px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+          <input type="text" placeholder="Search the Codex..." style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:13px;width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;box-sizing:border-box;max-width:1760px;width:100%;margin:0 auto;padding:16px 28px 16px;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#aaa69c;margin-bottom:10px;flex:none;">
+        <a href="./Landing%20Page.dc.html" class="cx-breadcrumb-link" style="color:#aaa69c;text-decoration:none;position:relative;">Home</a>
+        <span style="color:#3a3528;">/</span>
+        <span style="color:#d8b562;">World Navigation</span>
+      </div>
+      <h1 style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:22px;letter-spacing:0.01em;margin:0 0 14px;color:#eee7d8;flex:none;">World Navigation</h1>
+
+      <div style="flex:1;min-height:0;display:flex;gap:0;background:#111514;border:1px solid #3a3528;border-radius:14px;overflow:hidden;">
+        <div class="cx-scroll" style="width:260px;flex:none;border-right:1px solid #262b27;padding:14px 8px;overflow-y:auto;background:#171b19;">
+          <div class="cx-search" style="display:flex;align-items:center;gap:8px;background:#111514;border:1px solid #262b27;border-radius:7px;padding:6px 10px;margin:0 8px 12px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="11" cy="11" r="7" stroke="#aaa69c" stroke-width="2"></circle><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#aaa69c" stroke-width="2" stroke-linecap="round"></line></svg>
+            <input type="text" placeholder="Filter locations..." value="{{ treeSearch }}" onInput="{{ onTreeSearch }}" style="background:transparent;border:none;outline:none;color:#eee7d8;font-family:Manrope,sans-serif;font-size:11.5px;width:100%;">
+          </div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#c39a4b;text-transform:uppercase;padding:0 10px 10px;">Regions</div>
+          <div style="display:flex;flex-direction:column;gap:2px;user-select:none;">
+            <sc-for list="{{ regions }}" as="region" hint-placeholder-count="2">
+              <div>
+                <div onClick="{{ region.toggle }}" style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:7px;cursor:pointer;background:{{ region.rowBg }};">
+                  <svg width="10" height="10" viewBox="0 0 24 24" style="flex:none;transform:{{ region.chevronRotate }};transition:transform .15s;"><path d="M8 5l8 7-8 7" stroke="#d8b562" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+                  <span style="font-size:13px;font-weight:700;color:#eee7d8;">{{ region.name }}</span>
+                </div>
+                <sc-if value="{{ region.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding-left:20px;display:flex;flex-direction:column;gap:2px;margin-top:2px;">
+                    <sc-for list="{{ region.routes }}" as="route" hint-placeholder-count="3">
+                      <div>
+                        <div onClick="{{ route.toggle }}" style="display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:7px;cursor:pointer;background:{{ route.rowBg }};">
+                          <svg width="9" height="9" viewBox="0 0 24 24" style="flex:none;transform:{{ route.chevronRotate }};transition:transform .15s;"><path d="M8 5l8 7-8 7" stroke="#aaa69c" stroke-width="2.5" fill="none" stroke-linecap="round"></path></svg>
+                          <span style="font-size:12.5px;color:{{ route.textColor }};">{{ route.name }}</span>
+                        </div>
+                        <sc-if value="{{ route.expanded }}" hint-placeholder-val="{{ false }}">
+                          <div style="padding-left:20px;display:flex;flex-direction:column;gap:1px;margin-top:2px;">
+                            <sc-for list="{{ route.buildings }}" as="b" hint-placeholder-count="2">
+                              <div onClick="{{ b.select }}" style="padding:6px 10px;border-radius:6px;font-size:12px;color:{{ b.textColor }};background:{{ b.rowBg }};cursor:pointer;">{{ b.name }}</div>
+                            </sc-for>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div class="cx-scroll" style="flex:1;min-width:0;padding:22px 26px;overflow-y:auto;">
+          <sc-if value="{{ selected }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#7d796f;margin-bottom:16px;">
+              <sc-for list="{{ selected.breadcrumb }}" as="crumb" hint-placeholder-count="3">
+                <span style="color:{{ crumb.color }};">{{ crumb.label }}</span><span style="color:#3a3528;">{{ crumb.sep }}</span>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:18px;margin-bottom:22px;">
+              <div style="width:110px;height:110px;flex:none;border-radius:10px;border:1px solid #3a3528;background:radial-gradient(circle at 30% 22%, rgba(122,168,110,0.2), transparent 62%), #171b19;display:flex;align-items:center;justify-content:center;">
+                <div role="img" aria-label="{{ selected.name }}" style="width:70px;height:70px;background-image:url({{ selected.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.05em;color:#c39a4b;text-transform:uppercase;margin-bottom:6px;">{{ selected.type }}</div>
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+                  <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;margin:0;color:#eee7d8;">{{ selected.name }}</h2>
+                  <a href="{{ selected.fullPageHref }}" style="font-size:12px;font-weight:600;color:#d8b562;border:1px solid #3a3528;border-radius:7px;padding:5px 12px;white-space:nowrap;">View full page →</a>
+                </div>
+                <div style="font-size:12.5px;color:#aaa69c;line-height:1.6;">{{ selected.description }}</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div style="background:#171b19;border:1px solid #262b27;border-radius:10px;padding:16px;">
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:10px;">NPCs Present</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <sc-for list="{{ selected.npcs }}" as="npc" hint-placeholder-count="2">
+                    <div style="font-size:12.5px;color:#cfc9ba;">{{ npc }}</div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="background:#171b19;border:1px solid #262b27;border-radius:10px;padding:16px;">
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:10px;">Shop / Vendor</div>
+                <div style="font-size:12.5px;color:#cfc9ba;">{{ selected.shop }}</div>
+              </div>
+              <div style="background:#171b19;border:1px solid #262b27;border-radius:10px;padding:16px;grid-column:span 2;">
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#d8b562;text-transform:uppercase;margin-bottom:10px;">Notable Items Found Here</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <sc-for list="{{ selected.items }}" as="it" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:8px;background:#111514;border:1px solid #262b27;border-radius:8px;padding:6px 10px;">
+                      <div style="width:24px;height:24px;flex:none;border-radius:5px;background:#171b19;border:1px solid #3a3528;display:flex;align-items:center;justify-content:center;">
+                        <div role="img" aria-label="{{ it.name }}" style="width:18px;height:18px;background-image:url({{ it.image }});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>
+                      </div>
+                      <span style="font-size:12px;color:#cfc9ba;">{{ it.name }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SPR = {
+  pot: "./assets/sprites/chipped-pot.png",
+  shard: "./assets/sprites/comet-shard.png",
+  dusk: "./assets/sprites/dusk.png",
+  ether: "./assets/sprites/ether.png",
+  giga: "./assets/sprites/gigaton.png",
+  net: "./assets/sprites/net.png",
+  para: "./assets/sprites/paralyze-heal.png",
+  xspd: "./assets/sprites/x-speed.png",
+};
+
+const DATA = [
+  {
+    name: "Johto", image: SPR.dusk,
+    description: "A quiet, tradition-bound region south of Kanto, home to ancient temples and eight Gym Leaders.",
+    npcs: ["Professor Elm"], shop: "None", items: [],
+    routes: [
+      {
+        name: "Route 29", type: "Route", image: SPR.dusk,
+        description: "A quiet dirt path connecting New Bark Town to Cherrygrove City, lined with tall grass.",
+        npcs: ["Passing Trainer Joey"], shop: "None", items: [{name:"Potion", image: SPR.ether}],
+        buildings: [
+          { name: "Mr. Pokémon's House", type: "Residence", image: SPR.pot,
+            description: "A modest home at the edge of Route 29, belonging to the eccentric Mr. Pokémon.",
+            npcs: ["Mr. Pokémon"], shop: "None", items: [{name:"Mystery Egg", image: SPR.shard}] },
+          { name: "Berry Stand", type: "Vendor Stand", image: SPR.para,
+            description: "A roadside cart selling seasonal berries to trainers passing through Route 29.",
+            npcs: ["Berry Merchant Anna"], shop: "Berry Stand — buys/sells berries",
+            items: [{name:"Oran Berry", image: SPR.ether}, {name:"Pecha Berry", image: SPR.para}] },
+        ],
+      },
+      {
+        name: "Cherrygrove City", type: "City", image: SPR.giga,
+        description: "The first city most Johto trainers visit, known for its welcoming Pokémon Center.",
+        npcs: ["Guide Gramps", "Nurse Joy"], shop: "Cherrygrove Mart",
+        items: [{name:"Ether", image: SPR.ether}],
+        buildings: [
+          { name: "Pokémon Center", type: "Service", image: SPR.net,
+            description: "Heals Pokémon free of charge and offers access to the regional trade terminal.",
+            npcs: ["Nurse Joy"], shop: "None", items: [] },
+        ],
+      },
+      {
+        name: "Dark Cave", type: "Cave", image: SPR.xspd,
+        description: "A pitch-black cavern connecting Route 31 and Route 45, nearly impossible to navigate without a light source.",
+        npcs: [], shop: "None", items: [{name:"Comet Shard", image: SPR.shard}],
+        buildings: [],
+      },
+    ],
+  },
+  {
+    name: "Kanto", image: SPR.giga,
+    description: "The original region, stretching from Pallet Town to the Indigo Plateau.",
+    npcs: [], shop: "None", items: [],
+    routes: [
+      { name: "Route 1", type: "Route", image: SPR.dusk, description: "The road linking Pallet Town to Viridian City.", npcs: [], shop: "None", items: [], buildings: [] },
+    ],
+  },
+];
+
+function buildTree() { return DATA; }
+
+class Component extends DCLogic {
+  state = { expandedRegions: { Johto: true }, expandedRoutes: { "Johto/Route 29": true }, selectedPath: "Johto/Route 29/Berry Stand", treeSearch: "", worldMenuOpen: false, worldMenuClosing: false };
+
+  closeWorldMenu = () => {
+    if (!this.state.worldMenuOpen || this.state.worldMenuClosing) return;
+    this.setState({ worldMenuClosing: true });
+    clearTimeout(this._worldCloseTimer);
+    this._worldCloseTimer = setTimeout(() => this.setState({ worldMenuOpen: false, worldMenuClosing: false }), 180);
+  };
+
+  componentDidMount() {
+    this._onDocClick = (e) => {
+      if (this.state.worldMenuOpen && !this.state.worldMenuClosing && !(e.target.closest && e.target.closest('[data-world-menu]'))) {
+        this.closeWorldMenu();
+      }
+    };
+    document.addEventListener('click', this._onDocClick, true);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._worldCloseTimer);
+    document.removeEventListener('click', this._onDocClick, true);
+  }
+
+  toggleRegion = (name) => this.setState(s => ({ expandedRegions: { ...s.expandedRegions, [name]: !s.expandedRegions[name] } }));
+  toggleRoute = (key) => this.setState(s => ({ expandedRoutes: { ...s.expandedRoutes, [key]: !s.expandedRoutes[key] } }));
+  select = (path) => this.setState({ selectedPath: path });
+
+  findSelected() {
+    const parts = this.state.selectedPath.split("/");
+    const region = DATA.find(r => r.name === parts[0]);
+    if (!region) return null;
+    if (parts.length === 1) {
+      return { ...region, type: "Region", breadcrumb: [
+        { label: region.name, color: "#d8b562", sep: "" },
+      ]};
+    }
+    const route = region.routes.find(r => r.name === parts[1]);
+    if (!route) return null;
+    if (parts.length === 2) {
+      return { ...route, breadcrumb: [
+        { label: region.name, color: "#aaa69c", sep: " / " },
+        { label: route.name, color: "#d8b562", sep: "" },
+      ]};
+    }
+    const building = route.buildings.find(b => b.name === parts[2]);
+    if (!building) return null;
+    return { ...building, breadcrumb: [
+      { label: region.name, color: "#aaa69c", sep: " / " },
+      { label: route.name, color: "#aaa69c", sep: " / " },
+      { label: building.name, color: "#d8b562", sep: "" },
+    ]};
+  }
+
+  renderVals() {
+    const selectedRaw = this.findSelected();
+    const selected = selectedRaw ? {
+      ...selectedRaw,
+      fullPageHref: "./Location%20Detail.dc.html",
+    } : null;
+
+    const q = this.state.treeSearch.trim().toLowerCase();
+    const isSearching = q.length > 0;
+
+    const regions = DATA.map(region => {
+      const routeMatches = region.routes.map(route => {
+        const buildingMatches = route.buildings.filter(b => b.name.toLowerCase().includes(q));
+        const routeSelfMatches = route.name.toLowerCase().includes(q);
+        return { route, buildingMatches, visible: !isSearching || routeSelfMatches || buildingMatches.length > 0 };
+      });
+      const regionSelfMatches = region.name.toLowerCase().includes(q);
+      const anyRouteVisible = routeMatches.some(rm => rm.visible);
+      const regionVisible = !isSearching || regionSelfMatches || anyRouteVisible;
+      const expanded = isSearching ? (anyRouteVisible || regionSelfMatches) : !!this.state.expandedRegions[region.name];
+
+      return {
+        name: region.name,
+        visible: regionVisible,
+        expanded,
+        rowBg: expanded ? "#23281f" : "transparent",
+        chevronRotate: expanded ? "rotate(90deg)" : "rotate(0deg)",
+        toggle: () => { this.toggleRegion(region.name); this.select(region.name); },
+        routes: routeMatches.filter(rm => isSearching ? rm.visible : true).map(({ route, buildingMatches }) => {
+          const routeKey = region.name + "/" + route.name;
+          const routeSelfMatches = route.name.toLowerCase().includes(q);
+          const routeExpanded = isSearching ? (buildingMatches.length > 0 && !routeSelfMatches ? true : (isSearching && buildingMatches.length > 0)) : !!this.state.expandedRoutes[routeKey];
+          const isRouteSelected = this.state.selectedPath === routeKey;
+          const buildingsToShow = isSearching ? (routeSelfMatches ? route.buildings : buildingMatches) : route.buildings;
+          return {
+            name: route.name,
+            expanded: isSearching ? true : routeExpanded,
+            rowBg: routeExpanded ? "#1c201e" : "transparent",
+            textColor: isRouteSelected ? "#d8b562" : "#cfc9ba",
+            chevronRotate: (isSearching ? true : routeExpanded) ? "rotate(90deg)" : "rotate(0deg)",
+            toggle: () => { this.toggleRoute(routeKey); this.select(routeKey); },
+            buildings: buildingsToShow.map(b => {
+              const bKey = routeKey + "/" + b.name;
+              const isSelected = this.state.selectedPath === bKey;
+              return {
+                name: b.name,
+                textColor: isSelected ? "#d8b562" : "#8a8579",
+                rowBg: isSelected ? "#23281f" : "transparent",
+                select: () => this.select(bKey),
+              };
+            }),
+          };
+        }),
+      };
+    }).filter(r => r.visible);
+
+    return {
+      regions,
+      selected,
+      treeSearch: this.state.treeSearch,
+      onTreeSearch: (e) => this.setState({ treeSearch: e.target.value }),
+      worldMenuOpen: this.state.worldMenuOpen,
+      toggleWorldMenu: () => { if (this.state.worldMenuOpen) this.closeWorldMenu(); else { clearTimeout(this._worldCloseTimer); this.setState({ worldMenuOpen: true, worldMenuClosing: false }); } },
+      worldChevronRotate: (this.state.worldMenuOpen && !this.state.worldMenuClosing) ? "rotate(180deg)" : "rotate(0deg)",
+      panelAnim: this.state.worldMenuClosing ? "cx-menu-out .18s ease both" : "cx-menu-in .2s cubic-bezier(.2,.9,.3,1) both",
+      itemClass: this.state.worldMenuClosing ? "cx-item-closing" : "cx-item-open",
+    };
+  }
+}
+
+</script>
+</body>
+</html>
