@@ -50,14 +50,31 @@ test("shared shell and Appearance variants preserve public semantics", async ({
   await page.goto("/");
 
   const navigation = page.getByRole("navigation", { name: "Main navigation" });
+  // Locations and Shops moved under the World dropdown (Slice 2 of the
+  // Claude Design redesign) — see world-menu.tsx — so they're real links
+  // only once the dropdown is open, not flat top-level links.
   await expect(navigation.getByRole("link")).toHaveText([
     "Items",
     "Recipes",
     "Professions",
     "Classes",
-    "Locations",
-    "Shops",
   ]);
+  const worldTrigger = navigation.getByRole("button", { name: "World" });
+  await expect(worldTrigger).toHaveAttribute("aria-expanded", "false");
+  await worldTrigger.click();
+  // World menu items carry a label plus a description span (e.g.
+  // "LocationsCities, routes & landmarks" as concatenated text content),
+  // so this checks count + individual accessible names rather than an
+  // exact full-text array like the flat links above.
+  await expect(navigation.getByRole("link")).toHaveCount(6);
+  await expect(
+    navigation.getByRole("link", { name: "Locations", exact: false })
+  ).toHaveAttribute("href", "/locations");
+  await expect(
+    navigation.getByRole("link", { name: "Shops", exact: false })
+  ).toHaveAttribute("href", "/shops");
+  await worldTrigger.click();
+  await expect(worldTrigger).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("search", { name: "Site search" })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Merchants Codex home" })
@@ -71,8 +88,16 @@ test("shared shell and Appearance variants preserve public semantics", async ({
     "crafting wiki companion"
   );
 
+  // The World dropdown clicks above are real mouse interactions, which
+  // sets the browser's input modality to mouse — a bare script .focus()
+  // after that correctly shows no visible ring under that modality, per
+  // browser :focus-visible heuristics. A real key press re-establishes
+  // keyboard modality first, matching the working pattern in
+  // public-navigation.spec.ts's own keyboard-focus coverage.
   const firstNavLink = navigation.getByRole("link", { name: "Items" });
   await firstNavLink.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
   await expect(firstNavLink).toBeFocused();
   await expect(firstNavLink).not.toHaveCSS("outline-style", "none");
 
@@ -239,7 +264,14 @@ test("Design review remains protected from unauthenticated public sessions", asy
   });
   const page = await context.newPage();
   await page.goto("/admin/design-review");
-  await expect(page).toHaveURL(/\/login\?next=/);
+  // Under PUBLIC site visibility (the baseline the rest of this public
+  // E2E suite requires), the proxy's private-beta gate is inactive, so
+  // the redirect comes from the deeper admin.access permission check
+  // instead (requireAdminUser -> requirePermission, which does not carry
+  // a returnTo) — plain /login, not /login?next=. The property under
+  // test — an anonymous session cannot reach /admin/design-review —
+  // still holds either way.
+  await expect(page).toHaveURL(/\/login$/);
   await expect(
     page.getByRole("heading", { level: 1, name: "Private beta sign-in" })
   ).toBeVisible();

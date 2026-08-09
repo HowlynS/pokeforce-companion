@@ -24,6 +24,7 @@ export const designTokens = {
     accentBright: "#f4c542",
     accentHover: "#e0c079",
     menuSurface: "#191d1b",
+    menuItemHover: "#23281f",
     insetSurface: "#0f1210",
     artFrameSurface: "#141715",
     success: "#22c55e",

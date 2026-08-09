@@ -2,23 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PUBLIC_NAV_ITEMS } from "@/lib/public-nav";
+import { WorldMenu } from "@/components/layout/world-menu";
+import { PublicSiteSearch } from "@/components/layout/public-site-search";
 
-const navItems = [
-  { label: "Items", href: "/items" },
-  { label: "Recipes", href: "/recipes" },
-  { label: "Professions", href: "/professions" },
-  { label: "Classes", href: "/classes" },
-  { label: "Locations", href: "/locations" },
-  { label: "Shops", href: "/shops" },
-] as const;
-
+// The <nav> wraps both the link row and the search form (search stays a
+// role="search" region nested inside the nav landmark, matching the
+// existing header-search E2E coverage's own scoping), but visually
+// renders as a 3-column grid — see .public-primary-nav's display:contents
+// in globals.css, which promotes these two children into
+// .public-site-header-inner's own grid instead of boxing them together.
 export function MainNav() {
   const pathname = usePathname();
 
   return (
     <nav aria-label="Main navigation" className="public-primary-nav">
       <div className="public-primary-nav-links">
-        {navItems.map((item) => {
+        {PUBLIC_NAV_ITEMS.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -36,27 +36,11 @@ export function MainNav() {
             </Link>
           );
         })}
+
+        <WorldMenu />
       </div>
 
-      {/* Preserve the existing progressively enhanced GET search. */}
-      <form
-        action="/search"
-        method="get"
-        role="search"
-        aria-label="Site search"
-        className="public-site-search"
-      >
-        <input
-          type="search"
-          name="q"
-          aria-label="Search query"
-          placeholder="Search..."
-          className="public-site-search-input"
-        />
-        <button type="submit" className="btn btn-primary btn-compact">
-          Search
-        </button>
-      </form>
+      <PublicSiteSearch />
     </nav>
   );
 }

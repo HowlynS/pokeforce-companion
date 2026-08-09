@@ -96,13 +96,15 @@ test.describe("homepage", () => {
   });
 });
 
+// Items/Recipes/Professions/Classes stay flat top-level links. Locations
+// and Shops moved under the header's World dropdown in the Claude Design
+// redesign (Slice 2) — see world-menu.tsx — so they're covered by the
+// separate "World dropdown" describe block below instead of this list.
 const NAV_TARGETS = [
   { label: "Items", path: "/items", heading: "Items" },
   { label: "Recipes", path: "/recipes", heading: "Recipes" },
   { label: "Professions", path: "/professions", heading: "Professions" },
   { label: "Classes", path: "/classes", heading: "Classes" },
-  { label: "Locations", path: "/locations", heading: "Locations" },
-  { label: "Shops", path: "/shops", heading: "Shops" },
 ] as const;
 
 test.describe("main navigation", () => {
@@ -125,6 +127,90 @@ test.describe("main navigation", () => {
       expect(activeWidth).toBe(inactiveWidth);
     });
   }
+
+  const WORLD_TARGETS = [
+    { label: "Locations", path: "/locations", heading: "Locations" },
+    { label: "Shops", path: "/shops", heading: "Shops" },
+  ] as const;
+
+  test.describe("World dropdown", () => {
+    for (const target of WORLD_TARGETS) {
+      test(`the ${target.label} entry opens ${target.path}`, async ({
+        page,
+      }) => {
+        await page.goto("/");
+
+        const navigation = page.getByRole("navigation", {
+          name: "Main navigation",
+        });
+        const trigger = navigation.getByRole("button", { name: "World" });
+        await expect(
+          navigation.getByRole("link", { name: target.label })
+        ).toHaveCount(0);
+
+        await trigger.click();
+        await expect(trigger).toHaveAttribute("aria-expanded", "true");
+        const entry = navigation.getByRole("link", { name: target.label });
+        await expect(entry).toBeVisible();
+        await entry.click();
+
+        await expect(page).toHaveURL(target.path);
+        await expect(
+          page.getByRole("heading", {
+            level: 1,
+            name: target.heading,
+            exact: true,
+          })
+        ).toBeVisible();
+      });
+    }
+
+    test("opens on click, closes on outside click, and closes on Escape returning focus to the trigger", async ({
+      page,
+    }) => {
+      await page.goto("/");
+
+      const navigation = page.getByRole("navigation", {
+        name: "Main navigation",
+      });
+      const trigger = navigation.getByRole("button", { name: "World" });
+
+      await trigger.click();
+      await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      await expect(
+        navigation.getByRole("link", { name: "Locations" })
+      ).toBeVisible();
+
+      await page.mouse.click(10, 10);
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await expect(
+        navigation.getByRole("link", { name: "Locations" })
+      ).toHaveCount(0);
+
+      await trigger.click();
+      await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      await page.keyboard.press("Escape");
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await expect(trigger).toBeFocused();
+    });
+
+    test("does not expose World Navigation or NPCs, which have no production route", async ({
+      page,
+    }) => {
+      await page.goto("/");
+
+      const navigation = page.getByRole("navigation", {
+        name: "Main navigation",
+      });
+      await navigation.getByRole("button", { name: "World" }).click();
+
+      for (const unsupportedLabel of ["World Navigation", "NPCs"]) {
+        await expect(
+          navigation.getByRole("link", { name: unsupportedLabel })
+        ).toHaveCount(0);
+      }
+    });
+  });
 
   test("detail pages retain their resource-level active state", async ({
     page,

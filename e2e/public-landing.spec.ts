@@ -152,7 +152,12 @@ test("landing composition stays centered and bounded at all target widths", asyn
         cardsRight: cards.getBoundingClientRect().right,
         spriteSlotWidth: firstSpriteSlot.getBoundingClientRect().width,
         headerPosition: getComputedStyle(siteHeader).position,
-        headerBackground: getComputedStyle(siteHeader).backgroundColor,
+        // The Claude Design redesign (Slice 2) turned the header into a
+        // floating card (.public-site-header-inner carries the opaque
+        // backdrop/border/shadow) rather than a full-bleed strip — the
+        // outer sticky wrapper (.public-site-header) is intentionally
+        // transparent so the scenic background shows around the bar.
+        headerBarBackground: getComputedStyle(header).backgroundColor,
       };
     });
 
@@ -169,7 +174,7 @@ test("landing composition stays centered and bounded at all target widths", asyn
     );
     expect(layout.spriteSlotWidth).toBe(viewport.expectedSprite);
     expect(layout.headerPosition).toBe("sticky");
-    expect(layout.headerBackground).not.toBe("rgba(0, 0, 0, 0)");
+    expect(layout.headerBarBackground).not.toBe("rgba(0, 0, 0, 0)");
 
     const scenicBackground = page.locator(".public-scenic-background--home");
     await expect(scenicBackground).toHaveCount(1);

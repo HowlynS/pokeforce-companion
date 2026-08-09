@@ -23,6 +23,7 @@
   --color-accent-bright: #f4c542;
   --color-accent-hover: #e0c079;
   --color-menu-surface: #191d1b;
+  --color-menu-item-hover: #23281f;
   --color-inset-surface: #0f1210;
   --color-art-frame-surface: #141715;
   --color-success: #22c55e;
@@ -1405,22 +1406,26 @@ select:focus-visible {
   position: sticky;
   top: 0;
   z-index: 50;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-background);
+  padding-top: 14px;
 }
 
-.public-site-shell--scenic > .public-site-header {
-  background: rgba(17, 21, 20, 0.91);
-  backdrop-filter: saturate(0.82);
-}
-
+/* The header bar itself (Claude Design redesign, Slice 2): a floating
+   card rather than a full-bleed strip, per the handoff spec — background
+   rgba(17,21,20,.92) + backdrop-filter blur, 1px chrome border, 14px
+   radius, drop shadow. Applies identically whether or not the page has a
+   scenic background (most public routes don't set `scenic` at all), so
+   this no longer needs a separate scenic-only override. */
 .public-site-header-inner {
-  min-height: 112px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  padding-block: 24px;
+  gap: 28px;
+  padding: 10px 22px;
+  background: rgba(17, 21, 20, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .public-site-brand {
@@ -1432,65 +1437,197 @@ select:focus-visible {
 
 .public-site-logo {
   display: block;
-  width: 168px;
-  height: auto;
+  width: auto;
+  height: 66px;
+  /* Negative vertical margin so the mark overhangs the bar, per the
+     handoff's logo treatment. */
+  margin-block: -13px;
 }
 
+/* The <nav> renders as a grid item's children, not a box itself, so its
+   two children (the link row and the search form) become independent
+   grid columns of .public-site-header-inner (link row centered, search
+   flush right) while the search form STAYS inside the nav landmark in
+   the DOM/accessibility tree — required so the existing header-search
+   E2E coverage (scoped to nav[aria-label="Main navigation"]) keeps
+   passing unchanged. display:contents preserves landmark roles in every
+   evergreen browser this app targets. */
 .public-primary-nav {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 12px 16px;
+  display: contents;
 }
 
 .public-primary-nav-links {
+  justify-self: center;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 16px;
 }
 
 .public-nav-link {
-  min-height: 38px;
+  position: relative;
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 8px 12px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
   color: var(--color-text);
+  font-size: 12.5px;
+  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+    color 0.18s ease,
+    border-color 0.18s ease,
+    text-shadow 0.18s ease;
 }
 
-.public-nav-link:hover {
-  border-color: var(--color-accent);
+.public-nav-link:hover,
+.public-nav-link:focus-visible {
   color: var(--color-accent);
+  text-shadow: 0 0 12px rgba(195, 154, 75, 0.45);
 }
 
 .public-nav-link--active {
-  border-color: var(--color-accent);
-  background: var(--color-surface-soft);
   color: var(--color-accent-soft);
+  border-bottom-color: var(--color-accent-soft);
+}
+
+/* World dropdown (Slice 2): only Locations and Shops are real, live
+   routes today — World Navigation and NPCs stay out until they have a
+   truthful production route behind them (see world-menu.tsx). */
+.public-world-menu {
+  position: relative;
+}
+
+.public-world-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 0 0 4px;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    text-shadow 0.18s ease;
+}
+
+.public-world-menu-trigger:hover,
+.public-world-menu-trigger:focus-visible {
+  color: var(--color-accent);
+  text-shadow: 0 0 12px rgba(195, 154, 75, 0.45);
+}
+
+.public-world-menu-trigger.public-nav-link--active {
+  color: var(--color-accent-soft);
+  border-bottom-color: var(--color-accent-soft);
+}
+
+.public-world-menu-chevron {
+  flex: none;
+  transition: transform 0.15s ease;
+}
+
+.public-world-menu-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: grid;
+  gap: 2px;
+  min-width: 230px;
+  background: var(--color-menu-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+}
+
+.public-world-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.public-world-menu-item:hover,
+.public-world-menu-item:focus-visible {
+  background: var(--color-menu-item-hover);
+}
+
+.public-world-menu-item-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.public-world-menu-item-description {
+  font-size: 10px;
+  color: var(--color-text-meta);
 }
 
 .public-site-search {
+  justify-self: end;
+  min-width: 0;
+  width: 230px;
   display: flex;
+  align-items: center;
   gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-surface);
+  padding: 8px 12px;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.public-site-search:focus-within {
+  border-color: var(--color-accent-soft);
+  box-shadow: 0 0 0 3px rgba(195, 154, 75, 0.3);
 }
 
 .public-site-search-input {
-  width: 160px;
+  flex: 1;
   min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
+  border: none;
+  outline: none;
+  background: transparent;
   color: var(--color-text);
-  padding: 8px 12px;
+  font-size: 13px;
+  padding: 0;
+}
+
+.public-site-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.public-site-search-submit {
+  flex: none;
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.public-site-search:focus-within .public-site-search-submit,
+.public-site-search-submit:hover {
+  color: var(--color-accent-soft);
 }
 
 .public-site-main {
@@ -1501,7 +1638,8 @@ select:focus-visible {
 
 .public-site-footer {
   margin-top: 64px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-muted);
+  background: rgba(17, 21, 20, 0.9);
   color: var(--color-text-muted);
   font-size: 14px;
 }
@@ -1509,13 +1647,31 @@ select:focus-visible {
 .public-site-footer-inner {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px 20px;
-  padding-block: 24px 32px;
+  padding-block: 18px;
 }
 
 .public-site-footer-brand {
   color: var(--color-text);
   font-weight: 600;
+}
+
+.public-site-footer-credit {
+  font-size: 11.5px;
+  color: var(--color-text-meta-dim);
+}
+
+.public-site-footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+
+.public-site-footer-nav .breadcrumb-link {
+  font-size: 11.5px;
 }
 
 @media (max-width: 1120px) {
@@ -1748,8 +1904,7 @@ select:focus-visible {
 
 @media (min-width: 2400px) {
   .public-site-header-inner.public-site-container--landing {
-    min-height: 120px;
-    padding-block: 28px;
+    padding-block: 14px;
   }
 
   .public-site-container--landing .public-site-brand-name {

@@ -626,7 +626,7 @@ function PreviewHeader({ logoUrl }: { logoUrl: string | null }) {
         </span>
         <nav aria-label="Preview navigation" className="public-primary-nav">
           <div className="public-primary-nav-links">
-            {["Items", "Recipes", "Professions", "Classes", "Locations", "Shops"].map(
+            {["Items", "Recipes", "Professions", "Classes", "World"].map(
               (label) => (
                 <span key={label} className="public-nav-link">
                   {label}
@@ -634,6 +634,14 @@ function PreviewHeader({ logoUrl }: { logoUrl: string | null }) {
               )
             )}
           </div>
+          {/* Decorative stand-in for PublicSiteSearch: the real header's
+              nav renders as a 3-column grid (link row, search) via
+              .public-primary-nav's display:contents, so this static
+              preview needs its own third column to match — otherwise the
+              grid's search column would sit empty. */}
+          <span className="public-site-search" aria-hidden="true">
+            <span className="public-site-search-input">Search the Codex...</span>
+          </span>
         </nav>
       </div>
     </header>
