@@ -343,9 +343,10 @@ test.describe("public shell layout", () => {
         });
 
         expect(layout.contentWidth).toBeLessThanOrEqual(layout.viewportWidth);
-        const expectedWidth = path.startsWith("/items/")
-          ? Math.min(layout.viewportWidth, 1720)
-          : Math.min(layout.viewportWidth, 1480);
+        // The Items directory adopted the wide (1720px) container in the
+        // Claude Design redesign (Slice 4), matching its Overview sidebar
+        // composition — the same width Item detail already used.
+        const expectedWidth = Math.min(layout.viewportWidth, 1720);
         expect(Math.abs(layout.main.width - expectedWidth)).toBeLessThan(1);
         expect(Math.abs(layout.main.left - layout.header.left)).toBeLessThan(1);
         expect(Math.abs(layout.main.right - layout.header.right)).toBeLessThan(

@@ -188,8 +188,12 @@ test("catalogue filters and explicit no-result states remain canonical", async (
 }) => {
   await page.goto("/items?category=design-review-invalid-filter");
   await expect(page).toHaveURL(/\/items$/);
+  // The Claude Design redesign (Slice 4) replaced the always-visible
+  // Filter nav with a Filter button + popover (directory-filter-popover.tsx)
+  // — the canonicalize-on-invalid-filter behavior under test is unchanged,
+  // only the filter control's own shape is.
   await expect(
-    page.getByRole("navigation", { name: "Filter Items by Category" })
+    page.getByRole("button", { name: "Filter", exact: false })
   ).toBeVisible();
 
   await page.goto("/shops?q=Design%20Review%20No%20Matches");

@@ -9,6 +9,24 @@ export function readCatalogueQueryValue(
   return normalizedValue ? normalizedValue : undefined;
 }
 
+/** Every non-empty, deduplicated value for a repeatable query param (e.g.
+    `?category=a&category=b`), trimmed. Order-preserving. */
+export function readCatalogueQueryValues(value: CatalogueQueryValue): string[] {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const raw of values) {
+    const trimmed = raw.trim();
+    if (trimmed && !seen.has(trimmed)) {
+      seen.add(trimmed);
+      result.push(trimmed);
+    }
+  }
+
+  return result;
+}
+
 export function resolveCataloguePage(
   rawPage: CatalogueQueryValue,
   totalCount: number,
@@ -38,12 +56,18 @@ export function resolveCataloguePage(
 export function cataloguePageHref(
   basePath: string,
   page: number,
-  query: Record<string, string | undefined> = {}
+  query: Record<string, string | string[] | undefined> = {}
 ): string {
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(query)) {
-    if (value) {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        if (entry) {
+          searchParams.append(key, entry);
+        }
+      }
+    } else if (value) {
       searchParams.set(key, value);
     }
   }

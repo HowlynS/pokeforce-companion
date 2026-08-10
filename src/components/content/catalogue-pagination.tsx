@@ -6,7 +6,7 @@ type CataloguePaginationProps = {
   currentPage: number;
   pageCount: number;
   label: string;
-  query?: Record<string, string | undefined>;
+  query?: Record<string, string | string[] | undefined>;
 };
 
 export function CataloguePagination({

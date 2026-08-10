@@ -5,7 +5,7 @@ type ContentImageProps = {
   /** Storage object path from a trusted database record (never a URL). */
   imagePath: string | null;
   alt: string;
-  size?: "card" | "detail" | "hero" | "row";
+  size?: "card" | "detail" | "hero" | "row" | "grid";
 };
 
 const DISPLAY_SIZES = {
@@ -13,6 +13,7 @@ const DISPLAY_SIZES = {
   detail: 160,
   hero: 192,
   row: 48,
+  grid: 78,
 } as const;
 
 /**
