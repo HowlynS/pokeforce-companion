@@ -320,7 +320,7 @@ test.describe("public detail pages", () => {
       })
     ).toBeVisible();
 
-    const recipeLink = page.locator(".profession-recipe-preview-row").filter({
+    const recipeLink = page.locator(".recipe-output-recipe-link").filter({
       hasText: "Iron Ingot",
     });
     await expect(recipeLink).toBeVisible();
@@ -378,7 +378,7 @@ test.describe("relational navigation journeys", () => {
   test("profession detail -> recipe detail", async ({ page }) => {
     await page.goto("/professions/smithing");
     await page
-      .locator(".profession-recipe-preview-row")
+      .locator(".recipe-output-recipe-link")
       .filter({ hasText: "Iron Ingot" })
       .click();
     await expect(page).toHaveURL("/recipes/iron-ingot");

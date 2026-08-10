@@ -216,6 +216,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                   <CollapsibleSection
                     title="How to obtain"
                     className="item-panel item-obtain-panel"
+                    animationVariant="stagger"
                   >
                     {item.shopListings.length > 0 ? (
                       <div className="item-source-group">
@@ -315,6 +316,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                   <CollapsibleSection
                     title="Used in recipes"
                     className="item-panel item-recipes-panel"
+                    animationVariant="stagger"
                   >
                     <div className="item-recipe-rows">
                       {item.recipeIngredients.map((ingredient) => (
@@ -358,6 +360,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               <CollapsibleSection
                 title="Related Items"
                 className="item-panel item-related-panel"
+                animationVariant="stagger"
               >
                 <div className="item-related-grid">
                   {relatedItems.map((related) => (

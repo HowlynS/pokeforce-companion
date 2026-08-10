@@ -34,6 +34,7 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
       title="Inventory"
       meta={`${listings.length} ${listings.length === 1 ? "item" : "items"}`}
       className="shop-detail-inventory"
+      animationVariant="stagger"
     >
       <div className="shop-detail-inventory-panel">
         <div className="shop-detail-selected">

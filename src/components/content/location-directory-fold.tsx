@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
+import { publicMotionDuration } from "@/lib/public-motion";
 
 type LocationDirectoryFoldProps = {
   title: string;
@@ -38,7 +39,7 @@ export function LocationDirectoryFold({
     closeTimer.current = setTimeout(() => {
       setMounted(false);
       setClosing(false);
-    }, 130);
+    }, publicMotionDuration(130));
   }
 
   const isExpanded = mounted && !closing;
@@ -82,6 +83,8 @@ export function LocationDirectoryFold({
       {mounted ? (
         <div
           id={panelId}
+          aria-hidden={closing || undefined}
+          inert={closing ? true : undefined}
           className={
             "location-directory-fold-content " +
             (closing ? "location-directory-fold-content--closing" : "cx-item-in")

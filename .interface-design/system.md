@@ -344,6 +344,25 @@ same focused commit.
   optional notes, independent Verification, keyboard selection, hide-empty
   behavior, and reduced motion.
 
+### Shared public interaction fidelity
+
+- Public nav links and the World trigger share the handoff's `180ms` border and
+  text-glow behavior without recoloring inactive labels. Align World vertically
+  with the link row; keep its panel centered throughout exact `200ms` cubic-in,
+  `180ms` out, and `30ms` item-stagger animations.
+- Header search owns `200ms` border/background/glow transitions, the exact
+  `1.6s` pulse, and focus cancellation. The logo uses the handoff's dual-shadow
+  `3.2s` breathing keyframes.
+- Shared disclosure close is not an immediate unmount: retain content for the
+  `220ms` line sweep-out and apply either `120ms` item exit or `200ms` stagger
+  exit by content family. Shared ingredient popovers use `200ms` cubic entrance
+  and `180ms` exit.
+- Breadcrumb color/underline transitions are `180ms`; view controls and common
+  card surfaces use `200ms`; Recipe ingredient hover uses the exact `180ms`
+  cursor, 4px shift, sprite glow, and quantity emphasis treatment.
+- `prefers-reduced-motion` removes transitions/transforms and makes all delayed
+  unmounts immediate while preserving final visual and accessible states.
+
 ### PlayerClass naming
 
 - Internal/schema/domain name: `PlayerClass` — never bare `Class` (collides

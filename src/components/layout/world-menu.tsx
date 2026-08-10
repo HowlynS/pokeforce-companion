@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { publicMotionDuration } from "@/lib/public-motion";
 
 // The Claude Design handoff's World dropdown also lists "World
 // Navigation" (a region-tree overview) and "NPCs" — neither has a real
@@ -28,26 +29,38 @@ const worldItems = [
 export function WorldMenu() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuId = useId();
 
   const active = worldItems.some(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
   );
 
+  const closeMenu = useCallback(() => {
+    if (!open || closing) return;
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setClosing(true);
+    closeTimer.current = setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, publicMotionDuration(180));
+  }, [closing, open]);
+
   useEffect(() => {
     if (!open) return;
 
     function handlePointerDown(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+        closeMenu();
       }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false);
+        closeMenu();
         buttonRef.current?.focus();
       }
     }
@@ -59,7 +72,24 @@ export function WorldMenu() {
       document.removeEventListener("mousedown", handlePointerDown, true);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [closeMenu, open]);
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
+  function toggleMenu() {
+    if (open) {
+      closeMenu();
+      return;
+    }
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpen(true);
+    setClosing(false);
+  }
 
   return (
     <div className="public-world-menu" ref={containerRef}>
@@ -71,9 +101,9 @@ export function WorldMenu() {
           (active ? " public-nav-link--active" : "")
         }
         aria-haspopup="true"
-        aria-expanded={open}
+        aria-expanded={open && !closing}
         aria-controls={menuId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggleMenu}
       >
         World
         <svg
@@ -82,7 +112,9 @@ export function WorldMenu() {
           height="9"
           viewBox="0 0 24 24"
           className="public-world-menu-chevron"
-          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+          style={{
+            transform: open && !closing ? "rotate(180deg)" : "rotate(0deg)",
+          }}
         >
           <path
             d="M6 9l6 6 6-6"
@@ -95,13 +127,19 @@ export function WorldMenu() {
       </button>
 
       {open ? (
-        <div id={menuId} className="public-world-menu-panel cx-menu-in">
-          {worldItems.map((item) => (
+        <div
+          id={menuId}
+          className={`public-world-menu-panel ${closing ? "cx-menu-out" : "cx-menu-in"}`}
+          aria-hidden={closing || undefined}
+          inert={closing ? true : undefined}
+        >
+          {worldItems.map((item, index) => (
             <Link
               key={item.href}
               href={item.href}
-              className="public-world-menu-item"
-              onClick={() => setOpen(false)}
+              className={`public-world-menu-item ${closing ? "cx-item-out" : "cx-item-in"}`}
+              style={{ animationDelay: closing ? "0ms" : `${index * 30}ms` }}
+              onClick={closeMenu}
             >
               <span className="public-world-menu-item-label">
                 {item.label}

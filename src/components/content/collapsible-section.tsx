@@ -1,12 +1,14 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { publicMotionDuration } from "@/lib/public-motion";
 
 type CollapsibleSectionProps = {
   title: string;
   meta?: React.ReactNode;
   className?: string;
   defaultOpen?: boolean;
+  animationVariant?: "item" | "stagger";
   children: React.ReactNode;
 };
 
@@ -24,10 +26,44 @@ export function CollapsibleSection({
   meta,
   className,
   defaultOpen = true,
+  animationVariant = "item",
   children,
 }: CollapsibleSectionProps) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [mounted, setMounted] = useState(defaultOpen);
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelId = useId();
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
+  function toggle() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (!mounted) {
+      setMounted(true);
+      setClosing(false);
+      return;
+    }
+    if (closing) return;
+    setClosing(true);
+    closeTimer.current = setTimeout(() => {
+      setMounted(false);
+      setClosing(false);
+    }, publicMotionDuration(220));
+  }
+
+  const expanded = mounted && !closing;
+  const panelAnimation = closing
+    ? animationVariant === "stagger"
+      ? "cx-fade-out-stagger"
+      : "cx-item-out"
+    : animationVariant === "stagger"
+      ? "cx-fade-in-stagger"
+      : "cx-item-in";
 
   return (
     <div className={className}>
@@ -35,9 +71,9 @@ export function CollapsibleSection({
         <button
           type="button"
           className="detail-collapsible-trigger"
-          aria-expanded={open}
+          aria-expanded={expanded}
           aria-controls={panelId}
-          onClick={() => setOpen((value) => !value)}
+          onClick={toggle}
         >
           <svg
             aria-hidden="true"
@@ -45,7 +81,7 @@ export function CollapsibleSection({
             height="13"
             viewBox="0 0 24 24"
             className="detail-collapsible-chevron"
-            style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+            style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
           >
             <path
               d="M6 9l6 6 6-6"
@@ -61,14 +97,24 @@ export function CollapsibleSection({
               {meta}
             </span>
           ) : null}
-          {open ? (
-            <span className="detail-collapsible-rule cx-line-sweep" aria-hidden="true" />
+          {mounted ? (
+            <span
+              className={`detail-collapsible-rule ${closing ? "cx-line-sweep-out" : "cx-line-sweep"}`}
+              aria-hidden="true"
+            />
           ) : null}
         </button>
       </h2>
 
-      {open ? (
-        <div id={panelId} role="region" aria-label={title} className="cx-fade-in-stagger">
+      {mounted ? (
+        <div
+          id={panelId}
+          role="region"
+          aria-label={title}
+          aria-hidden={closing || undefined}
+          inert={closing ? true : undefined}
+          className={panelAnimation}
+        >
           {children}
         </div>
       ) : null}

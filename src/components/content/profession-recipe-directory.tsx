@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { publicMotionDuration } from "@/lib/public-motion";
 
 type ProfessionRecipeDirectoryProps = {
   grid: ReactNode;
@@ -47,7 +48,7 @@ export function ProfessionRecipeDirectory({
       closeTimer.current = setTimeout(() => {
         setOpen(false);
         setClosing(false);
-      }, 220);
+      }, publicMotionDuration(220));
       return;
     }
     setOpen(true);
@@ -98,6 +99,8 @@ export function ProfessionRecipeDirectory({
         <div
           id="profession-recipes-panel"
           className={`profession-recipes-panel${closing ? " cx-panel-out" : " cx-panel-in"}`}
+          aria-hidden={closing || undefined}
+          inert={closing ? true : undefined}
         >
           {mode === "grid" ? grid : list}
         </div>

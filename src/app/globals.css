@@ -1518,15 +1518,14 @@ select:focus-visible {
   text-decoration: none;
   white-space: nowrap;
   transition:
-    color 0.18s ease,
     border-color 0.18s ease,
     text-shadow 0.18s ease;
 }
 
 .public-nav-link:hover,
 .public-nav-link:focus-visible {
-  color: var(--color-accent);
-  text-shadow: 0 0 12px rgba(195, 154, 75, 0.45);
+  border-bottom-color: var(--color-accent);
+  text-shadow: 0 0 10px rgba(216, 181, 98, 0.65);
 }
 
 .public-nav-link--active {
@@ -1539,6 +1538,8 @@ select:focus-visible {
    truthful production route behind them (see world-menu.tsx). */
 .public-world-menu {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .public-world-menu-trigger {
@@ -1553,18 +1554,18 @@ select:focus-visible {
   font-family: inherit;
   font-size: 12.5px;
   font-weight: 600;
+  line-height: normal;
   white-space: nowrap;
   cursor: pointer;
   transition:
-    color 0.18s ease,
     border-color 0.18s ease,
     text-shadow 0.18s ease;
 }
 
 .public-world-menu-trigger:hover,
 .public-world-menu-trigger:focus-visible {
-  color: var(--color-accent);
-  text-shadow: 0 0 12px rgba(195, 154, 75, 0.45);
+  border-bottom-color: var(--color-accent);
+  text-shadow: 0 0 10px rgba(216, 181, 98, 0.65);
 }
 
 .public-world-menu-trigger.public-nav-link--active {
@@ -1591,6 +1592,7 @@ select:focus-visible {
   border-radius: 12px;
   padding: 8px;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+  transform-origin: top center;
 }
 
 .public-world-menu-item {
@@ -1632,13 +1634,30 @@ select:focus-visible {
   background: var(--color-surface);
   padding: 8px 12px;
   transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.public-site-search:hover {
+  border-color: var(--color-border-hover);
 }
 
 .public-site-search:focus-within {
-  border-color: var(--color-accent-soft);
-  box-shadow: 0 0 0 3px rgba(195, 154, 75, 0.3);
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  box-shadow:
+    0 0 0 3px rgba(195, 154, 75, 0.14),
+    0 0 18px rgba(216, 181, 98, 0.22);
+  animation: none;
+}
+
+.public-site-search svg * {
+  transition: stroke 0.2s ease;
+}
+
+.public-site-search:focus-within svg * {
+  stroke: var(--color-accent-soft);
 }
 
 .public-site-search-input {
@@ -1986,15 +2005,16 @@ select:focus-visible {
   color: var(--color-text);
   text-decoration: none;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .landing-resource-card:hover,
 .landing-resource-card:focus-visible {
   border-color: var(--color-accent);
+  background: var(--color-surface-soft);
   transform: translateY(-2px);
   box-shadow:
     0 0 0 1px rgba(195, 154, 75, 0.3),
@@ -2698,6 +2718,15 @@ select:focus-visible {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.directory-view-toggle-btn:hover,
+.directory-view-toggle-btn:focus-visible {
+  background: var(--color-menu-item-hover);
 }
 
 .directory-view-toggle-btn--active {
@@ -3281,6 +3310,7 @@ select:focus-visible {
   position: relative;
   color: var(--color-text-muted);
   text-decoration: none;
+  transition: color 0.18s ease;
 }
 
 .breadcrumb-link::after {
@@ -4651,21 +4681,49 @@ body:has(.recipe-detail-page) .public-site-footer {
   border-radius: 8px;
   background: var(--color-surface);
   padding: 8px 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .recipe-detail-page .recipe-ingredient-row::before {
   color: var(--color-accent-soft);
   font-size: 11px;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
   content: "▶";
 }
 
 .recipe-detail-page .recipe-ingredient-row:hover,
 .recipe-detail-page .recipe-ingredient-row:focus-visible {
   background: var(--color-surface-soft);
+  border-color: var(--color-accent);
+  transform: translateX(4px);
+  box-shadow:
+    0 0 16px rgba(216, 181, 98, 0.18),
+    inset 0 0 0 1px rgba(195, 154, 75, 0.25);
+}
+
+.recipe-detail-page .recipe-ingredient-row:hover::before,
+.recipe-detail-page .recipe-ingredient-row:focus-visible::before {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .recipe-detail-page .recipe-ingredient-row .item-recipe-thumbnail {
   width: 32px;
+  transition: filter 0.18s ease;
+}
+
+.recipe-detail-page .recipe-ingredient-row:hover .item-recipe-thumbnail,
+.recipe-detail-page .recipe-ingredient-row:focus-visible .item-recipe-thumbnail {
+  filter: drop-shadow(0 0 6px rgba(216, 181, 98, 0.6));
 }
 
 .recipe-detail-page
@@ -4700,6 +4758,15 @@ body:has(.recipe-detail-page) .public-site-footer {
 
 .recipe-detail-page .recipe-ingredient-quantity {
   font-size: 13px;
+  transition:
+    color 0.18s ease,
+    text-shadow 0.18s ease;
+}
+
+.recipe-detail-page .recipe-ingredient-row:hover .recipe-ingredient-quantity,
+.recipe-detail-page .recipe-ingredient-row:focus-visible .recipe-ingredient-quantity {
+  color: var(--color-accent-bright);
+  text-shadow: 0 0 8px rgba(244, 197, 66, 0.5);
 }
 
 .recipe-detail-page .recipe-result-row {
@@ -10289,12 +10356,21 @@ input[type="checkbox"] {
     animation: cx-item-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
   }
 
-  .cx-fade-in-stagger {
+  .cx-item-out {
+    animation: cx-item-out 120ms ease both;
+  }
+
+  .cx-fade-in-stagger,
+  .cx-fade-stagger {
     animation: cx-fade-in-stagger 320ms ease both;
   }
 
+  .cx-fade-out-stagger {
+    animation: cx-fade-out-stagger 200ms ease both;
+  }
+
   .cx-menu-in {
-    animation: cx-menu-in 200ms ease both;
+    animation: cx-menu-in 200ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
   }
 
   .cx-menu-out {
@@ -10302,7 +10378,7 @@ input[type="checkbox"] {
   }
 
   .cx-panel-in {
-    animation: cx-panel-in 200ms ease both;
+    animation: cx-panel-in 200ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
   }
 
   .cx-panel-out {
@@ -10318,7 +10394,7 @@ input[type="checkbox"] {
   }
 
   .cx-search-pulse:hover {
-    animation: cx-search-pulse 1.6s ease-out infinite;
+    animation: cx-search-pulse 1.6s ease-in-out infinite;
   }
 }
 
@@ -10333,6 +10409,17 @@ input[type="checkbox"] {
   }
 }
 
+@keyframes cx-item-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
 @keyframes cx-fade-in-stagger {
   from {
     opacity: 0;
@@ -10344,47 +10431,58 @@ input[type="checkbox"] {
   }
 }
 
+@keyframes cx-fade-out-stagger {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
 @keyframes cx-menu-in {
   from {
     opacity: 0;
-    transform: scaleY(0.92);
+    transform: translate(-50%, 0) scaleY(0.92) scaleX(0.98);
   }
   to {
     opacity: 1;
-    transform: scaleY(1);
+    transform: translate(-50%, 0) scaleY(1) scaleX(1);
   }
 }
 
 @keyframes cx-menu-out {
   from {
     opacity: 1;
-    transform: scaleY(1);
+    transform: translate(-50%, 0) scaleY(1) scaleX(1);
   }
   to {
     opacity: 0;
-    transform: scaleY(0.92);
+    transform: translate(-50%, 0) scaleY(0.94) scaleX(0.99);
   }
 }
 
 @keyframes cx-panel-in {
   from {
     opacity: 0;
-    transform: scaleY(0.92);
+    transform: scaleY(0.92) scaleX(0.98);
   }
   to {
     opacity: 1;
-    transform: scaleY(1);
+    transform: scaleY(1) scaleX(1);
   }
 }
 
 @keyframes cx-panel-out {
   from {
     opacity: 1;
-    transform: scaleY(1);
+    transform: scaleY(1) scaleX(1);
   }
   to {
     opacity: 0;
-    transform: scaleY(0.92);
+    transform: scaleY(0.94) scaleX(0.99);
   }
 }
 
@@ -10402,19 +10500,24 @@ input[type="checkbox"] {
 @keyframes cx-logo-breathe {
   0%,
   100% {
-    filter: drop-shadow(0 0 0 rgba(216, 181, 98, 0));
+    filter:
+      drop-shadow(0 0 3px rgba(216, 181, 98, 0.4))
+      drop-shadow(0 0 7px rgba(195, 154, 75, 0.22));
   }
   50% {
-    filter: drop-shadow(0 0 10px rgba(216, 181, 98, 0.45));
+    filter:
+      drop-shadow(0 0 5px rgba(216, 181, 98, 0.6))
+      drop-shadow(0 0 11px rgba(195, 154, 75, 0.32));
   }
 }
 
 @keyframes cx-search-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(195, 154, 75, 0.35);
-  }
+  0%,
   100% {
-    box-shadow: 0 0 0 10px rgba(195, 154, 75, 0);
+    box-shadow: 0 0 0 0 rgba(216, 181, 98, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(216, 181, 98, 0.06);
   }
 }
 
@@ -10423,6 +10526,10 @@ input[type="checkbox"] {
 @media (prefers-reduced-motion: no-preference) {
   .cx-line-sweep {
     animation: cx-line-sweep 350ms ease both;
+  }
+
+  .cx-line-sweep-out {
+    animation: cx-line-sweep-out 220ms ease both;
   }
 }
 
@@ -10435,7 +10542,17 @@ input[type="checkbox"] {
   }
 }
 
-.cx-line-sweep {
+@keyframes cx-line-sweep-out {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.cx-line-sweep,
+.cx-line-sweep-out {
   transform-origin: left;
 }
 
@@ -12535,6 +12652,25 @@ a.shop-detail-chip:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .public-nav-link,
+  .public-world-menu-trigger,
+  .public-world-menu-chevron,
+  .public-world-menu-item,
+  .public-site-search,
+  .public-site-search svg *,
+  .breadcrumb-link,
+  .landing-cta,
+  .landing-resource-card,
+  .landing-resource-affordance,
+  .landing-recent-row,
+  .landing-promo-card,
+  .directory-filter-trigger,
+  .directory-view-toggle-btn,
+  .detail-collapsible-chevron,
+  .recipe-detail-page .recipe-ingredient-row,
+  .recipe-detail-page .recipe-ingredient-row::before,
+  .recipe-detail-page .recipe-ingredient-row .item-recipe-thumbnail,
+  .recipe-detail-page .recipe-ingredient-quantity,
   .shop-detail-chip,
   .shop-detail-inventory-row,
   .shop-detail-inventory-select,
@@ -12543,6 +12679,10 @@ a.shop-detail-chip:focus-visible {
     transition: none;
   }
 
+  .landing-resource-card:hover,
+  .landing-resource-card:focus-visible,
+  .recipe-detail-page .recipe-ingredient-row:hover,
+  .recipe-detail-page .recipe-ingredient-row:focus-visible,
   .shop-detail-inventory-row:hover {
     transform: none;
   }

@@ -471,6 +471,28 @@ and selectable Inventory ledger while remaining bounded by production data:
   integer prices, multiple currencies, optional notes, keyboard selection,
   collapse behavior, stable fallbacks, and reduced motion.
 
+### Shared public interaction fidelity
+
+The post-rollout audit uses the repeated CSS in every supported Claude Design
+handoff as the shared interaction authority:
+
+- Header navigation keeps the `180ms` gold-border/text-glow transition without
+  changing inactive label color. The World trigger shares the link baseline;
+  its centered panel uses the exact `200ms` cubic entrance, `180ms` exit, and
+  `30ms` item stagger without losing `translateX(-50%)` during animation.
+- Header search uses the handoff's `200ms` border/background/glow transitions,
+  `1.6s` hover pulse, and focus cancellation. Logo breathing retains the exact
+  dual drop-shadow keyframes.
+- Shared detail disclosures remain mounted for the `220ms` rule sweep-out and
+  use the handoff's `120ms` item or `200ms` stagger exit. Ingredient popovers
+  retain their `200ms`/`180ms` panel motion.
+- Catalogue view buttons use the shared `200ms` hover surface transition;
+  breadcrumb color and underline each transition in `180ms`. Recipe ingredient
+  rows use the specified `180ms` cursor reveal, 4px shift, sprite glow, and
+  quantity emphasis.
+- Every delayed unmount resolves immediately under `prefers-reduced-motion`,
+  and shared hover transforms/transitions are disabled there.
+
 The Class directory reuses the managed scenic catalogue presentation without
 introducing a Class-specific atmosphere or gameplay semantics.
 

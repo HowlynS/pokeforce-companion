@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { publicMotionDuration } from "@/lib/public-motion";
 
 type LocationDetailDirectoryProps = {
   title: string;
@@ -48,7 +49,7 @@ export function LocationDetailDirectory({
     closeTimer.current = setTimeout(() => {
       setMounted(false);
       setClosing(false);
-    }, 220);
+    }, publicMotionDuration(220));
   }
 
   const expanded = mounted && !closing;
@@ -108,6 +109,8 @@ export function LocationDetailDirectory({
 
       {mounted ? (
         <div
+          aria-hidden={closing || undefined}
+          inert={closing ? true : undefined}
           className={
             "location-detail-directory-content " +
             (closing ? "location-detail-directory-content--closing" : "cx-item-in")

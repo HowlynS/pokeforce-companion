@@ -182,21 +182,45 @@ test.describe("main navigation", () => {
 
       await trigger.click();
       await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      const panel = navigation.locator(".public-world-menu-panel");
+      await expect(panel).toHaveClass(/cx-menu-in/);
+      await expect(panel).toHaveCSS("animation-duration", "0.2s");
       await expect(
         navigation.getByRole("link", { name: "Locations" })
       ).toBeVisible();
 
       await page.mouse.click(10, 10);
       await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await expect(panel).toHaveClass(/cx-menu-out/);
       await expect(
         navigation.getByRole("link", { name: "Locations" })
       ).toHaveCount(0);
+      await expect(panel).toHaveCount(0);
 
       await trigger.click();
       await expect(trigger).toHaveAttribute("aria-expanded", "true");
       await page.keyboard.press("Escape");
       await expect(trigger).toHaveAttribute("aria-expanded", "false");
       await expect(trigger).toBeFocused();
+    });
+
+    test("reduced motion removes menu animation and delayed unmount", async ({
+      page,
+    }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/");
+
+      const navigation = page.getByRole("navigation", {
+        name: "Main navigation",
+      });
+      const trigger = navigation.getByRole("button", { name: "World" });
+      await trigger.click();
+      const panel = navigation.locator(".public-world-menu-panel");
+      await expect(panel).toHaveCSS("animation-name", "none");
+
+      await trigger.click();
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await expect(panel).toHaveCount(0);
     });
 
     test("does not expose World Navigation or NPCs, which have no production route", async ({
@@ -495,9 +519,9 @@ test.describe("profession coverage (Slice 8B)", () => {
     await expect(page.getByText("No description available")).toHaveCount(0);
     await expect(page.getByText("No image available")).toBeVisible();
     // No recipes either: the entire optional relationship section (heading
-    // and empty state alike) is omitted; the factual hero count remains.
+    // and empty state alike) is omitted; the factual detail chip remains.
     const recipeCount = page
-      .locator(".profession-hero-counts > div")
+      .locator(".profession-detail-chip")
       .filter({ hasText: "Recipes" });
     await expect(recipeCount).toContainText("0");
     await expect(
