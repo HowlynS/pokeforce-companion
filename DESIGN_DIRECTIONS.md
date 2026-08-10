@@ -348,6 +348,29 @@ retaining richer production relationships:
   metadata, and factual update date. The managed detail scenic backdrop is
   shared presentation, not a Profession-specific atmosphere.
 
+### Public Class catalogue cards
+
+The canonical `/classes` directory adopts the handoff's roomy Class ledger
+without importing its unsupported gameplay model:
+
+- At desktop, use two columns with `20px` gaps beside the shared `272px`
+  overview rail. Cards use `20px` padding, `14px` corners, and a `130×130px`
+  image stage with centered `88px` content and the handoff's restrained
+  lavender-neutral radial highlight.
+- Card copy uses a `19px` Class name, an uppercase `Class` resource label, up
+  to three lines of the real compatibility description, and a ruled factual
+  verification state. List mode presents the same fields.
+- Production PlayerClass has no focus/type, bonus, level, Recipe requirement,
+  or Recipe-gating relation. Therefore the prototype filter and those summary
+  values do not render. Never infer them from names or other resources.
+- Search is a server-rendered name query. The overview shows only total
+  Classes, verified entries, and current matches. Preserve deterministic
+  alphabetical ordering, full-card links, handoff entrance stagger, quiet
+  fallbacks, reduced motion, and mobile stacking.
+
+The Class directory reuses the managed scenic catalogue presentation without
+introducing a Class-specific atmosphere or gameplay semantics.
+
 Player Classes (Trainer, Artisan, Rancher, Ranger, Farmhand) are a top-level
 public/admin resource, matching Item, Recipe, Profession, Category, Location,
 Shop, and Currency in status. The internal/schema/domain name is

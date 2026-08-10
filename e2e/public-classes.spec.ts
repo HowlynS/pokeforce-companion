@@ -35,7 +35,7 @@ test.afterEach(() => {
 function cardLink(page: Page, name: string) {
   return page
     .getByRole("link")
-    .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+    .filter({ has: page.getByRole("heading", { name, exact: true }) });
 }
 
 async function expectNoHorizontalOverflow(page: Page) {

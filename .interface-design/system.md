@@ -237,6 +237,25 @@ same focused commit.
   composition. The managed detail scenic layer is not a Profession-specific
   atmosphere.
 
+### Public Class catalogue cards
+
+- `/classes` uses the handoff's two-column ledger geometry beside the shared
+  `272px` overview rail: `20px` grid gaps, `20px` card padding, `14px` corners,
+  and a `130px` image stage with centered `88px` content. The stage retains the
+  handoff's restrained lavender-neutral radial highlight.
+- Copy uses a `19px` Class title, compact uppercase `Class` resource label, up
+  to three lines of real plain compatibility description, and a ruled factual
+  verification state. The list view reorganizes the same fields.
+- PlayerClass has no production focus/type, bonus, level, Recipe requirement,
+  or Recipe-gating relationship. Omit the prototype filter and those card or
+  overview values rather than simulating them.
+- Name search is a real server GET query. Overview values are total Classes,
+  verified entries, and current matches. Preserve alphabetical ordering,
+  full-card links, the shared `220ms`/`30ms` entrance stagger, fallbacks,
+  reduced motion, and single-column mobile transition.
+- The managed catalogue scenic layer is shared presentation and does not create
+  a Class-specific atmosphere or gameplay meaning.
+
 ### PlayerClass naming
 
 - Internal/schema/domain name: `PlayerClass` — never bare `Class` (collides
