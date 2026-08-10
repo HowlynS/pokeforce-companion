@@ -200,6 +200,17 @@ The shared detail-page composition is:
 Item pages use the accepted cool-blue atmosphere. Recipe pages use the accepted
 warm-amber atmosphere.
 
+The calibrated Item detail identity follows the archived Claude Design handoff:
+the content occupies the handoff's full `1760px` desktop measure, the primary
+and supporting columns are separated by `28px`, the supporting rail is `272px`,
+and the hero is a flat art-and-copy row rather than a bordered card.
+Its art frame is `180×180px` with `14px` corners and centered `128×128px`
+content. The copy begins `6px` below the art frame's top edge, uses an `11px`
+uppercase category, a `40px` resource title, and `14.5px` summary copy capped at
+`640px`. At narrow widths the columns and identity row stack without changing
+the art frame's size. Production-only acquisition, relationship, and
+verification information remains visible beneath or beside that composition.
+
 Public collection and context pages have distinct responsibilities:
 
 - `/recipes` is the canonical full Recipe catalogue. It uses the approved
@@ -266,10 +277,12 @@ Use the shared `ContentImage` component and preserve source aspect ratio.
 Sprite content uses crisp-edge or pixelated rendering; never blur or smooth
 native pixel art.
 
-Current hero behavior supports a `32×32` sprite displayed at `192×192` within a
-`240×240` stage. Images must not be distorted to fill that stage. Public
-fallbacks should be quiet and intentional, while row fallbacks remain
-fixed-size and preserve alignment.
+The calibrated Item detail hero displays content at `128×128px` inside a
+`180×180px` art frame. Other public detail resources may continue to use the
+shared `192×192px` content inside a `240×240px` stage until their own archived
+handoff calibration is complete. Images must not be distorted to fill either
+stage. Public fallbacks should be quiet and intentional, while row fallbacks
+remain fixed-size and preserve alignment.
 
 Do not add decorative generated-looking icons. Recipe detail retains a compact
 square Crafted Result image or fallback with an overlapping yield badge. That

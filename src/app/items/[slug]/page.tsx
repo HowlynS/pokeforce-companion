@@ -154,7 +154,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
 
   return (
     <AppShell scenic="detail" wide>
-      <article className="item-detail-page">
+      <article className="item-detail-page item-resource-detail-page">
         <Breadcrumb
           segments={[
             { name: "Home", href: "/" },
@@ -207,12 +207,6 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                     ) : null}
                   </div>
                 ) : null}
-                <dl className="item-fact-strip">
-                  <div>
-                    <dt>Held item</dt>
-                    <dd>{item.heldItem ? "Yes" : "No"}</dd>
-                  </div>
-                </dl>
               </div>
             </section>
 
@@ -402,6 +396,22 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                   <div>
                     <dt>Category</dt>
                     <dd>{item.category.name}</dd>
+                  </div>
+                ) : null}
+                {primarySource ? (
+                  <div>
+                    <dt>Source</dt>
+                    <dd>{primarySource}</dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>Held item</dt>
+                  <dd>{item.heldItem ? "Yes" : "No"}</dd>
+                </div>
+                {item.baseValue !== null ? (
+                  <div>
+                    <dt>Sell value</dt>
+                    <dd>{numberFormatter.format(item.baseValue)}g</dd>
                   </div>
                 ) : null}
                 {updatedAt ? (

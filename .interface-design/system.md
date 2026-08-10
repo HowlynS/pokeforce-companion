@@ -117,6 +117,12 @@ same focused commit.
 - Dense full-row relationship links.
 - Factual verification metadata.
 - Hide empty optional sections universally.
+- Calibrated Item detail: full `1760px` desktop content measure, `28px`
+  primary/rail gap, fixed `272px` supporting rail, and a flat (unbordered)
+  identity row. Use a `180×180px`, `14px`-radius art frame with centered
+  `128×128px` content; begin copy `6px` from the top, then an `11px` uppercase
+  category, `40px` title, and `14.5px` summary capped at `640px`. Stack the rail
+  and identity row at narrow widths while retaining the art frame's dimensions.
 
 ### Public resource responsibilities
 
@@ -171,7 +177,9 @@ same focused commit.
 
 - Use the shared component.
 - Preserve aspect ratio and crisp/pixelated sprite rendering.
-- A `32×32` sprite may display at `192×192` inside a `240×240` hero stage.
+- Item detail uses `128×128px` content inside its calibrated `180×180px` art
+  frame. Other detail resources may retain `192×192px` content inside a
+  `240×240px` hero stage until their own handoff calibration is completed.
 - Never distort an image to fill the stage.
 - Keep public fallbacks quiet and row fallbacks fixed-size/aligned.
 - Recipe detail retains a compact square Crafted Result image or fallback with
