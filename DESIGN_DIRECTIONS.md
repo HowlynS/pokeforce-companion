@@ -133,9 +133,9 @@ Homepage scenery remains legible but is calibrated to the handoff's dark
 field-guide presentation. The desktop homepage wash uses the handoff's
 `0.55`/`0.50` top/middle opacity and `0.72`/`0.10` vignette edge/center; the
 mobile homepage uses `0.52`/`0.58` and `0.56`/`0.24`/`0.40`. The Items
-catalogue stays quieter but meaningfully lighter than before: desktop
-`0.48`/`0.58` and `0.56`/`0.26`/`0.44`; mobile `0.56`/`0.64` and
-`0.52`/`0.32`/`0.42`. Item detail retains its established wash and cool-blue
+catalogue uses the handoff's `0.62`/`0.55` vertical wash and `0.70`/`0.15`
+radial vignette edge/center; mobile retains the stronger `0.56`/`0.64` wash.
+Item detail retains its established wash and cool-blue
 resource atmosphere, unchanged by this pass. Reading zones stay darker than
 scenic focal areas, the lower fade into solid `#111514` is unchanged, and the
 lossless master remains byte-identical.
@@ -155,6 +155,12 @@ The established public shell contains:
 - A restrained footer.
 - Visible keyboard focus.
 - Responsive behavior without horizontal overflow.
+
+The Items and Recipes directories use the handoff's fixed-height desktop
+catalogue shell: the header stays fixed, the catalogue results scroll inside
+the remaining viewport, and the footer is omitted at desktop widths. Below
+`1180px`, they return to ordinary document flow so stacked controls and the
+overview remain accessible.
 
 Its desktop geometry follows the handoff directly: a `1760px` maximum-width
 container with `28px` page gutters, a three-column logo/navigation/search
@@ -226,11 +232,13 @@ Public collection and context pages have distinct responsibilities:
 Public Item catalogue cards remain visually simpler than Recipe cards:
 
 - Use a centered fixed image or fallback stage with identical geometry.
-- Keep the Item name left-aligned at `20px` with a `1.25` line-height.
-- Show only the Category name directly beneath the title at `14px`, upright,
-  muted, and medium weight.
+- Keep the Item name left-aligned at `13.5px` with a `1.25` line-height and a
+  one-line ellipsis backed by the full title attribute.
+- Show the Category directly beneath at `10.5px`, uppercase, and muted gold.
+- Show a two-line real description when present and the first real acquisition
+  source in the quiet card footer.
 - Do not prefix the Category with `Category:`.
-- Do not show Tradeable status, description, or base value.
+- Do not show Tradeable status or base value.
 - Preserve full-card navigation, visible focus, long-title wrapping, and the
   established responsive grid.
 

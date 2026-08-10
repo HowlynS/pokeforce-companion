@@ -48,6 +48,12 @@ const allPrimaryViewports = [
 ] as const satisfies readonly PublicDesignViewportId[];
 
 const shellRegions = ["header", "primary navigation", "site search", "main", "footer"];
+const fixedCatalogueShellRegions = [
+  "header",
+  "primary navigation",
+  "site search",
+  "main",
+];
 const shellA11y = ["one H1", "visible focus", "labelled navigation", "no horizontal overflow"];
 
 export const PUBLIC_DESIGN_CONTRACTS = [
@@ -77,7 +83,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     fixtures: ["items-populated", "items-sparse"],
     scenicVariant: "catalogue",
     viewports: allPrimaryViewports,
-    requiredRegions: [...shellRegions, "page heading", "Category filter", "Item grid"],
+    requiredRegions: [...fixedCatalogueShellRegions, "page heading", "Category filter", "Item grid"],
     optionalRegions: ["pagination"],
     interactions: ["change Category filter", "open Item", "change page"],
     imageRequirement: "Square card stages; genuine sprites and no-image fallbacks share geometry",
@@ -115,7 +121,7 @@ export const PUBLIC_DESIGN_CONTRACTS = [
     representativeFixture: "recipes-dense",
     scenicVariant: "none",
     viewports: allPrimaryViewports,
-    requiredRegions: [...shellRegions, "page heading", "Profession filter", "Recipe grid"],
+    requiredRegions: [...fixedCatalogueShellRegions, "page heading", "Profession filter", "Recipe grid"],
     optionalRegions: ["pagination", "ingredient disclosure"],
     interactions: ["change Profession filter", "open Recipe/result/ingredient", "reveal extra ingredients", "change page"],
     imageRequirement: "Custom Recipe image or inherited result image; fixed output/fallback stage",

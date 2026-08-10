@@ -70,9 +70,8 @@ same focused commit.
 - Home desktop wash: `0.55`/`0.50`; radial vignette edge/center:
   `0.72`/`0.10`. Home mobile wash: `0.52`/`0.58`; vignette:
   `0.56`/`0.24`/`0.40`.
-- Items catalogue desktop wash: `0.48`/`0.58`; vignette:
-  `0.56`/`0.26`/`0.44`. Catalogue mobile wash: `0.56`/`0.64`; vignette:
-  `0.52`/`0.32`/`0.42`.
+- Items catalogue desktop wash: `0.62`/`0.55`; radial vignette edge/center:
+  `0.70`/`0.15`. Catalogue mobile wash remains `0.56`/`0.64`.
 - Homepage visibility may be stronger than catalogue/detail. Retain a darker
   reading zone behind copy and the existing lower fade into solid `#111514`.
   Item detail keeps its existing scenic values and cool-blue atmosphere,
@@ -95,6 +94,9 @@ same focused commit.
 - Desktop container: `1760px` maximum width with `28px` gutters; header uses
   the handoff's three-column logo/navigation/search geometry.
 - Preserve active navigation, visible focus, and overflow-free responsiveness.
+- Items and Recipes directories use a `100vh` desktop shell with internal
+  result scrolling and no desktop footer; return to document flow below
+  `1180px`.
 - Do not redesign the shell within a resource-page slice.
 - The official Merchants Codex image logo (`public/images/branding/
   merchants-codex-logo.png`) is the authoritative brand mark, replacing the
@@ -144,11 +146,12 @@ same focused commit.
 - Keep Item cards visually simpler than Recipe cards.
 - Center the fixed image/fallback stage; genuine images and fallbacks use
   identical geometry.
-- Item title: left-aligned, `20px`, `1.25` line-height, clean wrapping.
+- Item title: left-aligned, `13.5px`, `1.25` line-height, one-line ellipsis.
 - Category: Category name only, directly beneath the title, left-aligned,
-  `14px`, upright, muted, and medium weight.
-- Never show a `Category:` prefix, Tradeable status, description, or base
-  value.
+  `10.5px`, uppercase, and muted gold.
+- Render a two-line real description and a quiet first-source footer when
+  those facts exist.
+- Never show a `Category:` prefix, Tradeable status, or base value.
 - Preserve full-card navigation, visible focus, and the responsive catalogue
   grid.
 

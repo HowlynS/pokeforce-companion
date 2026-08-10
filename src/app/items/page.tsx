@@ -187,7 +187,7 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
   );
 
   return (
-    <AppShell scenic="catalogue" wide>
+    <AppShell catalogue scenic="catalogue" wide>
       <div className="directory-page">
         <Breadcrumb segments={[{ name: "Home", href: "/" }]} current="Items" />
         <h1 className="directory-title">Items</h1>

@@ -1378,12 +1378,27 @@ select:focus-visible {
     --public-scenic-position-desktop,
     55% 60%
   );
-  --public-scenic-depth: 600px;
-  --public-scenic-wash-top: rgba(17, 21, 20, 0.48);
-  --public-scenic-wash-middle: rgba(17, 21, 20, 0.58);
-  --public-scenic-vignette-left: rgba(17, 21, 20, 0.56);
-  --public-scenic-vignette-center: rgba(17, 21, 20, 0.26);
-  --public-scenic-vignette-right: rgba(17, 21, 20, 0.44);
+  --public-scenic-depth: 100vh;
+  --public-scenic-wash-top: rgba(17, 21, 20, 0.62);
+  --public-scenic-wash-middle: rgba(17, 21, 20, 0.55);
+  --public-scenic-vignette-left: rgba(17, 21, 20, 0.7);
+  --public-scenic-vignette-center: rgba(17, 21, 20, 0.15);
+  --public-scenic-vignette-right: rgba(17, 21, 20, 0.7);
+  background-image:
+    linear-gradient(
+      180deg,
+      var(--public-scenic-wash-top) 0%,
+      var(--public-scenic-wash-middle) 30%,
+      rgba(17, 21, 20, 0.86) 78%,
+      var(--color-background) 100%
+    ),
+    radial-gradient(
+      ellipse 60% 50% at 50% 8%,
+      var(--public-scenic-vignette-center),
+      var(--public-scenic-vignette-left) 70%
+    ),
+    var(--public-scenic-image, none),
+    url("/images/backgrounds/merchants-codex-coastal-overlook.png");
 }
 
 .public-scenic-background--detail {
@@ -2292,7 +2307,7 @@ select:focus-visible {
   }
 
   .public-scenic-background--catalogue {
-    --public-scenic-depth: 560px;
+    --public-scenic-depth: 100vh;
     --public-scenic-wash-top: rgba(17, 21, 20, 0.56);
     --public-scenic-wash-middle: rgba(17, 21, 20, 0.64);
     --public-scenic-vignette-left: rgba(17, 21, 20, 0.52);
@@ -2436,11 +2451,20 @@ select:focus-visible {
 .directory-page {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
+}
+
+.directory-page > .public-breadcrumb {
+  margin-bottom: 0;
+}
+
+.directory-page > .public-breadcrumb ol {
+  gap: 8px;
+  font-size: 12.5px;
 }
 
 .directory-title {
-  margin: 0 0 4px;
+  margin: 0 0 8px;
   color: var(--color-text);
   font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
   font-size: 22px;
@@ -2449,6 +2473,8 @@ select:focus-visible {
 }
 
 .directory-body {
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: flex-start;
   gap: 28px;
@@ -2457,6 +2483,9 @@ select:focus-visible {
 .directory-content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .directory-toolbar {
@@ -2663,7 +2692,7 @@ select:focus-visible {
 .directory-overview {
   width: 272px;
   flex: none;
-  margin-top: 45px;
+  margin-top: 0;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
@@ -2744,9 +2773,14 @@ select:focus-visible {
 
 /* Items directory grid/list cards */
 .item-catalogue-grid {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  align-content: start;
   gap: 12px;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
 
 .item-catalogue-card {
@@ -2834,9 +2868,42 @@ select:focus-visible {
 }
 
 .item-catalogue-list {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+@media (min-width: 1181px) {
+  .public-site-shell--catalogue {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .public-site-shell--catalogue .public-site-header {
+    flex: none;
+  }
+
+  .public-site-shell--catalogue .public-site-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .public-site-shell--catalogue .directory-page {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .public-site-shell--catalogue .public-site-footer {
+    display: none;
+  }
 }
 
 .item-catalogue-list-row {

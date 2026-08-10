@@ -314,13 +314,13 @@ test.describe("public shell layout", () => {
           const footer = document.querySelector<HTMLElement>(
             ".public-site-footer-inner"
           );
-          if (!header || !main || !footer) {
+          if (!header || !main) {
             throw new Error("Shared public shell elements were not rendered.");
           }
 
           const headerRect = header.getBoundingClientRect();
           const mainRect = main.getBoundingClientRect();
-          const footerRect = footer.getBoundingClientRect();
+          const footerRect = footer?.getBoundingClientRect();
           return {
             viewportWidth: document.documentElement.clientWidth,
             contentWidth: document.documentElement.scrollWidth,
@@ -334,11 +334,13 @@ test.describe("public shell layout", () => {
               right: mainRect.right,
               width: mainRect.width,
             },
-            footer: {
-              left: footerRect.left,
-              right: footerRect.right,
-              width: footerRect.width,
-            },
+            footer: footerRect
+              ? {
+                  left: footerRect.left,
+                  right: footerRect.right,
+                  width: footerRect.width,
+                }
+              : null,
           };
         });
 
@@ -346,16 +348,19 @@ test.describe("public shell layout", () => {
         // The Items directory adopted the wide (1720px) container in the
         // Claude Design redesign (Slice 4), matching its Overview sidebar
         // composition — the same width Item detail already used.
-        const expectedWidth = Math.min(layout.viewportWidth, 1720);
+        const expectedWidth = Math.min(layout.viewportWidth, 1760);
         expect(Math.abs(layout.main.width - expectedWidth)).toBeLessThan(1);
         expect(Math.abs(layout.main.left - layout.header.left)).toBeLessThan(1);
         expect(Math.abs(layout.main.right - layout.header.right)).toBeLessThan(
           1
         );
-        expect(Math.abs(layout.main.left - layout.footer.left)).toBeLessThan(1);
-        expect(Math.abs(layout.main.right - layout.footer.right)).toBeLessThan(
-          1
-        );
+        if (path === "/items") {
+          expect(layout.footer?.width).toBe(0);
+        } else {
+          expect(layout.footer).not.toBeNull();
+          expect(Math.abs(layout.main.left - layout.footer!.left)).toBeLessThan(1);
+          expect(Math.abs(layout.main.right - layout.footer!.right)).toBeLessThan(1);
+        }
         expect(
           Math.abs(
             layout.main.left -

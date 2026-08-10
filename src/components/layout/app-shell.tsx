@@ -13,6 +13,7 @@ import { PUBLIC_NAV_ITEMS } from "@/lib/public-nav";
 type AppShellProps = {
   children: React.ReactNode;
   landing?: boolean;
+  catalogue?: boolean;
   scenic?: "home" | "catalogue" | "detail";
   wide?: boolean;
 };
@@ -20,6 +21,7 @@ type AppShellProps = {
 export async function AppShell({
   children,
   landing = false,
+  catalogue = false,
   scenic,
   wide = false,
 }: AppShellProps) {
@@ -40,6 +42,7 @@ export async function AppShell({
       className={
         "public-site-shell" +
         (landing ? " public-site-shell--landing" : "") +
+        (catalogue ? " public-site-shell--catalogue" : "") +
         (scenic
           ? ` public-site-shell--scenic public-site-shell--scenic-${scenic}`
           : "")

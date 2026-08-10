@@ -236,7 +236,9 @@ test("every representative contract is semantic and overflow-free at primary vie
     await expect(page.locator("h1"), acceptance.id).toHaveCount(1);
     await expect(page.locator("h1"), acceptance.id).toBeVisible();
     await expect(page.locator("main"), acceptance.id).toBeVisible();
-    await expect(page.locator("footer"), acceptance.id).toBeVisible();
+    if (contract.requiredRegions.includes("footer")) {
+      await expect(page.locator("footer"), acceptance.id).toBeVisible();
+    }
     await expect(
       page.locator("a a, a button, button a, button button"),
       `${acceptance.id} must not nest interactive controls`
