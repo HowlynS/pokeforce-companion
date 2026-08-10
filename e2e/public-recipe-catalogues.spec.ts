@@ -113,33 +113,28 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/recipes");
 
-  const filters = page.getByRole("navigation", {
-    name: "Filter Recipes by Profession",
+  // The Claude Design redesign (Slice 6) replaced the always-visible
+  // "Filter Recipes by Profession" nav landmark with a Filter button +
+  // multi-select popover (directory-filter-popover.tsx, the same
+  // component already used by the Items directory in Slice 4) —
+  // unfiltered is simply "no checkboxes checked", and filtering is a
+  // real GET form submit rather than a per-profession link.
+  const filterTrigger = page.getByRole("button", { name: "Filter", exact: false });
+  await expect(filterTrigger).toBeVisible();
+  await filterTrigger.focus();
+  await expect(filterTrigger).not.toHaveCSS("outline-style", "none");
+  await filterTrigger.click();
+  const professionCheckbox = page.getByRole("checkbox", {
+    name: fixture.profession.name,
+    exact: true,
   });
+  await expect(professionCheckbox).toBeVisible();
   await expect(
-    filters.getByRole("link", { name: "All", exact: true })
-  ).toHaveAttribute("aria-current", "page");
-  await expect(
-    filters.getByRole("link", {
-      name: fixture.profession.name,
-      exact: true,
-    })
-  ).toHaveAttribute(
-    "href",
-    `/recipes?profession=${fixture.profession.slug}`
-  );
-  await expect(
-    filters.getByRole("link", {
+    page.getByRole("checkbox", {
       name: fixture.sparseProfession.name,
       exact: true,
     })
   ).toBeVisible();
-  const professionFilter = filters.getByRole("link", {
-    name: fixture.profession.name,
-    exact: true,
-  });
-  await professionFilter.focus();
-  await expect(professionFilter).not.toHaveCSS("outline-style", "none");
 
   const allCards = page.locator(".recipe-output-card");
   await expect(allCards).toHaveCount(12);
@@ -246,12 +241,11 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   const filteredPath = `/recipes?profession=${fixture.profession.slug}`;
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(filteredPath);
+  await page.getByRole("button", { name: "Filter", exact: false }).click();
   await expect(
-    filters.getByRole("link", {
-      name: fixture.profession.name,
-      exact: true,
-    })
-  ).toHaveAttribute("aria-current", "page");
+    page.getByRole("checkbox", { name: fixture.profession.name, exact: true })
+  ).toBeChecked();
+  await page.keyboard.press("Escape");
   await expect(page.locator(".recipe-output-card")).toHaveCount(12);
   await expect(
     page.getByText(fixture.sparseRecipe.name, { exact: true })
@@ -281,12 +275,14 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
       .getByRole("navigation", { name: "Recipes pagination" })
       .getByRole("link", { name: "Previous" })
   ).toHaveAttribute("href", filteredPath);
+  await page.getByRole("button", { name: "Filter", exact: false }).click();
   await expect(
-    filters.getByRole("link", {
+    page.getByRole("checkbox", {
       name: fixture.sparseProfession.name,
       exact: true,
     })
-  ).not.toHaveAttribute("href", /page=/);
+  ).not.toBeChecked();
+  await page.keyboard.press("Escape");
   await page.screenshot({
     path: path.join(SCREENSHOT_DIRECTORY, "recipes-filtered-page-2.png"),
     fullPage: true,
@@ -294,11 +290,12 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
 
   await page.goto("/recipes?profession=not-a-profession&page=9");
   await expect(page).toHaveURL("/recipes");
-  await expect(
-    page
-      .getByRole("navigation", { name: "Filter Recipes by Profession" })
-      .getByRole("link", { name: "All", exact: true })
-  ).toHaveAttribute("aria-current", "page");
+  await page.getByRole("button", { name: "Filter", exact: false }).click();
+  for (const profession of [fixture.profession, fixture.sparseProfession]) {
+    await expect(
+      page.getByRole("checkbox", { name: profession.name, exact: true })
+    ).not.toBeChecked();
+  }
 });
 
 test("Recipes index exposes only Profession filtering and drops stale Class queries", async ({
@@ -307,11 +304,12 @@ test("Recipes index exposes only Profession filtering and drops stale Class quer
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/recipes");
   await expect(
-    page.getByRole("navigation", { name: "Filter Recipes by Profession" })
+    page.getByRole("button", { name: "Filter", exact: false })
   ).toBeVisible();
+  await page.getByRole("button", { name: "Filter", exact: false }).click();
   await expect(
-    page.getByRole("navigation", { name: "Filter Recipes by Class" })
-  ).toHaveCount(0);
+    page.getByRole("checkbox", { name: fixture.profession.name, exact: true })
+  ).toBeVisible();
   await expect(page.getByText("Required class", { exact: true })).toHaveCount(
     0
   );

@@ -14,7 +14,7 @@ type RecipeOutputCatalogueProps = {
   eyebrow?: string;
   className?: string;
   ariaLabel?: string;
-  query?: Record<string, string | undefined>;
+  query?: Record<string, string | string[] | undefined>;
 };
 
 export function RecipeOutputCatalogue({
