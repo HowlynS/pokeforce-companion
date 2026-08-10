@@ -10,8 +10,9 @@ same focused commit.
 - Personality: restrained, warm, structured, readable, sprite-friendly.
 - Optimize for quick reference and dense linked factual data.
 - Avoid generic SaaS patterns, excessive ornament, and generated-looking icons.
-- Accepted implemented patterns override generic Interface Design advice.
-- Preserve accepted patterns and report conflicts before proposing redesigns.
+- The archived Claude Design production handoff is authoritative for visible
+  public presentation; production remains authoritative for behavior and data.
+- Existing implementation and tests do not preserve obsolete public geometry.
 
 ## Tokens
 
@@ -32,7 +33,7 @@ same focused commit.
 ### Typography
 
 - UI, body, dense data, and admin: existing Manrope-based sans-serif.
-- Major public resource title: DM Serif Display `400`.
+- Public display and major resource titles: Cormorant Garamond `700`.
 - Display line-height: tight and readable.
 - Display tracking: restrained negative.
 - Do not apply the serif globally, to card titles/metadata/navigation, or
@@ -91,6 +92,8 @@ same focused commit.
 ## Public Shell
 
 - Reuse shared brand, header, navigation, search, main region, and footer.
+- Desktop container: `1760px` maximum width with `28px` gutters; header uses
+  the handoff's three-column logo/navigation/search geometry.
 - Preserve active navigation, visible focus, and overflow-free responsiveness.
 - Do not redesign the shell within a resource-page slice.
 - The official Merchants Codex image logo (`public/images/branding/

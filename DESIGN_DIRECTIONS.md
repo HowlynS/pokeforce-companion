@@ -24,8 +24,10 @@ commit.
 
 Use this order of authority:
 
-1. Finalized, implemented Merchants Codex patterns.
-2. Approved screenshots and mock-ups.
+1. The archived Claude Design production handoff for visible public-page
+   presentation and geometry.
+2. Production behavior, schema-backed data, accessibility, routing, and asset
+   policy.
 3. `DESIGN_DIRECTIONS.md`.
 4. `.interface-design/system.md`.
 5. General Interface Design principles.
@@ -34,9 +36,9 @@ Interface Design is a critique, memory, and consistency layer. It is not
 permission to replace accepted Merchants Codex patterns or repeatedly propose
 new aesthetic directions.
 
-If Interface Design advice conflicts with an accepted project pattern,
-preserve the pattern, report the conflict, and request approval before
-redesigning it.
+Existing tests and implementation patterns do not preserve obsolete public
+geometry when the approved handoff replaces it. A visual deviation from the
+handoff requires a concrete production constraint.
 
 ## Visual Foundation
 
@@ -148,6 +150,11 @@ The established public shell contains:
 - A restrained footer.
 - Visible keyboard focus.
 - Responsive behavior without horizontal overflow.
+
+Its desktop geometry follows the handoff directly: a `1760px` maximum-width
+container with `28px` page gutters, a three-column logo/navigation/search
+header, and the compact reference footer cadence. At narrow widths the same
+elements reflow without changing their semantics.
 
 Do not independently redesign the shell while implementing an individual
 resource page.

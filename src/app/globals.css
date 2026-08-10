@@ -1385,17 +1385,17 @@ select:focus-visible {
 
 .public-site-container {
   width: 100%;
-  max-width: 1480px;
+  max-width: 1760px;
   margin-inline: auto;
-  padding-inline: clamp(24px, 3vw, 48px);
+  padding-inline: 28px;
 }
 
 .public-site-container--landing {
-  max-width: clamp(1440px, 62.5vw, 1720px);
+  max-width: 1760px;
 }
 
 .public-site-container.public-site-container--wide {
-  max-width: 1720px;
+  max-width: 1760px;
 }
 
 .public-site-container--landing.public-site-main {
@@ -1407,6 +1407,17 @@ select:focus-visible {
   top: 0;
   z-index: 50;
   padding-top: 14px;
+}
+
+.public-site-shell--landing .public-site-header {
+  padding-bottom: 14px;
+  background: linear-gradient(
+    180deg,
+    var(--color-background) 0%,
+    rgba(17, 21, 20, 0.96) 72%,
+    transparent 100%
+  );
+  backdrop-filter: blur(6px);
 }
 
 /* The header bar itself (Claude Design redesign, Slice 2): a floating
@@ -1675,13 +1686,29 @@ select:focus-visible {
 }
 
 @media (max-width: 1120px) {
+  .public-site-container {
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 800px) {
   .public-site-header-inner {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px 20px;
+    padding: 10px 14px 12px;
   }
 
-  .public-primary-nav {
-    justify-content: flex-start;
+  .public-primary-nav-links {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+    gap: 12px 16px;
+  }
+
+  .public-site-search {
+    grid-column: 2;
+    grid-row: 1;
+    width: min(230px, 100%);
   }
 }
 
@@ -2287,6 +2314,8 @@ select:focus-visible {
 @media (max-width: 620px) {
   .public-site-logo {
     width: 132px;
+    height: auto;
+    margin-block: 0;
   }
 
   .public-scenic-background {

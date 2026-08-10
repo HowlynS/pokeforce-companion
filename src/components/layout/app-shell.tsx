@@ -94,7 +94,7 @@ export async function AppShell({
         <div className={`${containerClassName} public-site-footer-inner`}>
           <span className="public-site-footer-credit">
             <span className="public-site-footer-brand">
-              {landing ? "Merchants Codex" : "PokeForce Companion"}
+              Merchants Codex
             </span>{" "}
             — A crafting wiki companion for items, recipes, professions,
             classes, categories, locations, and shops.
