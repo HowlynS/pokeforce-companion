@@ -352,32 +352,9 @@ test("Items index owns Category browsing and Category detail stays contextual", 
     "background-image",
     /merchants-codex-coastal-overlook\.png/
   );
-  expect(
-    await scenicBackground.evaluate((element) => {
-      const style = getComputedStyle(element);
-      return {
-        washTop: style.getPropertyValue("--public-scenic-wash-top").trim(),
-        washMiddle: style
-          .getPropertyValue("--public-scenic-wash-middle")
-          .trim(),
-        vignetteLeft: style
-          .getPropertyValue("--public-scenic-vignette-left")
-          .trim(),
-        vignetteCenter: style
-          .getPropertyValue("--public-scenic-vignette-center")
-          .trim(),
-        vignetteRight: style
-          .getPropertyValue("--public-scenic-vignette-right")
-          .trim(),
-      };
-    })
-  ).toEqual({
-    washTop: "#1115147a",
-    washMiddle: "#11151494",
-    vignetteLeft: "#1115148f",
-    vignetteCenter: "#11151442",
-    vignetteRight: "#11151470",
-  });
+  // Catalogue presentation now owns the handoff's direct wash and vignette
+  // gradients; legacy appearance-variable values are no longer visual
+  // contracts. The exact rendered treatment is covered by named captures.
   await filterTrigger.focus();
   await expect(filterTrigger).not.toHaveCSS("outline-style", "none");
   await filterTrigger.click();
@@ -580,36 +557,6 @@ test("Items index owns Category browsing and Category detail stays contextual", 
         (element) => getComputedStyle(element).backgroundPosition
       )
     ).toContain(viewport.width === 390 ? "82%" : "55%");
-    if (viewport.width === 390) {
-      expect(
-        await scenicBackground.evaluate((element) => {
-          const style = getComputedStyle(element);
-          return {
-            washTop: style
-              .getPropertyValue("--public-scenic-wash-top")
-              .trim(),
-            washMiddle: style
-              .getPropertyValue("--public-scenic-wash-middle")
-              .trim(),
-            vignetteLeft: style
-              .getPropertyValue("--public-scenic-vignette-left")
-              .trim(),
-            vignetteCenter: style
-              .getPropertyValue("--public-scenic-vignette-center")
-              .trim(),
-            vignetteRight: style
-              .getPropertyValue("--public-scenic-vignette-right")
-              .trim(),
-          };
-        })
-      ).toEqual({
-        washTop: "#1115148f",
-        washMiddle: "#111514a3",
-        vignetteLeft: "#11151485",
-        vignetteCenter: "#11151452",
-        vignetteRight: "#1115146b",
-      });
-    }
     await page.screenshot({
       path: path.join(
         SCREENSHOT_DIRECTORY,

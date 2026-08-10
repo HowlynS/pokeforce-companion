@@ -237,15 +237,14 @@ test.describe("main navigation", () => {
       ["/", "home"],
       ["/items", "catalogue"],
       ["/items/iron-ore", "detail"],
+      ["/recipes", "catalogue"],
+      ["/recipes/iron-sword", "detail"],
     ] as const) {
       await page.goto(path);
       await expect(
         page.locator(`.public-scenic-background--${variant}`)
       ).toHaveCount(1);
     }
-
-    await page.goto("/recipes");
-    await expect(page.locator(".public-scenic-background")).toHaveCount(0);
   });
 
   test("primary links expose keyboard focus without extra admin resources", async ({

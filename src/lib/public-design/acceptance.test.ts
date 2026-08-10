@@ -26,6 +26,6 @@ describe("public design acceptance matrix", () => {
       PUBLIC_DESIGN_ACCEPTANCE_MATRIX.find(
         ({ id }) => id === "recipe-detail--recipe-many-ingredients--desktop-1920"
       )
-    ).toMatchObject({ scenicBackground: "absent", sidebarMode: "side-by-side" });
+    ).toMatchObject({ scenicBackground: "present", sidebarMode: "not-applicable" });
   });
 });

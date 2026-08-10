@@ -108,6 +108,11 @@ test("shared shell and Appearance variants preserve public semantics", async ({
       route: "/items/design-review-item-dense",
       selector: ".public-scenic-background--detail",
     },
+    { route: "/recipes", selector: ".public-scenic-background--catalogue" },
+    {
+      route: "/recipes/design-review-recipe-many-ingredients",
+      selector: ".public-scenic-background--detail",
+    },
   ] as const;
   for (const entry of appearanceCases) {
     await page.goto(entry.route);
@@ -123,9 +128,6 @@ test("shared shell and Appearance variants preserve public semantics", async ({
       )
     ).toMatch(/^\d+(?:\.\d+)?% \d+(?:\.\d+)?%$/);
   }
-
-  await page.goto("/recipes");
-  await expect(page.locator(".public-scenic-background")).toHaveCount(0);
 });
 
 test("fixture content preserves rich text, image, relationship, and hide-empty contracts", async ({
@@ -172,7 +174,7 @@ test("fixture content preserves rich text, image, relationship, and hide-empty c
   await page.goto("/recipes/design-review-recipe-many-ingredients");
   await expect(page.locator(".recipe-ingredient-row")).toHaveCount(6);
   await expect(page.getByText("999", { exact: true })).toBeVisible();
-  await expect(page.getByText("50000 EXP", { exact: true })).toBeVisible();
+  await expect(page.getByText("+50000 EXP", { exact: true })).toBeVisible();
   await expect(page.locator(".recipe-identity-stage img")).toHaveCount(1);
   await expect(page.locator(".recipe-result-image-stage img")).toHaveCount(1);
 

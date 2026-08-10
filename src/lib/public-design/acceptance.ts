@@ -23,12 +23,12 @@ export type PublicDesignAcceptanceEntry = {
 function cardColumns(contractId: string, width: number): string {
   if (!contractId.endsWith("-index") && contractId !== "search") return "not-applicable";
   if (width <= 390) return "1";
-  if (contractId === "recipes-index") return width <= 1180 ? "2" : "3";
+  if (contractId === "recipes-index") return width <= 1180 ? "4" : "7";
   return "responsive auto-fit";
 }
 
 function sidebarMode(contractId: string, width: number): PublicDesignAcceptanceEntry["sidebarMode"] {
-  if (contractId !== "item-detail" && contractId !== "recipe-detail") return "not-applicable";
+  if (contractId !== "item-detail") return "not-applicable";
   return width <= 1040 ? "stacked" : "side-by-side";
 }
 
