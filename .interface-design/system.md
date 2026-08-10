@@ -67,9 +67,9 @@ same focused commit.
   mobile home `760px`, catalogue `560px`, detail `700px`.
 - Use a strong charcoal vertical wash, subtle horizontal vignette, and a
   complete fade to `#111514`; cards and panels remain nearly opaque.
-- Home desktop wash: `0.36`/`0.46`; vignette:
-  `0.54`/`0.16`/`0.30`. Home mobile wash: `0.48`/`0.56`; vignette:
-  `0.52`/`0.28`/`0.36`.
+- Home desktop wash: `0.55`/`0.50`; radial vignette edge/center:
+  `0.72`/`0.10`. Home mobile wash: `0.52`/`0.58`; vignette:
+  `0.56`/`0.24`/`0.40`.
 - Items catalogue desktop wash: `0.48`/`0.58`; vignette:
   `0.56`/`0.26`/`0.44`. Catalogue mobile wash: `0.56`/`0.64`; vignette:
   `0.52`/`0.32`/`0.42`.

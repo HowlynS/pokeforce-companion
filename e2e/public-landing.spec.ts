@@ -12,9 +12,9 @@ const resources = [
 ] as const;
 
 const viewports = [
-  { width: 1920, height: 1080, expectedWidth: 1440, expectedSprite: 40 },
-  { width: 2560, height: 1440, expectedWidth: 1600, expectedSprite: 52 },
-  { width: 3440, height: 1440, expectedWidth: 1720, expectedSprite: 52 },
+  { width: 1920, height: 1080, expectedWidth: 1760, expectedSprite: 66 },
+  { width: 2560, height: 1440, expectedWidth: 1760, expectedSprite: 66 },
+  { width: 3440, height: 1440, expectedWidth: 1760, expectedSprite: 66 },
 ] as const;
 
 let pageErrors: string[] = [];
@@ -211,11 +211,11 @@ test("landing composition stays centered and bounded at all target widths", asyn
         };
       })
     ).toEqual({
-      washTop: "#11151438",
-      washMiddle: "#1115144d",
-      vignetteLeft: "#11151461",
-      vignetteCenter: "#11151414",
-      vignetteRight: "#1115142e",
+      washTop: "#1115148c",
+      washMiddle: "#11151480",
+      vignetteLeft: "#111514b8",
+      vignetteCenter: "#1115141a",
+      vignetteRight: "#111514b8",
     });
 
     await page.screenshot({
@@ -304,16 +304,16 @@ test("the landing page reflows safely below desktop widths", async ({
     const layout = await page.evaluate(() => ({
       viewportWidth: document.documentElement.clientWidth,
       documentWidth: document.documentElement.scrollWidth,
-      statisticColumns: getComputedStyle(
+      statisticDisplay: getComputedStyle(
         document.querySelector<HTMLElement>(".landing-statistics")!
-      ).gridTemplateColumns,
+      ).display,
       cardColumns: getComputedStyle(
         document.querySelector<HTMLElement>(".landing-resource-grid")!
       ).gridTemplateColumns,
     }));
 
     expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
-    expect(layout.statisticColumns.split(" ")).toHaveLength(2);
+    expect(layout.statisticDisplay).toBe("flex");
     expect(layout.cardColumns.split(" ").length).toBeGreaterThanOrEqual(1);
     await expect(
       page.getByRole("search", { name: "Site search" })
@@ -351,11 +351,11 @@ test("the landing page reflows safely below desktop widths", async ({
           };
         })
       ).toEqual({
-        washTop: "#1115145c",
-        washMiddle: "#1115146b",
-        vignetteLeft: "#11151466",
-        vignetteCenter: "#11151433",
-        vignetteRight: "#11151442",
+        washTop: "#11151485",
+        washMiddle: "#11151494",
+        vignetteLeft: "#1115148f",
+        vignetteCenter: "#1115143d",
+        vignetteRight: "#11151466",
       });
       await page.screenshot({
         path: "test-results/landing-page-visual-pass/landing-390x844.png",
