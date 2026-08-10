@@ -295,6 +295,30 @@ cards, without changing the richer shared cards used in Profession previews:
   behavior retained in place of the handoff's decorative infinite-scroll
   sentinel.
 
+### Public Profession catalogue cards
+
+The canonical `/professions` directory follows the archived handoff's roomier
+discipline-card presentation rather than the compact Item or Recipe card:
+
+- At desktop, use a two-column grid with `20px` gaps beside the shared `272px`
+  overview rail. Cards use `20px` padding, `14px` corners, and a fixed
+  `130×130px` image stage containing an `88px` sprite or quiet fallback.
+- Use a `19px` sans title, a compact uppercase `Profession` resource label,
+  and at most three lines of the real plain compatibility description. The
+  ruled footer shows the real Recipe count and shared maximum Profession level
+  only when progression rows exist.
+- The prototype-only Gathering/Production types have no production schema
+  authority. Do not display or filter by them. The name search is a genuine
+  server-side GET filter, while Grid/List are two presentations of the same
+  Prisma-backed alphabetical result set.
+- The overview is factual: total Professions, assigned Recipes, verified
+  entries, and the highest stored Profession level. Preserve full-card links,
+  visible focus, image fallbacks, and a single-column mobile transition.
+
+The scenic layer shown in the Profession directory handoff reuses the approved
+managed catalogue asset and crop. It is not a Profession-specific resource
+atmosphere and must not alter the page's data hierarchy or geometry.
+
 Player Classes (Trainer, Artisan, Rancher, Ranger, Farmhand) are a top-level
 public/admin resource, matching Item, Recipe, Profession, Category, Location,
 Shop, and Currency in status. The internal/schema/domain name is

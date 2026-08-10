@@ -188,6 +188,27 @@ same focused commit.
   Recipe facts and links. Retain deterministic twelve-Recipe pagination rather
   than copying the handoff's decorative infinite-scroll sentinel.
 
+### Public Profession catalogue cards
+
+- `/professions` uses the archived handoff's roomier two-column discipline
+  ledger beside the shared `272px` overview rail. Grid cards use `20px` gaps,
+  `20px` padding, `14px` corners, and a fixed `130px` square image stage with
+  centered `88px` content.
+- Card copy uses a `19px` title, a compact uppercase `Profession` resource
+  label, up to three lines of the real plain compatibility description, then
+  a ruled factual footer for Recipe count and the shared maximum Profession
+  level when that progression data exists.
+- The handoff's Gathering/Production taxonomy is not in the production schema,
+  so neither its filter nor its counts render. Name search is a real
+  server-rendered GET query; Grid/List reorganize the same Prisma result set.
+- The overview reports only real totals: Professions, assigned Recipes,
+  verified entries, and the maximum stored Profession level. Full-card links,
+  deterministic alphabetical ordering, image fallbacks, and mobile stacking
+  remain intact.
+- The handoff's shared catalogue scenic layer is presentation, not a new
+  Profession atmosphere. It reuses the managed catalogue asset/crops and does
+  not change content geometry or introduce a Profession-specific background.
+
 ### PlayerClass naming
 
 - Internal/schema/domain name: `PlayerClass` — never bare `Class` (collides

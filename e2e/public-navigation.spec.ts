@@ -19,8 +19,9 @@ test.afterEach(() => {
   expect(pageErrors, "no uncaught page errors are allowed").toEqual([]);
 });
 
-// General resource cards expose an h3; RecipeOutputCard uses a contextual
-// link name because its visual title is a strong inside a multi-control card.
+// General resource cards expose a heading at the level appropriate to their
+// page hierarchy; RecipeOutputCard uses a contextual link name because its
+// visual title is a strong inside a multi-control card.
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -28,7 +29,7 @@ function escapeRegExp(value: string): string {
 function cardLink(page: Page, name: string) {
   const headingCard = page
     .getByRole("link")
-    .filter({ has: page.getByRole("heading", { level: 3, name, exact: true }) });
+    .filter({ has: page.getByRole("heading", { name, exact: true }) });
   const recipeOutputCard = page.getByRole("link", {
     name: new RegExp(`^${escapeRegExp(name)}, produces `),
   });

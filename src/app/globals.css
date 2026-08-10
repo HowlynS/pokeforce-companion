@@ -2967,6 +2967,199 @@ select:focus-visible {
   color: var(--color-text-meta-dim);
 }
 
+/* Professions directory -------------------------------------------------
+   The archived handoff gives disciplines a roomier two-column ledger card
+   than the compact Item/Recipe catalogues. All facts remain schema-backed;
+   the unsupported prototype-only Gathering/Production taxonomy is omitted. */
+.profession-catalogue-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 20px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: none;
+}
+
+.profession-catalogue-grid::-webkit-scrollbar,
+.profession-catalogue-list::-webkit-scrollbar {
+  display: none;
+}
+
+.profession-catalogue-card {
+  position: relative;
+  min-width: 0;
+  min-height: 172px;
+  display: flex;
+  gap: 20px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 14px;
+  background: var(--color-surface);
+  padding: 20px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.profession-catalogue-card:hover,
+.profession-catalogue-card:focus-visible,
+.profession-catalogue-list-row:hover,
+.profession-catalogue-list-row:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  box-shadow:
+    0 0 0 1px rgba(195, 154, 75, 0.3),
+    0 0 20px rgba(216, 181, 98, 0.22);
+}
+
+.profession-catalogue-card-media {
+  width: 130px;
+  height: 130px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(235, 228, 208, 0.18), transparent 62%),
+    var(--color-surface);
+  overflow: hidden;
+}
+
+.profession-catalogue-card-media .public-sprite-stage--card {
+  --sprite-stage-size: 88px;
+  --sprite-image-size: 88px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.profession-catalogue-card-media
+  .public-sprite-stage--card.public-sprite-stage--empty {
+  width: 88px;
+  height: 88px;
+  padding: 8px;
+}
+
+.profession-catalogue-card-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profession-catalogue-card-title {
+  margin: 0 0 4px;
+  color: var(--color-text);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.profession-catalogue-card-type,
+.profession-catalogue-list-type {
+  color: var(--color-accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.profession-catalogue-card-description {
+  flex: 1;
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.profession-catalogue-card-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--color-border-muted);
+  padding-top: 10px;
+  color: var(--color-text-meta-dim);
+  font-size: 12px;
+}
+
+.profession-catalogue-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.profession-catalogue-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 9px;
+  background: var(--color-surface);
+  padding: 6px 14px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.profession-catalogue-list-name {
+  width: 150px;
+  flex: none;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 13.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profession-catalogue-list-type {
+  width: 110px;
+  flex: none;
+}
+
+.profession-catalogue-list-description {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profession-catalogue-list-fact,
+.profession-catalogue-list-level {
+  width: 90px;
+  flex: none;
+  color: var(--color-text-meta-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.profession-catalogue-list-level {
+  width: 80px;
+  text-align: right;
+}
+
 @media (max-width: 1180px) {
   .directory-body {
     flex-direction: column;
@@ -3000,6 +3193,34 @@ select:focus-visible {
   .item-catalogue-list-name {
     width: auto;
     flex: 1;
+  }
+
+  .profession-catalogue-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profession-catalogue-card {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .profession-catalogue-card-media {
+    width: 96px;
+    height: 96px;
+  }
+
+  .profession-catalogue-card-media .public-sprite-stage--card {
+    --sprite-stage-size: 72px;
+    --sprite-image-size: 72px;
+  }
+
+  .profession-catalogue-list-type,
+  .profession-catalogue-list-level {
+    display: none;
+  }
+
+  .profession-catalogue-list-name {
+    width: 120px;
   }
 }
 
