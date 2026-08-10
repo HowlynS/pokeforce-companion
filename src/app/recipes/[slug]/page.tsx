@@ -97,7 +97,7 @@ export default async function RecipeDetailPage({
   const updatedAt = formatDisplayDate(recipe.updatedAt);
 
   return (
-    <AppShell wide>
+    <AppShell scenic="detail" wide>
       <article className="item-detail-page recipe-detail-page">
         <Breadcrumb
           segments={[
@@ -119,27 +119,54 @@ export default async function RecipeDetailPage({
                   alt={`Image of ${recipe.name}`}
                   size="hero"
                 />
+                <span className="recipe-hero-yield" aria-hidden="true">
+                  <span>Yields</span>
+                  <strong>{resultQuantity}</strong>
+                </span>
               </div>
 
               <div className="item-identity-copy">
                 {recipe.profession ? (
                   <p className="item-category-label">
-                    {recipe.profession.name}
+                    {recipe.profession.name} Recipe
                   </p>
                 ) : null}
                 <h1 id="recipe-title" className="public-resource-title">
                   {recipe.name}
                 </h1>
-                <dl className="item-fact-strip recipe-fact-strip">
-                  <div>
-                    <dt>Result quantity</dt>
-                    <dd>× {resultQuantity}</dd>
-                  </div>
-                  <div>
-                    <dt>Ingredients</dt>
-                    <dd>{recipe.ingredients.length}</dd>
-                  </div>
-                </dl>
+                <p className="recipe-summary">
+                  {recipe.profession && recipe.requiredLevel !== null
+                    ? "A Level " +
+                      recipe.requiredLevel +
+                      " " +
+                      recipe.profession.name +
+                      " recipe."
+                    : recipe.profession
+                      ? "A " + recipe.profession.name + " recipe."
+                      : "A crafting recipe."}{" "}
+                  Yields {resultQuantity} on completion.
+                </p>
+                <div className="item-info-chips recipe-info-chips">
+                  {recipe.profession ? (
+                    <Link
+                      href={"/professions/" + recipe.profession.slug}
+                      className="item-info-chip public-content-link"
+                    >
+                      Profession: <strong>{recipe.profession.name}</strong>
+                    </Link>
+                  ) : null}
+                  {recipe.requiredLevel !== null ? (
+                    <span className="item-info-chip">
+                      Level: <strong>{recipe.requiredLevel}</strong>
+                    </span>
+                  ) : null}
+                  <span className="item-info-chip">
+                    Reward:{" "}
+                    <strong className="item-info-chip-accent">
+                      +{recipe.experienceReward} EXP
+                    </strong>
+                  </span>
+                </div>
               </div>
             </section>
 
@@ -243,61 +270,12 @@ export default async function RecipeDetailPage({
                 </div>
               </CollapsibleSection>
             ) : null}
-          </div>
 
-          <aside className="item-sidebar" aria-label="Recipe information">
-            <section className="item-panel item-sidebar-panel">
-              <h2>Recipe details</h2>
-              <dl className="item-detail-list">
-                {recipe.profession ? (
-                  <div>
-                    <dt>Profession</dt>
-                    <dd>
-                      <Link
-                        href={`/professions/${recipe.profession.slug}`}
-                        className="public-content-link"
-                      >
-                        {recipe.profession.name}
-                      </Link>
-                    </dd>
-                  </div>
-                ) : null}
-                {recipe.requiredLevel !== null ? (
-                  <div>
-                    <dt>Required profession level</dt>
-                    <dd>{recipe.requiredLevel}</dd>
-                  </div>
-                ) : null}
-                <div>
-                  <dt>Result</dt>
-                  <dd>
-                    <Link
-                      href={`/items/${recipe.resultingItem.slug}`}
-                      className="public-content-link"
-                    >
-                      {recipe.resultingItem.name}
-                    </Link>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Ingredients</dt>
-                  <dd>{recipe.ingredients.length}</dd>
-                </div>
-                <div>
-                  <dt>EXP reward</dt>
-                  <dd>{recipe.experienceReward} EXP</dd>
-                </div>
-                {updatedAt ? (
-                  <div>
-                    <dt>Last updated</dt>
-                    <dd>{updatedAt}</dd>
-                  </div>
-                ) : null}
-              </dl>
-            </section>
-
-            <section className="item-panel item-sidebar-panel">
-              <h2>Verification</h2>
+            <section
+              className="recipe-verification-strip"
+              aria-labelledby="recipe-verification-title"
+            >
+              <h2 id="recipe-verification-title">Verification</h2>
               <p className="item-verification-state">
                 {verification ? "Verified" : "Unverified"}
               </p>
@@ -305,8 +283,12 @@ export default async function RecipeDetailPage({
                 {verification ??
                   "This Recipe’s gameplay information has not been verified for a Game Version."}
               </p>
+              {updatedAt ? (
+                <p className="recipe-updated-at">Last updated {updatedAt}</p>
+              ) : null}
             </section>
-          </aside>
+          </div>
+
         </div>
       </article>
     </AppShell>

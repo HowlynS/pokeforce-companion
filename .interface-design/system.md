@@ -123,6 +123,16 @@ same focused commit.
   `128×128px` content; begin copy `6px` from the top, then an `11px` uppercase
   category, `40px` title, and `14.5px` summary capped at `640px`. Stack the rail
   and identity row at narrow widths while retaining the art frame's dimensions.
+- Calibrated Recipe detail: full `1760px` desktop content measure and no
+  visible sidebar. Use a flat `180×180px` warm-amber art frame with centered
+  `128×128px` content and a bottom-right yield badge. Copy begins `6px` from
+  the top: `11px` `Profession Recipe` eyebrow, `40px` title, data-derived
+  `14.5px` summary capped at `640px`, then Profession/optional level/EXP chips.
+- Recipe Ingredients begin `32px` after the hero. The heading rule spans the
+  main measure; the list is `538px` wide at desktop, with `8px` outer padding,
+  `6px` gaps, `32px` images, and right-aligned quantities. Crafted result,
+  Related Recipes, verification, and update metadata follow below without
+  recreating a sidebar.
 
 ### Public resource responsibilities
 
@@ -144,7 +154,7 @@ same focused commit.
 - Profession and Class both remain atmosphere-free unless a future atmosphere
   is explicitly approved.
 - Recipe detail shows its Profession, optional required Profession level, and
-  EXP reward as separate facts. Recipe cards expose the Profession level when
+  EXP reward as hero chips. Recipe cards expose the Profession level when
   present.
 
 ### Public Item catalogue cards
@@ -194,9 +204,10 @@ same focused commit.
 
 - Use the shared component.
 - Preserve aspect ratio and crisp/pixelated sprite rendering.
-- Item detail uses `128×128px` content inside its calibrated `180×180px` art
-  frame. Other detail resources may retain `192×192px` content inside a
-  `240×240px` hero stage until their own handoff calibration is completed.
+- Item and Recipe detail use `128×128px` content inside calibrated
+  `180×180px` art frames. Other detail resources may retain `192×192px`
+  content inside a `240×240px` hero stage until their own handoff calibration
+  is completed.
 - Never distort an image to fill the stage.
 - Keep public fallbacks quiet and row fallbacks fixed-size/aligned.
 - Recipe detail retains a compact square Crafted Result image or fallback with

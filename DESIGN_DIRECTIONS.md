@@ -211,6 +211,21 @@ uppercase category, a `40px` resource title, and `14.5px` summary copy capped at
 the art frame's size. Production-only acquisition, relationship, and
 verification information remains visible beneath or beside that composition.
 
+The calibrated Recipe detail follows its distinct archived handoff rather than
+copying Item detail's fact rail. It uses the full `1760px` desktop measure with
+no visible sidebar, a flat `180×180px` warm-amber art frame, centered
+`128×128px` content, and a bottom-right factual yield badge. Copy begins `6px`
+from the top with an `11px` `Profession Recipe` eyebrow, `40px` title, and a
+data-derived `14.5px` summary capped at `640px`. Profession, optional required
+level, and EXP reward are compact hero chips.
+
+The Ingredient disclosure begins `32px` after the hero. Its heading rule uses
+the full main measure while the bordered list is `538px` wide at desktop
+(`520px` handoff content plus border/padding), with `8px` outer padding, `6px`
+row gaps, `32px` images, and right-aligned quantities. Production-owned Crafted
+result, Related Recipes, verification, and update metadata continue beneath
+this reference composition; they do not recreate the removed sidebar.
+
 Public collection and context pages have distinct responsibilities:
 
 - `/recipes` is the canonical full Recipe catalogue. It uses the approved
@@ -235,8 +250,9 @@ Public collection and context pages have distinct responsibilities:
   remains atmosphere-free. Class verification is identical in shape, and
   Class is likewise atmosphere-free.
 - Recipe detail shows its Profession, optional required Profession level, and
-  EXP reward as separate facts alongside Result and Ingredients. Recipe cards
-  expose the required Profession level when present.
+  EXP reward as hero chips. Result and Ingredients remain linked production
+  relationships. Recipe cards expose the required Profession level when
+  present.
 
 ### Public Item catalogue cards
 
@@ -299,12 +315,12 @@ Use the shared `ContentImage` component and preserve source aspect ratio.
 Sprite content uses crisp-edge or pixelated rendering; never blur or smooth
 native pixel art.
 
-The calibrated Item detail hero displays content at `128×128px` inside a
-`180×180px` art frame. Other public detail resources may continue to use the
-shared `192×192px` content inside a `240×240px` stage until their own archived
-handoff calibration is complete. Images must not be distorted to fill either
-stage. Public fallbacks should be quiet and intentional, while row fallbacks
-remain fixed-size and preserve alignment.
+The calibrated Item and Recipe detail heroes display content at `128×128px`
+inside `180×180px` art frames. Other public detail resources may continue to
+use shared `192×192px` content inside a `240×240px` stage until their own
+archived handoff calibration is complete. Images must not be distorted to fill
+either stage. Public fallbacks should be quiet and intentional, while row
+fallbacks remain fixed-size and preserve alignment.
 
 Do not add decorative generated-looking icons. Recipe detail retains a compact
 square Crafted Result image or fallback with an overlapping yield badge. That

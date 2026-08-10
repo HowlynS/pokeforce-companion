@@ -98,9 +98,8 @@ test("populated Recipe uses the shared detail composition and real relationships
   ).toHaveAttribute("aria-current", "page");
 
   await expect(page.getByText("Smithing", { exact: true }).first()).toBeVisible();
-  await expect(
-    page.locator(".recipe-fact-strip").getByText("× 2–4", { exact: true })
-  ).toBeVisible();
+  await expect(page.locator(".recipe-hero-yield")).toContainText("Yields");
+  await expect(page.locator(".recipe-hero-yield")).toContainText("2–4");
 
   const heroImage = page.getByRole("img", {
     name: `Image of ${fixture.recipe.name}`,
@@ -209,20 +208,20 @@ test("populated Recipe uses the shared detail composition and real relationships
       name: "Recipe details",
       exact: true,
     })
-  ).toBeVisible();
-  // Profession and its optional level stay together; EXP remains a
-  // separate Recipe fact.
+  ).toHaveCount(0);
+  // The handoff moves Profession, its optional level, and EXP from the
+  // removed fact rail into factual hero chips.
   await expect(page.getByText("Required class", { exact: true })).toHaveCount(
     0
   );
   await expect(
     page.getByText("Required profession level", { exact: true })
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(page.getByText("25", { exact: true })).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Smithing", exact: true })
+    page.getByRole("link", { name: "Profession: Smithing", exact: true })
   ).toHaveAttribute("href", "/professions/smithing");
-  await expect(page.getByText("10 EXP", { exact: true })).toBeVisible();
+  await expect(page.getByText("+10 EXP", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", {
       level: 2,
@@ -272,10 +271,10 @@ test("populated Recipe uses the shared detail composition and real relationships
   const resultBox = await resultPanel.boundingBox();
   expect(ingredientsBox).not.toBeNull();
   expect(resultBox).not.toBeNull();
-  expect(Math.abs(ingredientsBox!.y - resultBox!.y)).toBeLessThanOrEqual(1);
-  expect(ingredientsBox!.width / resultBox!.width).toBeGreaterThan(1.4);
-  expect(ingredientsBox!.width / resultBox!.width).toBeLessThan(1.6);
-  expect(resultBox!.height).toBeLessThan(ingredientsBox!.height);
+  expect(resultBox!.y).toBeGreaterThan(
+    ingredientsBox!.y + ingredientsBox!.height
+  );
+  expect(resultBox!.width).toBeLessThanOrEqual(520);
   await page.screenshot({
     path: path.join(
       SCREENSHOT_DIRECTORY,
@@ -312,9 +311,9 @@ test("populated Recipe uses the shared detail composition and real relationships
     .boundingBox();
   expect(intermediateIngredients).not.toBeNull();
   expect(intermediateResult).not.toBeNull();
-  expect(
-    Math.abs(intermediateIngredients!.y - intermediateResult!.y)
-  ).toBeLessThanOrEqual(1);
+  expect(intermediateResult!.y).toBeGreaterThan(
+    intermediateIngredients!.y + intermediateIngredients!.height
+  );
   await page.screenshot({
     path: path.join(
       SCREENSHOT_DIRECTORY,
@@ -374,7 +373,7 @@ test("sparse and no-image Recipes preserve hide-empty behavior", async ({
   await expect(
     page.getByText("Required profession level", { exact: true })
   ).toHaveCount(0);
-  await expect(page.getByText("5 EXP", { exact: true })).toBeVisible();
+  await expect(page.getByText("+5 EXP", { exact: true })).toBeVisible();
   await expect(page.locator(".recipe-ingredient-row")).toHaveCount(1);
   await expect(page.locator(".public-sprite-stage--hero")).toContainText(
     "No image available"

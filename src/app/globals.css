@@ -4226,6 +4226,320 @@ select:focus-visible {
   padding: 10px 10px 16px;
 }
 
+/* Recipe detail calibration follows its own archived handoff: unlike Item
+   detail it has no visible fact rail. Production relationships and
+   verification continue below the reference hero + Ingredient composition. */
+.recipe-detail-page {
+  display: block;
+}
+
+@media (min-width: 1181px) {
+  .recipe-detail-page {
+    width: calc(100% + 56px);
+    margin-inline: -28px;
+  }
+}
+
+.recipe-detail-page > .public-breadcrumb {
+  margin-bottom: 20px;
+}
+
+.recipe-detail-page .public-breadcrumb ol {
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.recipe-detail-page .item-content-grid {
+  display: block;
+}
+
+.recipe-detail-page .item-main-column {
+  gap: 32px;
+}
+
+.recipe-detail-page .item-content-grid > .item-sidebar {
+  display: none;
+}
+
+.recipe-detail-page .item-identity-panel {
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.recipe-detail-page .recipe-identity-stage {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.14), transparent 62%),
+    var(--color-surface);
+}
+
+.recipe-detail-page
+  .recipe-identity-stage
+  .public-sprite-stage--hero {
+  --sprite-stage-size: 128px;
+  --sprite-image-size: 128px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.recipe-detail-page
+  .recipe-identity-stage
+  .public-sprite-stage--hero.public-sprite-stage--empty {
+  width: 128px;
+  height: 128px;
+  padding: 14px;
+}
+
+.recipe-hero-yield {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(58, 53, 40, 0.75);
+  border-radius: 7px;
+  background: rgba(17, 21, 20, 0.82);
+  padding: 5px 10px;
+  text-align: center;
+}
+
+.recipe-hero-yield > span {
+  color: var(--color-text);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.recipe-hero-yield > strong {
+  color: #f4c542;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.recipe-detail-page .item-identity-copy {
+  justify-content: flex-start;
+  padding: 6px 0 0;
+}
+
+.recipe-detail-page .item-category-label {
+  margin-bottom: 8px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.recipe-detail-page .public-resource-title {
+  font-size: 40px;
+  line-height: 1.05;
+}
+
+.recipe-summary {
+  max-width: 640px;
+  margin: 14px 0 0;
+  color: var(--color-text-muted);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.recipe-detail-page .recipe-info-chips {
+  margin-top: 18px;
+}
+
+.recipe-detail-page .recipe-info-chips .item-info-chip {
+  text-decoration: none;
+}
+
+.recipe-detail-page .recipe-lower-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+}
+
+.recipe-detail-page .item-main-column > .item-panel,
+.recipe-detail-page .recipe-lower-grid > .item-panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.recipe-detail-page .item-main-column > .item-panel > h2,
+.recipe-detail-page .recipe-lower-grid > .item-panel > h2 {
+  margin-bottom: 14px;
+  font-size: 20px;
+}
+
+.recipe-detail-page .recipe-ingredients-panel {
+  width: 100%;
+}
+
+.recipe-detail-page .recipe-result-panel {
+  width: min(100%, 520px);
+}
+
+.recipe-detail-page .recipe-ingredients-panel .item-recipe-rows {
+  width: min(100%, 538px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #0f1210;
+  padding: 8px;
+}
+
+body:has(.recipe-detail-page) .public-site-footer {
+  display: none;
+}
+
+.recipe-detail-page .recipe-ingredient-row {
+  min-height: 50px;
+  grid-template-columns: 11px 32px minmax(0, 1fr) auto;
+  gap: 10px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 8px;
+  background: var(--color-surface);
+  padding: 8px 12px;
+}
+
+.recipe-detail-page .recipe-ingredient-row::before {
+  color: var(--color-accent-soft);
+  font-size: 11px;
+  content: "▶";
+}
+
+.recipe-detail-page .recipe-ingredient-row:hover,
+.recipe-detail-page .recipe-ingredient-row:focus-visible {
+  background: var(--color-surface-soft);
+}
+
+.recipe-detail-page .recipe-ingredient-row .item-recipe-thumbnail {
+  width: 32px;
+}
+
+.recipe-detail-page
+  .recipe-ingredient-row
+  .public-sprite-stage--row {
+  --sprite-stage-size: 32px;
+  --sprite-image-size: 32px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.recipe-detail-page
+  .recipe-ingredient-row
+  .public-sprite-stage--row.public-sprite-stage--empty {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+}
+
+.recipe-detail-page .recipe-ingredient-row .item-recipe-copy {
+  display: block;
+}
+
+.recipe-detail-page .recipe-ingredient-row .item-recipe-copy > strong {
+  font-size: 13px;
+}
+
+.recipe-detail-page .recipe-ingredient-row .item-recipe-copy > span {
+  display: none;
+}
+
+.recipe-detail-page .recipe-ingredient-quantity {
+  font-size: 13px;
+}
+
+.recipe-detail-page .recipe-result-row {
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.recipe-detail-page .item-related-panel {
+  max-width: 1000px;
+}
+
+.recipe-verification-strip {
+  width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px 16px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 18px;
+}
+
+.recipe-verification-strip h2 {
+  margin: 0;
+  color: var(--color-accent-soft);
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 18px;
+}
+
+.recipe-verification-strip .item-verification-state,
+.recipe-verification-strip .item-verification-copy {
+  margin: 0;
+}
+
+.recipe-verification-strip .item-verification-state {
+  font-size: 13px;
+}
+
+.recipe-verification-strip .item-verification-copy {
+  font-size: 12px;
+}
+
+.recipe-updated-at {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--color-text-meta-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 700px) {
+  .recipe-detail-page .item-identity-panel {
+    flex-direction: column;
+  }
+
+  .recipe-detail-page .recipe-identity-stage {
+    min-height: 0;
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .recipe-detail-page .item-identity-copy {
+    padding: 0;
+  }
+
+  .recipe-detail-page .public-resource-title {
+    font-size: clamp(32px, 9.7vw, 40px);
+  }
+
+  .recipe-verification-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .recipe-updated-at {
+    grid-column: auto;
+  }
+}
+
 /* Public Profession detail: a compact discipline identity followed by a
    restrained Recipe preview and factual Verification. The full output
    catalogue remains exclusive to the canonical Recipes index. */
