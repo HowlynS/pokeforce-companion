@@ -8,6 +8,7 @@ type LocationDirectoryFoldProps = {
   variant: "region" | "type";
   href?: string;
   count?: number;
+  countNoun?: string;
   children: React.ReactNode;
 };
 
@@ -17,6 +18,7 @@ export function LocationDirectoryFold({
   variant,
   href,
   count,
+  countNoun = "location",
   children,
 }: LocationDirectoryFoldProps) {
   const [mounted, setMounted] = useState(true);
@@ -69,7 +71,7 @@ export function LocationDirectoryFold({
         )}
         {typeof count === "number" ? (
           <span className="location-directory-fold-count">
-            {count} {count === 1 ? "location" : "locations"}
+            {count} {count === 1 ? countNoun : `${countNoun}s`}
           </span>
         ) : null}
         {variant === "type" ? (

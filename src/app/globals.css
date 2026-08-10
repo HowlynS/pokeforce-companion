@@ -2539,6 +2539,22 @@ select:focus-visible {
   color: var(--color-text-placeholder);
 }
 
+.directory-search-submit {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.directory-search-submit:hover {
+  color: var(--color-accent-soft);
+}
+
 .directory-filter {
   position: relative;
 }
@@ -11743,6 +11759,151 @@ a.profession-detail-chip:focus-visible {
   }
 
   .location-detail-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Shops catalogue: production Shops grouped by the real topmost Location and
+   Location type because Shop has no prototype-style category/type field. */
+.shops-directory-page,
+.shops-directory-page > .directory-content {
+  min-height: 0;
+}
+
+.shops-directory-page > .directory-content {
+  flex: 1;
+}
+
+.shops-directory-toolbar {
+  margin-bottom: 20px;
+}
+
+.shops-directory-clear {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  padding: 7px 14px;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.shops-directory-clear:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  color: var(--color-accent-soft);
+}
+
+.shops-directory-summary {
+  margin: -10px 0 16px;
+  color: var(--color-text-meta-dim);
+  font-size: 11.5px;
+}
+
+.shops-directory-groups {
+  flex: 1;
+}
+
+.shop-directory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.shop-directory-card {
+  display: flex;
+  min-width: 0;
+  gap: 10px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 10px;
+  background: var(--color-surface);
+  padding: 11px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.shop-directory-card:hover,
+.shop-directory-card:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  box-shadow:
+    0 0 0 1px rgba(195, 154, 75, 0.3),
+    0 0 20px rgba(216, 181, 98, 0.22);
+}
+
+.shop-directory-card-media,
+.shop-directory-card-media .public-sprite-stage--card {
+  width: 52px;
+  height: 52px;
+  flex: none;
+}
+
+.shop-directory-card-media .public-sprite-stage--card {
+  --sprite-stage-size: 52px;
+  --sprite-image-size: 34px;
+  border-color: var(--color-border);
+  background:
+    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.2), transparent 62%),
+    var(--color-background);
+}
+
+.shop-directory-card-media .public-sprite-stage--card.public-sprite-stage--empty {
+  width: 52px;
+  height: 52px;
+  padding: 4px;
+}
+
+.shop-directory-card-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.shop-directory-card h3 {
+  min-height: 17px;
+  overflow: hidden;
+  margin: 0 0 2px;
+  color: var(--color-text);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shop-directory-card-type {
+  margin-bottom: 3px;
+  color: var(--color-accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.shop-directory-card-location,
+.shop-directory-card-facts {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-meta-dim);
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .shop-directory-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }

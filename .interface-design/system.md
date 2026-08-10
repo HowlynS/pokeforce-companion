@@ -154,6 +154,8 @@ same focused commit.
 - Location detail owns its real ancestor breadcrumb, direct children, direct
   Shops, obtainable Items, and access note. It never infers nearby Locations,
   a Region relation, or NPC data.
+- Shops catalogue owns Shop search and preserves real Location, inventory, and
+  public Verification facts. It never infers a Shop category/type.
 - Profession detail is the approved exception to the canonical-catalogue rule:
   its handoff explicitly presents that Profession's complete craftable output
   directory. Other explanatory/contextual lists do not inherit this pattern.
@@ -309,6 +311,22 @@ same focused commit.
   production relationships below the hero. Reuse the same compact horizontal
   card geometry, retain canonical links and descriptions, hide empty sections,
   and preserve reduced motion. Public Location verification remains admin-only.
+
+### Public Shops catalogue
+
+- `/shops` uses the handoff's full-width catalogue ledger with the same
+  `16px 28px` inset, `22px` heading, `20px` toolbar gap, `26px` root-group
+  rhythm, desktop result scroller, and scenic catalogue surface as Locations.
+- Shop has no production category/type field. Group Shops first by their real
+  topmost Location and then by the assigned Location's canonical type; label
+  the second fold `{Location type} Shops`. Omit the prototype Shop-type filter.
+- Cards use `repeat(auto-fill, minmax(220px, 1fr))`, `12px` gaps, `11px`
+  padding, and a `52px` gold-neutral stage with `34px` content. Keep the title
+  on one ellipsized line, a factual `Shop` label, Location name,
+  inventory count, and public Verification string.
+- Search remains a real server GET across Shop name, description, and Location.
+  Preserve query summary, clear/reset actions, `220ms`/`30ms` card entrance,
+  `130ms` fold exit, hide-empty behavior, and reduced motion.
 
 ### PlayerClass naming
 

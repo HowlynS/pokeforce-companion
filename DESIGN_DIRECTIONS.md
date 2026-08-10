@@ -248,6 +248,8 @@ Public collection and context pages have distinct responsibilities:
 - Location detail owns its real ancestor breadcrumb, direct Sub-locations,
   direct Shops, obtainable Items, and access note. It never infers nearby
   Locations, a Region relation, or NPC data.
+- Shops catalogue owns server-backed Shop search and preserves real Location,
+  inventory, and public Verification facts. It never infers Shop category/type.
 - Full Recipe output cards belong to canonical collection contexts, except for
   the explicitly approved Profession detail handoff, which presents that
   Profession's complete craftable-output directory. No other explanatory or
@@ -429,6 +431,25 @@ composition while retaining every real production relationship:
   relationship sections using the same compact horizontal card geometry.
   Keep canonical links, authored Shop descriptions, hide-empty behavior, and
   reduced motion. Public verification remains intentionally admin-only.
+
+### Public Shops catalogue
+
+The canonical `/shops` directory mirrors the handoff's compact World ledger
+without importing its unsupported Shop taxonomy:
+
+- Use the shared full-width catalogue shell with `16px 28px` inset, `22px`
+  title, `20px` toolbar gap, `26px` root rhythm, internal desktop scrolling,
+  and the managed catalogue scenic surface.
+- Group Shops by their real topmost Location, then by the assigned Location's
+  canonical type under a `{Location type} Shops` fold. Shop has no production
+  category/type field, so the prototype Shop-type filter must not render.
+- Cards use an auto-fill `minmax(220px, 1fr)` grid, `12px` gaps, `11px`
+  padding, and a `52px` gold-neutral stage with `34px` content. Preserve the
+  ellipsized Shop name, Location name, inventory count, and public
+  Verification string.
+- Search remains a server GET across name, description, and Location. Retain
+  the query summary, clear/reset actions, `220ms`/`30ms` entrance stagger,
+  `130ms` fold exit, hide-empty handling, and reduced motion.
 
 The Class directory reuses the managed scenic catalogue presentation without
 introducing a Class-specific atmosphere or gameplay semantics.
