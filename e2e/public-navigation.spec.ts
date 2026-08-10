@@ -41,11 +41,15 @@ test.describe("homepage", () => {
     await page.goto("/");
 
     // The page title is the one h1; the shell's brand lockup is a home
-    // link (containing the product name and tagline), not a heading.
+    // link (containing the product name and tagline), not a heading. The
+    // Claude Design redesign (Slice 3) made the hero title the product's
+    // own established brand name ("Merchants Codex" — already used
+    // elsewhere in this shell, e.g. the footer's landing-mode brand text)
+    // rather than a separate tagline.
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: "The Guild’s Knowledge. Yours to Use.",
+        name: "Merchants Codex",
       })
     ).toBeVisible();
     await expect(

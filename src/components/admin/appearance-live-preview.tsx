@@ -654,18 +654,19 @@ function PreviewContent({ surface }: { surface: PublicSurface }) {
       <div className="landing-page">
         <section className="landing-overview">
           <div className="landing-hero-copy">
-            <p className="landing-eyebrow">Merchants Codex</p>
-            <h1>
-              The Guild&apos;s Knowledge.
-              <span>Yours to Use.</span>
-            </h1>
+            <p className="landing-hero-eyebrow">A Trader&apos;s Field Guide</p>
+            <h1>Merchants Codex</h1>
             <p className="landing-hero-description">
-              A complete reference for items, recipes, locations, and the
-              world&apos;s most valuable goods.
+              Every item, recipe, profession, and vendor — cross-referenced
+              and traced back to where they come from.
             </p>
             <div className="landing-hero-actions">
-              <span className="btn btn-primary">Browse Items</span>
-              <span className="btn btn-secondary">Explore Recipes</span>
+              <span className="landing-cta landing-cta-primary">
+                Browse the Codex
+              </span>
+              <span className="landing-cta landing-cta-ghost">
+                Explore Recipes
+              </span>
             </div>
           </div>
           <dl className="landing-statistics">

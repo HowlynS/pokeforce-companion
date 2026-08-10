@@ -62,7 +62,7 @@ test("hero CTAs and all five resource cards use their approved routes", async ({
   await page.goto("/");
 
   await expect(
-    page.getByRole("link", { name: "Browse Items", exact: true })
+    page.getByRole("link", { name: "Browse the Codex", exact: true })
   ).toHaveAttribute("href", "/items");
   await expect(
     page.getByRole("link", { name: "Explore Recipes", exact: true })
@@ -84,7 +84,7 @@ test("hero CTAs and all five resource cards use their approved routes", async ({
     "A crafting wiki companion for items, recipes, professions, classes, categories, locations, and shops."
   );
 
-  await page.getByRole("link", { name: "Browse Items", exact: true }).click();
+  await page.getByRole("link", { name: "Browse the Codex", exact: true }).click();
   await expect(page).toHaveURL("/items");
   await page.goBack();
   await page.getByRole("link", { name: "Explore Recipes", exact: true }).click();
@@ -168,7 +168,10 @@ test("landing composition stays centered and bounded at all target widths", asyn
       (layout.viewportWidth - layout.mainWidth) / 2,
       0
     );
-    expect(layout.heroTextAlign).toBe("start");
+    // The Claude Design redesign (Slice 3) made the hero centered — eyebrow,
+    // serif title, lead, and CTAs all stacked and center-aligned — instead
+    // of the prior left-aligned two-column layout.
+    expect(layout.heroTextAlign).toBe("center");
     expect(layout.cardsRight).toBeLessThanOrEqual(
       layout.mainLeft + layout.mainWidth
     );
@@ -238,6 +241,10 @@ test("plain-charcoal override leaves interface geometry unchanged", async ({
   await mkdir("test-results/landing-page-visual-pass", { recursive: true });
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/");
+  // The hero title uses a webfont (Cormorant Garamond, display: "swap"):
+  // waiting for it here avoids straddling the fallback-to-webfont swap
+  // between the two measurements below.
+  await page.evaluate(() => document.fonts.ready);
 
   const measure = () =>
     page.evaluate(() => {
@@ -264,7 +271,20 @@ test("plain-charcoal override leaves interface geometry unchanged", async ({
   });
   const charcoalGeometry = await measure();
 
-  expect(charcoalGeometry).toEqual(decoratedGeometry);
+  // A tolerance, not exact equality: Chromium's text layout for the
+  // serif hero title isn't perfectly bit-stable between two layout
+  // passes of the same content — a sub-pixel snap (observed up to ~1px)
+  // that isn't a real geometry shift and isn't what this assertion is
+  // checking for (whether the charcoal override moves the interface).
+  const GEOMETRY_TOLERANCE_PX = 2;
+  for (let index = 0; index < decoratedGeometry.length; index += 1) {
+    for (const key of ["x", "y", "width", "height"] as const) {
+      expect(
+        Math.abs(charcoalGeometry[index][key] - decoratedGeometry[index][key]),
+        `element ${index} "${key}": decorated=${decoratedGeometry[index][key]} charcoal=${charcoalGeometry[index][key]}`
+      ).toBeLessThanOrEqual(GEOMETRY_TOLERANCE_PX);
+    }
+  }
   await page.screenshot({
     path: "test-results/landing-page-visual-pass/landing-plain-charcoal-1920x1080.png",
     fullPage: true,
@@ -299,7 +319,7 @@ test("the landing page reflows safely below desktop widths", async ({
       page.getByRole("search", { name: "Site search" })
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Browse Items", exact: true })
+      page.getByRole("link", { name: "Browse the Codex", exact: true })
     ).toBeVisible();
 
     const scenicBackground = page.locator(".public-scenic-background--home");

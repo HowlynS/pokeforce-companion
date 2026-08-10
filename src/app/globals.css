@@ -1692,17 +1692,27 @@ select:focus-visible {
   padding-block: clamp(32px, 2.5vw, 48px) 15px;
 }
 
+/* Centered hero, per the Claude Design handoff — eyebrow, serif title,
+   lead, CTAs, then the statistics card below, everything stacked and
+   centered rather than the prior two-column side-by-side layout. The
+   class name stays .landing-overview (unchanged) so the admin Appearance
+   live-preview mock, which reuses this class, and the mobile-preview CSS
+   overrides above keep working without their own edit. */
 .landing-overview {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(440px, 0.62fr);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: clamp(32px, 2.5vw, 48px);
-  min-height: clamp(370px, 20vw, 390px);
+  gap: clamp(32px, 2.8vw, 44px);
 }
 
 .landing-hero-copy {
   position: relative;
-  max-width: 880px;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
   isolation: isolate;
 }
 
@@ -1716,11 +1726,16 @@ select:focus-visible {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: -16px;
+  /* Stays within the page's own horizontal padding (min 24px, see
+     .public-site-container) at every viewport width — a wider inset
+     here pushed .landing-hero-copy's own box (which shrinks to the
+     available width on narrow screens) past the viewport edge and
+     caused horizontal page overflow at mobile widths. */
+  inset: -20px;
   background: radial-gradient(
-    ellipse 640px 460px at 28% 42%,
-    rgba(17, 21, 20, 0.6) 0%,
-    rgba(17, 21, 20, 0.34) 48%,
+    ellipse 620px 420px at 50% 38%,
+    rgba(17, 21, 20, 0.58) 0%,
+    rgba(17, 21, 20, 0.32) 50%,
     rgba(17, 21, 20, 0) 82%
   );
   pointer-events: none;
@@ -1735,44 +1750,106 @@ select:focus-visible {
   text-transform: uppercase;
 }
 
+.landing-hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.landing-hero-eyebrow-rule {
+  display: block;
+  width: 38px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent));
+}
+
+.landing-hero-eyebrow-rule--end {
+  background: linear-gradient(90deg, var(--color-accent), transparent);
+}
+
 .landing-hero-copy h1 {
   max-width: 820px;
   margin: 0;
   color: var(--color-text);
-  font-size: clamp(52px, 4.4vw, 78px);
-  font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 1.04;
-}
-
-.landing-hero-copy h1 span {
-  display: block;
-  color: var(--color-accent-soft);
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: clamp(56px, 5.5vw, 92px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
 }
 
 .landing-hero-description {
-  max-width: 700px;
-  margin: 28px 0 0;
-  color: var(--color-text-muted);
-  font-size: clamp(18px, 1.3vw, 22px);
+  max-width: 620px;
+  margin: 0;
+  color: var(--color-text-body);
+  font-size: clamp(15.5px, 1.1vw, 17px);
   line-height: 1.65;
+  text-wrap: pretty;
 }
 
 .landing-hero-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: 12px;
-  margin-top: 36px;
+  margin-top: 6px;
 }
 
-.landing-hero-actions .btn {
-  min-width: 156px;
+.landing-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 9px;
+  padding: 12px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.landing-cta-primary {
+  color: var(--color-background);
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent-soft);
+}
+
+.landing-cta-primary:hover,
+.landing-cta-primary:focus-visible {
+  background: var(--color-accent-hover);
+  box-shadow: 0 0 24px rgba(216, 181, 98, 0.35);
+}
+
+.landing-cta-ghost {
+  color: var(--color-text-body);
+  font-weight: 600;
+  background: rgba(23, 27, 25, 0.72);
+  border: 1px solid var(--color-border);
+}
+
+.landing-cta-ghost:hover,
+.landing-cta-ghost:focus-visible {
+  border-color: var(--color-accent);
+  background: rgba(195, 154, 75, 0.08);
+  color: var(--color-text);
 }
 
 .landing-statistics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 0;
+  margin: 10px 0 0;
   border: 1px solid var(--color-border);
   border-radius: 16px;
   background: var(--color-surface);
@@ -1782,7 +1859,8 @@ select:focus-visible {
 
 .landing-statistic {
   min-width: 0;
-  padding: clamp(22px, 2vw, 30px);
+  padding: clamp(18px, 1.6vw, 24px) clamp(24px, 2vw, 34px);
+  text-align: center;
 }
 
 .landing-statistic:nth-child(odd) {
@@ -1794,65 +1872,116 @@ select:focus-visible {
 }
 
 .landing-statistic dt {
-  color: var(--color-text-muted);
-  font-size: 14px;
+  color: var(--color-text-meta);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .landing-statistic dd {
-  margin: 8px 0 0;
-  color: var(--color-text);
-  font-size: clamp(30px, 2.4vw, 40px);
-  font-weight: 600;
+  margin: 6px 0 0;
+  color: var(--color-accent-soft);
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: clamp(24px, 1.8vw, 30px);
+  font-weight: 700;
   line-height: 1;
 }
 
 .landing-resources {
   display: grid;
-  gap: 28px;
+  gap: 16px;
+}
+
+.landing-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .landing-section-heading h2 {
   margin: 0;
-  font-size: clamp(28px, 2vw, 36px);
-  font-weight: 600;
+  color: var(--color-text);
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
-.landing-section-heading .landing-eyebrow {
-  margin-bottom: 10px;
+.landing-section-rule {
+  flex: 1;
+  height: 1px;
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--color-border), transparent);
 }
 
 .landing-resource-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
 }
 
 .landing-resource-card {
+  position: relative;
   min-width: 0;
-  min-height: 200px;
   display: flex;
-  flex-direction: column;
-  border: 1px solid var(--color-border);
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--color-border-muted);
   border-radius: 14px;
   background: var(--color-surface);
-  padding: clamp(20px, 1.5vw, 24px);
+  padding: 16px 18px;
   color: var(--color-text);
   text-decoration: none;
   transition:
     background-color 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
-.landing-resource-card:hover {
+.landing-resource-card:hover,
+.landing-resource-card:focus-visible {
   border-color: var(--color-accent);
-  background: var(--color-surface-soft);
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(195, 154, 75, 0.3),
+    0 0 20px rgba(216, 181, 98, 0.22);
+}
+
+.landing-resource-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.landing-resource-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .landing-resource-card h3 {
   margin: 0;
-  font-size: 20px;
+  font-size: 15px;
+  font-weight: 700;
   line-height: 1.3;
+}
+
+.landing-resource-count-pill {
+  color: var(--color-accent-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: rgba(195, 154, 75, 0.12);
+  border: 1px solid rgba(195, 154, 75, 0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
 }
 
 .landing-resource-sprite-slot {
@@ -1860,45 +1989,246 @@ select:focus-visible {
   height: 40px;
   display: block;
   flex: 0 0 auto;
-  margin-bottom: 18px;
-  border: 1px dashed color-mix(in srgb, var(--color-border) 72%, transparent);
   border-radius: 10px;
-  background: color-mix(
-    in srgb,
-    var(--color-surface-soft) 58%,
-    transparent
-  );
+  border: 1px solid var(--color-border);
+  background:
+    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.16), transparent 62%),
+    var(--color-art-frame-surface);
 }
 
 .landing-resource-card p {
-  margin: 10px 0 18px;
+  margin: 0;
   color: var(--color-text-muted);
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.5;
+  text-wrap: pretty;
 }
 
 .landing-resource-affordance {
+  flex: none;
+  color: var(--color-accent-soft);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.landing-resource-card:hover .landing-resource-affordance,
+.landing-resource-card:focus-visible .landing-resource-affordance {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ---- Landing lower band: Recently Updated / How the Codex Works /
+   Crafting Chains promo (Claude Design redesign, Slice 3) ------------- */
+.landing-lower-band {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  align-items: start;
+  gap: 28px;
+}
+
+.landing-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.landing-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 10px;
+  background: var(--color-surface);
+  padding: 9px 14px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    padding-left 0.18s ease;
+}
+
+.landing-recent-row:hover,
+.landing-recent-row:focus-visible {
+  background: var(--color-surface-soft);
+  border-color: var(--color-accent);
+  padding-left: 16px;
+}
+
+.landing-recent-sprite-slot {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background:
+    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.14), transparent 62%),
+    var(--color-art-frame-surface);
+}
+
+.landing-recent-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.landing-recent-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.landing-recent-kind {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+}
+
+.landing-recent-note {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--color-text-meta-dim);
+}
+
+.landing-side-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.landing-how-it-works {
+  background: rgba(23, 27, 25, 0.86);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.landing-how-it-works-title {
+  margin: 0 0 14px;
+  color: var(--color-accent-soft);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.landing-how-it-works-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-how-it-works-list li {
+  display: flex;
+  gap: 12px;
+}
+
+.landing-how-step-badge {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent-soft);
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 6px;
+  border: 1px solid rgba(195, 154, 75, 0.4);
+  background: rgba(195, 154, 75, 0.1);
+}
+
+.landing-how-step-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.landing-how-step-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.landing-how-step-body {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.landing-promo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(195, 154, 75, 0.14), transparent 58%),
+    var(--color-surface);
+  border: 1px solid var(--color-border-muted);
+  border-radius: 14px;
+  padding: 20px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.landing-promo-card:hover,
+.landing-promo-card:focus-visible {
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 0 1px rgba(195, 154, 75, 0.3),
+    0 0 20px rgba(216, 181, 98, 0.22);
+}
+
+.landing-promo-title {
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.landing-promo-body {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.landing-promo-cta {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  margin-top: auto;
+  gap: 6px;
+  margin-top: 4px;
   color: var(--color-accent-soft);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 @media (max-width: 1260px) {
-  .landing-overview {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-    min-height: 0;
-  }
-
   .landing-statistics {
-    max-width: 720px;
+    max-width: 560px;
+    width: 100%;
   }
 
-  .landing-resource-grid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  .landing-lower-band {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1935,49 +2265,22 @@ select:focus-visible {
     padding-top: 56px;
   }
 
-  .landing-overview {
-    min-height: 460px;
-  }
-
   .landing-hero-copy {
-    max-width: 980px;
-  }
-
-  .landing-hero-copy h1 {
-    max-width: 960px;
-    font-size: clamp(76px, 2.65vw, 92px);
+    max-width: 820px;
   }
 
   .landing-hero-description {
-    max-width: 740px;
-    font-size: 22px;
+    max-width: 700px;
+    font-size: 17px;
   }
 
   .landing-statistic {
-    padding: 34px 36px;
-  }
-
-  .landing-statistic dd {
-    font-size: 44px;
-  }
-
-  .landing-resource-card {
-    min-height: 250px;
-    padding: 32px;
-  }
-
-  .landing-resource-card h3 {
-    font-size: 22px;
-  }
-
-  .landing-resource-card p {
-    font-size: 17px;
+    padding: 26px 40px;
   }
 
   .landing-resource-sprite-slot {
     width: 52px;
     height: 52px;
-    margin-bottom: 28px;
   }
 }
 
@@ -2033,8 +2336,9 @@ select:focus-visible {
     flex-direction: column;
   }
 
-  .landing-hero-actions .btn {
+  .landing-cta {
     width: 100%;
+    justify-content: center;
   }
 
   .landing-resource-grid {
