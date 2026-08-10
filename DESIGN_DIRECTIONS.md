@@ -238,9 +238,10 @@ Public collection and context pages have distinct responsibilities:
 - Profession detail explains a crafting discipline through the handoff's flat
   neutral identity and complete linked Recipe grid/list. Recipe, resulting
   Item, and Ingredient remain distinct production relationships.
-- Class detail explains an independent player Class through its compact neutral
-  identity, optional image/description, and inline Verification. It has no
-  Recipe count, Recipe previews, or Recipe-catalogue link.
+- Class detail explains an independent player Class through the handoff's flat
+  neutral identity, optional image/description, one factual Resource chip, and
+  inline Verification. It has no Recipe count, Recipe previews, or
+  Recipe-catalogue link.
 - Item Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not reproduce an Item grid or infer
   a Recipe catalogue from resulting Item Category.
@@ -367,6 +368,23 @@ without importing its unsupported gameplay model:
   Classes, verified entries, and current matches. Preserve deterministic
   alphabetical ordering, full-card links, handoff entrance stagger, quiet
   fallbacks, reduced motion, and mobile stacking.
+
+### Public Class detail
+
+The canonical `/classes/[slug]` view translates the handoff's sparse Class
+identity without inventing its gameplay model:
+
+- Within the `1760px` content measure, use a flat `180px` image stage, `128px`
+  content inset, `28px` gap, and `6px` top copy inset. Retain the restrained
+  lavender-neutral radial highlight shared with Class catalogue cards.
+- Use an `11px` uppercase eyebrow, `40px` Class title, and `14.5px`/`1.7` rich
+  authored description constrained to a `640px` reading measure.
+- PlayerClass has no production focus, bonus, maximum-level, Profession, or
+  Recipe fields. The sole fact chip is the truthful `Resource: Class` link to
+  `/classes`; prototype attributes must not be inferred.
+- Omit empty description and update metadata, keep factual Verification below
+  the identity, and treat the shared detail scenic layer as presentation rather
+  than a Class-specific atmosphere.
 
 The Class directory reuses the managed scenic catalogue presentation without
 introducing a Class-specific atmosphere or gameplay semantics.

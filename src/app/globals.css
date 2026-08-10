@@ -11132,6 +11132,16 @@ a.profession-detail-chip:focus-visible {
   }
 }
 
+.class-detail-page .profession-detail-stage {
+  background:
+    radial-gradient(circle at 30% 22%, rgba(168, 138, 206, 0.2), transparent 62%),
+    var(--color-surface);
+}
+
+.class-detail-page .profession-verification {
+  margin-top: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .profession-recipes-reveal > svg,
   .profession-detail-chip,

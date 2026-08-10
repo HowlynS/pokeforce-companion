@@ -145,9 +145,10 @@ same focused commit.
 - Profession detail explains a discipline with the handoff's flat neutral
   identity, real fact chips, complete linked Recipe grid/list, and inline
   Verification. Recipe, resulting Item, and Ingredient remain distinct links.
-- Class detail is an independent resource surface: compact neutral identity,
-  optional image/description, and inline Verification. It has no Recipe count,
-  Recipe previews, or Recipe-catalogue link.
+- Class detail is an independent resource surface: the handoff's flat neutral
+  identity, optional image/description, one factual Resource chip, and inline
+  Verification. It has no Recipe count, Recipe previews, or Recipe-catalogue
+  link.
 - Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not duplicate Item or Recipe grids.
 - Profession detail is the approved exception to the canonical-catalogue rule:
@@ -255,6 +256,21 @@ same focused commit.
   reduced motion, and single-column mobile transition.
 - The managed catalogue scenic layer is shared presentation and does not create
   a Class-specific atmosphere or gameplay meaning.
+
+### Public Class detail
+
+- `/classes/[slug]` uses the handoff's flat, full-width identity composition
+  within the `1760px` content measure: a `180px` image stage, `128px` content
+  inset, `28px` gap, and `6px` top copy inset. The stage keeps the restrained
+  lavender-neutral radial highlight used by the Class catalogue.
+- The eyebrow is `11px` uppercase, the Class title is `40px`, and rich authored
+  description copy is `14.5px`/`1.7` with a `640px` maximum reading measure.
+- Production PlayerClass has no focus, bonus, maximum-level, Profession, or
+  Recipe fields. Render only the factual `Resource: Class` chip, linked back to
+  the Classes catalogue; do not synthesize prototype attributes.
+- Hide absent description and update metadata, keep Verification inline below
+  the hero, and preserve the shared detail scenic layer as presentation rather
+  than a Class-specific atmosphere.
 
 ### PlayerClass naming
 
