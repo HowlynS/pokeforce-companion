@@ -328,6 +328,22 @@ same focused commit.
   Preserve query summary, clear/reset actions, `220ms`/`30ms` card entrance,
   `130ms` fold exit, hide-empty behavior, and reduced motion.
 
+### Public Shop detail
+
+- `/shops/[slug]` uses the managed detail scenic surface, canonical hierarchy
+  breadcrumb, `180px` gold-neutral identity stage with `128px` content, and
+  shared `40px` detail typography. Rich description and Verification remain
+  optional and hide completely when empty.
+- Shop has no production type, keeper, or NPC relation. Render `Shop` as the
+  resource label and only real Region, Location, and Location-type facts.
+- Inventory is a `520px` selectable panel with a `76px` selected stage,
+  `72px` selected content, `28px` row art, `8px` row rhythm, and `40ms`
+  entrance stagger. Hover/select uses the handoff's `180ms` translate, glow,
+  image-scale, cursor-reveal, and price-emphasis motion.
+- Keep ordered listings, canonical Item links, Currency identity, large prices,
+  optional notes, independent Verification, keyboard selection, hide-empty
+  behavior, and reduced motion.
+
 ### PlayerClass naming
 
 - Internal/schema/domain name: `PlayerClass` — never bare `Class` (collides

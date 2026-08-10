@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 
 type CollapsibleSectionProps = {
   title: string;
+  meta?: React.ReactNode;
   className?: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
@@ -20,6 +21,7 @@ type CollapsibleSectionProps = {
  */
 export function CollapsibleSection({
   title,
+  meta,
   className,
   defaultOpen = true,
   children,
@@ -54,6 +56,11 @@ export function CollapsibleSection({
             />
           </svg>
           {title}
+          {meta ? (
+            <span className="detail-collapsible-meta" aria-hidden="true">
+              {meta}
+            </span>
+          ) : null}
           {open ? (
             <span className="detail-collapsible-rule cx-line-sweep" aria-hidden="true" />
           ) : null}

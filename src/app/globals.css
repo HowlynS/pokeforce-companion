@@ -12133,3 +12133,417 @@ a.profession-detail-chip:focus-visible {
     width: 120px;
   }
 }
+
+/* Shop detail ----------------------------------------------------------
+   The handoff's compact merchant identity and selectable Inventory ledger,
+   populated exclusively from production Shop, Location, Item, Currency, and
+   verification records. */
+.shop-detail-page {
+  min-width: 0;
+  display: grid;
+  gap: 32px;
+}
+
+.shop-detail-page > .public-breadcrumb {
+  margin-bottom: -12px;
+}
+
+.shop-detail-hero {
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 28px;
+  margin-bottom: 0;
+}
+
+.shop-detail-stage {
+  width: 180px;
+  height: 180px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.2), transparent 62%),
+    var(--color-surface);
+}
+
+.shop-detail-stage .public-sprite-stage--hero {
+  --sprite-stage-size: 128px;
+  --sprite-image-size: 128px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.shop-detail-stage .public-sprite-stage--hero.public-sprite-stage--empty {
+  width: 128px;
+  height: 128px;
+  padding: 14px;
+}
+
+.shop-detail-copy {
+  min-width: 0;
+  flex: 1;
+  padding-top: 6px;
+}
+
+.shop-detail-eyebrow {
+  margin: 0 0 8px;
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.shop-detail-copy .public-resource-title {
+  margin: 0 0 14px;
+  font-size: 40px;
+  line-height: 1.05;
+}
+
+.shop-detail-description {
+  max-width: 640px;
+  margin: 0 0 18px;
+  color: var(--color-text-muted);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.shop-detail-description > :first-child {
+  margin-top: 0;
+}
+
+.shop-detail-description > :last-child {
+  margin-bottom: 0;
+}
+
+.shop-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.shop-detail-chip {
+  display: inline-block;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  padding: 8px 14px;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  text-decoration: none;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.shop-detail-chip strong {
+  color: var(--color-text);
+}
+
+.shop-detail-location-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+a.shop-detail-chip:hover,
+a.shop-detail-chip:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  box-shadow: 0 0 14px rgba(216, 181, 98, 0.25);
+}
+
+.shop-detail-verification {
+  margin: 12px 0 0;
+  color: var(--color-text-meta-dim);
+  font-size: 11.5px;
+}
+
+.shop-detail-inventory {
+  min-width: 0;
+  user-select: none;
+}
+
+.shop-detail-inventory > .detail-collapsible-heading {
+  margin: 0 0 14px;
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.detail-collapsible-meta {
+  color: var(--color-text-meta-dim);
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 11.5px;
+  font-weight: 400;
+}
+
+.shop-detail-inventory-panel {
+  width: min(100%, 520px);
+  border: 3px solid var(--color-accent-soft);
+  border-radius: 14px;
+  background: var(--color-surface);
+  padding: 16px;
+}
+
+.shop-detail-selected {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+
+.shop-detail-selected-stage {
+  width: 76px;
+  height: 76px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-accent-soft);
+  border-radius: 10px;
+  background: var(--color-inset-surface);
+  overflow: hidden;
+}
+
+.shop-detail-selected-stage .public-sprite-stage--grid {
+  --sprite-stage-size: 72px;
+  --sprite-image-size: 72px;
+}
+
+.shop-detail-selected-stage .public-sprite-stage--empty {
+  padding: 7px;
+}
+
+.shop-detail-selected-copy {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-inset-surface);
+  padding: 8px 12px;
+}
+
+.shop-detail-selected-copy a {
+  color: var(--color-accent-soft);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.shop-detail-selected-copy a:hover,
+.shop-detail-selected-copy a:focus-visible {
+  color: var(--color-text);
+}
+
+.shop-detail-selected-copy p {
+  margin: 2px 0 0;
+  color: var(--color-text-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.shop-detail-inventory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shop-detail-inventory-row.public-shop-listing {
+  grid-template-columns: 11px 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border-color: var(--color-border-muted);
+  border-radius: 8px;
+  background: var(--color-inset-surface);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.shop-detail-inventory-row:hover,
+.shop-detail-inventory-row:focus-within,
+.shop-detail-inventory-row--selected {
+  border-color: var(--color-accent) !important;
+  background: var(--color-surface-soft) !important;
+  box-shadow:
+    0 0 16px rgba(216, 181, 98, 0.2),
+    inset 0 0 0 1px rgba(195, 154, 75, 0.26);
+}
+
+.shop-detail-inventory-row:hover {
+  transform: translateX(4px);
+}
+
+.shop-detail-inventory-select {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--color-accent-soft);
+  font-size: 11px;
+  opacity: 0;
+  transform: translateX(-4px);
+  cursor: pointer;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.shop-detail-inventory-row:hover .shop-detail-inventory-select,
+.shop-detail-inventory-row:focus-within .shop-detail-inventory-select,
+.shop-detail-inventory-select[aria-pressed="true"] {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.shop-detail-inventory-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease;
+}
+
+.shop-detail-inventory-icon .public-sprite-stage--row {
+  --sprite-stage-size: 28px;
+  --sprite-image-size: 28px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.shop-detail-inventory-icon .public-sprite-stage--empty {
+  border: 1px solid var(--color-border);
+  padding: 2px;
+  font-size: 0;
+}
+
+.shop-detail-inventory-row:hover .shop-detail-inventory-icon {
+  transform: scale(1.12);
+}
+
+.shop-detail-inventory-row .public-shop-listing-content {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.shop-detail-inventory-row .public-shop-listing-content h3 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.shop-detail-inventory-row .public-shop-listing-content h3 a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.shop-detail-inventory-row .currency-price {
+  align-self: start;
+  color: var(--color-accent-soft);
+  font-size: 11.5px;
+  transition:
+    color 0.18s ease,
+    text-shadow 0.18s ease;
+}
+
+.shop-detail-inventory-row:hover .currency-price {
+  color: var(--color-accent-bright);
+  text-shadow: 0 0 8px rgba(244, 197, 66, 0.5);
+}
+
+.shop-detail-inventory-row .public-shop-listing-notes,
+.shop-detail-inventory-row .public-verification-stamp {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .shop-detail-page {
+    gap: 26px;
+  }
+
+  .shop-detail-hero {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 18px;
+  }
+
+  .shop-detail-stage {
+    width: 128px;
+    height: 128px;
+  }
+
+  .shop-detail-stage .public-sprite-stage--hero {
+    --sprite-stage-size: 96px;
+    --sprite-image-size: 96px;
+  }
+
+  .shop-detail-stage .public-sprite-stage--hero.public-sprite-stage--empty {
+    width: 96px;
+    height: 96px;
+  }
+
+  .shop-detail-copy {
+    padding-top: 0;
+  }
+
+  .shop-detail-copy .public-resource-title {
+    font-size: clamp(30px, 10vw, 40px);
+  }
+
+  .shop-detail-inventory-panel {
+    padding: 12px;
+  }
+
+  .shop-detail-selected {
+    align-items: stretch;
+  }
+
+  .shop-detail-inventory-row.public-shop-listing {
+    grid-template-columns: 9px 28px minmax(0, 1fr);
+  }
+
+  .shop-detail-inventory-row .public-shop-listing-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-detail-chip,
+  .shop-detail-inventory-row,
+  .shop-detail-inventory-select,
+  .shop-detail-inventory-icon,
+  .shop-detail-inventory-row .currency-price {
+    transition: none;
+  }
+
+  .shop-detail-inventory-row:hover {
+    transform: none;
+  }
+}

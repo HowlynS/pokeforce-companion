@@ -451,6 +451,26 @@ without importing its unsupported Shop taxonomy:
   the query summary, clear/reset actions, `220ms`/`30ms` entrance stagger,
   `130ms` fold exit, hide-empty handling, and reduced motion.
 
+### Public Shop detail
+
+The canonical `/shops/[slug]` page uses the handoff's compact merchant identity
+and selectable Inventory ledger while remaining bounded by production data:
+
+- Use the managed detail scenic surface, deep canonical breadcrumb, `180px`
+  gold-neutral hero stage with `128px` content, and the shared `40px` detail
+  title rhythm. Authored rich text remains semantic and hide-empty.
+- Shop has no type, keeper, or NPC relationship in production. Identify the
+  resource factually as `Shop`, link its real root Region and assigned Location,
+  expose the assigned Location type, and retain public Verification without
+  inventing prototype fields.
+- Inventory stays hidden when empty. When present, use the handoff's `520px`
+  selectable panel: `76px` selected stage with `72px` content, compact `28px`
+  listing images, ordered Item/Currency/price rows, `40ms` entrance stagger,
+  and the exact `180ms` hover/select transitions.
+- Preserve canonical Item links, every independently verified listing, large
+  integer prices, multiple currencies, optional notes, keyboard selection,
+  collapse behavior, stable fallbacks, and reduced motion.
+
 The Class directory reuses the managed scenic catalogue presentation without
 introducing a Class-specific atmosphere or gameplay semantics.
 

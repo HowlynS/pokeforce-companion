@@ -131,6 +131,12 @@ test("the Shop detail renders hierarchy, independent verification, ordered price
   ).toBeVisible();
   const rows = page.locator(".public-shop-listing");
   await expect(rows).toHaveCount(2);
+  const secondPreview = rows
+    .nth(1)
+    .getByRole("button", { name: `Preview ${fixtures.item.name}` });
+  await expect(secondPreview).toHaveAttribute("aria-pressed", "false");
+  await secondPreview.click();
+  await expect(secondPreview).toHaveAttribute("aria-pressed", "true");
   await expect(rows.nth(0)).toContainText(fixtures.item.name);
   await expect(rows.nth(0).getByLabel(`₽ 1,250 ${fixtures.primaryCurrency.name}`))
     .toHaveText("₽ 1,250");
@@ -149,6 +155,15 @@ test("the Shop detail renders hierarchy, independent verification, ordered price
   await expect(
     rows.nth(0).getByRole("link", { name: fixtures.item.name, exact: true })
   ).toHaveAttribute("href", `/items/${fixtures.item.slug}`);
+
+  const inventoryToggle = page.getByRole("button", {
+    name: "Inventory",
+    exact: true,
+  });
+  await inventoryToggle.click();
+  await expect(rows).toHaveCount(0);
+  await inventoryToggle.click();
+  await expect(rows).toHaveCount(2);
 
   for (const viewport of [
     { width: 1920, height: 1080 },
