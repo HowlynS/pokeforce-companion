@@ -6,7 +6,12 @@ import type { RecipeOutputCardValue } from "@/lib/recipes/recipe-output-catalogu
 
 type RecipeOutputCardProps = {
   recipe: RecipeOutputCardValue;
-  variant?: "standard" | "directory-grid" | "directory-list";
+  variant?:
+    | "standard"
+    | "directory-grid"
+    | "directory-list"
+    | "profession-grid"
+    | "profession-list";
 };
 
 const INGREDIENT_PREVIEW_COUNT = 4;
@@ -25,7 +30,13 @@ export function RecipeOutputCard({
     recipe.resultQuantityMax
   );
   const ingredientListId = `recipe-${recipe.id}-ingredients`;
-  const previewCount = variant === "directory-grid" ? 3 : INGREDIENT_PREVIEW_COUNT;
+  const isProfessionVariant = variant.startsWith("profession-");
+  const previewCount =
+    variant === "profession-list"
+      ? recipe.ingredients.length
+      : variant === "directory-grid" || variant === "profession-grid"
+      ? 3
+      : INGREDIENT_PREVIEW_COUNT;
   const previewIngredients = recipe.ingredients.slice(
     0,
     previewCount
@@ -83,6 +94,82 @@ export function RecipeOutputCard({
         </Link>
       );
     });
+
+  if (isProfessionVariant) {
+    return (
+      <article className={`recipe-output-card recipe-output-card--${variant}`}>
+        <div className="recipe-output-identity">
+          <Link
+            className="recipe-output-result-link"
+            href={`/items/${recipe.resultingItem.slug}`}
+            aria-label={`View resulting Item: ${recipe.resultingItem.name}`}
+          >
+            <span className="recipe-output-image-stage">
+              <ContentImage
+                imagePath={recipe.resultingItem.image}
+                alt={`Image of ${recipe.resultingItem.name}`}
+                size="card"
+              />
+              <span className="recipe-output-yield" aria-hidden="true">
+                {variant === "profession-grid" ? <span>Yields</span> : null}
+                <strong>
+                  {variant === "profession-grid" ? quantity : `Ã—${quantity}`}
+                </strong>
+              </span>
+            </span>
+          </Link>
+
+          <span className="recipe-output-copy">
+            <Link
+              className="recipe-output-recipe-link"
+              href={`/recipes/${recipe.slug}`}
+              aria-label={recipeLinkLabel}
+              title={recipe.name}
+            >
+              {recipe.name}
+            </Link>
+            {recipe.profession ? (
+              <span className="recipe-output-requirement">
+                <span>{recipe.profession.name}</span>
+                {recipe.requiredLevel !== null ? (
+                  <span>Lvl {recipe.requiredLevel}</span>
+                ) : null}
+              </span>
+            ) : null}
+          </span>
+        </div>
+
+        {recipe.ingredients.length > 0 ? (
+          <section
+            className="recipe-output-ingredients"
+            aria-label={`Ingredients for ${recipe.name}`}
+          >
+            {remainingIngredients.length > 0 ? (
+              <RecipeOutputIngredientDisclosure
+                listId={ingredientListId}
+                recipeName={recipe.name}
+                previewIngredients={renderIngredients(previewIngredients)}
+                remainingIngredients={renderIngredients(remainingIngredients)}
+                remainingCount={remainingIngredients.length}
+                compact={variant === "profession-grid"}
+                popover={variant === "profession-grid"}
+              />
+            ) : (
+              <div className="recipe-output-ingredient-list" id={ingredientListId}>
+                {renderIngredients(previewIngredients)}
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {variant === "profession-list" ? (
+          <span className="recipe-output-experience">
+            +{recipe.experienceReward} EXP
+          </span>
+        ) : null}
+      </article>
+    );
+  }
 
   return (
     <article className={`recipe-output-card recipe-output-card--${variant}`}>

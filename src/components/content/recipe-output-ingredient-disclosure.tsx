@@ -8,6 +8,8 @@ type RecipeOutputIngredientDisclosureProps = {
   previewIngredients: ReactNode;
   remainingIngredients: ReactNode;
   remainingCount: number;
+  compact?: boolean;
+  popover?: boolean;
 };
 
 export function RecipeOutputIngredientDisclosure({
@@ -16,6 +18,8 @@ export function RecipeOutputIngredientDisclosure({
   previewIngredients,
   remainingIngredients,
   remainingCount,
+  compact = false,
+  popover = false,
 }: RecipeOutputIngredientDisclosureProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -23,7 +27,7 @@ export function RecipeOutputIngredientDisclosure({
     <div className="recipe-output-ingredient-disclosure">
       <div className="recipe-output-ingredient-list" id={listId}>
         {previewIngredients}
-        {expanded ? remainingIngredients : null}
+        {expanded && !popover ? remainingIngredients : null}
       </div>
       <button
         className="recipe-output-ingredient-toggle"
@@ -37,8 +41,14 @@ export function RecipeOutputIngredientDisclosure({
         }
         onClick={() => setExpanded((current) => !current)}
       >
-        {expanded ? "Show fewer" : `+${remainingCount} more`}
+        {compact ? (expanded ? "−" : `+${remainingCount}`) : expanded ? "Show fewer" : `+${remainingCount} more`}
       </button>
+      {expanded && popover ? (
+        <div className="recipe-output-ingredient-panel cx-panel-in">
+          <p>More Ingredients</p>
+          {remainingIngredients}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -235,17 +235,19 @@ Public collection and context pages have distinct responsibilities:
 - `/items` is the canonical full Item catalogue. It uses deterministic
   pagination and a server-rendered Item Category filter backed only by
   `Item.category`.
-- Profession detail explains a crafting discipline. Its compact neutral hero
-  keeps factual Recipe and unique-result totals, while an optional compact
-  three-Recipe preview links to the canonical filtered Recipes index.
+- Profession detail explains a crafting discipline through the handoff's flat
+  neutral identity and complete linked Recipe grid/list. Recipe, resulting
+  Item, and Ingredient remain distinct production relationships.
 - Class detail explains an independent player Class through its compact neutral
   identity, optional image/description, and inline Verification. It has no
   Recipe count, Recipe previews, or Recipe-catalogue link.
 - Item Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not reproduce an Item grid or infer
   a Recipe catalogue from resulting Item Category.
-- Full Recipe output cards belong to canonical collection contexts, not
-  explanatory or contextual detail lists.
+- Full Recipe output cards belong to canonical collection contexts, except for
+  the explicitly approved Profession detail handoff, which presents that
+  Profession's complete craftable-output directory. No other explanatory or
+  contextual page inherits that exception automatically.
 - Profession verification remains a restrained factual strip, and Profession
   remains atmosphere-free. Class verification is identical in shape, and
   Class is likewise atmosphere-free.
@@ -318,6 +320,33 @@ discipline-card presentation rather than the compact Item or Recipe card:
 The scenic layer shown in the Profession directory handoff reuses the approved
 managed catalogue asset and crop. It is not a Profession-specific resource
 atmosphere and must not alter the page's data hierarchy or geometry.
+
+### Public Profession detail
+
+The canonical Profession detail follows its archived handoff literally while
+retaining richer production relationships:
+
+- Use the full `1760px` detail measure. The identity is a flat row with a
+  `180×180px` neutral art frame, centered `128px` content, and copy beginning
+  `6px` from the frame's top. Use an `11px` uppercase resource eyebrow, `40px`
+  serif title, and `14.5px` rich description capped at `640px`.
+- Fact chips show Resource (`Profession`), the maximum stored shared
+  Profession level when available, and live Recipe count. The prototype's
+  Gathering/Production type remains unsupported and must not be invented.
+- The Recipe section starts `32px` after the hero. Preserve its reveal arrow,
+  sweeping gold rule, Grid/List control, `220ms` card entrance with `30ms`
+  stagger capped at `330ms`, and reduced-motion equivalent.
+- Grid cards use `repeat(auto-fill, minmax(280px, 1fr))`, `14px` gaps, a
+  `78px` result stage with `64px` content and factual yield, Recipe title,
+  Profession/optional level, and three linked `36px` Ingredient previews.
+  Additional Ingredients open from a compact anchored disclosure.
+- Recipe titles, resulting Item stages, and Ingredients are distinct canonical
+  links with explicit accessible context. List view adds schema-backed EXP and
+  reorganizes the same server-rendered data. Render all real Recipes; the
+  prototype mock pool and infinite behavior have no production authority.
+- Keep rich text, fallbacks, hide-empty Recipe behavior, verification/build
+  metadata, and factual update date. The managed detail scenic backdrop is
+  shared presentation, not a Profession-specific atmosphere.
 
 Player Classes (Trainer, Artisan, Rancher, Ranger, Farmhand) are a top-level
 public/admin resource, matching Item, Recipe, Profession, Category, Location,

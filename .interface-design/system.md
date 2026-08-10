@@ -142,15 +142,17 @@ same focused commit.
   Recipe domain.
 - Items index is the canonical full Item catalogue: deterministic pagination
   and a server-rendered Item Category filter through `Item.category`.
-- Profession detail explains a discipline with its compact neutral identity
-  hero, factual Recipe/result counts, at most three compact Recipe preview
-  rows, a browse-all filtered Recipes link, and inline Verification.
+- Profession detail explains a discipline with the handoff's flat neutral
+  identity, real fact chips, complete linked Recipe grid/list, and inline
+  Verification. Recipe, resulting Item, and Ingredient remain distinct links.
 - Class detail is an independent resource surface: compact neutral identity,
   optional image/description, and inline Verification. It has no Recipe count,
   Recipe previews, or Recipe-catalogue link.
 - Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not duplicate Item or Recipe grids.
-- Do not reuse full Recipe cards for explanatory or contextual lists.
+- Profession detail is the approved exception to the canonical-catalogue rule:
+  its handoff explicitly presents that Profession's complete craftable output
+  directory. Other explanatory/contextual lists do not inherit this pattern.
 - Profession and Class both remain atmosphere-free unless a future atmosphere
   is explicitly approved.
 - Recipe detail shows its Profession, optional required Profession level, and
@@ -208,6 +210,32 @@ same focused commit.
 - The handoff's shared catalogue scenic layer is presentation, not a new
   Profession atmosphere. It reuses the managed catalogue asset/crops and does
   not change content geometry or introduce a Profession-specific background.
+
+### Public Profession detail
+
+- Use the full `1760px` detail measure. The hero is flat: `180px` square art
+  frame with `128px` content, then copy beginning `6px` from the top. Use an
+  `11px` uppercase resource eyebrow, `40px` serif title, and `14.5px` authored
+  description capped at `640px`.
+- Chips expose only real facts: Resource (`Profession`), maximum stored shared
+  Profession level when present, and the live Recipe count. Never translate
+  the handoff's unsupported Gathering/Production type into production data.
+- The Recipe disclosure begins `32px` after the hero. Its reveal arrow rotates
+  in `150ms`, the gold rule sweeps in over `350ms`, and cards enter over
+  `220ms` with `30ms` stagger capped at `330ms`. Grid/List switch the same
+  server-rendered Recipe set; reduced-motion users receive no entrance motion.
+- Grid uses `repeat(auto-fill, minmax(280px, 1fr))` with `14px` gaps. Cards use
+  a `78px` result stage with `64px` content and a factual yield badge, then
+  Recipe/Profession/level and three linked `36px` Ingredient previews. The
+  additional-Ingredient control opens a compact anchored panel.
+- Recipe title, resulting Item stage, and every Ingredient are separate
+  canonical links with distinct accessible names. List mode adds real EXP and
+  exposes the same facts without another query. All real Recipes render; the
+  prototype runtime's mock pool is not a pagination authority.
+- Preserve rich text, quiet image fallbacks, hide-empty Recipe section,
+  verification/build metadata, and factual updated date beneath the handoff
+  composition. The managed detail scenic layer is not a Profession-specific
+  atmosphere.
 
 ### PlayerClass naming
 

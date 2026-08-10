@@ -8,15 +8,11 @@ import {
 } from "./helpers/database-cleanup";
 import { readValidatedProfessionSpriteBytes } from "./helpers/profession-sprite-fixtures";
 
-const SPRITE_DIRECTORY = path.join(
-  __dirname,
-  "fixtures",
-  "profession-sprites"
-);
+const SPRITE_DIRECTORY = path.join(__dirname, "fixtures", "profession-sprites");
 const SCREENSHOT_DIRECTORY = path.join(
   process.cwd(),
   "test-results",
-  "resource-responsibility-visuals"
+  "resource-responsibility-visuals",
 );
 const VIEWPORTS = [
   { name: "1920x1080", width: 1920, height: 1080 },
@@ -26,9 +22,7 @@ const VIEWPORTS = [
   { name: "mobile-390x844", width: 390, height: 844 },
 ] as const;
 
-let fixture: Awaited<
-  ReturnType<typeof createE2ePublicProfessionDetailFixture>
->;
+let fixture: Awaited<ReturnType<typeof createE2ePublicProfessionDetailFixture>>;
 let pageErrors: string[] = [];
 
 test.beforeAll(async () => {
@@ -36,7 +30,7 @@ test.beforeAll(async () => {
   const sprites = readValidatedProfessionSpriteBytes(SPRITE_DIRECTORY);
   fixture = await createE2ePublicProfessionDetailFixture(
     sprites.kilnkeeperCrucible,
-    sprites
+    sprites,
   );
 });
 
@@ -66,13 +60,13 @@ async function expectNoHorizontalOverflow(page: Page) {
       page.evaluate(
         () =>
           document.documentElement.scrollWidth <=
-          document.documentElement.clientWidth
-      )
+          document.documentElement.clientWidth,
+      ),
     )
     .toBe(true);
 }
 
-test("Profession detail explains the discipline with a three-Recipe preview", async ({
+test("Profession detail exposes its complete linked Recipe directory", async ({
   page,
 }) => {
   const professionPath = `/professions/${fixture.profession.slug}`;
@@ -86,17 +80,18 @@ test("Profession detail explains the discipline with a three-Recipe preview", as
         level: 1,
         name: fixture.profession.name,
         exact: true,
-      })
+      }),
     ).toBeVisible();
-    await expect(page.locator(".profession-recipe-preview-row")).toHaveCount(3);
-    await expect(page.locator(".recipe-output-card")).toHaveCount(0);
     await expect(
-      page.getByRole("navigation", { name: /pagination/i })
+      page.locator(".recipe-output-card--profession-grid"),
+    ).toHaveCount(fixture.recipes.length);
+    await expect(
+      page.getByRole("navigation", { name: /pagination/i }),
     ).toHaveCount(0);
     await page.screenshot({
       path: path.join(
         SCREENSHOT_DIRECTORY,
-        `profession-preview-${viewport.name}.png`
+        `profession-detail-${viewport.name}.png`,
       ),
       fullPage: true,
     });
@@ -104,38 +99,63 @@ test("Profession detail explains the discipline with a three-Recipe preview", as
 
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(professionPath);
-  const previewRows = page.locator(".profession-recipe-preview-row");
-  await expect(previewRows).toHaveCount(3);
-  await expect(previewRows.locator("img")).toHaveCount(3);
-  await expect(previewRows.locator("img").first()).toHaveCSS(
+  const recipeCards = page.locator(".recipe-output-card--profession-grid");
+  await expect(recipeCards).toHaveCount(fixture.recipes.length);
+  await expect(recipeCards.locator("img").first()).toHaveCSS(
     "image-rendering",
-    "pixelated"
+    "pixelated",
   );
-  await expect(
-    page.getByRole("link", {
-      name: `Browse all ${fixture.profession.name} recipes`,
-      exact: true,
-    })
-  ).toHaveAttribute(
-    "href",
-    `/recipes?profession=${fixture.profession.slug}`
-  );
-  await expect(
-    page.locator(".profession-hero-counts").getByText("13", { exact: true })
-  ).toHaveCount(2);
-  await expect(
-    previewRows.first()
-  ).toHaveAttribute("href", `/recipes/${fixture.recipes[0].slug}`);
-  await expect(previewRows.first()).toHaveAttribute(
+
+  const firstRecipe = fixture.recipes[0];
+  const recipeLink = page.locator(`a[href="/recipes/${firstRecipe.slug}"]`);
+  await expect(recipeLink).toHaveCount(1);
+  await expect(recipeLink).toHaveAttribute(
     "aria-label",
-    `${fixture.recipes[0].name}, produces ×${fixture.recipes[0].resultQuantityMin}–${fixture.recipes[0].resultQuantityMax} ${fixture.recipes[0].result.name}, category ${fixture.outputCategory.name}`
+    `${firstRecipe.name}, produces \u00d7${firstRecipe.resultQuantityMin}\u2013${firstRecipe.resultQuantityMax} ${firstRecipe.result.name}, category ${fixture.outputCategory.name}, ${fixture.profession.name} level ${firstRecipe.requiredLevel}`,
   );
-  await previewRows.first().focus();
-  await expect(previewRows.first()).toBeFocused();
-  await expect(previewRows.first()).not.toHaveCSS("outline-style", "none");
+  await expect(
+    page.locator(`a[href="/items/${firstRecipe.result.slug}"]`).first(),
+  ).toHaveAttribute(
+    "aria-label",
+    `View resulting Item: ${firstRecipe.result.name}`,
+  );
+  await expect(
+    page
+      .locator(`a[href="/items/${firstRecipe.ingredients[0].slug}"]`)
+      .first(),
+  ).toHaveAttribute(
+    "aria-label",
+    `${firstRecipe.ingredients[0].name}, required quantity \u00d7${firstRecipe.ingredients[0].quantity}`,
+  );
+  await expect(
+    page.locator(".profession-detail-chip").filter({ hasText: "Recipes:" }),
+  ).toContainText(String(fixture.recipes.length));
+
+  const moreIngredients = page
+    .getByRole("button", { name: /Show \d+ more ingredients/ })
+    .first();
+  await moreIngredients.click();
+  await expect(page.getByText("More Ingredients", { exact: true })).toBeVisible();
+
+  const listButton = page.getByRole("button", { name: "List", exact: true });
+  await listButton.click();
+  await expect(listButton).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".profession-recipe-list")).toBeVisible();
+
+  const revealButton = page.getByRole("button", {
+    name: "Recipes",
+    exact: true,
+  });
+  await revealButton.click();
+  await expect(page.locator("#profession-recipes-panel")).toHaveCount(0);
+  await revealButton.click();
+  await expect(page.locator("#profession-recipes-panel")).toBeVisible();
+
+  await recipeLink.focus();
+  await expect(recipeLink).toBeFocused();
 });
 
-test("zero-Recipe Profession hides its optional preview", async ({ page }) => {
+test("zero-Recipe Profession hides its optional directory", async ({ page }) => {
   for (const viewport of [
     { name: "1920x1080", width: 1920, height: 1080 },
     { name: "mobile-390x844", width: 390, height: 844 },
@@ -148,18 +168,16 @@ test("zero-Recipe Profession hides its optional preview", async ({ page }) => {
         level: 1,
         name: "Foraging",
         exact: true,
-      })
+      }),
     ).toBeVisible();
-    const counts = page.locator(".profession-hero-counts");
-    await expect(counts.getByText("0", { exact: true })).toHaveCount(2);
-    await expect(page.locator(".profession-recipe-preview")).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: /Browse all .* recipes/ })
-    ).toHaveCount(0);
+      page.locator(".profession-detail-chip").filter({ hasText: "Recipes:" }),
+    ).toContainText("0");
+    await expect(page.locator(".profession-recipes-section")).toHaveCount(0);
     await page.screenshot({
       path: path.join(
         SCREENSHOT_DIRECTORY,
-        `profession-zero-recipes-${viewport.name}.png`
+        `profession-zero-recipes-${viewport.name}.png`,
       ),
       fullPage: true,
     });

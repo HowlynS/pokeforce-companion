@@ -72,7 +72,7 @@ export const PUBLIC_DESIGN_FIXTURES = [
     label: "Dense Profession detail",
     family: "detail",
     path: "/professions/design-review-profession-dense",
-    states: ["three previews", "browse all", "rich description", "verified"],
+    states: ["complete Recipe directory", "linked outputs and Ingredients", "rich description", "verified"],
   },
   {
     key: "profession-zero",
@@ -207,7 +207,7 @@ export const PUBLIC_DESIGN_RECORD_MANIFEST = [
   { model: "Item", slug: "design-review-item-no-image-long-name", states: ["unverified", "non-tradeable", "held item No", "no image", "very long name", "no acquisition"] },
   { model: "Recipe", slug: "design-review-recipe-many-ingredients", states: ["more than four ingredients", "high quantities", "yield range", "custom image", "Profession level", "EXP reward"] },
   { model: "Recipe", slug: "design-review-recipe-inherited-image", states: ["one ingredient", "inherited result image", "single yield"] },
-  { model: "Profession", slug: "design-review-profession-dense", states: ["more than one catalogue page", "three preview Recipes", "dense craft path", "long rich description"] },
+  { model: "Profession", slug: "design-review-profession-dense", states: ["complete Recipe directory", "linked outputs and Ingredients", "dense craft path", "long rich description"] },
   { model: "Profession", slug: "design-review-profession-zero", states: ["zero Recipes", "sparse", "no image"] },
   { model: "Profession", slug: "design-review-profession-one", states: ["one Recipe", "sparse craft path"] },
   { model: "PlayerClass", slug: "design-review-class-rich", states: ["rich description", "verified", "no image"] },

@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContentImage } from "@/components/content/content-image";
+import { ProfessionRecipeDirectory } from "@/components/content/profession-recipe-directory";
+import { RecipeOutputCard } from "@/components/content/recipe-output-card";
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
-import { cataloguePageHref } from "@/lib/catalogue-query";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { formatPublicVerification } from "@/lib/public-verification";
-import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
+import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 
 export const dynamic = "force-dynamic";
 
@@ -19,200 +21,134 @@ export default async function ProfessionDetailPage({
   params,
 }: ProfessionDetailPageProps) {
   const { slug } = await params;
-  const profession = await prisma.profession.findUnique({
-    where: { slug },
-    select: {
-      name: true,
-      description: true,
-      descriptionRich: true,
-      image: true,
-      updatedAt: true,
-      verifiedAt: true,
-      verifiedGameVersion: { select: { name: true } },
-      recipes: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          resultQuantityMin: true,
-          resultQuantityMax: true,
-          requiredLevel: true,
-          resultingItem: {
-            select: {
-              name: true,
-              slug: true,
-              image: true,
-              category: { select: { name: true } },
-            },
-          },
+  const [profession, levelSummary] = await Promise.all([
+    prisma.profession.findUnique({
+      where: { slug },
+      select: {
+        name: true,
+        description: true,
+        descriptionRich: true,
+        image: true,
+        updatedAt: true,
+        verifiedAt: true,
+        verifiedGameVersion: { select: { name: true } },
+        recipes: {
+          select: recipeOutputCardSelect,
+          orderBy: [{ name: "asc" }, { id: "asc" }],
         },
-        orderBy: [{ name: "asc" }, { id: "asc" }],
       },
-    },
-  });
+    }),
+    prisma.professionLevel.aggregate({ _max: { level: true } }),
+  ]);
 
-  if (!profession) {
-    notFound();
-  }
+  if (!profession) notFound();
 
   const verification = formatPublicVerification(profession);
   const updatedAt = formatDisplayDate(profession.updatedAt);
-  const resultingItemCount = new Set(
-    profession.recipes.map((recipe) => recipe.resultingItem.slug)
-  ).size;
-  const previewRecipes = profession.recipes.slice(0, 3);
+  const grid = (
+    <div className="profession-recipe-grid">
+      {profession.recipes.map((recipe, index) => (
+        <div
+          className="cx-item-in"
+          style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
+          key={recipe.id}
+        >
+          <RecipeOutputCard recipe={recipe} variant="profession-grid" />
+        </div>
+      ))}
+    </div>
+  );
+  const list = (
+    <div className="profession-recipe-list">
+      <div className="profession-recipe-list-header" aria-hidden="true">
+        <span />
+        <span>Recipe</span>
+        <span>Profession</span>
+        <span>EXP</span>
+        <span>Ingredients</span>
+      </div>
+      {profession.recipes.map((recipe, index) => (
+        <div
+          className="cx-item-in"
+          style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
+          key={recipe.id}
+        >
+          <RecipeOutputCard recipe={recipe} variant="profession-list" />
+        </div>
+      ))}
+    </div>
+  );
 
   return (
-    <AppShell wide>
-      <article className="item-detail-page profession-detail-page">
-        <nav
-          aria-label="Breadcrumb"
-          className="public-breadcrumb item-breadcrumb"
-        >
-          <ol>
-            <li>
-              <Link href="/" className="breadcrumb-link">
-                Home
-              </Link>
-            </li>
-            <li>
-              <span aria-hidden="true">/</span>
-              <Link href="/professions" className="breadcrumb-link">
-                Professions
-              </Link>
-            </li>
-            <li>
-              <span aria-hidden="true">/</span>
-              <span aria-current="page">{profession.name}</span>
-            </li>
-          </ol>
-        </nav>
+    <AppShell scenic="detail" wide>
+      <article className="profession-detail-page">
+        <Breadcrumb
+          segments={[
+            { name: "Home", href: "/" },
+            { name: "Professions", href: "/professions" },
+          ]}
+          current={profession.name}
+        />
 
-        <div
-          className={`profession-codex-frame${
-            profession.recipes.length <= 1
-              ? " profession-codex-frame--sparse"
-              : ""
-          }`}
-        >
-          <section
-            className="profession-discipline-hero"
-            aria-labelledby="profession-title"
-          >
-            <div className="profession-identity-stage">
-              <ContentImage
-                imagePath={profession.image}
-                alt={`Image of ${profession.name}`}
-                size="hero"
-              />
-            </div>
+        <section className="profession-detail-hero" aria-labelledby="profession-title">
+          <div className="profession-detail-stage">
+            <ContentImage
+              imagePath={profession.image}
+              alt={`Image of ${profession.name}`}
+              size="hero"
+            />
+          </div>
 
-            <div className="profession-identity-copy">
-              <p className="item-category-label">Profession</p>
-              <h1 id="profession-title" className="public-resource-title">
-                {profession.name}
-              </h1>
-              <RichTextContent
-                value={profession.descriptionRich}
-                fallback={profession.description}
-                className="profession-description rich-text-content"
-              />
-              {updatedAt ? (
-                <p className="profession-updated">Updated {updatedAt}</p>
+          <div className="profession-detail-copy">
+            <p className="profession-detail-eyebrow">Profession</p>
+            <h1 id="profession-title" className="public-resource-title">
+              {profession.name}
+            </h1>
+            <RichTextContent
+              value={profession.descriptionRich}
+              fallback={profession.description}
+              className="profession-description rich-text-content"
+            />
+            <div className="profession-detail-chips" aria-label="Profession facts">
+              <Link href="/professions" className="profession-detail-chip">
+                Resource:&nbsp;<strong>Profession</strong>
+              </Link>
+              {levelSummary._max.level ? (
+                <span className="profession-detail-chip">
+                  Max Level:&nbsp;<strong>{levelSummary._max.level}</strong>
+                </span>
               ) : null}
+              <span className="profession-detail-chip">
+                Recipes:&nbsp;<strong>{profession.recipes.length}</strong>
+              </span>
             </div>
+          </div>
+        </section>
 
-            <dl className="profession-hero-counts" aria-label="Profession totals">
-              <div>
-                <dt>Recipes</dt>
-                <dd>{profession.recipes.length}</dd>
-              </div>
-              <div>
-                <dt>Resulting items</dt>
-                <dd>{resultingItemCount}</dd>
-              </div>
-            </dl>
-          </section>
+        {profession.recipes.length > 0 ? (
+          <ProfessionRecipeDirectory grid={grid} list={list} />
+        ) : null}
 
-          {previewRecipes.length > 0 ? (
-            <section
-              className="profession-recipe-preview"
-              aria-labelledby="profession-recipes-title"
-            >
-              <header className="profession-recipe-preview-header">
-                <div>
-                  <p>Crafting discipline</p>
-                  <h2 id="profession-recipes-title">Recipes</h2>
-                </div>
-                <Link
-                  href={cataloguePageHref("/recipes", 1, {
-                    profession: slug,
-                  })}
-                >
-                  Browse all {profession.name} recipes
-                </Link>
-              </header>
-              <div className="profession-recipe-preview-list">
-                {previewRecipes.map((recipe) => {
-                  const quantity = formatRecipeQuantityRange(
-                    recipe.resultQuantityMin,
-                    recipe.resultQuantityMax
-                  );
-                  const recipeLinkLabel = `${recipe.name}, produces ×${quantity} ${
-                    recipe.resultingItem.name
-                  }${
-                    recipe.resultingItem.category
-                      ? `, category ${recipe.resultingItem.category.name}`
-                      : ""
-                  }`;
-
-                  return (
-                    <Link
-                      className="profession-recipe-preview-row"
-                      href={`/recipes/${recipe.slug}`}
-                      aria-label={recipeLinkLabel}
-                      key={recipe.id}
-                    >
-                      <ContentImage
-                        imagePath={recipe.resultingItem.image}
-                        alt={`Image of ${recipe.resultingItem.name}`}
-                        size="row"
-                      />
-                      <span>
-                        <strong>{recipe.name}</strong>
-                        <span>
-                          Produces ×{quantity} {recipe.resultingItem.name}
-                        </span>
-                        {recipe.resultingItem.category ? (
-                          <span>{recipe.resultingItem.category.name}</span>
-                        ) : null}
-                        {recipe.requiredLevel !== null ? (
-                          <span>Requires level {recipe.requiredLevel}</span>
-                        ) : null}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
-          <section
-            className="profession-verification"
-            aria-labelledby="profession-verification-title"
-          >
-            <div className="profession-verification-heading">
-              <h2 id="profession-verification-title">Verification</h2>
-              <p className="item-verification-state">
-                {verification ? "Verified" : "Unverified"}
-              </p>
-            </div>
+        <section
+          className="profession-verification"
+          aria-labelledby="profession-verification-title"
+        >
+          <div className="profession-verification-heading">
+            <h2 id="profession-verification-title">Verification</h2>
+            <p className="item-verification-state">
+              {verification ? "Verified" : "Unverified"}
+            </p>
+          </div>
+          <div>
             <p className="item-verification-copy">
               {verification ??
                 "This Profession’s gameplay information has not been verified for a Game Version."}
             </p>
-          </section>
-        </div>
+            {updatedAt ? (
+              <p className="profession-updated">Updated {updatedAt}</p>
+            ) : null}
+          </div>
+        </section>
       </article>
     </AppShell>
   );
