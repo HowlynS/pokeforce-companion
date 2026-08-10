@@ -15,6 +15,7 @@ type RecipeOutputCatalogueProps = {
   className?: string;
   ariaLabel?: string;
   query?: Record<string, string | string[] | undefined>;
+  directoryLayout?: "grid" | "list";
 };
 
 export function RecipeOutputCatalogue({
@@ -30,10 +31,12 @@ export function RecipeOutputCatalogue({
   className,
   ariaLabel,
   query,
+  directoryLayout,
 }: RecipeOutputCatalogueProps) {
   const catalogueClassName = [
     "recipe-output-catalogue",
     totalRecipeCount === 1 ? "recipe-output-catalogue--sparse" : "",
+    directoryLayout ? `recipe-output-catalogue--directory-${directoryLayout}` : "",
     className ?? "",
   ]
     .filter(Boolean)
@@ -54,7 +57,11 @@ export function RecipeOutputCatalogue({
 
       <div className="recipe-output-grid">
         {recipes.map((recipe) => (
-          <RecipeOutputCard recipe={recipe} key={recipe.id} />
+          <RecipeOutputCard
+            recipe={recipe}
+            variant={directoryLayout ? `directory-${directoryLayout}` : "standard"}
+            key={recipe.id}
+          />
         ))}
       </div>
 

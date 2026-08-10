@@ -5,6 +5,7 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { DirectoryFilterPopover } from "@/components/content/directory-filter-popover";
 import { DirectoryOverviewPanel } from "@/components/content/directory-overview-panel";
 import { DirectorySearchField } from "@/components/content/directory-search-field";
+import { DirectoryViewToggle } from "@/components/content/directory-view-toggle";
 import { RecipeOutputCatalogue } from "@/components/content/recipe-output-catalogue";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -100,60 +101,103 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
 
   const activeQuery = { profession: validSlugs, q: searchQuery };
   const hasActiveFilters = validSlugs.length > 0 || !!searchQuery;
+  const catalogueProps = {
+    recipes,
+    totalRecipeCount: recipeCount,
+    basePath: "/recipes",
+    currentPage,
+    pageCount,
+    paginationLabel: "Recipes pagination",
+    ariaLabel: "Recipe catalogue",
+    query: activeQuery,
+  } as const;
 
   return (
-    <AppShell wide>
-      <div className="directory-page">
+    <AppShell catalogue scenic="catalogue" wide>
+      <div className="directory-page recipes-directory-page">
         <Breadcrumb segments={[{ name: "Home", href: "/" }]} current="Recipes" />
         <h1 className="directory-title">Recipes</h1>
 
         <div className="directory-body">
           <div className="directory-content">
-            <div className="directory-toolbar">
-              <div className="directory-toolbar-left">
-                <DirectorySearchField
-                  basePath="/recipes"
-                  placeholder="Find a recipe by name..."
-                  defaultValue={searchQuery}
-                  preserve={{ profession: validSlugs }}
-                />
-                <DirectoryFilterPopover
-                  label="Professions"
-                  paramName="profession"
-                  basePath="/recipes"
-                  options={professions}
-                  selectedSlugs={validSlugs}
-                  preserve={{ q: searchQuery }}
-                />
-              </div>
-            </div>
-
             {recipeCount > 0 ? (
-              <RecipeOutputCatalogue
-                recipes={recipes}
-                totalRecipeCount={recipeCount}
-                basePath="/recipes"
-                currentPage={currentPage}
-                pageCount={pageCount}
-                paginationLabel="Recipes pagination"
-                ariaLabel="Recipe catalogue"
-                query={activeQuery}
+              <DirectoryViewToggle
+                toolbarLeft={
+                  <>
+                    <DirectorySearchField
+                      basePath="/recipes"
+                      placeholder="Find a recipe by name..."
+                      defaultValue={searchQuery}
+                      preserve={{ profession: validSlugs }}
+                    />
+                    <DirectoryFilterPopover
+                      label="Professions"
+                      paramName="profession"
+                      basePath="/recipes"
+                      options={professions}
+                      selectedSlugs={validSlugs}
+                      preserve={{ q: searchQuery }}
+                    />
+                  </>
+                }
+                grid={
+                  <RecipeOutputCatalogue
+                    {...catalogueProps}
+                    directoryLayout="grid"
+                  />
+                }
+                list={
+                  <RecipeOutputCatalogue
+                    {...catalogueProps}
+                    directoryLayout="list"
+                  />
+                }
               />
             ) : hasActiveFilters ? (
-              <div className="directory-empty-state">
-                <p className="directory-empty-title">No recipes found</p>
-                <p className="directory-empty-body">
-                  Try a different search term or reset your filters.
-                </p>
-                <Link href="/recipes" className="directory-empty-reset">
-                  Reset filters
-                </Link>
-              </div>
+              <>
+                <div className="directory-toolbar">
+                  <div className="directory-toolbar-left">
+                    <DirectorySearchField
+                      basePath="/recipes"
+                      placeholder="Find a recipe by name..."
+                      defaultValue={searchQuery}
+                      preserve={{ profession: validSlugs }}
+                    />
+                    <DirectoryFilterPopover
+                      label="Professions"
+                      paramName="profession"
+                      basePath="/recipes"
+                      options={professions}
+                      selectedSlugs={validSlugs}
+                      preserve={{ q: searchQuery }}
+                    />
+                  </div>
+                </div>
+                <div className="directory-empty-state">
+                  <p className="directory-empty-title">No recipes found</p>
+                  <p className="directory-empty-body">
+                    Try a different search term or reset your filters.
+                  </p>
+                  <Link href="/recipes" className="directory-empty-reset">
+                    Reset filters
+                  </Link>
+                </div>
+              </>
             ) : (
-              <EmptyState
-                title="No recipes yet"
-                description="Recipe data will be added after the initial data structure is defined."
-              />
+              <>
+                <div className="directory-toolbar">
+                  <div className="directory-toolbar-left">
+                    <DirectorySearchField
+                      basePath="/recipes"
+                      placeholder="Find a recipe by name..."
+                    />
+                  </div>
+                </div>
+                <EmptyState
+                  title="No recipes yet"
+                  description="Recipe data will be added after the initial data structure is defined."
+                />
+              </>
             )}
           </div>
 

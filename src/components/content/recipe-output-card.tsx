@@ -6,6 +6,7 @@ import type { RecipeOutputCardValue } from "@/lib/recipes/recipe-output-catalogu
 
 type RecipeOutputCardProps = {
   recipe: RecipeOutputCardValue;
+  variant?: "standard" | "directory-grid" | "directory-list";
 };
 
 const INGREDIENT_PREVIEW_COUNT = 4;
@@ -15,18 +16,22 @@ const INGREDIENT_PREVIEW_COUNT = 4;
  * Recipe + crafted result + ingredients. Detail-page relationship patterns
  * intentionally remain separate.
  */
-export function RecipeOutputCard({ recipe }: RecipeOutputCardProps) {
+export function RecipeOutputCard({
+  recipe,
+  variant = "standard",
+}: RecipeOutputCardProps) {
   const quantity = formatRecipeQuantityRange(
     recipe.resultQuantityMin,
     recipe.resultQuantityMax
   );
   const ingredientListId = `recipe-${recipe.id}-ingredients`;
+  const previewCount = variant === "directory-grid" ? 3 : INGREDIENT_PREVIEW_COUNT;
   const previewIngredients = recipe.ingredients.slice(
     0,
-    INGREDIENT_PREVIEW_COUNT
+    previewCount
   );
   const remainingIngredients = recipe.ingredients.slice(
-    INGREDIENT_PREVIEW_COUNT
+    previewCount
   );
   const recipeLinkLabel = `${recipe.name}, produces ×${quantity} ${
     recipe.resultingItem.name
@@ -80,7 +85,7 @@ export function RecipeOutputCard({ recipe }: RecipeOutputCardProps) {
     });
 
   return (
-    <article className="recipe-output-card">
+    <article className={`recipe-output-card recipe-output-card--${variant}`}>
       <Link
         className="recipe-output-identity"
         href={`/recipes/${recipe.slug}`}
@@ -93,7 +98,8 @@ export function RecipeOutputCard({ recipe }: RecipeOutputCardProps) {
             size="card"
           />
           <span className="recipe-output-yield" aria-hidden="true">
-            ×{quantity}
+            {variant === "directory-grid" ? <span>Yields</span> : null}
+            <strong>{variant === "directory-grid" ? quantity : `×${quantity}`}</strong>
           </span>
         </span>
 
@@ -107,7 +113,14 @@ export function RecipeOutputCard({ recipe }: RecipeOutputCardProps) {
           ) : null}
           {recipe.profession && recipe.requiredLevel !== null ? (
             <span className="recipe-output-requirement">
-              {recipe.profession.name} · Level {recipe.requiredLevel}
+              {variant.startsWith("directory-") ? (
+                <>
+                  <span>{recipe.profession.name}</span>
+                  <span>Lvl {recipe.requiredLevel}</span>
+                </>
+              ) : (
+                <>{recipe.profession.name} · Level {recipe.requiredLevel}</>
+              )}
             </span>
           ) : null}
         </span>
@@ -133,6 +146,11 @@ export function RecipeOutputCard({ recipe }: RecipeOutputCardProps) {
             </div>
           )}
         </section>
+      ) : null}
+      {variant.startsWith("directory-") ? (
+        <span className="recipe-output-experience">
+          +{recipe.experienceReward} EXP
+        </span>
       ) : null}
     </article>
   );

@@ -19,10 +19,10 @@ const SCREENSHOT_DIRECTORY = path.join(
   "resource-responsibility-visuals"
 );
 const VIEWPORTS = [
-  { name: "1920x1080", width: 1920, height: 1080, columns: 3 },
-  { name: "2560x1440", width: 2560, height: 1440, columns: 3 },
-  { name: "3440x1440", width: 3440, height: 1440, columns: 3 },
-  { name: "intermediate-1000x1100", width: 1000, height: 1100, columns: 2 },
+  { name: "1920x1080", width: 1920, height: 1080, columns: 7 },
+  { name: "2560x1440", width: 2560, height: 1440, columns: 7 },
+  { name: "3440x1440", width: 3440, height: 1440, columns: 7 },
+  { name: "intermediate-1000x1100", width: 1000, height: 1100, columns: 4 },
   { name: "mobile-390x844", width: 390, height: 844, columns: 1 },
 ] as const;
 
@@ -152,7 +152,7 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     ".recipe-output-image-stage img",
     ".recipe-output-image-stage .public-sprite-stage--empty"
   );
-  await expectRecipeColumns(page, 3);
+  await expectRecipeColumns(page, 7);
   await expectNoHorizontalOverflow(page);
 
   const denseRecipe = fixture.recipes.find((recipe) =>
@@ -169,10 +169,10 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     })
   ).toBeVisible();
   await expect(
-    denseCard.getByText(
-      `${fixture.profession.name} · Level ${denseRecipe.requiredLevel}`,
-      { exact: true }
-    )
+    denseCard.getByText(fixture.profession.name, { exact: true })
+  ).toBeVisible();
+  await expect(
+    denseCard.getByText(`Lvl ${denseRecipe.requiredLevel}`, { exact: true })
   ).toBeVisible();
   await denseCard.screenshot({
     path: path.join(
@@ -181,7 +181,7 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     ),
   });
   const visibleIngredients = denseCard.locator(".recipe-output-ingredient");
-  await expect(visibleIngredients).toHaveCount(4);
+  await expect(visibleIngredients).toHaveCount(3);
 
   const thirdIngredient = visibleIngredients.nth(2);
   const thirdTooltip = thirdIngredient.getByRole("tooltip");
@@ -223,6 +223,12 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     )
   ).toBeLessThanOrEqual(1);
   await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  await expect(page.locator(".recipe-output-card--directory-list")).toHaveCount(12);
+  await expectNoHorizontalOverflow(page);
+  await page.getByRole("button", { name: "Grid", exact: true }).click();
+  await expect(page.locator(".recipe-output-card--directory-grid")).toHaveCount(12);
 
   for (const viewport of VIEWPORTS) {
     await page.setViewportSize(viewport);

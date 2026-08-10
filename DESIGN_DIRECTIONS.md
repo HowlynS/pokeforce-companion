@@ -257,6 +257,28 @@ Only render facts present in the current schema and query. Do not invent
 descriptions, rarity, weight, buy or sell price, crafting time, crafting
 difficulty, station, required level, notes, or any other property.
 
+### Public Recipe catalogue cards
+
+The canonical `/recipes` directory uses the archived handoff's compact Recipe
+cards, without changing the richer shared cards used in Profession previews:
+
+- The desktop grid uses `repeat(auto-fill, minmax(190px, 1fr))` with `12px`
+  gaps; the standard `1760px` shell produces seven columns beside the `272px`
+  overview rail.
+- Each grid card has `12px` padding, a square art frame, centered `104px`
+  result content, and a bottom-left factual yield badge.
+- Recipe names are `13.5px`, one line, and ellipsized. Profession and required
+  level share the compact line below without allowing the level to collapse.
+- Show three linked `36px` Ingredient previews in grid view, retaining the
+  real disclosure and tooltip behavior for additional Ingredients.
+- Show the schema-backed EXP reward in the quiet ruled footer.
+- Preserve the handoff's Grid/List control. List view reorganizes the same
+  Recipe result, Profession/level, EXP, and linked Ingredient data; it does not
+  introduce another query or data source.
+- Keep deterministic twelve-Recipe server pagination. It is production-owned
+  behavior retained in place of the handoff's decorative infinite-scroll
+  sentinel.
+
 Player Classes (Trainer, Artisan, Rancher, Ranger, Farmhand) are a top-level
 public/admin resource, matching Item, Recipe, Profession, Category, Location,
 Shop, and Currency in status. The internal/schema/domain name is

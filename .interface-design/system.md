@@ -161,6 +161,23 @@ same focused commit.
 - Preserve full-card navigation, visible focus, and the responsive catalogue
   grid.
 
+### Public Recipe catalogue cards
+
+- Scope the handoff card treatment to canonical `/recipes`; Profession preview
+  cards retain the shared explanatory composition.
+- Grid: `repeat(auto-fill, minmax(190px, 1fr))`, `12px` gaps, seven desktop
+  columns alongside the `272px` overview rail.
+- Card: `12px` padding, square result-art frame, centered `104px` content, and
+  factual yield badge at bottom left.
+- Title: `13.5px`, one-line ellipsis. Follow with compact uppercase Profession
+  plus non-collapsing `Lvl` metadata.
+- Grid view exposes three linked `36px` Ingredient previews; preserve real
+  additional-Ingredient disclosure and tooltips.
+- Put schema-backed EXP reward in the ruled card footer.
+- Grid/List is a client presentation switch over the same server-rendered
+  Recipe facts and links. Retain deterministic twelve-Recipe pagination rather
+  than copying the handoff's decorative infinite-scroll sentinel.
+
 ### PlayerClass naming
 
 - Internal/schema/domain name: `PlayerClass` — never bare `Class` (collides

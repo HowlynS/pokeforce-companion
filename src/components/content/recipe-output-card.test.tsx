@@ -18,6 +18,7 @@ const recipe: RecipeOutputCardValue = {
   resultQuantityMax: 4,
   profession: { name: "Smithing" },
   requiredLevel: 25,
+  experienceReward: 120,
   resultingItem: {
     name: "Dense Result",
     slug: "dense-result",

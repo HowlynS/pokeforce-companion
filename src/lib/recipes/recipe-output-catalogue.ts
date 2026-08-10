@@ -13,6 +13,7 @@ export const recipeOutputCardSelect = {
   resultQuantityMin: true,
   resultQuantityMax: true,
   requiredLevel: true,
+  experienceReward: true,
   profession: {
     select: {
       name: true,
