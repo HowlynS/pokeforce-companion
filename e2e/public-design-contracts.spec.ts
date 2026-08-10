@@ -200,9 +200,9 @@ test("catalogue filters and explicit no-result states remain canonical", async (
 
   await page.goto("/shops?q=Design%20Review%20No%20Matches");
   await expect(
-    page.getByRole("heading", { name: "No matching shops" })
+    page.getByText("No shops found", { exact: true })
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Show all Shops" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Reset search" })).toHaveAttribute(
     "href",
     "/shops"
   );
