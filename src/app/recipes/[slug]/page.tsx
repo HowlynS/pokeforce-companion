@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { CollapsibleSection } from "@/components/content/collapsible-section";
 import { ContentImage } from "@/components/content/content-image";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
@@ -61,6 +63,28 @@ export default async function RecipeDetailPage({
     notFound();
   }
 
+  // Related Recipes: other Recipes belonging to the same Profession — a
+  // real, derivable relationship (Recipe.profession), never an invented
+  // Class or gameplay-unlock association.
+  const relatedRecipes = recipe.profession
+    ? await prisma.recipe.findMany({
+        where: {
+          profession: { slug: recipe.profession.slug },
+          slug: { not: slug },
+        },
+        select: {
+          slug: true,
+          name: true,
+          image: true,
+          resultQuantityMin: true,
+          resultQuantityMax: true,
+          resultingItem: { select: { name: true, image: true } },
+        },
+        orderBy: { name: "asc" },
+        take: 12,
+      })
+    : [];
+
   const heroImage = resolveRecipeDisplayImage({
     recipeImage: recipe.image,
     resultingItemImage: recipe.resultingItem.image,
@@ -75,28 +99,13 @@ export default async function RecipeDetailPage({
   return (
     <AppShell wide>
       <article className="item-detail-page recipe-detail-page">
-        <nav
-          aria-label="Breadcrumb"
-          className="public-breadcrumb item-breadcrumb"
-        >
-          <ol>
-            <li>
-              <Link href="/" className="breadcrumb-link">
-                Home
-              </Link>
-            </li>
-            <li>
-              <span aria-hidden="true">/</span>
-              <Link href="/recipes" className="breadcrumb-link">
-                Recipes
-              </Link>
-            </li>
-            <li>
-              <span aria-hidden="true">/</span>
-              <span aria-current="page">{recipe.name}</span>
-            </li>
-          </ol>
-        </nav>
+        <Breadcrumb
+          segments={[
+            { name: "Home", href: "/" },
+            { name: "Recipes", href: "/recipes" },
+          ]}
+          current={recipe.name}
+        />
 
         <div className="item-content-grid">
           <div className="item-main-column">
@@ -136,8 +145,10 @@ export default async function RecipeDetailPage({
 
             <div className="item-lower-grid recipe-lower-grid">
               {recipe.ingredients.length > 0 ? (
-                <section className="item-panel recipe-ingredients-panel">
-                  <h2>Ingredients</h2>
+                <CollapsibleSection
+                  title="Ingredients"
+                  className="item-panel recipe-ingredients-panel"
+                >
                   <div className="item-recipe-rows">
                     {recipe.ingredients.map((ingredient) => (
                       <Link
@@ -164,7 +175,7 @@ export default async function RecipeDetailPage({
                       </Link>
                     ))}
                   </div>
-                </section>
+                </CollapsibleSection>
               ) : null}
 
               <section className="item-panel recipe-result-panel">
@@ -193,6 +204,45 @@ export default async function RecipeDetailPage({
                 </Link>
               </section>
             </div>
+
+            {relatedRecipes.length > 0 ? (
+              <CollapsibleSection
+                title="Related Recipes"
+                className="item-panel item-related-panel"
+              >
+                <div className="item-related-grid">
+                  {relatedRecipes.map((related) => (
+                    <Link
+                      key={related.slug}
+                      href={`/recipes/${related.slug}`}
+                      className="item-related-card"
+                    >
+                      <span className="item-related-card-media">
+                        <ContentImage
+                          imagePath={resolveRecipeDisplayImage({
+                            recipeImage: related.image,
+                            resultingItemImage: related.resultingItem.image,
+                          })}
+                          alt={`Image of ${related.name}`}
+                          size="grid"
+                        />
+                      </span>
+                      <span className="item-related-card-name">
+                        {related.name}
+                      </span>
+                      <span className="item-related-card-category">
+                        ×{" "}
+                        {formatRecipeQuantityRange(
+                          related.resultQuantityMin,
+                          related.resultQuantityMax
+                        )}{" "}
+                        {related.resultingItem.name}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </CollapsibleSection>
+            ) : null}
           </div>
 
           <aside className="item-sidebar" aria-label="Recipe information">
