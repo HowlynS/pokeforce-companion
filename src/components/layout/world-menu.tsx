@@ -82,6 +82,11 @@ export function WorldMenu() {
   );
 
   function toggleMenu() {
+    if (closing) {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+      setClosing(false);
+      return;
+    }
     if (open) {
       closeMenu();
       return;

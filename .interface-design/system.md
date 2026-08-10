@@ -362,6 +362,8 @@ same focused commit.
   cursor, 4px shift, sprite glow, and quantity emphasis treatment.
 - `prefers-reduced-motion` removes transitions/transforms and makes all delayed
   unmounts immediate while preserving final visual and accessible states.
+- Menu and disclosure exits are interruptible; reactivation during an exit
+  cancels the pending unmount instead of dropping the user's input.
 
 ### PlayerClass naming
 

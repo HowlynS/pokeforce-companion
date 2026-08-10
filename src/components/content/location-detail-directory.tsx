@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { publicMotionDuration } from "@/lib/public-motion";
 
 type LocationDetailDirectoryProps = {
@@ -38,8 +38,19 @@ export function LocationDetailDirectory({
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
   function toggle() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (closing) {
+      setClosing(false);
+      return;
+    }
     if (!mounted) {
       setMounted(true);
       setClosing(false);

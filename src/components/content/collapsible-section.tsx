@@ -43,12 +43,15 @@ export function CollapsibleSection({
 
   function toggle() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (closing) {
+      setClosing(false);
+      return;
+    }
     if (!mounted) {
       setMounted(true);
       setClosing(false);
       return;
     }
-    if (closing) return;
     setClosing(true);
     closeTimer.current = setTimeout(() => {
       setMounted(false);

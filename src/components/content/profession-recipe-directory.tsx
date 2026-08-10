@@ -43,6 +43,10 @@ export function ProfessionRecipeDirectory({
 
   function toggleOpen() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (closing) {
+      setClosing(false);
+      return;
+    }
     if (open) {
       setClosing(true);
       closeTimer.current = setTimeout(() => {

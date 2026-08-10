@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { publicMotionDuration } from "@/lib/public-motion";
 
 type LocationDirectoryFoldProps = {
@@ -27,8 +27,19 @@ export function LocationDirectoryFold({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelId = useId();
 
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
   function toggle() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (closing) {
+      setClosing(false);
+      return;
+    }
     if (!mounted) {
       setMounted(true);
       setClosing(false);

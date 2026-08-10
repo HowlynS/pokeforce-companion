@@ -492,6 +492,8 @@ handoff as the shared interaction authority:
   quantity emphasis.
 - Every delayed unmount resolves immediately under `prefers-reduced-motion`,
   and shared hover transforms/transitions are disabled there.
+- Animated exits are reversible: activating a menu or disclosure again during
+  its exit window cancels the pending unmount and restores the panel in place.
 
 The Class directory reuses the managed scenic catalogue presentation without
 introducing a Class-specific atmosphere or gameplay semantics.

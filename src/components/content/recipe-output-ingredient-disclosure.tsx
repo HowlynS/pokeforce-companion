@@ -35,6 +35,10 @@ export function RecipeOutputIngredientDisclosure({
 
   function toggle() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (closing) {
+      setClosing(false);
+      return;
+    }
     if (!expanded) {
       setExpanded(true);
       setClosing(false);
