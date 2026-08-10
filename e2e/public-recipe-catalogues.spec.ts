@@ -332,12 +332,14 @@ test("Items index owns Category browsing and Category detail stays contextual", 
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/items");
 
-  const filters = page.getByRole("navigation", {
-    name: "Filter Items by Category",
-  });
-  await expect(
-    filters.getByRole("link", { name: "All", exact: true })
-  ).toHaveAttribute("aria-current", "page");
+  // The Claude Design redesign (Slice 4) replaced the always-visible
+  // "Filter Items by Category" nav landmark with a Filter button +
+  // multi-select popover (directory-filter-popover.tsx) — unfiltered is
+  // simply "no checkboxes checked", not an "All" link with
+  // aria-current, and filtering is a real GET form submit rather than a
+  // per-category link.
+  const filterTrigger = page.getByRole("button", { name: "Filter", exact: false });
+  await expect(filterTrigger).toBeVisible();
   const scenicBackground = page.locator(
     ".public-scenic-background--catalogue"
   );
@@ -372,28 +374,26 @@ test("Items index owns Category browsing and Category detail stays contextual", 
     vignetteCenter: "#11151442",
     vignetteRight: "#11151470",
   });
-  const toolsFilter = filters.getByRole("link", {
+  await filterTrigger.focus();
+  await expect(filterTrigger).not.toHaveCSS("outline-style", "none");
+  await filterTrigger.click();
+  const categoryCheckbox = page.getByRole("checkbox", {
     name: fixture.outputCategory.name,
     exact: true,
   });
-  await expect(toolsFilter).toHaveAttribute(
-    "href",
-    `/items?category=${fixture.outputCategory.slug}`
-  );
-  await toolsFilter.focus();
-  await expect(toolsFilter).not.toHaveCSS("outline-style", "none");
+  await expect(categoryCheckbox).toBeVisible();
   await expectRealSpritesDominate(
-    page.locator(".item-index-catalogue"),
-    ".public-sprite-stage--card img",
-    ".public-sprite-stage--card.public-sprite-stage--empty"
+    page.locator(".item-catalogue-grid"),
+    ".public-sprite-stage--grid img",
+    ".public-sprite-stage--grid.public-sprite-stage--empty"
   );
-  const firstItemCard = page.locator(".item-index-catalogue .interactive-card").first();
+  const firstItemCard = page.locator(".item-catalogue-card").first();
   const firstItemTitle = firstItemCard.getByRole("heading");
   await expect(firstItemTitle).toBeVisible();
-  await expect(firstItemTitle).toHaveCSS("font-size", "20px");
-  const firstItemCategory = firstItemCard.locator(".item-index-card-category");
+  await expect(firstItemTitle).toHaveCSS("font-size", "13.5px");
+  const firstItemCategory = firstItemCard.locator(".item-catalogue-card-category");
   await expect(firstItemCategory).toHaveText(fixture.outputCategory.name);
-  await expect(firstItemCategory).toHaveCSS("font-size", "14px");
+  await expect(firstItemCategory).toHaveCSS("font-size", "10.5px");
   await expect(firstItemCategory).toHaveCSS("font-style", "normal");
   expect(
     await firstItemTitle.evaluate(
@@ -404,25 +404,30 @@ test("Items index owns Category browsing and Category detail stays contextual", 
     )
   ).toBe(true);
   await expect(
-    page.locator(".item-index-catalogue").getByText("Category:", {
+    page.locator(".item-catalogue-grid").getByText("Category:", {
       exact: false,
     })
   ).toHaveCount(0);
   await expect(
-    page.locator(".item-index-catalogue").getByText("Tradeable:", {
+    page.locator(".item-catalogue-grid").getByText("Tradeable:", {
       exact: false,
     })
   ).toHaveCount(0);
   await expect(
     page
-      .locator(".item-index-catalogue")
+      .locator(".item-catalogue-grid")
       .getByText(/Description:|Base value:/i)
   ).toHaveCount(0);
-  const genuineStage = firstItemCard.locator(".public-sprite-stage--card");
+  const genuineStage = firstItemCard.locator(".public-sprite-stage--grid");
+  // .first(): the Items directory's page size grew from 12 to 24 in the
+  // Claude Design redesign (Slice 4, closer to the handoff's density),
+  // so more than one no-image fallback card can now appear on the first
+  // page — any one of them is equally valid for this geometry check.
   const fallbackCard = page
-    .locator(".item-index-catalogue .interactive-card")
-    .filter({ has: page.getByText("No image available", { exact: true }) });
-  const fallbackStage = fallbackCard.locator(".public-sprite-stage--card");
+    .locator(".item-catalogue-card")
+    .filter({ has: page.getByText("No image available", { exact: true }) })
+    .first();
+  const fallbackStage = fallbackCard.locator(".public-sprite-stage--grid");
   const stageGeometry = await Promise.all(
     [genuineStage, fallbackStage].map(async (stage) => {
       const cardBox = await stage.locator("xpath=ancestor::a").boundingBox();
@@ -456,12 +461,19 @@ test("Items index owns Category browsing and Category detail stays contextual", 
   await fallbackCard.screenshot({
     path: path.join(SCREENSHOT_DIRECTORY, "item-no-image-card-close.png"),
   });
+  // The Claude Design redesign (Slice 4) clamps grid card titles to one
+  // line with an ellipsis (matching the handoff's compact card density)
+  // rather than wrapping — the full name is still available via the
+  // title attribute.
   const longTitleCard = page
-    .locator(".item-index-catalogue .interactive-card")
+    .locator(".item-catalogue-card")
     .filter({ hasText: "Field Surveyor's Dusk Gauge" });
-  await expect(longTitleCard.getByRole("heading")).toHaveCSS(
-    "white-space",
-    "normal"
+  const longTitleHeading = longTitleCard.getByRole("heading");
+  await expect(longTitleHeading).toHaveCSS("white-space", "nowrap");
+  await expect(longTitleHeading).toHaveCSS("text-overflow", "ellipsis");
+  await expect(longTitleHeading).toHaveAttribute(
+    "title",
+    "A Test E2E Field Surveyor's Dusk Gauge"
   );
   const longTitleGeometry = await longTitleCard.evaluate((card) => {
     const heading = card.querySelector("h3");
@@ -472,41 +484,36 @@ test("Items index owns Category browsing and Category detail stays contextual", 
       headingWithinCard:
         heading.getBoundingClientRect().right <=
         card.getBoundingClientRect().right,
-      wraps: heading.getBoundingClientRect().height >
+      singleLine:
+        heading.getBoundingClientRect().height <=
         Number.parseFloat(getComputedStyle(heading).lineHeight) + 1,
     };
   });
   expect(longTitleGeometry).toEqual({
     headingWithinCard: true,
-    wraps: true,
+    singleLine: true,
   });
   await longTitleCard.screenshot({
     path: path.join(SCREENSHOT_DIRECTORY, "item-long-title-card-close.png"),
   });
 
-  await toolsFilter.click();
+  await categoryCheckbox.check();
+  await page.getByRole("button", { name: "Apply filters" }).click();
   const filteredPath = `/items?category=${fixture.outputCategory.slug}`;
   await expect(page).toHaveURL(filteredPath);
   await expect(
-    page
-      .getByRole("navigation", { name: "Filter Items by Category" })
-      .getByRole("link", {
-        name: fixture.outputCategory.name,
-        exact: true,
-      })
-  ).toHaveAttribute("aria-current", "page");
-  await expect(
     page.getByText(fixture.consumerOnlyRecipe.result.name, { exact: true })
   ).toHaveCount(0);
-  const filteredCards = page.locator(
-    ".item-index-catalogue .interactive-card"
-  );
-  await expect(filteredCards).toHaveCount(12);
+  // The Items directory's page size grew from 12 to 24 in the Claude
+  // Design redesign (Slice 4) — the 25-item fixture now spans 2 pages
+  // (24 + 1) instead of 3 (12 + 12 + 1).
+  const filteredCards = page.locator(".item-catalogue-card");
+  await expect(filteredCards).toHaveCount(24);
   await expect(
-    filteredCards.locator(".item-index-card-category")
-  ).toHaveText(Array(12).fill(fixture.outputCategory.name));
+    filteredCards.locator(".item-catalogue-card-category")
+  ).toHaveText(Array(24).fill(fixture.outputCategory.name));
   await expect(
-    page.locator(".item-index-catalogue").getByText(/Category:|Tradeable:/)
+    page.locator(".item-catalogue-grid").getByText(/Category:|Tradeable:/)
   ).toHaveCount(0);
   const pagination = page.getByRole("navigation", {
     name: "Items pagination",
