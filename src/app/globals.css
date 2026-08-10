@@ -11142,7 +11142,235 @@ a.profession-detail-chip:focus-visible {
   margin-top: 0;
 }
 
+/* Locations catalogue: nested root/type ledger from the Claude Design
+   handoff. Data remains the production Location hierarchy; there is no
+   prototype-only World or NPC model behind these groups. */
+.locations-directory-page {
+  min-height: 0;
+}
+
+.locations-directory-page > .directory-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.location-directory-groups {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: none;
+}
+
+.location-directory-groups::-webkit-scrollbar {
+  display: none;
+}
+
+.location-directory-fold-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.location-directory-fold-toggle {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 18px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--color-accent-soft);
+  cursor: pointer;
+}
+
+.location-directory-fold-toggle svg {
+  transition: transform 150ms ease;
+}
+
+.location-directory-fold-toggle[aria-expanded="false"] svg {
+  transform: rotate(-90deg);
+}
+
+.location-directory-fold-heading h2,
+.location-directory-fold-heading h3,
+.location-directory-card h4 {
+  margin: 0;
+}
+
+.location-directory-fold-heading h2,
+.location-directory-fold-heading h2 a {
+  color: var(--color-accent-soft);
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.location-directory-fold-heading h2 a:hover {
+  color: var(--color-text);
+}
+
+.location-directory-fold-count {
+  color: var(--color-text-meta-dim);
+  font-size: 11.5px;
+}
+
+.location-directory-fold--type {
+  margin-bottom: 18px;
+}
+
+.location-directory-fold--type:last-child {
+  margin-bottom: 0;
+}
+
+.location-directory-fold--type .location-directory-fold-heading {
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.location-directory-fold--type .location-directory-fold-toggle {
+  top: 0;
+  width: 10px;
+  height: 14px;
+  color: var(--color-text-muted);
+}
+
+.location-directory-fold-heading h3 {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.location-directory-fold-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-muted);
+}
+
+.location-directory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.location-directory-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  gap: 10px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 10px;
+  background: var(--color-surface);
+  padding: 11px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.location-directory-card:hover,
+.location-directory-card:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  box-shadow:
+    0 0 0 1px rgba(195, 154, 75, 0.3),
+    0 0 20px rgba(216, 181, 98, 0.22);
+}
+
+.location-directory-card-media,
+.location-directory-card-media .public-sprite-stage--row {
+  width: 52px;
+  height: 52px;
+  flex: none;
+}
+
+.location-directory-card-media .public-sprite-stage--row {
+  --sprite-image-size: 34px;
+  border-color: var(--color-border);
+  background:
+    radial-gradient(circle at 30% 22%, rgba(122, 168, 110, 0.2), transparent 62%),
+    var(--color-background);
+}
+
+.location-directory-card-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.location-directory-card h4 {
+  margin-bottom: 2px;
+  color: var(--color-text);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.location-directory-card-type {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.location-directory-card-meta {
+  display: block;
+  color: var(--color-text-meta-dim);
+  font-size: 10.5px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .location-directory-fold-content--closing {
+    animation: location-directory-fold-out 130ms ease both;
+  }
+}
+
+@keyframes location-directory-fold-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+@media (max-width: 1179px) {
+  .location-directory-groups {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 520px) {
+  .location-directory-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .locations-directory-page .directory-search-field {
+    width: min(220px, 100%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .location-directory-fold-toggle svg,
   .profession-recipes-reveal > svg,
   .profession-detail-chip,
   .profession-recipes-view-toggle button,

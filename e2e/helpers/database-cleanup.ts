@@ -86,6 +86,8 @@ export const E2E_RECIPE_ITEM_SLUG_PREFIX = "test-e2e-recipe-item-";
 // "relation" prefix or raw-SQL relation helper is needed for the
 // blocked-deletion test.
 export const E2E_LOCATION_SLUG_PREFIX = "test-e2e-location";
+export const E2E_PUBLIC_LOCATION_DIRECTORY_SLUG_PREFIX =
+  "test-e2e-location-public-directory";
 
 // Covers every Location slug the image browser tests use — the same
 // sub-prefix arrangement (and the same run-order caveat) as the Item image
@@ -1068,6 +1070,70 @@ export async function countE2eTestLocationRecords(): Promise<number> {
       [`${E2E_LOCATION_SLUG_PREFIX}%`]
     );
     return result.rows[0].n as number;
+  });
+}
+
+/** Creates the small real hierarchy used by the public Location directory
+ * browser contract. Its dedicated sub-prefix keeps setup and cleanup isolated
+ * from the admin Location suites. */
+export async function createE2ePublicLocationDirectoryFixtures(): Promise<void> {
+  await deleteE2ePublicLocationDirectoryFixtures();
+
+  await withVerifiedDatabase(async (client) => {
+    const region = await client.query<{ id: string }>(
+      `insert into "Location"
+         (id, slug, name, type, "createdAt", "updatedAt")
+       values (gen_random_uuid()::text, $1, $2, 'REGION', now(), now())
+       returning id`,
+      [
+        `${E2E_PUBLIC_LOCATION_DIRECTORY_SLUG_PREFIX}-region`,
+        "Test E2E Northwind Region",
+      ]
+    );
+    const parentId = region.rows[0].id;
+
+    await client.query(
+      `insert into "Location"
+         (id, slug, name, type, "parentId", "createdAt", "updatedAt")
+       values
+         (gen_random_uuid()::text, $1, $2, 'ROUTE', $7, now(), now()),
+         (gen_random_uuid()::text, $3, $4, 'TOWN', $7, now(), now()),
+         (gen_random_uuid()::text, $5, $6, 'SPECIAL_AREA', $7, now(), now())`,
+      [
+        `${E2E_PUBLIC_LOCATION_DIRECTORY_SLUG_PREFIX}-route`,
+        "Test E2E Long Caravan Route Through the Amber Highlands",
+        `${E2E_PUBLIC_LOCATION_DIRECTORY_SLUG_PREFIX}-town`,
+        "Test E2E Brassmarket Township",
+        `${E2E_PUBLIC_LOCATION_DIRECTORY_SLUG_PREFIX}-special`,
+        "Test E2E Special Auction Annex",
+        parentId,
+      ]
+    );
+  });
+}
+
+export async function deleteE2ePublicLocationDirectoryFixtures(): Promise<number> {
+  if (E2E_PUBLIC_LOCATION_DIRECTORY_SLUG_PREFIX.length < 12) {
+    throw new Error("Refusing public Location fixture cleanup: prefix is unsafe.");
+  }
+
+  return withVerifiedDatabase(async (client) => {
+    let removed = 0;
+    for (let iteration = 0; iteration < 10; iteration += 1) {
+      const result = await client.query(
+        `delete from "Location"
+         where slug like $1
+           and id not in (
+             select "parentId" from "Location"
+             where "parentId" is not null and slug like $1
+           )`,
+        [`${E2E_PUBLIC_LOCATION_DIRECTORY_SLUG_PREFIX}%`]
+      );
+      const count = result.rowCount ?? 0;
+      removed += count;
+      if (count === 0) break;
+    }
+    return removed;
   });
 }
 

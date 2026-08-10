@@ -239,7 +239,17 @@ test("every representative contract is semantic and overflow-free at primary vie
     await expect(page.locator("h1"), acceptance.id).toBeVisible();
     await expect(page.locator("main"), acceptance.id).toBeVisible();
     if (contract.requiredRegions.includes("footer")) {
-      await expect(page.locator("footer"), acceptance.id).toBeVisible();
+      // Catalogue pages intentionally use the handoff's fixed desktop shell:
+      // their result pane owns the remaining viewport and the footer is
+      // visually omitted until the layout returns to document flow below
+      // 1180px. The semantic footer stays mounted in either state.
+      const usesFixedCatalogueShell =
+        (await page.locator(".public-site-shell--catalogue").count()) > 0;
+      if (usesFixedCatalogueShell && viewport.width >= 1180) {
+        await expect(page.locator("footer"), acceptance.id).toBeHidden();
+      } else {
+        await expect(page.locator("footer"), acceptance.id).toBeVisible();
+      }
     }
     await expect(
       page.locator("a a, a button, button a, button button"),

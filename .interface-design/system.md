@@ -272,6 +272,23 @@ same focused commit.
   the hero, and preserve the shared detail scenic layer as presentation rather
   than a Class-specific atmosphere.
 
+### Public Locations catalogue
+
+- `/locations` follows the handoff's nested ledger within the shared `1760px`
+  catalogue shell: `16px 28px` page inset, `22px` title, `20px` toolbar gap,
+  and `26px` between root groups. The results column fills the available width
+  and becomes its own vertical scroller at desktop catalogue widths.
+- Topmost production Location records are the factual root headings. Their
+  descendants flatten beneath them in canonical Location-type order with a
+  ruled `11px` uppercase subheading. Never invent a World, Region, or NPC model.
+- Cards use an auto-fill `minmax(220px, 1fr)` grid with `12px` gaps, `11px`
+  padding, a `52px` green-neutral stage with `34px` content, a `13.5px` name,
+  factual type, and real direct-Shop count. Keep the handoff's `220ms`/`30ms`
+  entrance stagger and `130ms` fold exit.
+- Name search and multi-select Location-type filtering are real GET queries.
+  Root and type folds are accessible disclosures; empty results retain the
+  handoff's reset guidance. All motion respects reduced-motion preference.
+
 ### PlayerClass naming
 
 - Internal/schema/domain name: `PlayerClass` — never bare `Class` (collides

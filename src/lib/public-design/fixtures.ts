@@ -125,10 +125,17 @@ export const PUBLIC_DESIGN_FIXTURES = [
   },
   {
     key: "locations-populated",
-    label: "Location type catalogue",
+    label: "Location hierarchy catalogue",
     family: "catalogue",
     path: "/locations",
-    states: ["all Location types", "long names", "flat deterministic index"],
+    states: ["all Location types", "long names", "root/type hierarchy"],
+  },
+  {
+    key: "locations-no-results",
+    label: "Location search with no results",
+    family: "catalogue",
+    path: "/locations?q=Design%20Review%20No%20Matches",
+    states: ["no result", "query feedback", "reset filters"],
   },
   {
     key: "location-dense",
@@ -207,7 +214,7 @@ export const PUBLIC_DESIGN_RECORD_MANIFEST = [
   { model: "Item", slug: "design-review-item-no-image-long-name", states: ["unverified", "non-tradeable", "held item No", "no image", "very long name", "no acquisition"] },
   { model: "Recipe", slug: "design-review-recipe-many-ingredients", states: ["more than four ingredients", "high quantities", "yield range", "custom image", "Profession level", "EXP reward"] },
   { model: "Recipe", slug: "design-review-recipe-inherited-image", states: ["one ingredient", "inherited result image", "single yield"] },
-  { model: "Profession", slug: "design-review-profession-dense", states: ["complete Recipe directory", "linked outputs and Ingredients", "dense craft path", "long rich description"] },
+  { model: "Profession", slug: "design-review-profession-dense", states: ["complete Recipe directory", "more than one catalogue page", "linked outputs and Ingredients", "dense craft path", "long rich description"] },
   { model: "Profession", slug: "design-review-profession-zero", states: ["zero Recipes", "sparse", "no image"] },
   { model: "Profession", slug: "design-review-profession-one", states: ["one Recipe", "sparse craft path"] },
   { model: "PlayerClass", slug: "design-review-class-rich", states: ["rich description", "verified", "no image"] },

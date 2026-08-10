@@ -386,6 +386,26 @@ identity without inventing its gameplay model:
   the identity, and treat the shared detail scenic layer as presentation rather
   than a Class-specific atmosphere.
 
+### Public Locations catalogue
+
+The canonical `/locations` directory uses the handoff's hierarchy ledger while
+remaining grounded in production's self-referencing Location model:
+
+- Use the shared `1760px` catalogue shell with `16px 28px` content inset, a
+  `22px` title, `20px` toolbar gap, and `26px` between root groups. Desktop
+  results scroll within the catalogue viewport; narrower layouts return to
+  document flow.
+- The topmost real Location in each chain is the linked root heading. Flatten
+  its matching descendants into canonical Location-type groups with ruled
+  `11px` uppercase headings. Do not invent World, Region, or NPC records.
+- Cards use `repeat(auto-fill, minmax(220px, 1fr))`, `12px` gaps, `11px`
+  padding, and a `52px` green-neutral image stage with `34px` content. Their
+  only secondary facts are the real Location type and direct-Shop count.
+- Search and multi-select type filters are server-backed GET controls. Root and
+  type groups are accessible collapsible disclosures with the handoff's
+  `220ms`/`30ms` entrance stagger and `130ms` exit; reduced motion remains
+  authoritative.
+
 The Class directory reuses the managed scenic catalogue presentation without
 introducing a Class-specific atmosphere or gameplay semantics.
 
