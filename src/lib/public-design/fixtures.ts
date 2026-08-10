@@ -142,7 +142,14 @@ export const PUBLIC_DESIGN_FIXTURES = [
     label: "Dense Location detail",
     family: "detail",
     path: "/locations/design-review-location-dense",
-    states: ["deep breadcrumb", "children", "Shops", "obtainable Items"],
+    states: ["deep breadcrumb", "Traveler's Note", "Shops", "obtainable Items"],
+  },
+  {
+    key: "location-hierarchy-root",
+    label: "Root Location detail",
+    family: "detail",
+    path: "/locations/design-review-location-region",
+    states: ["root breadcrumb", "direct child directory", "grid/list toggle"],
   },
   {
     key: "shops-populated",

@@ -103,3 +103,43 @@ test("Locations catalogue has no horizontal overflow at all calibration widths",
     await expectNoHorizontalOverflow(page);
   }
 });
+
+test("Location detail renders direct children in the handoff grid/list directory", async ({
+  page,
+}) => {
+  await page.goto("/locations/test-e2e-location-public-directory-region");
+
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Test E2E Northwind Region" }),
+  ).toBeVisible();
+  const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
+  await expect(breadcrumb.getByRole("link", { name: "Home" })).toHaveAttribute(
+    "href",
+    "/",
+  );
+  await expect(breadcrumb.getByRole("link", { name: "Locations" })).toHaveAttribute(
+    "href",
+    "/locations",
+  );
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Location Details" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Sub-locations" }),
+  ).toBeVisible();
+  await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
+
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  await expect(page.locator(".location-detail-child-list-row")).toHaveCount(3);
+  await page.getByRole("button", { name: "Sub-locations", exact: true }).click();
+  await expect(page.locator(".location-detail-child-list-row")).toHaveCount(0);
+
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.reload();
+    await expectNoHorizontalOverflow(page);
+  }
+});

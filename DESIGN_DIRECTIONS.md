@@ -245,6 +245,9 @@ Public collection and context pages have distinct responsibilities:
 - Item Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not reproduce an Item grid or infer
   a Recipe catalogue from resulting Item Category.
+- Location detail owns its real ancestor breadcrumb, direct Sub-locations,
+  direct Shops, obtainable Items, and access note. It never infers nearby
+  Locations, a Region relation, or NPC data.
 - Full Recipe output cards belong to canonical collection contexts, except for
   the explicitly approved Profession detail handoff, which presents that
   Profession's complete craftable-output directory. No other explanatory or
@@ -405,6 +408,27 @@ remaining grounded in production's self-referencing Location model:
   type groups are accessible collapsible disclosures with the handoff's
   `220ms`/`30ms` entrance stagger and `130ms` exit; reduced motion remains
   authoritative.
+
+### Public Location detail
+
+The canonical `/locations/[slug]` view adopts the handoff's identity and facts
+composition while retaining every real production relationship:
+
+- Use a desktop `1fr / 272px` layout with `28px` gap. The main column begins
+  with the root-first breadcrumb and a flat `180px` green-neutral image stage
+  with `128px` content; the `40px` identity copy follows the shared detail
+  rhythm. The facts rail is sticky at `88px` and stacks below at `940px`.
+- Render only factual type, direct Sub-location count, and direct Shop count as
+  hero chips. The sidebar adds parent and unique obtainable-Item count, with
+  the optional access note presented as Traveler's Note.
+- Direct children—not same-region or inferred nearby records—form the
+  handoff-style collapsible Location directory with type groups, grid/list
+  modes, `220ms` section exit, `130ms` group exit, and `14px` cards around the
+  shared `52px` green-neutral stage.
+- Preserve direct Shops and grouped obtainable Items as independent collapsible
+  relationship sections using the same compact horizontal card geometry.
+  Keep canonical links, authored Shop descriptions, hide-empty behavior, and
+  reduced motion. Public verification remains intentionally admin-only.
 
 The Class directory reuses the managed scenic catalogue presentation without
 introducing a Class-specific atmosphere or gameplay semantics.

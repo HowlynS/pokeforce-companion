@@ -151,6 +151,9 @@ same focused commit.
   link.
 - Category detail describes and counts an Item type, then links to the
   canonical filtered Items index. It does not duplicate Item or Recipe grids.
+- Location detail owns its real ancestor breadcrumb, direct children, direct
+  Shops, obtainable Items, and access note. It never infers nearby Locations,
+  a Region relation, or NPC data.
 - Profession detail is the approved exception to the canonical-catalogue rule:
   its handoff explicitly presents that Profession's complete craftable output
   directory. Other explanatory/contextual lists do not inherit this pattern.
@@ -288,6 +291,24 @@ same focused commit.
 - Name search and multi-select Location-type filtering are real GET queries.
   Root and type folds are accessible disclosures; empty results retain the
   handoff's reset guidance. All motion respects reduced-motion preference.
+
+### Public Location detail
+
+- `/locations/[slug]` uses a `1fr / 272px` layout with a `28px` gap. The main
+  column carries the full root-first breadcrumb, a flat `180px` green-neutral
+  image stage with `128px` content, and the shared `40px` identity typography;
+  the facts rail is sticky at `88px` on desktop and stacks below at `940px`.
+- Identity chips expose only schema-backed type, direct Sub-location count,
+  and direct Shop count. The facts rail adds parent and unique obtainable-Item
+  count. The optional production access note becomes the Traveler's Note.
+- Direct children—not same-region or inferred nearby records—use the handoff's
+  collapsible Location directory with grouped types, grid/list modes,
+  `220ms` section exit, and `130ms` type-fold exit. Grid cards use `14px`
+  padding around the shared `52px` green-neutral stage.
+- Direct Shops and grouped obtainable Items remain separate collapsible
+  production relationships below the hero. Reuse the same compact horizontal
+  card geometry, retain canonical links and descriptions, hide empty sections,
+  and preserve reduced motion. Public Location verification remains admin-only.
 
 ### PlayerClass naming
 
