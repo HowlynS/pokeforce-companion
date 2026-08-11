@@ -350,9 +350,11 @@ same focused commit.
   text-glow behavior without recoloring inactive labels. Align World vertically
   with the link row; keep its panel centered throughout exact `200ms` cubic-in,
   `180ms` out, and `30ms` item-stagger animations.
-- Header search owns `200ms` border/background/glow transitions, the exact
-  `1.6s` pulse, and focus cancellation. The logo uses the handoff's dual-shadow
-  `3.2s` breathing keyframes.
+- Every public search input uses the shared header-search interaction primitive:
+  `200ms` border/background/glow and icon transitions, the exact `1.6s` hover
+  pulse, focus cancellation, muted placeholder treatment, and reduced-motion
+  suppression. Route-specific geometry and GET/query behavior stay independent.
+  The logo uses the handoff's dual-shadow `3.2s` breathing keyframes.
 - Shared disclosure close is not an immediate unmount: retain content for the
   `220ms` line sweep-out and apply either `120ms` item exit or `200ms` stagger
   exit by content family. Shared ingredient popovers use `200ms` cubic entrance

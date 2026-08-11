@@ -88,33 +88,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         method="get"
         role="search"
         aria-label="Search the wiki"
+        className="public-search-page-form"
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "12px",
           marginBottom: designTokens.layout.sectionGap,
         }}
       >
-        <label style={{ display: "grid", gap: "6px", flex: "1 1 260px" }}>
-          <span style={{ color: designTokens.colors.textMuted }}>
-            Search query
+        <label className="public-search-page-label">
+          <span className="public-search-page-label-text">Search query</span>
+          <span className="public-search-field public-search-page-field">
+            <input
+              type="search"
+              name="q"
+              defaultValue={query}
+              placeholder="e.g. iron"
+              className="public-search-page-input"
+            />
           </span>
-          <input
-            type="search"
-            name="q"
-            defaultValue={query}
-            placeholder="e.g. iron"
-            style={{
-              border: `1px solid ${designTokens.colors.border}`,
-              borderRadius: designTokens.radius.sm,
-              background: designTokens.colors.surface,
-              color: designTokens.colors.text,
-              padding: "10px 12px",
-              fontSize: "16px",
-              fontFamily: "inherit",
-              width: "100%",
-            }}
-          />
         </label>
 
         <button

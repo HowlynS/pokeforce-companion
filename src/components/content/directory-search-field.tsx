@@ -37,7 +37,7 @@ export function DirectorySearchField({
       method="get"
       role="search"
       aria-label={ariaLabel ?? placeholder}
-      className="directory-search-field"
+      className="public-search-field directory-search-field"
     >
       {hiddenInputs}
       {submitLabel ? (

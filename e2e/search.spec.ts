@@ -39,6 +39,65 @@ function pageSearchInput(page: Page) {
   return page.getByRole("main").getByRole("searchbox", { name: "Search query" });
 }
 
+const PUBLIC_SEARCH_SURFACES = [
+  "/items",
+  "/recipes",
+  "/professions",
+  "/classes",
+  "/locations",
+  "/shops",
+  "/search",
+] as const;
+
+type SearchInteractionState = {
+  animationDuration: string;
+  animationName: string;
+  animationTimingFunction: string;
+  backgroundColor: string;
+  borderColor: string;
+  boxShadow: string;
+  placeholderColor: string;
+  transitionDuration: string;
+  transitionTimingFunction: string;
+};
+
+async function searchInteractionState(
+  input: ReturnType<typeof pageSearchInput>,
+): Promise<SearchInteractionState> {
+  return input.evaluate((element) => {
+    const frame = element.parentElement;
+    if (!frame?.classList.contains("public-search-field")) {
+      throw new Error("Search input is missing the shared public field frame.");
+    }
+
+    const frameStyle = getComputedStyle(frame);
+    const placeholderStyle = getComputedStyle(element, "::placeholder");
+    return {
+      animationDuration: frameStyle.animationDuration,
+      animationName: frameStyle.animationName,
+      animationTimingFunction: frameStyle.animationTimingFunction,
+      backgroundColor: frameStyle.backgroundColor,
+      borderColor: frameStyle.borderColor,
+      boxShadow: frameStyle.boxShadow,
+      placeholderColor: placeholderStyle.color,
+      transitionDuration: frameStyle.transitionDuration,
+      transitionTimingFunction: frameStyle.transitionTimingFunction,
+    };
+  });
+}
+
+async function searchIconState(input: ReturnType<typeof pageSearchInput>) {
+  const iconPart = input.locator("..").locator("svg *").first();
+  return iconPart.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      stroke: style.stroke,
+      transitionDuration: style.transitionDuration,
+      transitionTimingFunction: style.transitionTimingFunction,
+    };
+  });
+}
+
 test("the header search form reaches /search with the submitted query", async ({
   page,
 }) => {
@@ -55,6 +114,93 @@ test("the header search form reaches /search with the submitted query", async ({
     page.getByRole("heading", { level: 1, name: "Search", exact: true })
   ).toBeVisible();
   await expect(cardLink(page, "Iron Ore")).toBeVisible();
+});
+
+test("every public search surface reuses the header interaction at 1920x1080", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  for (const path of PUBLIC_SEARCH_SURFACES) {
+    await page.goto(path);
+
+    const headerInput = headerSearchInput(page);
+    const publicInput = page.getByRole("main").getByRole("searchbox");
+    const headerFrame = headerInput.locator("..");
+    const publicFrame = publicInput.locator("..");
+
+    await expect(headerFrame).toHaveClass(/\bpublic-search-field\b/);
+    await expect(publicFrame).toHaveClass(/\bpublic-search-field\b/);
+
+    const headerDefault = await searchInteractionState(headerInput);
+    const publicDefault = await searchInteractionState(publicInput);
+    expect(publicDefault.transitionDuration).toBe(
+      headerDefault.transitionDuration,
+    );
+    expect(publicDefault.transitionTimingFunction).toBe(
+      headerDefault.transitionTimingFunction,
+    );
+    expect(publicDefault.placeholderColor).toBe(headerDefault.placeholderColor);
+    if (path !== "/search") {
+      const headerIconDefault = await searchIconState(headerInput);
+      const publicIconDefault = await searchIconState(publicInput);
+      expect(publicIconDefault.transitionDuration).toBe(
+        headerIconDefault.transitionDuration,
+      );
+      expect(publicIconDefault.transitionTimingFunction).toBe(
+        headerIconDefault.transitionTimingFunction,
+      );
+    }
+
+    await headerFrame.hover();
+    await page.waitForTimeout(260);
+    const headerHover = await searchInteractionState(headerInput);
+    await publicFrame.hover();
+    await page.waitForTimeout(260);
+    const publicHover = await searchInteractionState(publicInput);
+    expect(publicHover.borderColor).toBe(headerHover.borderColor);
+    expect(publicHover.animationName).toBe(headerHover.animationName);
+    expect(publicHover.animationDuration).toBe(headerHover.animationDuration);
+    expect(publicHover.animationTimingFunction).toBe(
+      headerHover.animationTimingFunction,
+    );
+
+    await headerInput.focus();
+    await page.waitForTimeout(260);
+    const headerFocus = await searchInteractionState(headerInput);
+    const headerIconFocus =
+      path === "/search" ? null : await searchIconState(headerInput);
+    await publicInput.focus();
+    await page.waitForTimeout(260);
+    const publicFocus = await searchInteractionState(publicInput);
+    expect(publicFocus.borderColor).toBe(headerFocus.borderColor);
+    expect(publicFocus.backgroundColor).toBe(headerFocus.backgroundColor);
+    expect(publicFocus.boxShadow).toBe(headerFocus.boxShadow);
+    expect(publicFocus.animationName).toBe(headerFocus.animationName);
+    if (headerIconFocus) {
+      const publicIconFocus = await searchIconState(publicInput);
+      expect(publicIconFocus.stroke).toBe(headerIconFocus.stroke);
+    }
+  }
+});
+
+test("reduced motion disables the shared public search transitions and pulse", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  for (const path of PUBLIC_SEARCH_SURFACES) {
+    await page.goto(path);
+    const input = page.getByRole("main").getByRole("searchbox");
+    await input.locator("..").hover();
+    const state = await searchInteractionState(input);
+
+    expect(state.transitionDuration).toBe("0s");
+    expect(state.animationName).toBe("none");
+  }
 });
 
 test("visiting /search without a query shows the empty-query guidance", async ({

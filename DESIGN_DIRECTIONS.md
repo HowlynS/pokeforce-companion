@@ -480,9 +480,11 @@ handoff as the shared interaction authority:
   changing inactive label color. The World trigger shares the link baseline;
   its centered panel uses the exact `200ms` cubic entrance, `180ms` exit, and
   `30ms` item stagger without losing `translateX(-50%)` during animation.
-- Header search uses the handoff's `200ms` border/background/glow transitions,
-  `1.6s` hover pulse, and focus cancellation. Logo breathing retains the exact
-  dual drop-shadow keyframes.
+- Header search remains the authority for every public search field: all public
+  directory and search-page inputs share its `200ms` border/background/glow and
+  icon transitions, `1.6s` hover pulse, focus cancellation, muted placeholder,
+  and reduced-motion suppression without sharing route-specific geometry or
+  query behavior. Logo breathing retains the exact dual drop-shadow keyframes.
 - Shared detail disclosures remain mounted for the `220ms` rule sweep-out and
   use the handoff's `120ms` item or `200ms` stagger exit. Ingredient popovers
   retain their `200ms`/`180ms` panel motion.

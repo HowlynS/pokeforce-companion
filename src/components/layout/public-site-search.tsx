@@ -9,7 +9,7 @@ export function PublicSiteSearch() {
       method="get"
       role="search"
       aria-label="Site search"
-      className="public-site-search cx-search-pulse"
+      className="public-search-field public-site-search"
     >
       <input
         type="search"
