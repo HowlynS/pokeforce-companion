@@ -5530,6 +5530,9 @@ body:has(.recipe-detail-page) .public-site-footer {
 }
 
 .recipe-output-card--directory-grid .recipe-output-requirement {
+  /* Grid items default to min-width:auto, which lets a long Profession name
+     size this flex row past the card and defeat the ellipsis below. */
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -5769,6 +5772,19 @@ body:has(.recipe-detail-page) .public-site-footer {
   width: 44px;
   height: 44px;
   padding: 5px;
+  overflow: hidden;
+}
+
+/* The result stage shrinks to 44px in list view, so the shared 11px
+   "No image available" fallback would spill past the rounded stage. Match
+   the compact treatment the Ingredient stages already use. */
+.recipe-output-card--directory-list
+  .recipe-output-image-stage
+  .public-sprite-stage--card.public-sprite-stage--empty
+  .public-sprite-fallback {
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.15;
 }
 
 .recipe-output-card--directory-list .recipe-output-yield {
@@ -12721,7 +12737,7 @@ a.shop-detail-chip:focus-visible {
 
 .detail-collapsible-meta {
   color: var(--color-text-meta-dim);
-  font-family: var(--font-body), Arial, sans-serif;
+  font-family: var(--font-sans), Arial, sans-serif;
   font-size: 11.5px;
   font-weight: 400;
 }
@@ -12787,7 +12803,7 @@ a.shop-detail-chip:focus-visible {
 
 .shop-detail-selected-copy p {
   margin: 2px 0 0;
-  color: var(--color-text-soft);
+  color: var(--color-text-body);
   font-size: 12px;
   line-height: 1.4;
 }

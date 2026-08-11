@@ -11,13 +11,9 @@ export function PublicSiteSearch() {
       aria-label="Site search"
       className="public-search-field public-site-search"
     >
-      <input
-        type="search"
-        name="q"
-        aria-label="Search query"
-        placeholder="Search the Codex..."
-        className="public-site-search-input"
-      />
+      {/* Icon first, matching the handoff's `.cx-search` markup (svg then
+          input) and the directory search field's own order. It stays a real
+          submit control so the GET form still works without JavaScript. */}
       <button
         type="submit"
         className="public-site-search-submit"
@@ -36,6 +32,13 @@ export function PublicSiteSearch() {
           />
         </svg>
       </button>
+      <input
+        type="search"
+        name="q"
+        aria-label="Search query"
+        placeholder="Search the Codex..."
+        className="public-site-search-input"
+      />
     </form>
   );
 }
