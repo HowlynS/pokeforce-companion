@@ -196,6 +196,24 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   });
   const visibleIngredients = denseCard.locator(".recipe-output-ingredient");
   await expect(visibleIngredients).toHaveCount(3);
+  const quantityBadges = visibleIngredients.locator(
+    ".recipe-output-ingredient-quantity-badge"
+  );
+  await expect(quantityBadges).toHaveCount(3);
+  const quantityBadgeGeometry = await quantityBadges.first().evaluate((badge) => {
+    const rect = badge.getBoundingClientRect();
+    const style = getComputedStyle(badge);
+    return {
+      width: rect.width,
+      height: rect.height,
+      fontSize: style.fontSize,
+      lineHeight: style.lineHeight,
+    };
+  });
+  expect(quantityBadgeGeometry.width).toBeGreaterThanOrEqual(17);
+  expect(quantityBadgeGeometry.height).toBe(17);
+  expect(quantityBadgeGeometry.fontSize).toBe("10.5px");
+  expect(quantityBadgeGeometry.lineHeight).toBe("15px");
 
   const thirdIngredient = visibleIngredients.nth(2);
   const thirdTooltip = thirdIngredient.getByRole("tooltip");
@@ -237,6 +255,44 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     )
   ).toBeLessThanOrEqual(1);
   await expectNoHorizontalOverflow(page);
+
+  const ingredientDisclosure = denseCard.locator(
+    ".recipe-output-ingredient-toggle"
+  );
+  await expect(ingredientDisclosure).toHaveAttribute(
+    "aria-label",
+    `Show 6 more ingredients for ${denseRecipe.name}`
+  );
+  await expect(ingredientDisclosure).toHaveText("");
+  const disclosureChevron = ingredientDisclosure.locator(
+    ".recipe-output-ingredient-toggle-chevron"
+  );
+  await expect(disclosureChevron).toBeVisible();
+  const collapsedChevronTransform = await disclosureChevron.evaluate(
+    (chevron) => getComputedStyle(chevron).transform
+  );
+  await ingredientDisclosure.click();
+  await expect(ingredientDisclosure).toHaveAttribute("aria-expanded", "true");
+  await expect(denseCard.locator(".recipe-output-ingredient-panel")).toBeVisible();
+  await expect
+    .poll(() =>
+      disclosureChevron.evaluate((chevron) => getComputedStyle(chevron).transform)
+    )
+    .not.toBe(collapsedChevronTransform);
+  await ingredientDisclosure.press("Enter");
+  await expect(ingredientDisclosure).toHaveAttribute("aria-expanded", "false");
+  await expect(denseCard.locator(".recipe-output-ingredient-panel")).toHaveCount(0);
+
+  await ingredientDisclosure.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(ingredientDisclosure).toBeFocused();
+  await expect(ingredientDisclosure).not.toHaveCSS("outline-style", "none");
+  await ingredientDisclosure.press("Space");
+  await expect(ingredientDisclosure).toHaveAttribute("aria-expanded", "true");
+  await ingredientDisclosure.press("Space");
+  await expect(ingredientDisclosure).toHaveAttribute("aria-expanded", "false");
+  await expect(denseCard.locator(".recipe-output-ingredient-panel")).toHaveCount(0);
 
   await page.getByRole("button", { name: "List", exact: true }).click();
   const listHeading = page.locator(".recipe-output-list-heading");
@@ -292,6 +348,7 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     await page.goto("/recipes");
     await expectRecipeColumns(page, viewport.columns);
     await expectNoHorizontalOverflow(page);
+    await page.waitForTimeout(700);
     await page.screenshot({
       path: path.join(
         SCREENSHOT_DIRECTORY,
@@ -323,6 +380,12 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   ).first();
   await expect(reducedMotionCard).toHaveCSS("animation-name", "none");
   await expect(reducedMotionCard).toHaveCSS("transition-duration", "0s");
+  await expect(
+    page
+      .locator(".recipe-output-card--directory-grid")
+      .filter({ hasText: denseRecipe.name })
+      .locator(".recipe-output-ingredient-toggle-chevron")
+  ).toHaveCSS("transition-duration", "0s");
   await page.emulateMedia({ reducedMotion: "no-preference" });
 
   const filteredPath = `/recipes?profession=${fixture.profession.slug}`;

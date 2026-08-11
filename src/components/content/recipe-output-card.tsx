@@ -97,7 +97,14 @@ export function RecipeOutputCard({
               size="row"
             />
           </span>
-          <strong aria-hidden="true">
+          <strong
+            className={
+              variant === "standard"
+                ? undefined
+                : "recipe-output-ingredient-quantity-badge"
+            }
+            aria-hidden="true"
+          >
             {variant.startsWith("directory-")
               ? ingredient.quantity
               : `×${ingredient.quantity}`}
@@ -173,7 +180,6 @@ export function RecipeOutputCard({
               previewIngredients={renderIngredients(previewIngredients)}
               remainingIngredients={renderIngredients(recipe.ingredients)}
               remainingCount={remainingIngredients.length}
-              compact
               popover
             />
           ) : (
@@ -242,7 +248,6 @@ export function RecipeOutputCard({
                 previewIngredients={renderIngredients(previewIngredients)}
                 remainingIngredients={renderIngredients(remainingIngredients)}
                 remainingCount={remainingIngredients.length}
-                compact={variant === "profession-grid"}
                 popover={variant === "profession-grid"}
               />
             ) : (
@@ -337,7 +342,6 @@ export function RecipeOutputCard({
                   : remainingIngredients,
               )}
               remainingCount={remainingIngredients.length}
-              compact={variant === "directory-grid"}
               popover={variant === "directory-grid"}
             />
           ) : (

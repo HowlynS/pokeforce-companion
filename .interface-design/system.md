@@ -192,6 +192,10 @@ same focused commit.
   plus non-collapsing `Lvl` metadata.
 - Grid view exposes three linked `36px` Ingredient previews; preserve real
   additional-Ingredient disclosure and tooltips.
+- Circular Ingredient quantities use the shared `17px` badge, `10.5px` type,
+  `15px` line-height, and `-6px` bottom/right offset. Recipe-card overflow is
+  a chevron-only native button; its accessible name retains the hidden count
+  and the chevron reverses when expanded.
 - Put schema-backed EXP reward in the ruled card footer.
 - List view has an explicit Recipe / Profession / EXP / Ingredients heading
   row. Desktop result rows render `1402×64px` with a `50px` result stage,
@@ -351,9 +355,9 @@ same focused commit.
 
 ### Shared public interaction fidelity
 
-- Public nav links and the World trigger share the handoff's `180ms` border and
-  text-glow behavior without recoloring inactive labels. Align World vertically
-  with the link row; keep its panel centered throughout exact `200ms` cubic-in,
+- Public nav links and the World trigger share a `1.5` line box plus the
+  handoff's `180ms` border and text-glow behavior without recoloring inactive
+  labels. Keep its panel centered throughout exact `200ms` cubic-in,
   `180ms` out, and `30ms` item-stagger animations.
 - Every public search input uses the shared header-search interaction primitive:
   `200ms` border/background/glow and icon transitions, the exact `1.6s` hover

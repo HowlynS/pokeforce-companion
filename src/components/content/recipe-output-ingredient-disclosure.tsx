@@ -9,7 +9,6 @@ type RecipeOutputIngredientDisclosureProps = {
   previewIngredients: ReactNode;
   remainingIngredients: ReactNode;
   remainingCount: number;
-  compact?: boolean;
   popover?: boolean;
 };
 
@@ -19,7 +18,6 @@ export function RecipeOutputIngredientDisclosure({
   previewIngredients,
   remainingIngredients,
   remainingCount,
-  compact = false,
   popover = false,
 }: RecipeOutputIngredientDisclosureProps) {
   const [expanded, setExpanded] = useState(false);
@@ -73,7 +71,21 @@ export function RecipeOutputIngredientDisclosure({
         }
         onClick={toggle}
       >
-        {compact ? (expanded ? "−" : `+${remainingCount}`) : expanded ? "Show fewer" : `+${remainingCount} more`}
+        <svg
+          className="recipe-output-ingredient-toggle-chevron"
+          aria-hidden="true"
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M6 9l6 6 6-6"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+        </svg>
       </button>
       {expanded && popover ? (
         <div

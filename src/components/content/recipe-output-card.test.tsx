@@ -48,7 +48,8 @@ describe("RecipeOutputCard", () => {
     expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(4);
     expect(html).toContain("Smithing");
     expect(html).toContain("Level 25");
-    expect(html).toContain("+1 more");
+    expect(html).toContain("recipe-output-ingredient-toggle-chevron");
+    expect(html).not.toContain("+1 more");
     expect(html).toContain("Ingredient 4");
     expect(html).toContain(
       'aria-label="Show 1 more ingredients for Dense Recipe"'
@@ -89,7 +90,9 @@ describe("RecipeOutputCard", () => {
     );
 
     expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(3);
-    expect(html).toContain(">+2<");
+    expect(html).toContain("recipe-output-ingredient-toggle-chevron");
+    expect(html).not.toContain(">+2<");
+    expect(html).toContain("recipe-output-ingredient-quantity-badge");
     expect(html).toContain(
       'aria-label="Show 2 more ingredients for Dense Recipe"'
     );

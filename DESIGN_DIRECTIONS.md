@@ -296,6 +296,10 @@ cards, without changing the richer shared cards used in Profession previews:
   level share the compact line below without allowing the level to collapse.
 - Show three linked `36px` Ingredient previews in grid view, retaining the
   real disclosure and tooltip behavior for additional Ingredients.
+- Circular Ingredient quantities use one restrained `17px` badge with
+  `10.5px` tabular type and a `-6px` bottom/right offset. Overflow controls use
+  a chevron only at rest, reverse when expanded, and keep the exact remaining
+  Ingredient count in their accessible name.
 - Show the schema-backed EXP reward in the quiet ruled footer.
 - Preserve the handoff's Grid/List control. List view reorganizes the same
   Recipe result, Profession/level, EXP, and linked Ingredient data; it does not
@@ -481,9 +485,10 @@ and selectable Inventory ledger while remaining bounded by production data:
 The post-rollout audit uses the repeated CSS in every supported Claude Design
 handoff as the shared interaction authority:
 
-- Header navigation keeps the `180ms` gold-border/text-glow transition without
-  changing inactive label color. The World trigger shares the link baseline;
-  its centered panel uses the exact `200ms` cubic entrance, `180ms` exit, and
+- Header navigation uses one `1.5` line box and keeps the `180ms`
+  gold-border/text-glow transition without changing inactive label color. The
+  World trigger therefore shares link baseline and height; its centered panel
+  uses the exact `200ms` cubic entrance, `180ms` exit, and
   `30ms` item stagger without losing `translateX(-50%)` during animation.
 - Header search remains the authority for every public search field: all public
   directory and search-page inputs share its `200ms` border/background/glow and

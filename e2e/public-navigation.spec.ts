@@ -113,6 +113,44 @@ const NAV_TARGETS = [
 ] as const;
 
 test.describe("main navigation", () => {
+  test("World shares the primary nav baseline at wide desktop widths", async ({
+    page,
+  }) => {
+    for (const viewport of [
+      { width: 1920, height: 1080 },
+      { width: 3440, height: 1440 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+
+      const geometry = await page
+        .getByRole("navigation", { name: "Main navigation" })
+        .evaluate((navigation) => {
+          const link = navigation.querySelector<HTMLElement>(".public-nav-link");
+          const world = navigation.querySelector<HTMLElement>(
+            ".public-world-menu-trigger"
+          );
+          if (!link || !world) throw new Error("Expected primary nav controls");
+          const linkRect = link.getBoundingClientRect();
+          const worldRect = world.getBoundingClientRect();
+          return {
+            topDelta: worldRect.top - linkRect.top,
+            heightDelta: worldRect.height - linkRect.height,
+            centerDelta:
+              worldRect.top + worldRect.height / 2 -
+              (linkRect.top + linkRect.height / 2),
+            linkLineHeight: getComputedStyle(link).lineHeight,
+            worldLineHeight: getComputedStyle(world).lineHeight,
+          };
+        });
+
+      expect(geometry.topDelta).toBeCloseTo(0, 1);
+      expect(geometry.heightDelta).toBeCloseTo(0, 1);
+      expect(geometry.centerDelta).toBeCloseTo(0, 1);
+      expect(geometry.worldLineHeight).toBe(geometry.linkLineHeight);
+    }
+  });
+
   for (const target of NAV_TARGETS) {
     test(`the ${target.label} link opens ${target.path}`, async ({ page }) => {
       await page.goto("/");

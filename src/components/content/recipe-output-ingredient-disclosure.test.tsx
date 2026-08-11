@@ -21,7 +21,8 @@ describe("RecipeOutputIngredientDisclosure", () => {
     expect(html).toContain(
       'aria-label="Show 6 more ingredients for Test E2E Dense Gearwork"'
     );
-    expect(html).toContain("+6 more");
+    expect(html).toContain("recipe-output-ingredient-toggle-chevron");
+    expect(html).not.toContain("+6 more");
     expect(html).toContain("Preview ingredients");
     expect(html).not.toContain("Hidden ingredients");
   });
