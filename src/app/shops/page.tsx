@@ -174,7 +174,7 @@ export default async function ShopsPage({ searchParams }: ShopsPageProps) {
                                   <ContentImage
                                     imagePath={shop.image}
                                     alt={`Image of ${shop.name}`}
-                                    size="card"
+                                    size="row"
                                   />
                                 </span>
                                 <span className="shop-directory-card-copy">

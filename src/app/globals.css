@@ -12289,26 +12289,22 @@ a.profession-detail-chip:focus-visible {
     0 0 20px rgba(216, 181, 98, 0.22);
 }
 
+/* Same 52px catalogue stage the Locations directory uses, differing only in
+   its gold (rather than green) tint — including the compact row fallback,
+   which the 34px content area has room for. */
 .shop-directory-card-media,
-.shop-directory-card-media .public-sprite-stage--card {
+.shop-directory-card-media .public-sprite-stage--row {
   width: 52px;
   height: 52px;
   flex: none;
 }
 
-.shop-directory-card-media .public-sprite-stage--card {
-  --sprite-stage-size: 52px;
+.shop-directory-card-media .public-sprite-stage--row {
   --sprite-image-size: 34px;
   border-color: var(--color-border);
   background:
     radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.2), transparent 62%),
     var(--color-background);
-}
-
-.shop-directory-card-media .public-sprite-stage--card.public-sprite-stage--empty {
-  width: 52px;
-  height: 52px;
-  padding: 4px;
 }
 
 .shop-directory-card-copy {

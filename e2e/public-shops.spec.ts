@@ -50,7 +50,11 @@ test("the public Shop list presents location, Inventory count, verification, and
   await expect(shopCard).toContainText(
     "Verified for test-gv-current on 25 Jul 2026"
   );
-  await expect(shopCard.getByText("No image available")).toBeVisible();
+  // The 52px catalogue stage uses the compact row fallback (shared with the
+  // Locations directory); "No image available" remains its accessible name.
+  await expect(
+    shopCard.getByLabel("No image available")
+  ).toBeVisible();
 
   const shopSearch = page
     .getByRole("search", { name: "Search shops" })
