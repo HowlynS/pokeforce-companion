@@ -609,3 +609,10 @@ field summaries instead of raw JSON as its primary interface.
 
 Latest clean visual baseline commit: `8ec557e`. Later access-control commits
 intentionally leave the current public visual design unchanged.
+
+Recipe-card ingredient disclosure keeps the compact chevron-only preview
+control, then opens a complete ordered ingredient list aligned to the card.
+The panel uses 10px padding, a 6px heading-to-list gap, 36px bordered rows with
+5px vertical gaps, 28px icon stages, and an 8px identity gap. Names remain the
+primary row label, quantities align right as `×N`, and missing images retain the
+same stage with the restrained `No image` fallback.

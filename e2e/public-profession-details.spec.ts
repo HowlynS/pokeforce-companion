@@ -135,7 +135,7 @@ test("Profession detail exposes its complete linked Recipe directory", async ({
     .getByRole("button", { name: /Show \d+ more ingredients/ })
     .first();
   await moreIngredients.click();
-  await expect(page.getByText("More Ingredients", { exact: true })).toBeVisible();
+  await expect(page.getByText("RECIPE INGREDIENTS", { exact: true })).toBeVisible();
 
   const listButton = page.getByRole("button", { name: "List", exact: true });
   await listButton.click();

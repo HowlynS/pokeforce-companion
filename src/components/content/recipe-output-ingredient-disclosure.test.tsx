@@ -9,7 +9,7 @@ describe("RecipeOutputIngredientDisclosure", () => {
         listId="recipe-test-ingredients"
         recipeName="Test E2E Dense Gearwork"
         previewIngredients={<span>Preview ingredients</span>}
-        remainingIngredients={<span>Hidden ingredients</span>}
+        expandedIngredients={<span>Hidden ingredients</span>}
         remainingCount={6}
       />
     );

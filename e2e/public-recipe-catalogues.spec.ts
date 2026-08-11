@@ -273,7 +273,82 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   );
   await ingredientDisclosure.click();
   await expect(ingredientDisclosure).toHaveAttribute("aria-expanded", "true");
-  await expect(denseCard.locator(".recipe-output-ingredient-panel")).toBeVisible();
+  await expect(ingredientDisclosure).toHaveAttribute(
+    "aria-label",
+    `Hide 6 additional ingredients for ${denseRecipe.name}`
+  );
+  const ingredientPanel = denseCard.locator(
+    ".recipe-output-ingredient-panel"
+  );
+  await expect(ingredientPanel).toBeVisible();
+  await expect(
+    ingredientPanel.getByText("RECIPE INGREDIENTS", { exact: true })
+  ).toBeVisible();
+  const panelRows = ingredientPanel.locator(
+    ".recipe-output-ingredient-panel-row"
+  );
+  const orderedIngredients = [...denseRecipe.ingredients].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+  await expect(panelRows).toHaveCount(orderedIngredients.length);
+  for (const [index, ingredient] of orderedIngredients.entries()) {
+    const row = panelRows.nth(index);
+    await expect(row.getByText(ingredient.name, { exact: true })).toBeVisible();
+    await expect(
+      row.getByText(`×${ingredient.quantity}`, { exact: true })
+    ).toBeVisible();
+    await expect(row).toHaveAttribute("href", `/items/${ingredient.slug}`);
+  }
+  const fallbackIngredientIndex = orderedIngredients.findIndex(
+    (ingredient) => ingredient.spriteKey === null
+  );
+  expect(fallbackIngredientIndex).toBeGreaterThanOrEqual(0);
+  const fallbackRow = panelRows.nth(fallbackIngredientIndex);
+  await expect(
+    fallbackRow.locator(".public-sprite-stage--empty")
+  ).toContainText("No image");
+  const panelGeometry = await ingredientPanel.evaluate((panel) => {
+    const row = panel.querySelector<HTMLElement>(
+      ".recipe-output-ingredient-panel-row"
+    );
+    const image = panel.querySelector<HTMLElement>(
+      ".recipe-output-ingredient-panel-image"
+    );
+    const list = panel.querySelector<HTMLElement>(
+      ".recipe-output-ingredient-panel-list"
+    );
+    if (!row || !image || !list) {
+      throw new Error("Expected a complete Recipe ingredient panel row");
+    }
+    const panelRect = panel.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const imageRect = image.getBoundingClientRect();
+    const panelStyle = getComputedStyle(panel);
+    const rowStyle = getComputedStyle(row);
+    return {
+      panelWidth: panelRect.width,
+      panelPadding: panelStyle.padding,
+      listGap: getComputedStyle(list).gap,
+      rowHeight: rowRect.height,
+      rowGap: rowStyle.gap,
+      imageWidth: imageRect.width,
+      imageHeight: imageRect.height,
+    };
+  });
+  expect(panelGeometry.panelWidth).toBeCloseTo(188, 0);
+  expect(panelGeometry.panelPadding).toBe("10px");
+  expect(panelGeometry.listGap).toBe("5px");
+  expect(panelGeometry.rowHeight).toBeCloseTo(36, 0);
+  expect(panelGeometry.rowGap).toBe("8px");
+  expect(panelGeometry.imageWidth).toBeCloseTo(28, 0);
+  expect(panelGeometry.imageHeight).toBeCloseTo(28, 0);
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipes-ingredient-disclosure-1920x1080.png"
+    ),
+  });
   await expect
     .poll(() =>
       disclosureChevron.evaluate((chevron) => getComputedStyle(chevron).transform)
@@ -380,12 +455,25 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   ).first();
   await expect(reducedMotionCard).toHaveCSS("animation-name", "none");
   await expect(reducedMotionCard).toHaveCSS("transition-duration", "0s");
+  const reducedMotionDenseCard = page
+    .locator(".recipe-output-card--directory-grid")
+    .filter({ hasText: denseRecipe.name });
   await expect(
-    page
-      .locator(".recipe-output-card--directory-grid")
-      .filter({ hasText: denseRecipe.name })
-      .locator(".recipe-output-ingredient-toggle-chevron")
+    reducedMotionDenseCard.locator(
+      ".recipe-output-ingredient-toggle-chevron"
+    )
   ).toHaveCSS("transition-duration", "0s");
+  const reducedMotionDisclosure = reducedMotionDenseCard.locator(
+    ".recipe-output-ingredient-toggle"
+  );
+  await reducedMotionDisclosure.click();
+  await expect(
+    reducedMotionDenseCard.locator(".recipe-output-ingredient-panel-row").first()
+  ).toHaveCSS("transition-duration", "0s");
+  await reducedMotionDisclosure.click();
+  await expect(
+    reducedMotionDenseCard.locator(".recipe-output-ingredient-panel")
+  ).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: "no-preference" });
 
   const filteredPath = `/recipes?profession=${fixture.profession.slug}`;

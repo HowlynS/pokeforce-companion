@@ -127,6 +127,26 @@ export function RecipeOutputCard({
       );
     });
 
+  const renderIngredientPanelRows = (
+    ingredients: RecipeOutputCardValue["ingredients"]
+  ) =>
+    ingredients.map((ingredient) => (
+      <Link
+        className="recipe-output-ingredient-panel-row"
+        href={`/items/${ingredient.item.slug}`}
+        aria-label={`${ingredient.item.name}, required quantity ×${ingredient.quantity}`}
+        key={`panel-${ingredient.id}`}
+      >
+        <span className="recipe-output-ingredient-panel-image">
+          <ContentImage imagePath={ingredient.item.image} alt="" size="row" />
+        </span>
+        <span className="recipe-output-ingredient-panel-name">
+          {ingredient.item.name}
+        </span>
+        <strong aria-hidden="true">×{ingredient.quantity}</strong>
+      </Link>
+    ));
+
   if (variant === "directory-list") {
     return (
       <article className={cardClassName} style={cardStyle}>
@@ -178,7 +198,7 @@ export function RecipeOutputCard({
               listId={ingredientListId}
               recipeName={recipe.name}
               previewIngredients={renderIngredients(previewIngredients)}
-              remainingIngredients={renderIngredients(recipe.ingredients)}
+              expandedIngredients={renderIngredientPanelRows(recipe.ingredients)}
               remainingCount={remainingIngredients.length}
               popover
             />
@@ -246,7 +266,11 @@ export function RecipeOutputCard({
                 listId={ingredientListId}
                 recipeName={recipe.name}
                 previewIngredients={renderIngredients(previewIngredients)}
-                remainingIngredients={renderIngredients(remainingIngredients)}
+                expandedIngredients={
+                  variant === "profession-grid"
+                    ? renderIngredientPanelRows(recipe.ingredients)
+                    : renderIngredients(remainingIngredients)
+                }
                 remainingCount={remainingIngredients.length}
                 popover={variant === "profession-grid"}
               />
@@ -336,11 +360,11 @@ export function RecipeOutputCard({
               listId={ingredientListId}
               recipeName={recipe.name}
               previewIngredients={renderIngredients(previewIngredients)}
-              remainingIngredients={renderIngredients(
+              expandedIngredients={
                 variant === "directory-grid"
-                  ? recipe.ingredients
-                  : remainingIngredients,
-              )}
+                  ? renderIngredientPanelRows(recipe.ingredients)
+                  : renderIngredients(remainingIngredients)
+              }
               remainingCount={remainingIngredients.length}
               popover={variant === "directory-grid"}
             />

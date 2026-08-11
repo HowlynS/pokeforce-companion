@@ -7,7 +7,7 @@ type RecipeOutputIngredientDisclosureProps = {
   listId: string;
   recipeName: string;
   previewIngredients: ReactNode;
-  remainingIngredients: ReactNode;
+  expandedIngredients: ReactNode;
   remainingCount: number;
   popover?: boolean;
 };
@@ -16,7 +16,7 @@ export function RecipeOutputIngredientDisclosure({
   listId,
   recipeName,
   previewIngredients,
-  remainingIngredients,
+  expandedIngredients,
   remainingCount,
   popover = false,
 }: RecipeOutputIngredientDisclosureProps) {
@@ -55,9 +55,12 @@ export function RecipeOutputIngredientDisclosure({
 
   return (
     <div className="recipe-output-ingredient-disclosure">
-      <div className="recipe-output-ingredient-list" id={listId}>
+      <div
+        className="recipe-output-ingredient-list"
+        id={popover ? `${listId}-preview` : listId}
+      >
         {previewIngredients}
-        {expanded && !popover ? remainingIngredients : null}
+        {expanded && !popover ? expandedIngredients : null}
       </div>
       <button
         className="recipe-output-ingredient-toggle"
@@ -66,7 +69,7 @@ export function RecipeOutputIngredientDisclosure({
         aria-expanded={expanded && !closing}
         aria-label={
           expanded
-            ? `Show fewer ingredients for ${recipeName}`
+            ? `Hide ${remainingCount} additional ingredients for ${recipeName}`
             : `Show ${remainingCount} more ingredients for ${recipeName}`
         }
         onClick={toggle}
@@ -89,12 +92,17 @@ export function RecipeOutputIngredientDisclosure({
       </button>
       {expanded && popover ? (
         <div
+          id={listId}
           className={`recipe-output-ingredient-panel ${closing ? "cx-panel-out" : "cx-panel-in"}`}
+          role="region"
+          aria-labelledby={`${listId}-heading`}
           aria-hidden={closing || undefined}
           inert={closing ? true : undefined}
         >
-          <p>More Ingredients</p>
-          {remainingIngredients}
+          <p id={`${listId}-heading`}>RECIPE INGREDIENTS</p>
+          <div className="recipe-output-ingredient-panel-list">
+            {expandedIngredients}
+          </div>
         </div>
       ) : null}
     </div>

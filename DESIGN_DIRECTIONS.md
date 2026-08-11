@@ -783,3 +783,10 @@ public redesign slice, and `pnpm public:design:capture` for deterministic visual
 baselines. Both commands consume the application-owned contracts, fixtures,
 and viewport presets documented in `PUBLIC_REDESIGN_INTEGRATION.md`; neither is
 a substitute for explicit visual approval.
+
+Recipe-card ingredient disclosure keeps its inline preview compact and uses a
+chevron-only control. The expanded card-width panel is the complete ordered
+ingredient list: 10px panel padding, 6px heading spacing, 36px bordered rows,
+5px row gaps, 28px icon stages, and 8px between icon and name. Ingredient names
+stay readable, quantities align at the far right as `×N`, and image-less items
+keep the same stage geometry with the restrained `No image` fallback.
