@@ -337,11 +337,11 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   });
   expect(panelGeometry.panelWidth).toBeCloseTo(188, 0);
   expect(panelGeometry.panelPadding).toBe("10px");
-  expect(panelGeometry.listGap).toBe("5px");
-  expect(panelGeometry.rowHeight).toBeCloseTo(36, 0);
+  expect(panelGeometry.listGap).toBe("0px");
+  expect(panelGeometry.rowHeight).toBeCloseTo(28, 0);
   expect(panelGeometry.rowGap).toBe("8px");
-  expect(panelGeometry.imageWidth).toBeCloseTo(28, 0);
-  expect(panelGeometry.imageHeight).toBeCloseTo(28, 0);
+  expect(panelGeometry.imageWidth).toBeCloseTo(24, 0);
+  expect(panelGeometry.imageHeight).toBeCloseTo(24, 0);
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
     path: path.join(

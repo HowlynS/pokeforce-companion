@@ -11291,32 +11291,28 @@ a.profession-detail-chip:focus-visible {
 
 .recipe-output-ingredient-panel-list {
   display: grid;
-  gap: 5px;
+  gap: 0;
 }
 
 .recipe-output-ingredient-panel-row {
   min-width: 0;
   width: 100%;
-  min-height: 36px;
+  min-height: 28px;
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--color-border-muted);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
-  padding: 3px 7px 3px 3px;
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
   color: var(--color-text);
   text-decoration: none;
-  transition:
-    border-color 0.18s ease,
-    background-color 0.18s ease;
+  transition: color 0.18s ease;
 }
 
 .recipe-output-ingredient-panel-row:hover,
 .recipe-output-ingredient-panel-row:focus-visible {
-  border-color: color-mix(in srgb, var(--color-accent) 48%, var(--color-border));
-  background: color-mix(in srgb, var(--color-surface-soft) 92%, var(--color-accent));
+  color: var(--color-accent-soft);
 }
 
 .recipe-output-ingredient-panel-row:focus-visible {
@@ -11326,10 +11322,10 @@ a.profession-detail-chip:focus-visible {
 
 .recipe-output-ingredient-panel-image,
 .recipe-output-ingredient-panel-image .public-sprite-stage--row {
-  --sprite-stage-size: 28px;
-  --sprite-image-size: 28px;
-  width: 28px;
-  height: 28px;
+  --sprite-stage-size: 24px;
+  --sprite-image-size: 24px;
+  width: 24px;
+  height: 24px;
 }
 
 .recipe-output-ingredient-panel-image .public-sprite-stage--row {
@@ -11339,8 +11335,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-output-ingredient-panel-image .public-sprite-fallback {
-  padding: 2px;
-  font-size: 6.5px;
+  padding: 1px;
+  font-size: 6px;
   line-height: 1.05;
 }
 
