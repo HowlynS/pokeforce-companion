@@ -611,9 +611,14 @@ Latest clean visual baseline commit: `8ec557e`. Later access-control commits
 intentionally leave the current public visual design unchanged.
 
 Recipe-card ingredient disclosure keeps the compact chevron-only preview
-control, then opens a complete ordered ingredient list aligned to the card.
-The panel uses 10px padding, a 6px heading-to-list gap, unboxed 28px rows,
-24px icon stages, and an 8px identity gap. Names remain the primary row label,
-quantities align right as `×N`, and missing images retain the same stage with
-the restrained `No image` fallback. Only the panel and icon stages carry
-surfaces; ingredient rows do not.
+control as the sole production override to the archived handoff, then opens a
+complete ordered ingredient list aligned to the card. Grid panels anchor at
+`top: 42px` and `left/right: -12px`; List panels anchor at `top: 50px`, use a
+`200px` content width, and grow to `222px` including border and 10px padding.
+Panels use 8px flex gaps, unboxed 24px rows and icon stages, 12.5px/400 names,
+and 12.5px/700 right-aligned `×N` quantities. Names wrap rather than ellipsize.
+The exact 200ms panel entrance accompanies 220ms row entrances staggered 30ms
+up to 300ms; closing uses 120ms rows inside the 180ms panel exit and delayed
+unmount. The open card sits at z-index 40. Clicking outside its card dismisses
+immediately, matching the handoff; trigger-driven close retains the exit state.
+Missing images preserve the 24px stage and restrained `No image` fallback.

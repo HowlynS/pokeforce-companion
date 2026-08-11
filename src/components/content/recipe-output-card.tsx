@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { ContentImage } from "@/components/content/content-image";
 import { RecipeOutputIngredientDisclosure } from "@/components/content/recipe-output-ingredient-disclosure";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
@@ -130,12 +131,17 @@ export function RecipeOutputCard({
   const renderIngredientPanelRows = (
     ingredients: RecipeOutputCardValue["ingredients"]
   ) =>
-    ingredients.map((ingredient) => (
+    ingredients.map((ingredient, index) => (
       <Link
         className="recipe-output-ingredient-panel-row"
         href={`/items/${ingredient.item.slug}`}
         aria-label={`${ingredient.item.name}, required quantity ×${ingredient.quantity}`}
         key={`panel-${ingredient.id}`}
+        style={
+          {
+            "--recipe-ingredient-row-delay": `${Math.min(index, 10) * 30}ms`,
+          } as CSSProperties
+        }
       >
         <span className="recipe-output-ingredient-panel-image">
           <ContentImage imagePath={ingredient.item.image} alt="" size="row" />

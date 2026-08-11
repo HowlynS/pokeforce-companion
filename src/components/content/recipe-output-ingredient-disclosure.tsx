@@ -23,6 +23,7 @@ export function RecipeOutputIngredientDisclosure({
   const [expanded, setExpanded] = useState(false);
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disclosureRef = useRef<HTMLDivElement>(null);
 
   useEffect(
     () => () => {
@@ -31,12 +32,28 @@ export function RecipeOutputIngredientDisclosure({
     [],
   );
 
+  useEffect(() => {
+    if (!expanded || !popover) return;
+
+    function dismissOutsideCard(event: MouseEvent) {
+      const disclosure = disclosureRef.current;
+      const target = event.target;
+      if (!disclosure || !(target instanceof Node)) return;
+
+      const card = disclosure.closest(".recipe-output-card");
+      if ((card ?? disclosure).contains(target)) return;
+
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+      setExpanded(false);
+      setClosing(false);
+    }
+
+    document.addEventListener("click", dismissOutsideCard, true);
+    return () => document.removeEventListener("click", dismissOutsideCard, true);
+  }, [expanded, popover]);
+
   function toggle() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    if (closing) {
-      setClosing(false);
-      return;
-    }
     if (!expanded) {
       setExpanded(true);
       setClosing(false);
@@ -54,7 +71,7 @@ export function RecipeOutputIngredientDisclosure({
   }
 
   return (
-    <div className="recipe-output-ingredient-disclosure">
+    <div className="recipe-output-ingredient-disclosure" ref={disclosureRef}>
       <div
         className="recipe-output-ingredient-list"
         id={popover ? `${listId}-preview` : listId}
@@ -68,7 +85,7 @@ export function RecipeOutputIngredientDisclosure({
         aria-controls={listId}
         aria-expanded={expanded && !closing}
         aria-label={
-          expanded
+          expanded && !closing
             ? `Hide ${remainingCount} additional ingredients for ${recipeName}`
             : `Show ${remainingCount} more ingredients for ${recipeName}`
         }
@@ -100,9 +117,7 @@ export function RecipeOutputIngredientDisclosure({
           inert={closing ? true : undefined}
         >
           <p id={`${listId}-heading`}>RECIPE INGREDIENTS</p>
-          <div className="recipe-output-ingredient-panel-list">
-            {expandedIngredients}
-          </div>
+          {expandedIngredients}
         </div>
       ) : null}
     </div>

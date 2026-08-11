@@ -785,9 +785,12 @@ and viewport presets documented in `PUBLIC_REDESIGN_INTEGRATION.md`; neither is
 a substitute for explicit visual approval.
 
 Recipe-card ingredient disclosure keeps its inline preview compact and uses a
-chevron-only control. The expanded card-width panel is the complete ordered
-ingredient list: 10px panel padding, 6px heading spacing, unboxed 28px rows,
-24px icon stages, and 8px between icon and name. Ingredient names stay
-readable, quantities align at the far right as `×N`, and image-less items keep
-the same stage geometry with the restrained `No image` fallback. The panel and
-icon stages retain surfaces; individual ingredient rows remain transparent.
+chevron-only control as the one intentional production override to the
+handoff's visible `+N`. The expanded panel is otherwise literal: complete
+ordered data, exact Grid/List anchors, 10px padding, 8px flex gaps, unboxed
+24px rows and icon stages, 12.5px names, and 12.5px right-aligned `×N`
+quantities. Names use natural wrapping rather than forced ellipsis. Preserve
+the 8px radius, warm border, dark elevated surface, shadow, z-index 40 open
+card, 200ms/180ms panel motion, 220ms staggered row entrance, 120ms row exit,
+delayed trigger-close unmount, and immediate outside-card dismissal. Missing
+images keep the same stage geometry with the restrained `No image` fallback.
