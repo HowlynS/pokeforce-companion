@@ -55,11 +55,24 @@ export function RecipeOutputCatalogue({
         </header>
       ) : null}
 
+      {directoryLayout === "list" ? (
+        <div className="recipe-output-list-heading">
+          <span className="recipe-output-list-identity-heading">
+            <span />
+            <span>Recipe</span>
+          </span>
+          <span>Profession</span>
+          <span className="recipe-output-list-exp-heading">EXP</span>
+          <span>Ingredients</span>
+        </div>
+      ) : null}
+
       <div className="recipe-output-grid">
-        {recipes.map((recipe) => (
+        {recipes.map((recipe, index) => (
           <RecipeOutputCard
             recipe={recipe}
             variant={directoryLayout ? `directory-${directoryLayout}` : "standard"}
+            entryDelayMs={directoryLayout ? index * 30 : undefined}
             key={recipe.id}
           />
         ))}

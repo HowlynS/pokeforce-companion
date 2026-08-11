@@ -56,12 +56,42 @@ describe("RecipeOutputCard", () => {
     expect(html).not.toContain("Ingredient 5");
   });
 
-  it("hides profession-level metadata when no required level is set", () => {
+  it("keeps the profession visible when no required level is set", () => {
     const html = renderToStaticMarkup(
       <RecipeOutputCard recipe={{ ...recipe, requiredLevel: null }} />
     );
 
     expect(html).not.toContain("Level 25");
     expect(html).not.toContain("Smithing level 25");
+    expect(html).toContain("Smithing");
+    expect(html).toContain(
+      'aria-label="Dense Recipe, produces ×2–4 Dense Result, category Tools, Smithing"'
+    );
+  });
+
+  it("uses the Claude Design list columns without changing links or labels", () => {
+    const html = renderToStaticMarkup(
+      <RecipeOutputCard recipe={recipe} variant="directory-list" />
+    );
+
+    expect(html).toContain("recipe-output-card--directory-list");
+    expect(html).toContain("recipe-output-list-identity");
+    expect(html).toContain("recipe-output-list-profession");
+    expect(html).toContain("recipe-output-experience");
+    expect(html).toContain("+120 EXP");
+    expect(html).toContain('href="/recipes/dense-recipe"');
+    expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(5);
+  });
+
+  it("caps the directory grid preview at three ingredients", () => {
+    const html = renderToStaticMarkup(
+      <RecipeOutputCard recipe={recipe} variant="directory-grid" />
+    );
+
+    expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(3);
+    expect(html).toContain(">+2<");
+    expect(html).toContain(
+      'aria-label="Show 2 more ingredients for Dense Recipe"'
+    );
   });
 });

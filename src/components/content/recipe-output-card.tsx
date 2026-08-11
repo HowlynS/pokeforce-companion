@@ -6,6 +6,7 @@ import type { RecipeOutputCardValue } from "@/lib/recipes/recipe-output-catalogu
 
 type RecipeOutputCardProps = {
   recipe: RecipeOutputCardValue;
+  entryDelayMs?: number;
   variant?:
     | "standard"
     | "directory-grid"
@@ -23,6 +24,7 @@ const INGREDIENT_PREVIEW_COUNT = 4;
  */
 export function RecipeOutputCard({
   recipe,
+  entryDelayMs,
   variant = "standard",
 }: RecipeOutputCardProps) {
   const quantity = formatRecipeQuantityRange(
@@ -34,6 +36,8 @@ export function RecipeOutputCard({
   const previewCount =
     variant === "profession-list"
       ? recipe.ingredients.length
+      : variant === "directory-list"
+      ? 6
       : variant === "directory-grid" || variant === "profession-grid"
       ? 3
       : INGREDIENT_PREVIEW_COUNT;
@@ -50,11 +54,28 @@ export function RecipeOutputCard({
     recipe.resultingItem.category
       ? `, category ${recipe.resultingItem.category.name}`
       : ""
-  }${
-    recipe.profession && recipe.requiredLevel !== null
-      ? `, ${recipe.profession.name} level ${recipe.requiredLevel}`
-      : ""
+  }${recipe.profession ? `, ${recipe.profession.name}${
+    recipe.requiredLevel !== null ? ` level ${recipe.requiredLevel}` : ""
+  }` : ""}`;
+  const cardClassName = `recipe-output-card recipe-output-card--${variant}${
+    variant.startsWith("directory-") ? " cx-item-in" : ""
   }`;
+  const cardStyle =
+    entryDelayMs === undefined
+      ? undefined
+      : { animationDelay: `${Math.min(entryDelayMs, 330)}ms` };
+  const gridTitleSize =
+    recipe.name.length >= 26
+      ? "11px"
+      : recipe.name.length >= 20
+      ? "12px"
+      : "13.5px";
+  const listTitleSize =
+    recipe.name.length >= 16
+      ? "11px"
+      : recipe.name.length >= 13
+      ? "12px"
+      : "13.5px";
   const renderIngredients = (
     ingredients: RecipeOutputCardValue["ingredients"]
   ) =>
@@ -76,7 +97,11 @@ export function RecipeOutputCard({
               size="row"
             />
           </span>
-          <strong aria-hidden="true">×{ingredient.quantity}</strong>
+          <strong aria-hidden="true">
+            {variant.startsWith("directory-")
+              ? ingredient.quantity
+              : `×${ingredient.quantity}`}
+          </strong>
           <span
             className="recipe-output-tooltip"
             id={tooltipId}
@@ -95,9 +120,75 @@ export function RecipeOutputCard({
       );
     });
 
+  if (variant === "directory-list") {
+    return (
+      <article className={cardClassName} style={cardStyle}>
+        <Link
+          className="recipe-output-list-identity"
+          href={`/recipes/${recipe.slug}`}
+          aria-label={recipeLinkLabel}
+        >
+          <span className="recipe-output-image-stage">
+            <ContentImage
+              imagePath={recipe.resultingItem.image}
+              alt={`Image of ${recipe.resultingItem.name}`}
+              size="card"
+            />
+            <span className="recipe-output-yield" aria-hidden="true">
+              <strong>{quantity}</strong>
+            </span>
+          </span>
+          <strong
+            className="recipe-output-list-title"
+            title={recipe.name}
+            style={{ fontSize: listTitleSize }}
+          >
+            {recipe.name}
+          </strong>
+        </Link>
+
+        <span className="recipe-output-list-profession">
+          {recipe.profession ? (
+            <>
+              <span>{recipe.profession.name}</span>
+              {recipe.requiredLevel !== null ? (
+                <span>Lvl {recipe.requiredLevel}</span>
+              ) : null}
+            </>
+          ) : null}
+        </span>
+
+        <span className="recipe-output-experience">
+          +{recipe.experienceReward} EXP
+        </span>
+
+        <section
+          className="recipe-output-ingredients"
+          aria-label={`Ingredients for ${recipe.name}`}
+        >
+          {remainingIngredients.length > 0 ? (
+            <RecipeOutputIngredientDisclosure
+              listId={ingredientListId}
+              recipeName={recipe.name}
+              previewIngredients={renderIngredients(previewIngredients)}
+              remainingIngredients={renderIngredients(recipe.ingredients)}
+              remainingCount={remainingIngredients.length}
+              compact
+              popover
+            />
+          ) : (
+            <div className="recipe-output-ingredient-list" id={ingredientListId}>
+              {renderIngredients(previewIngredients)}
+            </div>
+          )}
+        </section>
+      </article>
+    );
+  }
+
   if (isProfessionVariant) {
     return (
-      <article className={`recipe-output-card recipe-output-card--${variant}`}>
+      <article className={cardClassName} style={cardStyle}>
         <div className="recipe-output-identity">
           <Link
             className="recipe-output-result-link"
@@ -172,7 +263,7 @@ export function RecipeOutputCard({
   }
 
   return (
-    <article className={`recipe-output-card recipe-output-card--${variant}`}>
+    <article className={cardClassName} style={cardStyle}>
       <Link
         className="recipe-output-identity"
         href={`/recipes/${recipe.slug}`}
@@ -192,21 +283,37 @@ export function RecipeOutputCard({
 
         <span className="recipe-output-copy">
           <span className="recipe-output-eyebrow">Recipe</span>
-          <strong>{recipe.name}</strong>
+          <strong
+            title={recipe.name}
+            style={
+              variant === "directory-grid"
+                ? { fontSize: gridTitleSize }
+                : undefined
+            }
+          >
+            {recipe.name}
+          </strong>
           {recipe.resultingItem.category ? (
             <span className="recipe-output-category">
               {recipe.resultingItem.category.name}
             </span>
           ) : null}
-          {recipe.profession && recipe.requiredLevel !== null ? (
+          {recipe.profession ? (
             <span className="recipe-output-requirement">
               {variant.startsWith("directory-") ? (
                 <>
                   <span>{recipe.profession.name}</span>
-                  <span>Lvl {recipe.requiredLevel}</span>
+                  {recipe.requiredLevel !== null ? (
+                    <span>Lvl {recipe.requiredLevel}</span>
+                  ) : null}
                 </>
               ) : (
-                <>{recipe.profession.name} · Level {recipe.requiredLevel}</>
+                <>
+                  {recipe.profession.name}
+                  {recipe.requiredLevel !== null
+                    ? ` · Level ${recipe.requiredLevel}`
+                    : ""}
+                </>
               )}
             </span>
           ) : null}
@@ -224,8 +331,14 @@ export function RecipeOutputCard({
               listId={ingredientListId}
               recipeName={recipe.name}
               previewIngredients={renderIngredients(previewIngredients)}
-              remainingIngredients={renderIngredients(remainingIngredients)}
+              remainingIngredients={renderIngredients(
+                variant === "directory-grid"
+                  ? recipe.ingredients
+                  : remainingIngredients,
+              )}
               remainingCount={remainingIngredients.length}
+              compact={variant === "directory-grid"}
+              popover={variant === "directory-grid"}
             />
           ) : (
             <div className="recipe-output-ingredient-list" id={ingredientListId}>

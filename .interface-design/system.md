@@ -185,13 +185,18 @@ same focused commit.
   cards retain the shared explanatory composition.
 - Grid: `repeat(auto-fill, minmax(190px, 1fr))`, `12px` gaps, seven desktop
   columns alongside the `272px` overview rail.
-- Card: `12px` padding, square result-art frame, centered `104px` content, and
-  factual yield badge at bottom left.
+- At `1920×1080`, grid cards render `190×317px`: `12px` padding, a
+  `166×166px` result-art frame with centered `104px` content, and a factual
+  yield badge at bottom left.
 - Title: `13.5px`, one-line ellipsis. Follow with compact uppercase Profession
   plus non-collapsing `Lvl` metadata.
 - Grid view exposes three linked `36px` Ingredient previews; preserve real
   additional-Ingredient disclosure and tooltips.
 - Put schema-backed EXP reward in the ruled card footer.
+- List view has an explicit Recipe / Profession / EXP / Ingredients heading
+  row. Desktop result rows render `1402×64px` with a `50px` result stage,
+  `110px` title, `80px` Profession/level, `55px` EXP, and a `1011px`
+  Ingredients region; linked Ingredient stages are `42px` outer size.
 - Grid/List is a client presentation switch over the same server-rendered
   Recipe facts and links. Retain deterministic twelve-Recipe pagination rather
   than copying the handoff's decorative infinite-scroll sentinel.

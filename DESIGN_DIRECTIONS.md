@@ -289,8 +289,9 @@ cards, without changing the richer shared cards used in Profession previews:
 - The desktop grid uses `repeat(auto-fill, minmax(190px, 1fr))` with `12px`
   gaps; the standard `1760px` shell produces seven columns beside the `272px`
   overview rail.
-- Each grid card has `12px` padding, a square art frame, centered `104px`
-  result content, and a bottom-left factual yield badge.
+- At `1920×1080`, each grid card is `190×317px` with `12px` padding, a
+  `166×166px` square art frame, centered `104px` result content, and a
+  bottom-left factual yield badge.
 - Recipe names are `13.5px`, one line, and ellipsized. Profession and required
   level share the compact line below without allowing the level to collapse.
 - Show three linked `36px` Ingredient previews in grid view, retaining the
@@ -299,6 +300,10 @@ cards, without changing the richer shared cards used in Profession previews:
 - Preserve the handoff's Grid/List control. List view reorganizes the same
   Recipe result, Profession/level, EXP, and linked Ingredient data; it does not
   introduce another query or data source.
+- List view restores the handoff's explicit Recipe / Profession / EXP /
+  Ingredients heading. Its `1920×1080` rows are `1402×64px`, composed from a
+  `50px` result stage, `110px` title, `80px` Profession/level, `55px` EXP, and
+  `1011px` Ingredients region with `42px` linked Ingredient stages.
 - Keep deterministic twelve-Recipe server pagination. It is production-owned
   behavior retained in place of the handoff's decorative infinite-scroll
   sentinel.

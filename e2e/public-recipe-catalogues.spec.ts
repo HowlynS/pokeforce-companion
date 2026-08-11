@@ -154,6 +154,20 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   );
   await expectRecipeColumns(page, 7);
   await expectNoHorizontalOverflow(page);
+  const gridGeometry = await allCards.first().evaluate((card) => {
+    const cardRect = card.getBoundingClientRect();
+    const stage = card.querySelector<HTMLElement>(".recipe-output-image-stage");
+    if (!stage) throw new Error("Expected the Recipe result image stage");
+    const stageRect = stage.getBoundingClientRect();
+    return {
+      card: { width: cardRect.width, height: cardRect.height },
+      stage: { width: stageRect.width, height: stageRect.height },
+    };
+  });
+  expect(gridGeometry.card.width).toBeCloseTo(190, 0);
+  expect(gridGeometry.card.height).toBeCloseTo(317, 0);
+  expect(gridGeometry.stage.width).toBeCloseTo(166, 0);
+  expect(gridGeometry.stage.height).toBeCloseTo(166, 0);
 
   const denseRecipe = fixture.recipes.find((recipe) =>
     recipe.name.includes("Dense Ninefold")
@@ -225,7 +239,50 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole("button", { name: "List", exact: true }).click();
-  await expect(page.locator(".recipe-output-card--directory-list")).toHaveCount(12);
+  const listHeading = page.locator(".recipe-output-list-heading");
+  await expect(listHeading).toBeVisible();
+  for (const heading of ["Recipe", "Profession", "EXP", "Ingredients"]) {
+    await expect(listHeading.getByText(heading, { exact: true })).toBeVisible();
+  }
+  const listCards = page.locator(".recipe-output-card--directory-list");
+  await expect(listCards).toHaveCount(12);
+  const listGeometry = await listCards.first().evaluate((card) => {
+    const rect = card.getBoundingClientRect();
+    const identity = card.querySelector<HTMLElement>(
+      ".recipe-output-list-identity"
+    );
+    const stage = card.querySelector<HTMLElement>(".recipe-output-image-stage");
+    const title = card.querySelector<HTMLElement>(".recipe-output-list-title");
+    const profession = card.querySelector<HTMLElement>(
+      ".recipe-output-list-profession"
+    );
+    const experience = card.querySelector<HTMLElement>(
+      ".recipe-output-experience"
+    );
+    const ingredients = card.querySelector<HTMLElement>(
+      ".recipe-output-ingredients"
+    );
+    if (!identity || !stage || !title || !profession || !experience || !ingredients) {
+      throw new Error("Expected all Recipe list columns");
+    }
+    return {
+      row: { width: rect.width, height: rect.height },
+      identity: identity.getBoundingClientRect().width,
+      stage: stage.getBoundingClientRect().width,
+      title: title.getBoundingClientRect().width,
+      profession: profession.getBoundingClientRect().width,
+      experience: experience.getBoundingClientRect().width,
+      ingredients: ingredients.getBoundingClientRect().width,
+    };
+  });
+  expect(listGeometry.row.width).toBeCloseTo(1402, 0);
+  expect(listGeometry.row.height).toBeCloseTo(64, 0);
+  expect(listGeometry.identity).toBeCloseTo(174, 0);
+  expect(listGeometry.stage).toBeCloseTo(50, 0);
+  expect(listGeometry.title).toBeCloseTo(110, 0);
+  expect(listGeometry.profession).toBeCloseTo(80, 0);
+  expect(listGeometry.experience).toBeCloseTo(55, 0);
+  expect(listGeometry.ingredients).toBeCloseTo(1011, 0);
   await expectNoHorizontalOverflow(page);
   await page.getByRole("button", { name: "Grid", exact: true }).click();
   await expect(page.locator(".recipe-output-card--directory-grid")).toHaveCount(12);
@@ -242,7 +299,31 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
       ),
       fullPage: true,
     });
+    await page.getByRole("button", { name: "List", exact: true }).click();
+    if (viewport.width > 680) {
+      await expect(page.locator(".recipe-output-list-heading")).toBeVisible();
+    } else {
+      await expect(page.locator(".recipe-output-list-heading")).toBeHidden();
+    }
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({
+      path: path.join(
+        SCREENSHOT_DIRECTORY,
+        `recipes-list-${viewport.name}.png`
+      ),
+      fullPage: true,
+    });
   }
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/recipes");
+  const reducedMotionCard = page.locator(
+    ".recipe-output-card--directory-grid"
+  ).first();
+  await expect(reducedMotionCard).toHaveCSS("animation-name", "none");
+  await expect(reducedMotionCard).toHaveCSS("transition-duration", "0s");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
 
   const filteredPath = `/recipes?profession=${fixture.profession.slug}`;
   await page.setViewportSize({ width: 1920, height: 1080 });

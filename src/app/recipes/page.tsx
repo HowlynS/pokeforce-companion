@@ -203,6 +203,7 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
 
           <DirectoryOverviewPanel
             title="Recipes Overview"
+            icon="recipes"
             stats={[
               { label: "Total Recipes", value: totalRecipeCount },
               { label: "Professions", value: totalProfessionCount },
