@@ -292,6 +292,32 @@ same focused commit.
   the hero, and preserve the shared detail scenic layer as presentation rather
   than a Class-specific atmosphere.
 
+### Public World Navigation
+
+- `/world` uses the shared fixed-height catalogue shell around a `14px`-radius
+  bordered workspace: a `260px` tree sidebar (`14px 8px` padding, own scroller,
+  muted right border) beside a `22px 26px` detail pane. Below `1180px` the
+  columns stack and return to document flow.
+- Regions are topmost production Locations; nesting is `Location.parent`
+  containment at its real depth. The handoff's three levels are styling only
+  (level 0 region, level 1 nested, level 2+ leaf). Never invent World, Region,
+  or NPC records, and never turn a Shop into a Location node.
+- Selection is `?location=<slug>` and filtering is `?q=`, both real server GETs.
+  Branches are `<details>` disclosures so expansion is keyboard-native and
+  works without JavaScript; a filter keeps a match's ancestors.
+- The detail pane uses a `110px` green-neutral stage with `70px` content, an
+  `11px` uppercase type eyebrow, a `26px` serif name, the `View full page →`
+  pill to `/locations/[slug]`, and a `12.5px` description.
+- Panels form a `1fr 1fr` grid with `14px` gaps. "NPCs Present" is omitted
+  entirely; a factual Location facts panel holds the composition. Shops lists
+  directly assigned Shops with inventory counts; Obtainable items spans both
+  columns and derives only from Acquisition Sources at this Location, one chip
+  per Item. Empty panels hide, and Location facts spans a row it occupies
+  alone.
+- The World dropdown lists World Navigation (with the handoff's `Recommended`
+  pill and a ruled separator), Locations, and Shops, marking the current
+  destination gold. NPCs stays absent until a production resource exists.
+
 ### Public Locations catalogue
 
 - `/locations` follows the handoff's nested ledger within the shared `1760px`

@@ -172,6 +172,11 @@ test.describe("main navigation", () => {
   }
 
   const WORLD_TARGETS = [
+    {
+      label: "World Navigation",
+      path: "/world",
+      heading: "World Navigation",
+    },
     { label: "Locations", path: "/locations", heading: "Locations" },
     { label: "Shops", path: "/shops", heading: "Shops" },
   ] as const;
@@ -261,7 +266,7 @@ test.describe("main navigation", () => {
       await expect(panel).toHaveCount(0);
     });
 
-    test("does not expose World Navigation or NPCs, which have no production route", async ({
+    test("recommends World Navigation but still does not expose NPCs, which have no production route", async ({
       page,
     }) => {
       await page.goto("/");
@@ -271,11 +276,35 @@ test.describe("main navigation", () => {
       });
       await navigation.getByRole("button", { name: "World" }).click();
 
-      for (const unsupportedLabel of ["World Navigation", "NPCs"]) {
-        await expect(
-          navigation.getByRole("link", { name: unsupportedLabel })
-        ).toHaveCount(0);
-      }
+      // World Navigation is a real route now, and keeps the handoff's
+      // Recommended treatment.
+      const worldNavigation = navigation.getByRole("link", {
+        name: /World Navigation/,
+      });
+      await expect(worldNavigation).toHaveAttribute("href", "/world");
+      await expect(
+        worldNavigation.locator(".public-world-menu-item-badge")
+      ).toHaveText("Recommended");
+
+      // NPC still has no Prisma model or route anywhere in the app.
+      await expect(
+        navigation.getByRole("link", { name: "NPCs" })
+      ).toHaveCount(0);
+    });
+
+    test("marks the open World destination as the current entry", async ({
+      page,
+    }) => {
+      await page.goto("/world");
+
+      const navigation = page.getByRole("navigation", {
+        name: "Main navigation",
+      });
+      await navigation.getByRole("button", { name: "World" }).click();
+
+      await expect(
+        navigation.locator('.public-world-menu-item[aria-current="page"]')
+      ).toHaveAttribute("href", "/world");
     });
   });
 

@@ -409,6 +409,45 @@ identity without inventing its gameplay model:
   the identity, and treat the shared detail scenic layer as presentation rather
   than a Class-specific atmosphere.
 
+### Public World Navigation
+
+The canonical `/world` view adopts the handoff's World Navigation screen as a
+hierarchical discovery surface rather than another flat directory:
+
+- Use the shared fixed-height catalogue shell. Inside it, a `14px`-radius
+  bordered workspace holds a `260px` tree sidebar (`14px 8px` padding, its own
+  scroller, ruled off with the muted border) beside a `22px 26px` detail pane.
+  Below `1180px` both return to document flow and the tree stacks above.
+- A "region" is simply a topmost production Location — the same root derivation
+  `/locations` and `/shops` already use. Nesting is `Location.parent`
+  containment only. Render the real depth; the prototype's three fixed levels
+  drive styling (level 0 region row, level 1 nested row, level 2+ leaf), never
+  a limit. Never invent a World, Region, or NPC record.
+- Selection is a real `?location=<slug>` GET, so every node is linkable and
+  server-rendered; the name filter is a real `?q=` GET that keeps a match's
+  ancestors so the path stays navigable. Branches are `<details>` disclosures,
+  so expansion is keyboard-native and survives without JavaScript.
+- The detail pane uses a `110px` green-neutral stage with `70px` content, an
+  `11px` uppercase type eyebrow, a `26px` serif name, the handoff's
+  `View full page →` pill linking to the canonical `/locations/[slug]`, and a
+  `12.5px` description.
+- Panels are a `1fr 1fr` grid with `14px` gaps. The handoff's "NPCs Present"
+  panel is omitted entirely — production has no NPC model — and a factual
+  Location facts panel (type, direct sub-location count, direct Shop count,
+  obtainable-Item count, optional access note) keeps the two-up composition
+  from schema-backed fields. Shops list the Location's directly assigned Shops
+  with their inventory counts; Obtainable items span both columns and derive
+  strictly from Acquisition Sources whose own `locationId` is this Location,
+  one chip per Item. Both hide completely when empty, and Location facts spans
+  the row when it is alone on it.
+- Location remains "where" and Shop remains a commercial service: the tree
+  never turns a Shop into a Location node.
+
+The World dropdown exposes World Navigation (with the handoff's `Recommended`
+pill and a ruled separator beneath it), Locations, and Shops. NPCs stays absent
+until a production resource exists. The dropdown marks its current destination
+gold, matching the handoff's own active treatment.
+
 ### Public Locations catalogue
 
 The canonical `/locations` directory uses the handoff's hierarchy ledger while

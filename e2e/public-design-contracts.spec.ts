@@ -66,7 +66,10 @@ test("shared shell and Appearance variants preserve public semantics", async ({
   // "LocationsCities, routes & landmarks" as concatenated text content),
   // so this checks count + individual accessible names rather than an
   // exact full-text array like the flat links above.
-  await expect(navigation.getByRole("link")).toHaveCount(6);
+  await expect(navigation.getByRole("link")).toHaveCount(7);
+  await expect(
+    navigation.getByRole("link", { name: "World Navigation", exact: false })
+  ).toHaveAttribute("href", "/world");
   await expect(
     navigation.getByRole("link", { name: "Locations", exact: false })
   ).toHaveAttribute("href", "/locations");

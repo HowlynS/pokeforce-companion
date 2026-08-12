@@ -5,24 +5,29 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { publicMotionDuration } from "@/lib/public-motion";
 
-// The Claude Design handoff's World dropdown also lists "World
-// Navigation" (a region-tree overview) and "NPCs" — neither has a real
-// production route: World Navigation doesn't exist yet (it needs its own
-// slice built strictly from real Location containment, not the
-// prototype's region/NPC framing), and NPC has no Prisma model or route
-// anywhere in the app. Only truthful, live routes are exposed here; the
-// other two entries are added once (and if) they have something real
-// behind them.
+// The handoff's World dropdown lists World Navigation (Recommended),
+// Locations, Shops and NPCs. The first three are real production routes;
+// NPC still has no Prisma model or route anywhere in the app, so it stays
+// absent rather than being stubbed. World Navigation is built strictly from
+// real Location containment, never the prototype's region/NPC framing.
 const worldItems = [
+  {
+    label: "World Navigation",
+    href: "/world",
+    description: "Region tree overview",
+    recommended: true,
+  },
   {
     label: "Locations",
     href: "/locations",
     description: "Cities, routes & landmarks",
+    recommended: false,
   },
   {
     label: "Shops",
     href: "/shops",
     description: "Vendors & trade goods",
+    recommended: false,
   },
 ] as const;
 
@@ -138,22 +143,35 @@ export function WorldMenu() {
           aria-hidden={closing || undefined}
           inert={closing ? true : undefined}
         >
-          {worldItems.map((item, index) => (
+          {worldItems.map((item, index) => {
+            const current =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
             <Link
               key={item.href}
               href={item.href}
-              className={`public-world-menu-item ${closing ? "cx-item-out" : "cx-item-in"}`}
+              aria-current={current ? "page" : undefined}
+              className={
+                `public-world-menu-item ${closing ? "cx-item-out" : "cx-item-in"}` +
+                (current ? " public-world-menu-item--current" : "")
+              }
               style={{ animationDelay: closing ? "0ms" : `${index * 30}ms` }}
               onClick={closeMenu}
             >
               <span className="public-world-menu-item-label">
                 {item.label}
+                {item.recommended ? (
+                  <span className="public-world-menu-item-badge">
+                    Recommended
+                  </span>
+                ) : null}
               </span>
               <span className="public-world-menu-item-description">
                 {item.description}
               </span>
             </Link>
-          ))}
+            );
+          })}
         </div>
       ) : null}
     </div>

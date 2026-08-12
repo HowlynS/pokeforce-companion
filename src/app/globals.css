@@ -1612,10 +1612,44 @@ select:focus-visible {
   background: var(--color-menu-item-hover);
 }
 
+/* The handoff rules the recommended World Navigation entry off from the
+   ordinary directory links beneath it. */
+.public-world-menu-item:nth-child(2) {
+  margin-top: 6px;
+  border-top: 1px solid var(--color-divider-menu);
+  padding-top: 11px;
+}
+
 .public-world-menu-item-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 12.5px;
   font-weight: 700;
   color: var(--color-text);
+  /* The panel's 230px is a floor, not a cap: keeping the label and its
+     Recommended pill on one line lets the panel grow to fit them, matching
+     the handoff. */
+  white-space: nowrap;
+}
+
+/* The handoff colours the current destination's label gold while its
+   siblings stay ivory. */
+.public-world-menu-item--current .public-world-menu-item-label {
+  color: var(--color-accent-soft);
+}
+
+/* The handoff's Recommended pill on the World Navigation entry. */
+.public-world-menu-item-badge {
+  flex: none;
+  border-radius: 4px;
+  background: var(--color-accent-soft);
+  padding: 2px 6px;
+  color: var(--color-background);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .public-world-menu-item-description {
@@ -13042,5 +13076,486 @@ a.shop-detail-chip:focus-visible {
   .recipe-detail-page .recipe-ingredient-row:focus-visible,
   .shop-detail-inventory-row:hover {
     transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   World Navigation (/world)
+
+   Ported from the handoff's World Navigation screen. It reuses the shared
+   fixed-height catalogue shell (public-site-shell--catalogue), so the bordered
+   workspace fills the remaining viewport and each column scrolls internally at
+   desktop widths, exactly like the Items/Recipes/Locations/Shops directories.
+--------------------------------------------------------------------------- */
+
+.world-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-background);
+}
+
+.world-sidebar {
+  width: 260px;
+  flex: none;
+  overflow-y: auto;
+  border-right: 1px solid var(--color-border-muted);
+  background: var(--color-surface);
+  padding: 14px 8px;
+  scrollbar-width: none;
+}
+
+.world-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.world-sidebar-search {
+  margin: 0 8px 12px;
+}
+
+/* The sidebar filter is the same shared search primitive every public field
+   uses; only its route-specific geometry is narrower than the header's. */
+.world-sidebar-search .directory-search-field {
+  width: 100%;
+  border-color: var(--color-border-muted);
+  border-radius: 7px;
+  background: var(--color-background);
+  padding: 6px 10px;
+}
+
+.world-sidebar-search .directory-search-field input[type="search"] {
+  font-size: 11.5px;
+}
+
+.world-sidebar-label {
+  margin: 0;
+  padding: 0 10px 10px;
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.world-sidebar-empty {
+  margin: 0;
+  padding: 0 10px;
+  color: var(--color-text-meta);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.world-tree-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.world-tree > .world-tree-list {
+  user-select: none;
+}
+
+.world-tree-branch > .world-tree-list {
+  margin-top: 2px;
+  padding-left: 20px;
+}
+
+.world-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 7px;
+  padding: 8px 10px;
+  cursor: pointer;
+  list-style: none;
+  transition: background-color 0.15s ease;
+}
+
+.world-tree-row::-webkit-details-marker {
+  display: none;
+}
+
+.world-tree-row--level-1 {
+  padding: 7px 10px;
+}
+
+.world-tree-row--level-2 {
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.world-tree-row:hover {
+  background: var(--color-surface-soft);
+}
+
+/* The handoff tints an open branch by level, and marks the selected row with
+   the menu-hover surface plus a gold label. */
+details[open] > .world-tree-row--level-0 {
+  background: var(--color-menu-item-hover);
+}
+
+details[open] > .world-tree-row--level-1 {
+  background: var(--color-surface-soft);
+}
+
+.world-tree-row--selected,
+details[open] > .world-tree-row--selected {
+  background: var(--color-menu-item-hover);
+}
+
+.world-tree-chevron {
+  flex: none;
+  display: inline-flex;
+  color: var(--color-accent-soft);
+  transition: transform 0.15s ease;
+}
+
+.world-tree-row--level-1 .world-tree-chevron,
+.world-tree-row--level-2 .world-tree-chevron {
+  color: var(--color-text-muted);
+}
+
+details[open] > .world-tree-row > .world-tree-chevron {
+  transform: rotate(90deg);
+}
+
+.world-tree-label {
+  min-width: 0;
+  flex: 1;
+  color: var(--color-text-body);
+  font-size: 12.5px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.world-tree-row--level-0 .world-tree-label {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.world-tree-row--level-2 .world-tree-label {
+  color: var(--color-text-meta);
+  font-size: 12px;
+}
+
+.world-tree-row--leaf {
+  padding-left: 27px;
+}
+
+.world-tree-row--selected .world-tree-label {
+  color: var(--color-accent-soft);
+}
+
+.world-tree-label:hover {
+  color: var(--color-text);
+}
+
+.world-detail {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 22px 26px;
+  scrollbar-width: none;
+}
+
+.world-detail::-webkit-scrollbar {
+  display: none;
+}
+
+.world-detail-path {
+  margin: 0 0 16px;
+  color: var(--color-text-meta-dim);
+  font-size: 12px;
+}
+
+.world-detail-path-separator {
+  margin: 0 8px;
+  color: var(--color-border);
+}
+
+.world-detail-path-current {
+  color: var(--color-accent-soft);
+}
+
+.world-detail-identity {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.world-detail-stage,
+.world-detail-stage .public-sprite-stage--row {
+  width: 110px;
+  height: 110px;
+  flex: none;
+}
+
+.world-detail-stage .public-sprite-stage--row {
+  --sprite-image-size: 70px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(122, 168, 110, 0.2), transparent 62%),
+    var(--color-surface);
+}
+
+.world-detail-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.world-detail-eyebrow {
+  margin: 0 0 6px;
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.world-detail-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.world-detail-title-row h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.world-detail-full-page {
+  flex: none;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  padding: 5px 12px;
+  color: var(--color-accent-soft);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.world-detail-full-page:hover,
+.world-detail-full-page:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+}
+
+.world-detail-description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.world-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.world-panel {
+  min-width: 0;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 10px;
+  background: var(--color-surface);
+  padding: 16px;
+}
+
+.world-panel--wide {
+  grid-column: span 2;
+}
+
+.world-panel h3 {
+  margin: 0 0 10px;
+  color: var(--color-accent-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.world-panel-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.world-panel-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.world-panel-list a {
+  min-width: 0;
+  color: var(--color-text-body);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.world-panel-list a:hover,
+.world-panel-list a:focus-visible {
+  color: var(--color-accent-soft);
+}
+
+.world-panel-meta {
+  flex: none;
+  color: var(--color-text-meta-dim);
+  font-size: 11.5px;
+}
+
+.world-panel-facts {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.world-panel-facts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.world-panel-facts dt {
+  color: var(--color-text-meta);
+  font-size: 12.5px;
+}
+
+.world-panel-facts dd {
+  margin: 0;
+  color: var(--color-text-body);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.world-panel-note {
+  margin: 10px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.world-item-chips {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.world-item-chips a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 8px;
+  background: var(--color-background);
+  padding: 6px 10px;
+  color: var(--color-text-body);
+  font-size: 12px;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.world-item-chips a:hover,
+.world-item-chips a:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+}
+
+.world-item-chip-stage,
+.world-item-chip-stage .public-sprite-stage--row {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.world-item-chip-stage .public-sprite-stage--row {
+  --sprite-image-size: 18px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-surface);
+}
+
+.world-item-chip-stage .public-sprite-fallback {
+  font-size: 6px;
+  line-height: 1.05;
+}
+
+/* Below the catalogue shell's own breakpoint the workspace returns to ordinary
+   document flow: the tree stacks above the detail pane and neither column is
+   an independent scroller. */
+@media (max-width: 1180px) {
+  .world-workspace {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .world-sidebar {
+    width: auto;
+    max-height: 320px;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border-muted);
+  }
+
+  .world-detail {
+    overflow: visible;
+    padding: 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .world-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .world-panel--wide {
+    grid-column: auto;
+  }
+
+  .world-detail-identity {
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world-tree-row,
+  .world-tree-chevron,
+  .world-detail-full-page,
+  .world-item-chips a {
+    transition: none;
   }
 }

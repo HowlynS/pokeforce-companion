@@ -10,6 +10,7 @@ const PUBLIC_INDEX_PATHS = [
   "/professions",
   "/classes",
   "/categories",
+  "/world",
   "/locations",
   "/shops",
 ] as const;
