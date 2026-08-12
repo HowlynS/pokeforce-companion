@@ -185,9 +185,15 @@ same focused commit.
   cards retain the shared explanatory composition.
 - Grid: `repeat(auto-fill, minmax(190px, 1fr))`, `12px` gaps, seven desktop
   columns alongside the `272px` overview rail.
-- At `1920×1080`, grid cards render `190×317px`: `12px` padding, a
-  `166×166px` result-art frame with centered `104px` content, and a factual
+- At `1920×1080`, grid cards render `190×315px`: `12px` padding, a
+  `164×164px` result-art frame with centered `104px` content, and a factual
   yield badge at bottom left.
+- The card keeps one internal horizontal rhythm: art frame, title,
+  Profession/level, Ingredient preview row and ruled footer all resolve to the
+  same `164px` content box. Bordered stages inside the card use `border-box`
+  so a `1px` frame cannot push a section outside it. The disclosure's trailing
+  grid column is the trigger's own `25px`, right-aligning the chevron to the
+  title's inset while leaving room for three unshrunk `36px` previews.
 - Title: `13.5px`, one-line ellipsis. Follow with compact uppercase Profession
   plus non-collapsing `Lvl` metadata.
 - Grid view exposes three linked `36px` Ingredient previews; preserve real

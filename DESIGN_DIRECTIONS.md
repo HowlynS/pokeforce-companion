@@ -289,9 +289,18 @@ cards, without changing the richer shared cards used in Profession previews:
 - The desktop grid uses `repeat(auto-fill, minmax(190px, 1fr))` with `12px`
   gaps; the standard `1760px` shell produces seven columns beside the `272px`
   overview rail.
-- At `1920×1080`, each grid card is `190×317px` with `12px` padding, a
-  `166×166px` square art frame, centered `104px` result content, and a
-  bottom-left factual yield badge.
+- At `1920×1080`, each grid card is `190×315px` with `12px` padding, a
+  `164×164px` square art frame, centered `104px` result content, and a
+  bottom-left factual yield badge. The card has one internal horizontal
+  rhythm: the art frame, title, Profession/level line, Ingredient preview row
+  and ruled footer all resolve to the same `164px` content box. Every bordered
+  stage inside the card is `border-box`, so a `1px` frame never pushes a
+  section outside that box — the handoff declares this on its own `36px`,
+  `25px` and `24px` stages and omits it only on the art frame, where the slip
+  leaves that frame `2px` wider than every sibling. The disclosure's trailing
+  column is the trigger's own `25px` width, so the chevron's right edge lands
+  on the same inset as the title, and the preview column stays wide enough for
+  three full `36px` stages plus their two `9px` gaps.
 - Recipe names are `13.5px`, one line, and ellipsized. Profession and required
   level share the compact line below without allowing the level to collapse.
 - Show three linked `36px` Ingredient previews in grid view, retaining the

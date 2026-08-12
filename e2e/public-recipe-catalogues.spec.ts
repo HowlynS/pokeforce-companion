@@ -158,16 +158,45 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     const cardRect = card.getBoundingClientRect();
     const stage = card.querySelector<HTMLElement>(".recipe-output-image-stage");
     if (!stage) throw new Error("Expected the Recipe result image stage");
+    const title = card.querySelector<HTMLElement>(".recipe-output-copy > strong");
+    if (!title) throw new Error("Expected the Recipe card title");
+    const footer = card.querySelector<HTMLElement>(".recipe-output-experience");
+    if (!footer) throw new Error("Expected the Recipe card footer");
+    const preview = card.querySelector<HTMLElement>(".recipe-output-ingredient");
+    const inset = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left - cardRect.left,
+        right: cardRect.right - rect.right,
+      };
+    };
     const stageRect = stage.getBoundingClientRect();
     return {
       card: { width: cardRect.width, height: cardRect.height },
       stage: { width: stageRect.width, height: stageRect.height },
+      stageInset: inset(stage),
+      titleInset: inset(title),
+      footerInset: inset(footer),
+      previewWidth: preview?.getBoundingClientRect().width ?? null,
+      previewLeft: preview ? inset(preview).left : null,
     };
   });
   expect(gridGeometry.card.width).toBeCloseTo(190, 0);
-  expect(gridGeometry.card.height).toBeCloseTo(317, 0);
-  expect(gridGeometry.stage.width).toBeCloseTo(166, 0);
-  expect(gridGeometry.stage.height).toBeCloseTo(166, 0);
+  expect(gridGeometry.card.height).toBeCloseTo(315, 0);
+  expect(gridGeometry.stage.width).toBeCloseTo(164, 0);
+  expect(gridGeometry.stage.height).toBeCloseTo(164, 0);
+
+  // One internal horizontal rhythm: the art frame, title, footer and the first
+  // Ingredient preview all resolve to the same card content box, and previews
+  // keep their full 36px stage instead of shrinking to fit the trigger.
+  expect(gridGeometry.stageInset.left).toBeCloseTo(gridGeometry.titleInset.left, 0);
+  expect(gridGeometry.stageInset.right).toBeCloseTo(gridGeometry.titleInset.right, 0);
+  expect(gridGeometry.footerInset.left).toBeCloseTo(gridGeometry.titleInset.left, 0);
+  expect(gridGeometry.footerInset.right).toBeCloseTo(gridGeometry.titleInset.right, 0);
+  if (gridGeometry.previewWidth !== null) {
+    expect(gridGeometry.previewWidth).toBeCloseTo(36, 0);
+    expect(gridGeometry.previewLeft).toBeCloseTo(gridGeometry.titleInset.left, 0);
+  }
 
   const denseRecipe = fixture.recipes.find((recipe) =>
     recipe.name.includes("Dense Ninefold")

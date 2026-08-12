@@ -5414,7 +5414,18 @@ body:has(.recipe-detail-page) .public-site-footer {
   display: none;
 }
 
+/* One horizontal rhythm for the whole Recipe grid card. Every section — art
+   frame, title, Profession/level, Ingredient previews, disclosure trigger and
+   the ruled footer — resolves to the same content box (the 190px column minus
+   its 1px border and 12px padding = 164px). Bordered stages inside the card
+   therefore use border-box, so a 1px frame can never push a section outside
+   that box: the handoff writes `box-sizing:border-box` on its own 36px/25px/
+   24px stages for exactly this reason, and only omits it on the art frame,
+   where the slip leaves that frame 2px wider than every sibling. */
 .recipe-output-card--directory-grid {
+  --recipe-card-preview: 36px;
+  --recipe-card-trigger: 25px;
+  --recipe-card-rhythm: 9px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -5449,7 +5460,7 @@ body:has(.recipe-detail-page) .public-site-footer {
 }
 
 .recipe-output-card--directory-grid .recipe-output-image-stage {
-  box-sizing: content-box;
+  box-sizing: border-box;
   width: 100%;
   aspect-ratio: 1;
   border: 1px solid var(--color-border);
@@ -5565,24 +5576,31 @@ body:has(.recipe-detail-page) .public-site-footer {
   padding: 0 0 6px;
 }
 
+/* The trailing column is the trigger's own width, not a 36px preview slot, so
+   the chevron's right edge lands on the card's content inset like the title
+   and footer. That also leaves the preview column wide enough for three full
+   36px stages plus their two gaps, so they never shrink. */
 .recipe-output-card--directory-grid .recipe-output-ingredient-disclosure {
   position: relative;
-  grid-template-columns: minmax(0, 1fr) 36px;
-  gap: 9px;
+  grid-template-columns: minmax(0, 1fr) var(--recipe-card-trigger);
+  gap: var(--recipe-card-rhythm);
 }
 
 .recipe-output-card--directory-grid .recipe-output-ingredient-list {
   flex-wrap: nowrap;
-  gap: 9px;
+  gap: var(--recipe-card-rhythm);
 }
 
 .recipe-output-card--directory-grid
   .recipe-output-ingredient-list
   > .recipe-output-ingredient {
   min-width: 0;
-  width: 36px;
-  height: 36px;
+  width: var(--recipe-card-preview);
+  height: var(--recipe-card-preview);
   min-height: 0;
+  /* Never shrink: a shrunk preview breaks the row's rhythm and drags its
+     quantity badge, which is anchored to the stage's own corner. */
+  flex: none;
   display: flex;
   border: 0;
   border-radius: 0;
@@ -5603,9 +5621,9 @@ body:has(.recipe-detail-page) .public-site-footer {
   > .recipe-output-ingredient
   .recipe-output-ingredient-image
   .public-sprite-stage--row {
-  --sprite-stage-size: 36px;
-  --sprite-image-size: 36px;
-  box-sizing: content-box;
+  --sprite-stage-size: var(--recipe-card-preview);
+  --sprite-image-size: var(--recipe-card-preview);
+  box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: 7px;
   background: var(--color-surface-soft);
@@ -11344,7 +11362,10 @@ a.profession-detail-chip:focus-visible {
   height: 24px;
 }
 
+/* Border-box keeps the icon column exactly 24px whether the row has a real
+   sprite or the fallback, so every ingredient name starts at the same x. */
 .recipe-output-ingredient-panel-image .public-sprite-stage--row {
+  box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: 5px;
   background: var(--color-surface);
