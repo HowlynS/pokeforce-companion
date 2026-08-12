@@ -5497,7 +5497,12 @@ body:has(.recipe-detail-page) .public-site-footer {
   box-sizing: border-box;
   width: 100%;
   aspect-ratio: 1;
-  border: 1px solid var(--color-border);
+  /* Deliberate production override of the handoff's neutral #3a3528 frame:
+     the result stage reads as a restrained gold-framed item portrait. It is
+     derived from the existing --color-accent rather than a new yellow, and
+     held well below full strength so the resting frame never competes with
+     the card's own focus-within/hover border, which uses that token at 100%. */
+  border: 1px solid color-mix(in srgb, var(--color-accent) 58%, transparent);
   border-radius: 8px;
   background:
     radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.14), transparent 62%),

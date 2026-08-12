@@ -291,7 +291,13 @@ cards, without changing the richer shared cards used in Profession previews:
   overview rail.
 - At `1920×1080`, each grid card is `190×315px` with `12px` padding, a
   `164×164px` square art frame, centered `104px` result content, and a
-  bottom-left factual yield badge. The card has one internal horizontal
+  bottom-left factual yield badge. The result frame is an approved production
+  override of the handoff's neutral `#3a3528`: a thin `1px` restrained gold
+  line derived from the existing `--color-accent`, held well below full
+  strength so the resting frame never competes with the card's own
+  focus-within/hover border, which uses that same token at full strength with
+  a glow. It reads as a framed item portrait, never a bright outline; no new
+  yellow is introduced. The card has one internal horizontal
   rhythm: the art frame, title, Profession/level line, Ingredient preview row
   and ruled footer all resolve to the same `164px` content box. Every bordered
   stage inside the card is `border-box`, so a `1px` frame never pushes a

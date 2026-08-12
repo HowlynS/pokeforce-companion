@@ -188,6 +188,10 @@ same focused commit.
 - At `1920×1080`, grid cards render `190×315px`: `12px` padding, a
   `164×164px` result-art frame with centered `104px` content, and a factual
   yield badge at bottom left.
+- The result frame overrides the handoff's neutral `#3a3528` with a thin `1px`
+  restrained gold derived from `--color-accent`, kept below full strength so it
+  never competes with the card's full-strength focus-within/hover border. Do
+  not introduce a separate yellow value for it.
 - The card keeps one internal horizontal rhythm: art frame, title,
   Profession/level, Ingredient preview row and ruled footer all resolve to the
   same `164px` content box. Bordered stages inside the card use `border-box`
