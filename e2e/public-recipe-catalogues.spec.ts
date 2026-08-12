@@ -300,8 +300,33 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   const collapsedChevronTransform = await disclosureChevron.evaluate(
     (chevron) => getComputedStyle(chevron).transform
   );
+
+  // The expanded panel is an absolute-positioned overlay, not a grid
+  // participant: opening it must not push the row below down by even 1px.
+  const denseCardBoxBeforeOpen = await denseCard.boundingBox();
+  expect(denseCardBoxBeforeOpen).not.toBeNull();
+  const siblingRowBoxesBeforeOpen = await allCards.evaluateAll((cards, denseTop) =>
+    cards
+      .map((card) => card.getBoundingClientRect())
+      .filter((rect) => rect.top > denseTop + 1)
+      .map((rect) => ({ x: rect.x, y: rect.y, width: rect.width, height: rect.height })),
+    denseCardBoxBeforeOpen!.y
+  );
+  expect(siblingRowBoxesBeforeOpen.length).toBeGreaterThan(0);
+
   await ingredientDisclosure.click();
   await expect(ingredientDisclosure).toHaveAttribute("aria-expanded", "true");
+
+  const denseCardBoxAfterOpen = await denseCard.boundingBox();
+  expect(denseCardBoxAfterOpen).toEqual(denseCardBoxBeforeOpen);
+  const siblingRowBoxesAfterOpen = await allCards.evaluateAll((cards, denseTop) =>
+    cards
+      .map((card) => card.getBoundingClientRect())
+      .filter((rect) => rect.top > denseTop + 1)
+      .map((rect) => ({ x: rect.x, y: rect.y, width: rect.width, height: rect.height })),
+    denseCardBoxBeforeOpen!.y
+  );
+  expect(siblingRowBoxesAfterOpen).toEqual(siblingRowBoxesBeforeOpen);
   await expect(ingredientDisclosure).toHaveAttribute(
     "aria-label",
     `Hide 6 additional ingredients for ${denseRecipe.name}`
@@ -313,6 +338,19 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   await expect(
     ingredientPanel.getByText("RECIPE INGREDIENTS", { exact: true })
   ).toBeVisible();
+
+  // Proves the panel actually paints above the row it overlaps, not merely
+  // that it is positioned there: a hit test at a point inside the panel but
+  // below the dense card's own bottom edge must resolve inside the panel.
+  const overlayHitTest = await ingredientPanel.evaluate((panel, cardBottom) => {
+    const panelRect = panel.getBoundingClientRect();
+    const x = panelRect.x + panelRect.width / 2;
+    const y = Math.min(cardBottom + 10, panelRect.bottom - 5);
+    const hit = document.elementFromPoint(x, y);
+    return { hitsPanel: !!hit && panel.contains(hit), y, cardBottom, panelBottom: panelRect.bottom };
+  }, denseCardBoxBeforeOpen!.y + denseCardBoxBeforeOpen!.height);
+  expect(overlayHitTest.panelBottom).toBeGreaterThan(overlayHitTest.cardBottom);
+  expect(overlayHitTest.hitsPanel).toBe(true);
   const panelRows = ingredientPanel.locator(
     ".recipe-output-ingredient-panel-row"
   );
