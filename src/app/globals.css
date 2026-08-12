@@ -5701,11 +5701,15 @@ body:has(.recipe-detail-page) .public-site-footer {
   font-size: 11px;
 }
 
-.recipe-output-card--directory-grid .recipe-output-ingredient-panel {
+/* The panel is centered under the disclosure row by its own base rule; this
+   variant only needs the extra clearance under the preview/trigger row and
+   a top-center scale origin so the entrance animation reads as growing down
+   from the trigger, not from the panel's own top-left corner. */
+.recipe-output-card--directory-grid .recipe-output-ingredient-positioner {
   top: 42px;
-  right: -12px;
-  left: -12px;
-  min-width: 0;
+}
+
+.recipe-output-card--directory-grid .recipe-output-ingredient-panel {
   transform-origin: top center;
 }
 
@@ -5981,9 +5985,18 @@ body:has(.recipe-detail-page) .public-site-footer {
   font-size: 11.5px;
 }
 
-.recipe-output-card--directory-list .recipe-output-ingredient-panel {
+/* The List row layout is unaffected by the adaptive-width work: the panel
+   keeps its own fixed, left-anchored footprint exactly as before. */
+.recipe-output-card--directory-list .recipe-output-ingredient-positioner {
   top: 50px;
+  left: 0;
+  transform: none;
+}
+
+.recipe-output-card--directory-list .recipe-output-ingredient-panel {
   width: 200px;
+  min-width: 0;
+  max-width: none;
 }
 
 .recipe-output-card--directory-list .recipe-output-experience {
@@ -11346,13 +11359,29 @@ a.profession-detail-chip:focus-visible {
   font-size: 10.5px;
 }
 
-.recipe-output-ingredient-panel {
+/* Positioning lives on this wrapper, never on the panel itself: the panel
+   also carries the cx-panel-in/out scale animation on its own `transform`,
+   and animating that property would silently overwrite a centering
+   translateX declared on the same element. Keeping the two concerns on two
+   elements means the animation can never fight the anchor. */
+.recipe-output-ingredient-positioner {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
+  left: 50%;
   z-index: 30;
-  min-width: 200px;
+  transform: translateX(calc(-50% + var(--panel-edge-shift, 0px)));
+}
+
+/* Sized on the panel itself, not the positioner: `width: max-content` gives
+   the panel a self-contained preferred width computed from its own grid
+   rows, so it never depends on a parent that is simultaneously trying to
+   shrink-to-fit around it (a percentage width here would be circular — the
+   positioner has no size of its own to resolve a percentage against). */
+.recipe-output-ingredient-panel {
   box-sizing: content-box;
+  width: max-content;
+  min-width: 190px;
+  max-width: min(320px, calc(100vw - 24px));
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -11375,12 +11404,19 @@ a.profession-detail-chip:focus-visible {
   text-transform: uppercase;
 }
 
+/* One explicit row structure, shared by every ingredient row: a fixed icon
+   column, a flexible name column, and a fixed quantity column, all on one
+   grid so the three cells share a single center-Y and the icon/name/
+   quantity edges land on identical x positions regardless of row content.
+   Growing the panel only ever hands the extra room to the middle column. */
 .recipe-output-ingredient-panel-row {
-  min-width: 0;
-  width: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 36px;
+  column-gap: 10px;
   align-items: center;
-  gap: 8px;
+  min-height: 28px;
+  width: 100%;
+  min-width: 0;
   border: 0;
   background: transparent;
   padding: 0;
@@ -11393,16 +11429,26 @@ a.profession-detail-chip:focus-visible {
   outline-offset: 1px;
 }
 
-.recipe-output-ingredient-panel-image,
-.recipe-output-ingredient-panel-image .public-sprite-stage--row {
-  --sprite-stage-size: 24px;
-  --sprite-image-size: 24px;
-  width: 24px;
-  height: 24px;
+.recipe-output-ingredient-panel-image {
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
 }
 
-/* Border-box keeps the icon column exactly 24px whether the row has a real
-   sprite or the fallback, so every ingredient name starts at the same x. */
+.recipe-output-ingredient-panel-image .public-sprite-stage--row {
+  --sprite-stage-size: 28px;
+  --sprite-image-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+/* Border-box keeps the icon stage exactly 28px whether the row has a real
+   sprite or the fallback, so every ingredient name starts at the same x;
+   the stage rectangle controls alignment, never the sprite's own content. */
 .recipe-output-ingredient-panel-image .public-sprite-stage--row {
   box-sizing: border-box;
   border: 1px solid var(--color-border);
@@ -11417,20 +11463,25 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-output-ingredient-panel-name {
+  display: flex;
+  align-items: center;
   min-width: 0;
+  min-height: 28px;
   font-size: 12.5px;
   font-weight: 400;
-  line-height: normal;
+  line-height: 1.2;
 }
 
 .recipe-output-ingredient-panel-row > strong {
-  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 28px;
   color: var(--color-accent-soft);
-  margin-left: auto;
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  line-height: normal;
+  line-height: 1;
 }
 
 .profession-recipe-list {

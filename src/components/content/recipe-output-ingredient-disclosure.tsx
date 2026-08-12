@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { publicMotionDuration } from "@/lib/public-motion";
 
 type RecipeOutputIngredientDisclosureProps = {
@@ -12,6 +19,11 @@ type RecipeOutputIngredientDisclosureProps = {
   popover?: boolean;
 };
 
+// Keeps the centered overlay clear of the viewport's own edges once it
+// grows past its minimum width; re-measured only when the panel opens, not
+// on every frame, since the card itself never moves while the panel is open.
+const PANEL_EDGE_GUTTER = 12;
+
 export function RecipeOutputIngredientDisclosure({
   listId,
   recipeName,
@@ -22,8 +34,10 @@ export function RecipeOutputIngredientDisclosure({
 }: RecipeOutputIngredientDisclosureProps) {
   const [expanded, setExpanded] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [edgeShift, setEdgeShift] = useState(0);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const disclosureRef = useRef<HTMLDivElement>(null);
+  const positionerRef = useRef<HTMLDivElement>(null);
 
   useEffect(
     () => () => {
@@ -50,6 +64,24 @@ export function RecipeOutputIngredientDisclosure({
 
     document.addEventListener("click", dismissOutsideCard, true);
     return () => document.removeEventListener("click", dismissOutsideCard, true);
+  }, [expanded, popover]);
+
+  // Measures the panel against the viewport as soon as it opens (before the
+  // browser paints, so no visible jump) and nudges it back on-screen with a
+  // translateX offset instead of abandoning the centered anchor entirely.
+  useLayoutEffect(() => {
+    if (!expanded || !popover) return;
+    const positioner = positionerRef.current;
+    if (!positioner) return;
+    const rect = positioner.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    let shift = 0;
+    if (rect.left < PANEL_EDGE_GUTTER) {
+      shift = PANEL_EDGE_GUTTER - rect.left;
+    } else if (rect.right > viewportWidth - PANEL_EDGE_GUTTER) {
+      shift = viewportWidth - PANEL_EDGE_GUTTER - rect.right;
+    }
+    setEdgeShift(shift);
   }, [expanded, popover]);
 
   function toggle() {
@@ -109,15 +141,23 @@ export function RecipeOutputIngredientDisclosure({
       </button>
       {expanded && popover ? (
         <div
-          id={listId}
-          className={`recipe-output-ingredient-panel ${closing ? "cx-panel-out" : "cx-panel-in"}`}
-          role="region"
-          aria-labelledby={`${listId}-heading`}
-          aria-hidden={closing || undefined}
-          inert={closing ? true : undefined}
+          className="recipe-output-ingredient-positioner"
+          ref={positionerRef}
+          style={
+            { "--panel-edge-shift": `${edgeShift}px` } as CSSProperties
+          }
         >
-          <p id={`${listId}-heading`}>RECIPE INGREDIENTS</p>
-          {expandedIngredients}
+          <div
+            id={listId}
+            className={`recipe-output-ingredient-panel ${closing ? "cx-panel-out" : "cx-panel-in"}`}
+            role="region"
+            aria-labelledby={`${listId}-heading`}
+            aria-hidden={closing || undefined}
+            inert={closing ? true : undefined}
+          >
+            <p id={`${listId}-heading`}>RECIPE INGREDIENTS</p>
+            {expandedIngredients}
+          </div>
         </div>
       ) : null}
     </div>

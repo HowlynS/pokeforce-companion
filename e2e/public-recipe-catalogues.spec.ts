@@ -382,26 +382,19 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     const secondRow = panel.querySelectorAll<HTMLElement>(
       ".recipe-output-ingredient-panel-row"
     )[1];
-    const image = panel.querySelector<HTMLElement>(
-      ".recipe-output-ingredient-panel-image"
-    );
     const name = panel.querySelector<HTMLElement>(
       ".recipe-output-ingredient-panel-name"
     );
     const quantity = row?.querySelector<HTMLElement>("strong");
     const card = panel.closest<HTMLElement>(".recipe-output-card");
-    if (!row || !secondRow || !image || !name || !quantity || !card) {
+    if (!row || !secondRow || !name || !quantity || !card) {
       throw new Error("Expected a complete Recipe ingredient panel row");
     }
     const panelRect = panel.getBoundingClientRect();
-    const rowRect = row.getBoundingClientRect();
-    const imageRect = image.getBoundingClientRect();
-    const nameRect = name.getBoundingClientRect();
-    const quantityRect = quantity.getBoundingClientRect();
-    const panelStyle = getComputedStyle(panel);
     const rowStyle = getComputedStyle(row);
     const nameStyle = getComputedStyle(name);
     const quantityStyle = getComputedStyle(quantity);
+    const panelStyle = getComputedStyle(panel);
     return {
       panelWidth: panelRect.width,
       panelHeight: panelRect.height,
@@ -413,25 +406,12 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
       panelShadow: panelStyle.boxShadow,
       panelBoxSizing: panelStyle.boxSizing,
       panelChildCount: panel.children.length,
-      rowHeight: rowRect.height,
       rowDisplay: rowStyle.display,
-      rowGap: rowStyle.gap,
-      rowPadding: rowStyle.padding,
+      rowGridColumns: rowStyle.gridTemplateColumns,
+      rowColumnGap: rowStyle.columnGap,
       rowAnimationName: rowStyle.animationName,
       firstRowDelay: rowStyle.animationDelay,
       secondRowDelay: getComputedStyle(secondRow).animationDelay,
-      imageWidth: imageRect.width,
-      imageHeight: imageRect.height,
-      imageCenterDelta: Math.abs(
-        imageRect.top + imageRect.height / 2 - (rowRect.top + rowRect.height / 2)
-      ),
-      nameCenterDelta: Math.abs(
-        nameRect.top + nameRect.height / 2 - (rowRect.top + rowRect.height / 2)
-      ),
-      quantityCenterDelta: Math.abs(
-        quantityRect.top + quantityRect.height / 2 -
-          (rowRect.top + rowRect.height / 2)
-      ),
       nameFontSize: nameStyle.fontSize,
       nameFontWeight: nameStyle.fontWeight,
       nameWhiteSpace: nameStyle.whiteSpace,
@@ -441,8 +421,13 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
       cardZIndex: getComputedStyle(card).zIndex,
     };
   });
-  expect(panelGeometry.panelWidth).toBeCloseTo(188, 0);
-  expect(panelGeometry.panelHeight).toBeGreaterThan(326);
+  // The panel's own minimum width (190px content) plus its fixed padding
+  // (10px) and border (1px) on each side is its floor; ~320px content plus
+  // the same padding/border is its ceiling. This fixture's long ingredient
+  // names should have pushed it well past the floor.
+  const PANEL_PADDING_AND_BORDER = 2 * (10 + 1);
+  expect(panelGeometry.panelWidth).toBeGreaterThan(190 + PANEL_PADDING_AND_BORDER);
+  expect(panelGeometry.panelWidth).toBeLessThanOrEqual(320 + PANEL_PADDING_AND_BORDER + 1);
   expect(panelGeometry.panelDisplay).toBe("flex");
   expect(panelGeometry.panelGap).toBe("8px");
   expect(panelGeometry.panelPadding).toBe("10px");
@@ -451,18 +436,19 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   expect(panelGeometry.panelShadow).not.toBe("none");
   expect(panelGeometry.panelBoxSizing).toBe("content-box");
   expect(panelGeometry.panelChildCount).toBe(orderedIngredients.length + 1);
-  expect(panelGeometry.rowHeight).toBeGreaterThanOrEqual(24);
-  expect(panelGeometry.rowDisplay).toBe("flex");
-  expect(panelGeometry.rowGap).toBe("8px");
-  expect(panelGeometry.rowPadding).toBe("0px");
+  expect(panelGeometry.rowDisplay).toBe("grid");
+  // 28px icon / flexible name / 36px quantity: only the middle track may
+  // ever change size as the panel grows.
+  const [iconTrack, nameTrack, quantityTrack] = panelGeometry.rowGridColumns
+    .split(" ")
+    .map((value) => parseFloat(value));
+  expect(iconTrack).toBeCloseTo(28, 0);
+  expect(quantityTrack).toBeCloseTo(36, 0);
+  expect(nameTrack).toBeGreaterThan(0);
+  expect(panelGeometry.rowColumnGap).toBe("10px");
   expect(panelGeometry.rowAnimationName).toBe("cx-item-in");
   expect(panelGeometry.firstRowDelay).toBe("0s");
   expect(panelGeometry.secondRowDelay).toBe("0.03s");
-  expect(panelGeometry.imageWidth).toBeCloseTo(24, 0);
-  expect(panelGeometry.imageHeight).toBeCloseTo(24, 0);
-  expect(panelGeometry.imageCenterDelta).toBeLessThanOrEqual(0.5);
-  expect(panelGeometry.nameCenterDelta).toBeLessThanOrEqual(0.5);
-  expect(panelGeometry.quantityCenterDelta).toBeLessThanOrEqual(0.5);
   expect(panelGeometry.nameFontSize).toBe("12.5px");
   expect(panelGeometry.nameFontWeight).toBe("400");
   expect(panelGeometry.nameWhiteSpace).toBe("normal");
@@ -470,6 +456,71 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   expect(panelGeometry.quantityFontSize).toBe("12.5px");
   expect(panelGeometry.quantityFontWeight).toBe("700");
   expect(panelGeometry.cardZIndex).toBe("40");
+
+  // Required browser measurement: every row's icon, name, and quantity
+  // column against a shared centerline, plus identical left/right edges
+  // across every row regardless of content. Covers real-sprite rows,
+  // "No image" fallback rows, and this fixture's long, wrapping names.
+  const rowMeasurements = await ingredientPanel.evaluate((panel) =>
+    Array.from(
+      panel.querySelectorAll<HTMLElement>(".recipe-output-ingredient-panel-row")
+    ).map((row) => {
+      const image = row.querySelector<HTMLElement>(
+        ".recipe-output-ingredient-panel-image"
+      );
+      const name = row.querySelector<HTMLElement>(
+        ".recipe-output-ingredient-panel-name"
+      );
+      const quantity = row.querySelector<HTMLElement>("strong");
+      if (!image || !name || !quantity) {
+        throw new Error("Expected a complete ingredient panel row");
+      }
+      const imageRect = image.getBoundingClientRect();
+      const nameRect = name.getBoundingClientRect();
+      const quantityRect = quantity.getBoundingClientRect();
+      return {
+        isFallback: !!row.querySelector(".public-sprite-stage--empty"),
+        isSingleLine: nameRect.height <= 20,
+        imageLeft: imageRect.left,
+        imageWidth: imageRect.width,
+        imageHeight: imageRect.height,
+        imageCenterY: imageRect.top + imageRect.height / 2,
+        nameLeft: nameRect.left,
+        nameCenterY: nameRect.top + nameRect.height / 2,
+        quantityRight: quantityRect.right,
+        quantityCenterY: quantityRect.top + quantityRect.height / 2,
+      };
+    })
+  );
+  expect(rowMeasurements.length).toBeGreaterThanOrEqual(5);
+  const realImageRows = rowMeasurements.filter((row) => !row.isFallback);
+  const fallbackRows = rowMeasurements.filter((row) => row.isFallback);
+  const wrappedRows = rowMeasurements.filter((row) => !row.isSingleLine);
+  expect(realImageRows.length).toBeGreaterThanOrEqual(2);
+  // The dense fixture seeds exactly one spriteless ingredient; that single
+  // fallback row is still measured against every real-sprite row below.
+  expect(fallbackRows.length).toBeGreaterThanOrEqual(1);
+  expect(wrappedRows.length).toBeGreaterThanOrEqual(1);
+  for (const row of rowMeasurements) {
+    expect(row.imageWidth).toBeCloseTo(28, 0);
+    expect(row.imageHeight).toBeCloseTo(28, 0);
+  }
+  // Same column x-positions on every row, real sprite or fallback alike.
+  const imageLefts = rowMeasurements.map((row) => row.imageLeft);
+  const nameLefts = rowMeasurements.map((row) => row.nameLeft);
+  const quantityRights = rowMeasurements.map((row) => row.quantityRight);
+  expect(Math.max(...imageLefts) - Math.min(...imageLefts)).toBeLessThanOrEqual(0.5);
+  expect(Math.max(...nameLefts) - Math.min(...nameLefts)).toBeLessThanOrEqual(0.5);
+  expect(Math.max(...quantityRights) - Math.min(...quantityRights)).toBeLessThanOrEqual(
+    0.5
+  );
+  // Icon, name, and quantity share one centerline within every row (a
+  // wrapped name grows the row, but the grid still centers all three
+  // columns against that taller row).
+  for (const row of rowMeasurements) {
+    const centers = [row.imageCenterY, row.nameCenterY, row.quantityCenterY];
+    expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1);
+  }
   await expectNoHorizontalOverflow(page);
   await page.screenshot({
     path: path.join(
@@ -507,6 +558,47 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   await page.getByRole("heading", { name: "Recipes", exact: true }).click();
   await expect(denseCard.locator(".recipe-output-ingredient-panel")).toHaveCount(0);
   await expect(denseCard).toHaveCSS("z-index", "auto");
+
+  // Edge-safety: the rightmost card with a disclosure trigger in the first
+  // row is centered by default, so an adaptive-width panel would naturally
+  // want to spill past the viewport's right edge. The disclosure's runtime
+  // edge-shift must pull it back on-screen without creating page overflow.
+  // Found dynamically rather than by fixture name, since the grid's actual
+  // column order is an implementation detail of the fixture, not this test.
+  const edgeCardIndex = await page.evaluate(() => {
+    const cards = Array.from(
+      document.querySelectorAll<HTMLElement>(".recipe-output-card--directory-grid")
+    );
+    const minTop = Math.min(...cards.map((card) => card.getBoundingClientRect().top));
+    const firstRow = cards
+      .map((card, index) => ({ card, index }))
+      .filter(({ card }) => Math.abs(card.getBoundingClientRect().top - minTop) < 1)
+      .filter(({ card }) => card.querySelector(".recipe-output-ingredient-toggle"));
+    firstRow.sort(
+      (a, b) =>
+        b.card.getBoundingClientRect().right - a.card.getBoundingClientRect().right
+    );
+    return firstRow[0]?.index ?? -1;
+  });
+  expect(edgeCardIndex).toBeGreaterThanOrEqual(0);
+  const edgeCard = allCards.nth(edgeCardIndex);
+  await edgeCard.locator(".recipe-output-ingredient-toggle").click();
+  const edgePanel = edgeCard.locator(".recipe-output-ingredient-panel");
+  await expect(edgePanel).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await expect(edgePanel).toHaveCSS("opacity", "1");
+  await page.screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipes-ingredient-disclosure-edge-shift-1920x1080.png"
+    ),
+  });
+  const edgePanelBox = await edgePanel.boundingBox();
+  expect(edgePanelBox).not.toBeNull();
+  expect(edgePanelBox!.x).toBeGreaterThanOrEqual(0);
+  expect(edgePanelBox!.x + edgePanelBox!.width).toBeLessThanOrEqual(1920);
+  await edgeCard.locator(".recipe-output-ingredient-toggle").click();
+  await expect(edgeCard.locator(".recipe-output-ingredient-panel")).toHaveCount(0);
 
   await page.getByRole("button", { name: "List", exact: true }).click();
   const listHeading = page.locator(".recipe-output-list-heading");
@@ -566,19 +658,30 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     denseListPanel.locator(".recipe-output-ingredient-panel-row").last()
   ).toHaveCSS("opacity", "1");
   const listPanelGeometry = await denseListPanel.evaluate((panel) => {
+    const positioner = panel.parentElement;
+    if (!positioner) {
+      throw new Error("Expected the panel's positioning wrapper");
+    }
     const rect = panel.getBoundingClientRect();
     const style = getComputedStyle(panel);
+    const positionerStyle = getComputedStyle(positioner);
     return {
       outerWidth: rect.width,
       styleWidth: style.width,
-      top: style.top,
+      styleMinWidth: style.minWidth,
+      styleMaxWidth: style.maxWidth,
       transformOrigin: style.transformOrigin,
+      positionerTop: positionerStyle.top,
+      positionerLeft: positionerStyle.left,
     };
   });
   expect(listPanelGeometry.outerWidth).toBeCloseTo(222, 0);
   expect(listPanelGeometry.styleWidth).toBe("200px");
-  expect(listPanelGeometry.top).toBe("50px");
+  expect(listPanelGeometry.styleMinWidth).toBe("0px");
+  expect(listPanelGeometry.styleMaxWidth).toBe("none");
   expect(listPanelGeometry.transformOrigin).toBe("0px 0px");
+  expect(listPanelGeometry.positionerTop).toBe("50px");
+  expect(listPanelGeometry.positionerLeft).toBe("0px");
   await denseListDisclosure.press("Enter");
   await expect(denseListPanel).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
