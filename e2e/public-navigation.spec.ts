@@ -5,6 +5,12 @@
 // classes. Seeded names/slugs come from prisma/seed.ts.
 
 import { expect, test, type Page } from "@playwright/test";
+import { requireSiteVisibility } from "./helpers/site-visibility";
+
+// Anonymous public browsing is only reachable under PUBLIC visibility, so
+// this spec establishes it rather than inheriting whatever mode the
+// previously-run spec happened to leave behind.
+requireSiteVisibility("PUBLIC");
 
 // Browser error hygiene (Group 9): any uncaught page error fails the test.
 // Serial single-worker execution makes this module-level state safe.

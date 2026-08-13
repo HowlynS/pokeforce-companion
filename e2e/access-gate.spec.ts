@@ -1,32 +1,18 @@
 import { expect, test } from "@playwright/test";
-import { Pool } from "pg";
-import { loadTestEnvironment } from "../src/lib/testing/load-test-environment";
+import {
+  requireSiteVisibility,
+  setSiteVisibility,
+} from "./helpers/site-visibility";
 
-loadTestEnvironment();
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
-
-async function setVisibility(visibility: "PRIVATE_BETA" | "PUBLIC") {
-  await pool.query(
-    `INSERT INTO "SiteAccessSettings" ("id", "visibility", "createdAt", "updatedAt")
-     VALUES ('site', $1::"SiteVisibility", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-     ON CONFLICT ("id") DO UPDATE
-     SET "visibility" = EXCLUDED."visibility", "updatedAt" = CURRENT_TIMESTAMP`,
-    [visibility]
-  );
-}
-
+// This spec is the one place that deliberately drives BOTH visibility modes,
+// so it owns its state explicitly: `perTest` re-establishes PRIVATE_BETA
+// before each test (several tests below switch to PUBLIC mid-test), and the
+// helper's afterAll returns the database to the PUBLIC baseline instead of
+// stranding it in PRIVATE_BETA — the leak that used to redirect every
+// later public spec to /login. Kept `.serial` because these tests mutate a
+// shared singleton and must not interleave with each other.
 test.describe.serial("private/public site gate", () => {
-  test.beforeEach(async () => {
-    await setVisibility("PRIVATE_BETA");
-  });
-
-  test.afterAll(async () => {
-    await setVisibility("PRIVATE_BETA");
-    await pool.end();
-  });
+  requireSiteVisibility("PRIVATE_BETA", { perTest: true });
 
   for (const route of ["/", "/items", "/items/iron-ore", "/search?q=iron"]) {
     test(`private mode redirects anonymous ${route}`, async ({ page }) => {
@@ -57,7 +43,7 @@ test.describe.serial("private/public site gate", () => {
   test("public mode allows ordinary anonymous routes but keeps admin protected", async ({
     page,
   }) => {
-    await setVisibility("PUBLIC");
+    await setSiteVisibility("PUBLIC");
 
     await page.goto("/items");
     await expect(page).toHaveURL("/items");
@@ -68,11 +54,11 @@ test.describe.serial("private/public site gate", () => {
   });
 
   test("switching back to private blocks the next anonymous request", async ({ page }) => {
-    await setVisibility("PUBLIC");
+    await setSiteVisibility("PUBLIC");
     await page.goto("/recipes");
     await expect(page).toHaveURL("/recipes");
 
-    await setVisibility("PRIVATE_BETA");
+    await setSiteVisibility("PRIVATE_BETA");
     await page.goto("/recipes");
     await expect(page).toHaveURL(/\/login\?next=/);
   });

@@ -7,6 +7,12 @@ import {
   readE2ePublicProfessionDetailFixtureState,
 } from "./helpers/database-cleanup";
 import { readValidatedProfessionSpriteBytes } from "./helpers/profession-sprite-fixtures";
+import { requireSiteVisibility } from "./helpers/site-visibility";
+
+// Anonymous public browsing is only reachable under PUBLIC visibility, so
+// this spec establishes it rather than inheriting whatever mode the
+// previously-run spec happened to leave behind.
+requireSiteVisibility("PUBLIC");
 
 const SPRITE_DIRECTORY = path.join(__dirname, "fixtures", "profession-sprites");
 const SCREENSHOT_DIRECTORY = path.join(

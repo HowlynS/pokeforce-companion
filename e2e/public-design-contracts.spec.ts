@@ -8,6 +8,13 @@ import {
 } from "../src/lib/public-design/contracts";
 import { getPublicDesignFixture } from "../src/lib/public-design/fixtures";
 import { getPublicDesignViewport } from "../src/lib/public-design/viewports";
+import { requireSiteVisibility } from "./helpers/site-visibility";
+
+// This project signs in, but the specs still assert PUBLIC-visibility
+// behavior (e.g. the plain /login redirect from the admin permission check,
+// not the gate's /login?next=). Declared here so the mode is established
+// rather than inherited from whichever project or spec ran before.
+requireSiteVisibility("PUBLIC");
 
 const SCREENSHOT_DIRECTORY = path.join(
   process.cwd(),

@@ -2,8 +2,17 @@
 // admin protection, and the login page. Nothing signs in, no credentials
 // are submitted, and no record, Auth user, or Storage object is touched.
 // The missing slugs below are guaranteed absent from prisma/seed.ts.
+//
+// This file's groups require OPPOSITE site-visibility modes, which is why it
+// could never pass as a whole from a cold run before: the private-beta gate
+// runs in the proxy, ahead of routing, so under PRIVATE_BETA a missing slug
+// is redirected to /login and can never produce a real 404, while under
+// PUBLIC the admin redirect comes from the deeper permission check and
+// carries no ?next=. Each describe therefore declares the mode it needs;
+// none inherits state from another spec or from the group above it.
 
 import { expect, test } from "@playwright/test";
+import { requireSiteVisibility } from "./helpers/site-visibility";
 
 // Browser error hygiene (Group 9): any uncaught page error fails the test.
 // Serial single-worker execution makes this module-level state safe.
@@ -19,6 +28,11 @@ test.afterEach(() => {
 });
 
 test.describe("not-found behavior", () => {
+  // A real 404 is only observable once the gate is inactive: under
+  // PRIVATE_BETA the proxy redirects to /login before Next.js ever routes
+  // the request.
+  requireSiteVisibility("PUBLIC");
+
   const MISSING_ROUTES = [
     "/items/test-e2e-missing-item",
     "/recipes/test-e2e-missing-recipe",
@@ -42,6 +56,15 @@ test.describe("not-found behavior", () => {
 });
 
 test.describe("unauthenticated admin protection", () => {
+  // These assertions describe the private-beta gate's own redirect, which
+  // carries the ?next= return path (loginPathFor). That redirect only
+  // happens under PRIVATE_BETA; under PUBLIC the request falls through to
+  // requireAdminUser -> requirePermission, which redirects to a plain
+  // /login. The assertions below are unchanged — the mode they always
+  // described is now established explicitly instead of being inherited
+  // from whichever spec happened to run first.
+  requireSiteVisibility("PRIVATE_BETA");
+
   // Each test uses Playwright's default fresh context: no cookies, no
   // stored session.
   const PROTECTED_ROUTES = [
@@ -130,6 +153,11 @@ test.describe("unauthenticated admin protection", () => {
 });
 
 test.describe("login page", () => {
+  // /login is a minimum-public path in both modes, so this group's
+  // assertions hold either way; it still declares the baseline so the file
+  // never ends in whatever mode the group above it needed.
+  requireSiteVisibility("PUBLIC");
+
   test("renders the sign-in form with no sign-up control and no session", async ({
     page,
     context,

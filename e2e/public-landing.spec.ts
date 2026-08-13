@@ -2,6 +2,12 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
+import { requireSiteVisibility } from "./helpers/site-visibility";
+
+// Anonymous public browsing is only reachable under PUBLIC visibility, so
+// this spec establishes it rather than inheriting whatever mode the
+// previously-run spec happened to leave behind.
+requireSiteVisibility("PUBLIC");
 
 const resources = [
   { name: "Items", href: "/items" },

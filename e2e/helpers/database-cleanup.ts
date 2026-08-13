@@ -206,7 +206,7 @@ const E2E_PUBLIC_PROFESSION_STORAGE_PATHS = [
   ),
 ];
 
-async function withVerifiedDatabase<T>(
+export async function withVerifiedDatabase<T>(
   run: (client: Client) => Promise<T>
 ): Promise<T> {
   // Fail-closed guard first: loads .env.test.local (override) and throws a

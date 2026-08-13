@@ -1,5 +1,6 @@
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { changeSiteVisibility } from "@/lib/access/visibility-service";
+import { TEST_SITE_VISIBILITY_BASELINE } from "@/lib/testing/site-visibility-baseline";
 import { writeContentAudit } from "@/lib/audit/content";
 import {
   disconnectTestPrisma,
@@ -10,6 +11,12 @@ const OWNER_ID = "test-audit-owner";
 const AUTH_ID = "test-audit-owner-auth";
 const EMAIL = "test-audit-owner@example.com";
 
+/**
+ * Resets this suite's own records and restores PRIVATE_BETA, which is a
+ * PRECONDITION these tests need rather than a resting state: the audit
+ * assertion below expects `previous: "PRIVATE_BETA"` when the visibility
+ * change is recorded.
+ */
 async function cleanup() {
   const prisma = await getVerifiedTestPrisma();
   await prisma.auditEvent.deleteMany({
@@ -25,6 +32,15 @@ async function cleanup() {
 afterEach(cleanup);
 afterAll(async () => {
   await cleanup();
+  // Site visibility is a singleton shared with the browser suite, so this
+  // suite must not finish holding its own precondition — leaving
+  // PRIVATE_BETA behind is exactly the leak that used to redirect public
+  // E2E specs to /login. Hand the database back at the documented baseline.
+  const prisma = await getVerifiedTestPrisma();
+  await prisma.siteAccessSettings.update({
+    where: { id: "site" },
+    data: { visibility: TEST_SITE_VISIBILITY_BASELINE },
+  });
   await disconnectTestPrisma();
 });
 

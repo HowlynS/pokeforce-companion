@@ -4,6 +4,12 @@ import {
   createE2ePublicShopFixtures,
   deleteE2eTestShopRecords,
 } from "./helpers/database-cleanup";
+import { requireSiteVisibility } from "./helpers/site-visibility";
+
+// Anonymous public browsing is only reachable under PUBLIC visibility, so
+// this spec establishes it rather than inheriting whatever mode the
+// previously-run spec happened to leave behind.
+requireSiteVisibility("PUBLIC");
 
 let fixtures: Awaited<ReturnType<typeof createE2ePublicShopFixtures>>;
 let pageErrors: string[] = [];

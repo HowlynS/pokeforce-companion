@@ -10,6 +10,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
+import { requireSiteVisibility } from "./helpers/site-visibility";
+
+// Anonymous public browsing is only reachable under PUBLIC visibility, so
+// this spec establishes it rather than inheriting whatever mode the
+// previously-run spec happened to leave behind.
+requireSiteVisibility("PUBLIC");
 
 const SCREENSHOT_DIRECTORY = path.join(
   process.cwd(),
