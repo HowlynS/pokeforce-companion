@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { CatalogueViewSwitch } from "@/components/content/catalogue-view-switch";
 import { publicMotionDuration } from "@/lib/public-motion";
 
 type ProfessionRecipeDirectoryProps = {
@@ -106,7 +107,7 @@ export function ProfessionRecipeDirectory({
           aria-hidden={closing || undefined}
           inert={closing ? true : undefined}
         >
-          {mode === "grid" ? grid : list}
+          <CatalogueViewSwitch mode={mode} grid={grid} list={list} />
         </div>
       ) : null}
     </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CatalogueViewSwitch } from "@/components/content/catalogue-view-switch";
 import { publicMotionDuration } from "@/lib/public-motion";
 
 type LocationDetailDirectoryProps = {
@@ -127,7 +128,7 @@ export function LocationDetailDirectory({
             (closing ? "location-detail-directory-content--closing" : "cx-item-in")
           }
         >
-          {mode === "grid" ? grid : list}
+          <CatalogueViewSwitch mode={mode} grid={grid} list={list} />
         </div>
       ) : null}
     </section>

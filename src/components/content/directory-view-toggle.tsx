@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CatalogueViewSwitch } from "@/components/content/catalogue-view-switch";
 
 type DirectoryViewToggleProps = {
   /** Search field + filter popover — rendered on the toolbar's left. */
@@ -73,7 +74,7 @@ export function DirectoryViewToggle({
           </button>
         </div>
       </div>
-      {mode === "grid" ? grid : list}
+      <CatalogueViewSwitch mode={mode} grid={grid} list={list} />
     </>
   );
 }
