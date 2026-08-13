@@ -96,6 +96,100 @@ async function expectRecipeColumns(page: Page, count: number) {
     .toBe(count);
 }
 
+/** Mirrors PANEL_EDGE_GUTTER in recipe-output-ingredient-disclosure.tsx. */
+const PANEL_EDGE_GUTTER = 12;
+
+/**
+ * Opens one card's ingredient overlay and proves it paints entirely inside
+ * whatever actually crops it — the Recipes grid clips horizontally (its
+ * `overflow-y: auto` computes `overflow-x` to `auto`), so a panel measured
+ * only against the viewport would have its quantity column cropped.
+ */
+async function measureOpenPanelBounds(card: Locator) {
+  const toggle = card.locator(".recipe-output-ingredient-toggle");
+  await toggle.click();
+  const panel = card.locator(".recipe-output-ingredient-panel");
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveCSS("opacity", "1");
+
+  const geometry = await panel.evaluate((element) => {
+    let left = 0;
+    let right = document.documentElement.clientWidth;
+    let node = element.parentElement;
+    const clippingAncestors: string[] = [];
+    while (node && node !== document.documentElement) {
+      if (getComputedStyle(node).overflowX !== "visible") {
+        const bound = node.getBoundingClientRect();
+        clippingAncestors.push(
+          typeof node.className === "string" ? node.className : node.tagName
+        );
+        left = Math.max(left, bound.left);
+        right = Math.min(right, bound.right);
+      }
+      node = node.parentElement;
+    }
+    const panelRect = element.getBoundingClientRect();
+    const owningCard = element.closest<HTMLElement>(".recipe-output-card");
+    if (!owningCard) throw new Error("Expected the panel's owning Recipe card");
+    const cardRect = owningCard.getBoundingClientRect();
+    const quantities = Array.from(
+      element.querySelectorAll<HTMLElement>(
+        ".recipe-output-ingredient-panel-row > strong"
+      )
+    ).map((quantity) => {
+      const rect = quantity.getBoundingClientRect();
+      return { text: quantity.textContent ?? "", right: rect.right, width: rect.width };
+    });
+    return {
+      panel: { left: panelRect.left, right: panelRect.right, width: panelRect.width },
+      card: { left: cardRect.left, right: cardRect.right },
+      bounds: { left, right },
+      clippingAncestors,
+      viewportWidth: document.documentElement.clientWidth,
+      quantities,
+    };
+  });
+
+  // The whole panel, quantity column included, stays inside the real
+  // clipping boundary rather than merely inside the window.
+  expect(geometry.panel.right).toBeLessThanOrEqual(
+    geometry.bounds.right - PANEL_EDGE_GUTTER + 0.5
+  );
+  expect(geometry.panel.left).toBeGreaterThanOrEqual(
+    geometry.bounds.left + PANEL_EDGE_GUTTER - 0.5
+  );
+  expect(geometry.quantities.length).toBeGreaterThan(0);
+  for (const quantity of geometry.quantities) {
+    expect(quantity.text).toMatch(/^×\d+$/);
+    expect(quantity.width).toBeGreaterThan(0);
+    expect(quantity.right).toBeLessThanOrEqual(geometry.panel.right - 0.5);
+  }
+  return { geometry, toggle, panel };
+}
+
+/** First-row card indices at the left edge, middle, and right edge. */
+async function findEdgeCardIndices(page: Page) {
+  return page.evaluate(() => {
+    const cards = Array.from(
+      document.querySelectorAll<HTMLElement>(".recipe-output-card--directory-grid")
+    );
+    const minTop = Math.min(...cards.map((card) => card.getBoundingClientRect().top));
+    const firstRow = cards
+      .map((card, index) => ({ card, index }))
+      .filter(({ card }) => Math.abs(card.getBoundingClientRect().top - minTop) < 1)
+      .filter(({ card }) => card.querySelector(".recipe-output-ingredient-toggle"))
+      .sort(
+        (a, b) =>
+          a.card.getBoundingClientRect().left - b.card.getBoundingClientRect().left
+      );
+    return {
+      leftmost: firstRow[0]?.index ?? -1,
+      middle: firstRow[Math.floor(firstRow.length / 2)]?.index ?? -1,
+      rightmost: firstRow[firstRow.length - 1]?.index ?? -1,
+    };
+  });
+}
+
 async function expectRealSpritesDominate(
   scope: Locator,
   imageSelector: string,
@@ -559,46 +653,83 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
   await expect(denseCard.locator(".recipe-output-ingredient-panel")).toHaveCount(0);
   await expect(denseCard).toHaveCSS("z-index", "auto");
 
-  // Edge-safety: the rightmost card with a disclosure trigger in the first
-  // row is centered by default, so an adaptive-width panel would naturally
-  // want to spill past the viewport's right edge. The disclosure's runtime
-  // edge-shift must pull it back on-screen without creating page overflow.
-  // Found dynamically rather than by fixture name, since the grid's actual
-  // column order is an implementation detail of the fixture, not this test.
-  const edgeCardIndex = await page.evaluate(() => {
-    const cards = Array.from(
-      document.querySelectorAll<HTMLElement>(".recipe-output-card--directory-grid")
-    );
-    const minTop = Math.min(...cards.map((card) => card.getBoundingClientRect().top));
-    const firstRow = cards
-      .map((card, index) => ({ card, index }))
-      .filter(({ card }) => Math.abs(card.getBoundingClientRect().top - minTop) < 1)
-      .filter(({ card }) => card.querySelector(".recipe-output-ingredient-toggle"));
-    firstRow.sort(
-      (a, b) =>
-        b.card.getBoundingClientRect().right - a.card.getBoundingClientRect().right
-    );
-    return firstRow[0]?.index ?? -1;
-  });
-  expect(edgeCardIndex).toBeGreaterThanOrEqual(0);
-  const edgeCard = allCards.nth(edgeCardIndex);
-  await edgeCard.locator(".recipe-output-ingredient-toggle").click();
-  const edgePanel = edgeCard.locator(".recipe-output-ingredient-panel");
-  await expect(edgePanel).toBeVisible();
+  // Edge-safety: an adaptive-width panel is centered under its card, so at
+  // either end of a row it would naturally spill past the catalogue grid —
+  // which crops horizontally, since its `overflow-y: auto` computes the
+  // untouched `overflow-x` to `auto` alongside it. The runtime edge-shift
+  // must pull the whole panel, quantity column included, back inside that
+  // boundary. Cards are found dynamically: the grid's actual column order is
+  // an implementation detail of the fixture, not of this test.
+  const edgeIndices = await findEdgeCardIndices(page);
+  expect(edgeIndices.leftmost).toBeGreaterThanOrEqual(0);
+  expect(edgeIndices.middle).toBeGreaterThanOrEqual(0);
+  expect(edgeIndices.rightmost).toBeGreaterThanOrEqual(0);
+  expect(edgeIndices.rightmost).not.toBe(edgeIndices.leftmost);
+
+  const rightmost = await measureOpenPanelBounds(allCards.nth(edgeIndices.rightmost));
   await expectNoHorizontalOverflow(page);
-  await expect(edgePanel).toHaveCSS("opacity", "1");
   await page.screenshot({
     path: path.join(
       SCREENSHOT_DIRECTORY,
       "recipes-ingredient-disclosure-edge-shift-1920x1080.png"
     ),
   });
-  const edgePanelBox = await edgePanel.boundingBox();
-  expect(edgePanelBox).not.toBeNull();
-  expect(edgePanelBox!.x).toBeGreaterThanOrEqual(0);
-  expect(edgePanelBox!.x + edgePanelBox!.width).toBeLessThanOrEqual(1920);
-  await edgeCard.locator(".recipe-output-ingredient-toggle").click();
-  await expect(edgeCard.locator(".recipe-output-ingredient-panel")).toHaveCount(0);
+  // The grid, not the window, is what constrains this card.
+  expect(rightmost.geometry.clippingAncestors).toContain("recipe-output-grid");
+  expect(rightmost.geometry.bounds.right).toBeLessThan(
+    rightmost.geometry.viewportWidth
+  );
+  // Anchored to its card while extending left of it, rather than cropped.
+  expect(rightmost.geometry.panel.left).toBeLessThan(rightmost.geometry.card.left);
+  await rightmost.toggle.click();
+  await expect(
+    allCards.nth(edgeIndices.rightmost).locator(".recipe-output-ingredient-panel")
+  ).toHaveCount(0);
+
+  const leftmost = await measureOpenPanelBounds(allCards.nth(edgeIndices.leftmost));
+  await expectNoHorizontalOverflow(page);
+  expect(leftmost.geometry.panel.right).toBeGreaterThan(leftmost.geometry.card.right);
+  await leftmost.toggle.click();
+  await expect(
+    allCards.nth(edgeIndices.leftmost).locator(".recipe-output-ingredient-panel")
+  ).toHaveCount(0);
+
+  // A mid-row card needs no correction at all: it stays centered on its card.
+  const middle = await measureOpenPanelBounds(allCards.nth(edgeIndices.middle));
+  await expectNoHorizontalOverflow(page);
+  const middleCardCenter =
+    (middle.geometry.card.left + middle.geometry.card.right) / 2;
+  const middlePanelCenter =
+    (middle.geometry.panel.left + middle.geometry.panel.right) / 2;
+  expect(Math.abs(middlePanelCenter - middleCardCenter)).toBeLessThanOrEqual(0.5);
+  await middle.toggle.click();
+  await expect(
+    allCards.nth(edgeIndices.middle).locator(".recipe-output-ingredient-panel")
+  ).toHaveCount(0);
+
+  // The clipping boundary is a layout result, not a constant, so the same
+  // correction is re-proven on an ultrawide viewport where the grid ends far
+  // from the window edge.
+  await page.setViewportSize({ width: 3440, height: 1440 });
+  await expectRecipeColumns(page, 7);
+  const wideIndices = await findEdgeCardIndices(page);
+  const wideRightmost = await measureOpenPanelBounds(
+    allCards.nth(wideIndices.rightmost)
+  );
+  await expectNoHorizontalOverflow(page);
+  expect(wideRightmost.geometry.clippingAncestors).toContain("recipe-output-grid");
+  await page.screenshot({
+    path: path.join(
+      SCREENSHOT_DIRECTORY,
+      "recipes-ingredient-disclosure-edge-shift-3440x1440.png"
+    ),
+  });
+  await wideRightmost.toggle.click();
+  await expect(
+    allCards.nth(wideIndices.rightmost).locator(".recipe-output-ingredient-panel")
+  ).toHaveCount(0);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await expectRecipeColumns(page, 7);
 
   await page.getByRole("button", { name: "List", exact: true }).click();
   const listHeading = page.locator(".recipe-output-list-heading");
