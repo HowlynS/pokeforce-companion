@@ -1,6 +1,9 @@
 export type DirectoryOverviewStat = {
   label: string;
-  value: string | number;
+  /** A node, not just a value, so a figure that changes with a live filter
+      (see LiveMatchCount) can keep itself current without this panel needing
+      to know anything about searching. */
+  value: React.ReactNode;
 };
 
 type DirectoryOverviewPanelProps = {

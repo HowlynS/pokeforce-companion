@@ -5,6 +5,7 @@ import { ContentImage } from "@/components/content/content-image";
 import { DirectoryOverviewPanel } from "@/components/content/directory-overview-panel";
 import { DirectorySearchField } from "@/components/content/directory-search-field";
 import { DirectoryViewToggle } from "@/components/content/directory-view-toggle";
+import { LiveResetLink } from "@/components/content/live-filter-reset";
 import { EmptyState } from "@/components/ui/empty-state";
 import { readCatalogueQueryValue } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
@@ -20,14 +21,14 @@ export default async function ProfessionsPage({
 }: ProfessionsPageProps) {
   const { q: rawQuery } = await searchParams;
   const searchQuery = readCatalogueQueryValue(rawQuery);
-  const where = searchQuery
-    ? { name: { contains: searchQuery, mode: "insensitive" as const } }
-    : undefined;
 
+  // The search term is no longer a database filter: the catalogue is filtered
+  // live in the browser, so every Profession is loaded once and `?q=` only
+  // seeds the field. Other filters (this page has none) would still be applied
+  // server-side.
   const [professions, totalProfessionCount, totalRecipeCount, verifiedCount, levelSummary] =
     await Promise.all([
       prisma.profession.findMany({
-        where,
         select: {
           id: true,
           slug: true,
@@ -44,9 +45,10 @@ export default async function ProfessionsPage({
       prisma.professionLevel.aggregate({ _max: { level: true } }),
     ]);
 
-  const gridView = (
-    <div className="profession-catalogue-grid">
-      {professions.map((profession, index) => (
+  const entries = professions.map((profession, index) => ({
+    key: profession.id,
+    text: profession.name,
+    grid: (
         <Link
           key={profession.id}
           href={`/professions/${profession.slug}`}
@@ -86,13 +88,8 @@ export default async function ProfessionsPage({
             </span>
           </span>
         </Link>
-      ))}
-    </div>
-  );
-
-  const listView = (
-    <div className="profession-catalogue-list">
-      {professions.map((profession, index) => (
+    ),
+    list: (
         <Link
           key={profession.id}
           href={`/professions/${profession.slug}`}
@@ -119,7 +116,18 @@ export default async function ProfessionsPage({
             </span>
           ) : null}
         </Link>
-      ))}
+    ),
+  }));
+
+  const noMatchesState = (
+    <div className="directory-empty-state">
+      <p className="directory-empty-title">No professions found</p>
+      <p className="directory-empty-body">
+        Try a different search term or reset your search.
+      </p>
+      <LiveResetLink href="/professions" className="directory-empty-reset" queryOnly>
+        Reset search
+      </LiveResetLink>
     </div>
   );
 
@@ -134,17 +142,17 @@ export default async function ProfessionsPage({
 
         <div className="directory-body">
           <div className="directory-content">
-            {professions.length > 0 ? (
+            {entries.length > 0 ? (
               <DirectoryViewToggle
-                toolbarLeft={
-                  <DirectorySearchField
-                    basePath="/professions"
-                    placeholder="Find a profession by name..."
-                    defaultValue={searchQuery}
-                  />
-                }
-                grid={gridView}
-                list={listView}
+                search={{
+                  basePath: "/professions",
+                  placeholder: "Find a profession by name...",
+                  initialQuery: searchQuery ?? "",
+                }}
+                entries={entries}
+                gridShell={{ containerClassName: "profession-catalogue-grid" }}
+                listShell={{ containerClassName: "profession-catalogue-list" }}
+                emptyState={noMatchesState}
               />
             ) : (
               <>
@@ -157,22 +165,10 @@ export default async function ProfessionsPage({
                     />
                   </div>
                 </div>
-                {searchQuery ? (
-                  <div className="directory-empty-state">
-                    <p className="directory-empty-title">No professions found</p>
-                    <p className="directory-empty-body">
-                      Try a different search term or reset your search.
-                    </p>
-                    <Link href="/professions" className="directory-empty-reset">
-                      Reset search
-                    </Link>
-                  </div>
-                ) : (
-                  <EmptyState
-                    title="No professions yet"
-                    description="Profession data will be added when the project reaches the data model milestone."
-                  />
-                )}
+                <EmptyState
+                  title="No professions yet"
+                  description="Profession data will be added when the project reaches the data model milestone."
+                />
               </>
             )}
           </div>

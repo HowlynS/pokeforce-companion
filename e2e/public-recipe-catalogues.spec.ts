@@ -933,6 +933,25 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
     fullPage: true,
   });
 
+  // A live search from page 2 goes back to the first page of the NEW result
+  // set, instead of stranding the visitor on a page the matches no longer
+  // have. The Profession filter beside it is untouched.
+  await page.goto(`${filteredPath}&page=2`);
+  await expect(
+    page.getByRole("navigation", { name: "Recipes pagination" })
+  ).toContainText("Page 2 of 2");
+  await page
+    .getByRole("searchbox", { name: "Find a recipe by name..." })
+    .fill(denseRecipe.name);
+  await expect(page.locator(".recipe-output-card")).toHaveCount(1);
+  await expect(
+    page.getByRole("navigation", { name: "Recipes pagination" })
+  ).toHaveCount(0);
+  await expect(page).not.toHaveURL(/[?&]page=/);
+  await expect(page).toHaveURL(
+    new RegExp(`profession=${fixture.profession.slug}`)
+  );
+
   await page.goto("/recipes?profession=not-a-profession&page=9");
   await expect(page).toHaveURL("/recipes");
   await page.getByRole("button", { name: "Filter", exact: false }).click();

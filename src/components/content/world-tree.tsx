@@ -2,7 +2,27 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { WorldLocationNode } from "@/lib/world/world-tree";
+import { LiveSearchField } from "@/components/content/live-search-field";
+import { normalizeLiveQuery } from "@/lib/search/live-filter";
+import {
+  useLiveQueryState,
+  useLiveQuerySync,
+} from "@/lib/search/use-live-query-sync";
+import {
+  filterWorldTree,
+  flattenWorldTree,
+  type WorldLocationNode,
+} from "@/lib/world/world-tree";
+
+type WorldSidebarProps = {
+  /** The COMPLETE containment tree — filtering happens here, in the browser. */
+  nodes: readonly WorldLocationNode[];
+  selectedId: string;
+  selectedSlug: string;
+  /** Ids the current selection requires to be revealed (its own path). */
+  expandedIds: readonly string[];
+  initialQuery: string;
+};
 
 type WorldTreeProps = {
   nodes: readonly WorldLocationNode[];
@@ -11,6 +31,8 @@ type WorldTreeProps = {
   expandedIds: readonly string[];
   /** Preserved on every node link so filtering survives navigation. */
   query: string;
+  /** Branches a live filter needs open to show its matches in context. */
+  revealedIds?: ReadonlySet<string>;
 };
 
 type WorldTreeNodesProps = {
@@ -139,11 +161,12 @@ function WorldTreeNodes({
   );
 }
 
-export function WorldTree({
+function WorldTree({
   nodes,
   selectedId,
   expandedIds,
   query,
+  revealedIds,
 }: WorldTreeProps) {
   // Disclosure is sticky and additive: a branch opens when the visitor opens
   // it or when a selection reveals it, and closes only when the visitor
@@ -153,24 +176,42 @@ export function WorldTree({
   const [state, setState] = useState<{
     selectedId: string;
     open: ReadonlySet<string>;
-  }>(() => ({ selectedId, open: new Set(expandedIds) }));
+    /** Branches the visitor closed by hand. Kept apart from `open` so an
+        explicit collapse also wins over a filter's own reveal. */
+    collapsed: ReadonlySet<string>;
+  }>(() => ({ selectedId, open: new Set(expandedIds), collapsed: new Set() }));
 
   if (state.selectedId !== selectedId) {
     // Setting state while rendering this same component is React's supported
     // way to adjust state from props without an extra commit.
     const open = new Set(state.open);
-    for (const id of expandedIds) open.add(id);
-    setState({ selectedId, open });
+    const collapsed = new Set(state.collapsed);
+    for (const id of expandedIds) {
+      open.add(id);
+      collapsed.delete(id);
+    }
+    setState({ selectedId, open, collapsed });
   }
 
-  const isOpen = (id: string) => state.open.has(id);
+  // A branch a live filter needs open is shown open WITHOUT being written into
+  // the visitor's own disclosure set, so clearing the filter restores exactly
+  // the tree they had before typing.
+  const isOpen = (id: string) =>
+    !state.collapsed.has(id) &&
+    (state.open.has(id) || Boolean(revealedIds?.has(id)));
 
   function onToggle(id: string, open: boolean) {
     setState((current) => {
-      const next = new Set(current.open);
-      if (open) next.add(id);
-      else next.delete(id);
-      return { ...current, open: next };
+      const nextOpen = new Set(current.open);
+      const nextCollapsed = new Set(current.collapsed);
+      if (open) {
+        nextOpen.add(id);
+        nextCollapsed.delete(id);
+      } else {
+        nextOpen.delete(id);
+        nextCollapsed.add(id);
+      }
+      return { ...current, open: nextOpen, collapsed: nextCollapsed };
     });
   }
 
@@ -184,5 +225,83 @@ export function WorldTree({
         query={query}
       />
     </nav>
+  );
+}
+
+/**
+ * The World sidebar: filter field, label, and tree as ONE client surface.
+ *
+ * The field has to live here rather than beside the tree, because live
+ * filtering means the query is component state — a field rendered by the
+ * server would either lose focus on every keystroke or need a round trip to
+ * change what the tree shows. Filtering itself reuses `filterWorldTree`, the
+ * same pure function the server used, so the ancestor-preserving semantics are
+ * unchanged: a deep match keeps its whole containment chain visible rather
+ * than being flattened to the matching node alone.
+ */
+export function WorldSidebar({
+  nodes,
+  selectedId,
+  selectedSlug,
+  expandedIds,
+  initialQuery,
+}: WorldSidebarProps) {
+  const [query, setQuery] = useLiveQueryState(initialQuery);
+  const trimmed = query.trim();
+
+  useLiveQuerySync({
+    basePath: "/world",
+    query,
+    params: { location: selectedSlug },
+  });
+
+  const visibleTree = filterWorldTree(nodes, trimmed);
+  // Every branch left standing by the filter is a branch on the way to a
+  // match, so revealing exactly those shows each match in context without
+  // touching the visitor's own disclosure state.
+  const revealedIds = normalizeLiveQuery(query)
+    ? new Set(
+        flattenWorldTree(visibleTree)
+          .filter((node) => node.children.length > 0)
+          .map((node) => node.id),
+      )
+    : undefined;
+
+  return (
+    <>
+      <div className="world-sidebar-search">
+        <LiveSearchField
+          basePath="/world"
+          placeholder="Filter locations..."
+          ariaLabel="Filter locations"
+          submitLabel="Filter locations"
+          value={query}
+          onChange={setQuery}
+          preserve={{ location: selectedSlug }}
+        />
+      </div>
+      <p className="world-sidebar-label">Regions</p>
+      {visibleTree.length > 0 ? (
+        <WorldTree
+          nodes={visibleTree}
+          selectedId={selectedId}
+          expandedIds={expandedIds}
+          query={trimmed}
+          revealedIds={revealedIds}
+        />
+      ) : (
+        <p className="world-sidebar-empty">
+          No locations match <strong>{trimmed}</strong>.{" "}
+          <button
+            type="button"
+            className="world-sidebar-clear"
+            onClick={() => setQuery("")}
+          >
+            Clear the filter
+          </button>
+          .
+        </p>
+      )}
+    </>
   );
 }

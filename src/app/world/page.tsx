@@ -2,19 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { ContentImage } from "@/components/content/content-image";
-import { DirectorySearchField } from "@/components/content/directory-search-field";
-import { WorldTree } from "@/components/content/world-tree";
+import { WorldSidebar } from "@/components/content/world-tree";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { readCatalogueQueryValue } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
 import { LOCATION_TYPE_LABELS } from "@/lib/validation/location";
-import {
-  buildWorldTree,
-  filterWorldTree,
-  selectWorldLocation,
-} from "@/lib/world/world-tree";
+import { buildWorldTree, selectWorldLocation } from "@/lib/world/world-tree";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +44,6 @@ export default async function WorldPage({ searchParams }: WorldPageProps) {
   });
 
   const tree = buildWorldTree(locations);
-  const visibleTree = filterWorldTree(tree, query);
   // Selection resolves against the full tree, so a filtered sidebar never
   // silently changes which Location the detail pane is describing.
   const selection = selectWorldLocation(tree, requestedSlug);
@@ -117,34 +111,16 @@ export default async function WorldPage({ searchParams }: WorldPageProps) {
         {selection && detail ? (
           <div className="world-workspace">
             <div className="world-sidebar">
-              <div className="world-sidebar-search">
-                <DirectorySearchField
-                  basePath="/world"
-                  placeholder="Filter locations..."
-                  defaultValue={query}
-                  preserve={{ location: selection.selected.slug }}
-                  ariaLabel="Filter locations"
-                  submitLabel="Filter locations"
-                />
-              </div>
-              <p className="world-sidebar-label">Regions</p>
-              {visibleTree.length > 0 ? (
-                <WorldTree
-                  nodes={visibleTree}
-                  selectedId={selection.selected.id}
-                  expandedIds={[...selection.expandedIds]}
-                  query={query}
-                />
-              ) : (
-                <p className="world-sidebar-empty">
-                  No locations match{" "}
-                  <strong>{query}</strong>.{" "}
-                  <Link href={`/world?location=${selection.selected.slug}`}>
-                    Clear the filter
-                  </Link>
-                  .
-                </p>
-              )}
+              {/* The whole tree is handed to the client so the filter can run
+                  on the keystroke; `?q=` only seeds it, and the same pure
+                  filterWorldTree the server used still decides what survives. */}
+              <WorldSidebar
+                nodes={tree}
+                selectedId={selection.selected.id}
+                selectedSlug={selection.selected.slug}
+                expandedIds={[...selection.expandedIds]}
+                initialQuery={query}
+              />
             </div>
 
             <div className="world-detail">

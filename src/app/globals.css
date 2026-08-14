@@ -13205,6 +13205,24 @@ a.shop-detail-chip:focus-visible {
   line-height: 1.5;
 }
 
+/* Clearing a live filter is client state, not a navigation, so the control is
+   a real button wearing the inline-link treatment it replaced. */
+.world-sidebar-clear {
+  margin: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--color-accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.world-sidebar-clear:hover,
+.world-sidebar-clear:focus-visible {
+  color: var(--color-accent-soft);
+}
+
 .world-tree-list {
   margin: 0;
   padding: 0;

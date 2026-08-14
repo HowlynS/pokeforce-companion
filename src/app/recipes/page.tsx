@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
@@ -6,7 +5,12 @@ import { DirectoryFilterPopover } from "@/components/content/directory-filter-po
 import { DirectoryOverviewPanel } from "@/components/content/directory-overview-panel";
 import { DirectorySearchField } from "@/components/content/directory-search-field";
 import { DirectoryViewToggle } from "@/components/content/directory-view-toggle";
-import { RecipeOutputCatalogue } from "@/components/content/recipe-output-catalogue";
+import { RecipeOutputCard } from "@/components/content/recipe-output-card";
+import {
+  LiveMatchCount,
+  LiveMatchCountProvider,
+} from "@/components/content/live-match-count";
+import { LiveResetLink } from "@/components/content/live-filter-reset";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   cataloguePageHref,
@@ -72,45 +76,70 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
     );
   }
 
+  // The Profession filter stays a database filter; the search term does not.
+  // Recipes matching the current Profession selection are loaded in full and
+  // filtered live in the browser, so `?q=` only seeds the field and the first
+  // page index.
   const recipeWhere =
-    validSlugs.length > 0 || searchQuery
-      ? {
-          ...(validSlugs.length > 0
-            ? { profession: { slug: { in: validSlugs } } }
-            : {}),
-          ...(searchQuery
-            ? { name: { contains: searchQuery, mode: "insensitive" as const } }
-            : {}),
-        }
+    validSlugs.length > 0
+      ? { profession: { slug: { in: validSlugs } } }
       : undefined;
   const recipeCount = await prisma.recipe.count({ where: recipeWhere });
-  const { currentPage, pageCount, skip } = resolveRecipeOutputPage(
-    rawPage,
-    recipeCount
-  );
+  const { currentPage } = resolveRecipeOutputPage(rawPage, recipeCount);
   const recipes =
     recipeCount > 0
       ? await prisma.recipe.findMany({
           where: recipeWhere,
           select: recipeOutputCardSelect,
           orderBy: [{ name: "asc" }, { id: "asc" }],
-          skip,
-          take: RECIPE_OUTPUT_PAGE_SIZE,
         })
       : [];
 
-  const activeQuery = { profession: validSlugs, q: searchQuery };
   const hasActiveFilters = validSlugs.length > 0 || !!searchQuery;
-  const catalogueProps = {
-    recipes,
-    totalRecipeCount: recipeCount,
-    basePath: "/recipes",
-    currentPage,
-    pageCount,
-    paginationLabel: "Recipes pagination",
-    ariaLabel: "Recipe catalogue",
-    query: activeQuery,
-  } as const;
+
+  const entries = recipes.map((recipe, index) => ({
+    key: recipe.id,
+    text: recipe.name,
+    grid: (
+      <RecipeOutputCard
+        recipe={recipe}
+        variant="directory-grid"
+        entryDelayMs={index * 30}
+        key={recipe.id}
+      />
+    ),
+    list: (
+      <RecipeOutputCard
+        recipe={recipe}
+        variant="directory-list"
+        entryDelayMs={index * 30}
+        key={recipe.id}
+      />
+    ),
+  }));
+
+  const professionFilter = (
+    <DirectoryFilterPopover
+      label="Professions"
+      paramName="profession"
+      basePath="/recipes"
+      options={professions}
+      selectedSlugs={validSlugs}
+      preserve={{ q: searchQuery }}
+    />
+  );
+
+  const noMatchesState = (
+    <div className="directory-empty-state">
+      <p className="directory-empty-title">No recipes found</p>
+      <p className="directory-empty-body">
+        Try a different search term or reset your filters.
+      </p>
+      <LiveResetLink href="/recipes" className="directory-empty-reset" queryOnly={validSlugs.length === 0}>
+        Reset filters
+      </LiveResetLink>
+    </div>
+  );
 
   return (
     <AppShell catalogue scenic="catalogue" wide>
@@ -118,100 +147,99 @@ export default async function RecipesPage({ searchParams }: RecipesPageProps) {
         <Breadcrumb segments={[{ name: "Home", href: "/" }]} current="Recipes" />
         <h1 className="directory-title">Recipes</h1>
 
-        <div className="directory-body">
-          <div className="directory-content">
-            {recipeCount > 0 ? (
-              <DirectoryViewToggle
-                toolbarLeft={
-                  <>
-                    <DirectorySearchField
-                      basePath="/recipes"
-                      placeholder="Find a recipe by name..."
-                      defaultValue={searchQuery}
-                      preserve={{ profession: validSlugs }}
-                    />
-                    <DirectoryFilterPopover
-                      label="Professions"
-                      paramName="profession"
-                      basePath="/recipes"
-                      options={professions}
-                      selectedSlugs={validSlugs}
-                      preserve={{ q: searchQuery }}
-                    />
-                  </>
-                }
-                grid={
-                  <RecipeOutputCatalogue
-                    {...catalogueProps}
-                    directoryLayout="grid"
-                  />
-                }
-                list={
-                  <RecipeOutputCatalogue
-                    {...catalogueProps}
-                    directoryLayout="list"
-                  />
-                }
-              />
-            ) : hasActiveFilters ? (
-              <>
-                <div className="directory-toolbar">
-                  <div className="directory-toolbar-left">
-                    <DirectorySearchField
-                      basePath="/recipes"
-                      placeholder="Find a recipe by name..."
-                      defaultValue={searchQuery}
-                      preserve={{ profession: validSlugs }}
-                    />
-                    <DirectoryFilterPopover
-                      label="Professions"
-                      paramName="profession"
-                      basePath="/recipes"
-                      options={professions}
-                      selectedSlugs={validSlugs}
-                      preserve={{ q: searchQuery }}
-                    />
-                  </div>
-                </div>
-                <div className="directory-empty-state">
-                  <p className="directory-empty-title">No recipes found</p>
-                  <p className="directory-empty-body">
-                    Try a different search term or reset your filters.
-                  </p>
-                  <Link href="/recipes" className="directory-empty-reset">
-                    Reset filters
-                  </Link>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="directory-toolbar">
-                  <div className="directory-toolbar-left">
-                    <DirectorySearchField
-                      basePath="/recipes"
-                      placeholder="Find a recipe by name..."
-                    />
-                  </div>
-                </div>
-                <EmptyState
-                  title="No recipes yet"
-                  description="Recipe data will be added after the initial data structure is defined."
+        <LiveMatchCountProvider>
+          <div className="directory-body">
+            <div className="directory-content">
+              {entries.length > 0 ? (
+                <DirectoryViewToggle
+                  search={{
+                    basePath: "/recipes",
+                    placeholder: "Find a recipe by name...",
+                    initialQuery: searchQuery ?? "",
+                    preserve: { profession: validSlugs },
+                  }}
+                  toolbarExtra={professionFilter}
+                  entries={entries}
+                  gridShell={{
+                    sectionClassName:
+                      "recipe-output-catalogue recipe-output-catalogue--directory-grid",
+                    sparseClassName: "recipe-output-catalogue--sparse",
+                    sectionAriaLabel: "Recipe catalogue",
+                    containerClassName: "recipe-output-grid",
+                  }}
+                  listShell={{
+                    sectionClassName:
+                      "recipe-output-catalogue recipe-output-catalogue--directory-list",
+                    sparseClassName: "recipe-output-catalogue--sparse",
+                    sectionAriaLabel: "Recipe catalogue",
+                    containerClassName: "recipe-output-grid",
+                    // Every child is keyed: this element is created on the
+                    // server and rendered by a client component, and React
+                    // re-validates such children after they cross the RSC
+                    // boundary — an unkeyed static list warns there even
+                    // though it never would in one render pass.
+                    header: (
+                      <div className="recipe-output-list-heading">
+                        <span
+                          className="recipe-output-list-identity-heading"
+                          key="identity"
+                        >
+                          <span key="spacer" />
+                          <span key="recipe">Recipe</span>
+                        </span>
+                        <span key="profession">Profession</span>
+                        <span className="recipe-output-list-exp-heading" key="exp">
+                          EXP
+                        </span>
+                        <span key="ingredients">Ingredients</span>
+                      </div>
+                    ),
+                  }}
+                  pageSize={RECIPE_OUTPUT_PAGE_SIZE}
+                  initialPage={currentPage}
+                  paginationLabel="Recipes pagination"
+                  emptyState={noMatchesState}
                 />
-              </>
-            )}
-          </div>
+              ) : (
+                <>
+                  <div className="directory-toolbar">
+                    <div className="directory-toolbar-left">
+                      <DirectorySearchField
+                        basePath="/recipes"
+                        placeholder="Find a recipe by name..."
+                        defaultValue={searchQuery}
+                        preserve={{ profession: validSlugs }}
+                      />
+                      {hasActiveFilters ? professionFilter : null}
+                    </div>
+                  </div>
+                  {hasActiveFilters ? (
+                    noMatchesState
+                  ) : (
+                    <EmptyState
+                      title="No recipes yet"
+                      description="Recipe data will be added after the initial data structure is defined."
+                    />
+                  )}
+                </>
+              )}
+            </div>
 
-          <DirectoryOverviewPanel
-            title="Recipes Overview"
-            icon="recipes"
-            stats={[
-              { label: "Total Recipes", value: totalRecipeCount },
-              { label: "Professions", value: totalProfessionCount },
-              { label: "Verified Entries", value: verifiedRecipeCount },
-              { label: "Matching Now", value: recipeCount },
-            ]}
-          />
-        </div>
+            <DirectoryOverviewPanel
+              title="Recipes Overview"
+              icon="recipes"
+              stats={[
+                { label: "Total Recipes", value: totalRecipeCount },
+                { label: "Professions", value: totalProfessionCount },
+                { label: "Verified Entries", value: verifiedRecipeCount },
+                {
+                  label: "Matching Now",
+                  value: <LiveMatchCount fallback={recipeCount} />,
+                },
+              ]}
+            />
+          </div>
+        </LiveMatchCountProvider>
       </div>
     </AppShell>
   );

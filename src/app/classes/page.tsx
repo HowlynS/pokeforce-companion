@@ -3,8 +3,13 @@ import { ContentImage } from "@/components/content/content-image";
 import { DirectoryOverviewPanel } from "@/components/content/directory-overview-panel";
 import { DirectorySearchField } from "@/components/content/directory-search-field";
 import { DirectoryViewToggle } from "@/components/content/directory-view-toggle";
+import {
+  LiveMatchCount,
+  LiveMatchCountProvider,
+} from "@/components/content/live-match-count";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { LiveResetLink } from "@/components/content/live-filter-reset";
 import { EmptyState } from "@/components/ui/empty-state";
 import { readCatalogueQueryValue } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
@@ -20,12 +25,10 @@ export default async function PlayerClassesPage({
 }: PlayerClassesPageProps) {
   const { q: rawQuery } = await searchParams;
   const searchQuery = readCatalogueQueryValue(rawQuery);
-  const where = searchQuery
-    ? { name: { contains: searchQuery, mode: "insensitive" as const } }
-    : undefined;
+  // The catalogue filters live in the browser, so `?q=` only seeds the field;
+  // every Class is loaded once.
   const [playerClasses, totalClassCount, verifiedClassCount] = await Promise.all([
     prisma.playerClass.findMany({
-      where,
       select: {
         id: true,
         name: true,
@@ -40,9 +43,10 @@ export default async function PlayerClassesPage({
     prisma.playerClass.count({ where: { verifiedAt: { not: null } } }),
   ]);
 
-  const grid = (
-    <div className="class-catalogue-grid">
-      {playerClasses.map((playerClass, index) => (
+  const entries = playerClasses.map((playerClass, index) => ({
+    key: playerClass.id,
+    text: playerClass.name,
+    grid: (
         <Link
           className="class-catalogue-card cx-item-in"
           href={`/classes/${playerClass.slug}`}
@@ -74,13 +78,8 @@ export default async function PlayerClassesPage({
             </span>
           </span>
         </Link>
-      ))}
-    </div>
-  );
-
-  const list = (
-    <div className="class-catalogue-list">
-      {playerClasses.map((playerClass, index) => (
+    ),
+    list: (
         <Link
           className="class-catalogue-list-row cx-item-in"
           href={`/classes/${playerClass.slug}`}
@@ -101,7 +100,18 @@ export default async function PlayerClassesPage({
             {playerClass.verifiedAt ? "Verified" : "Unverified"}
           </span>
         </Link>
-      ))}
+    ),
+  }));
+
+  const noMatchesState = (
+    <div className="directory-empty-state">
+      <p className="directory-empty-title">No classes found</p>
+      <p className="directory-empty-body">
+        Try a different search term or reset your search.
+      </p>
+      <LiveResetLink href="/classes" className="directory-empty-reset" queryOnly>
+        Reset search
+      </LiveResetLink>
     </div>
   );
 
@@ -111,60 +121,53 @@ export default async function PlayerClassesPage({
         <Breadcrumb segments={[{ name: "Home", href: "/" }]} current="Classes" />
         <h1 className="directory-title">Classes</h1>
 
-        <div className="directory-body">
-          <div className="directory-content">
-            {playerClasses.length > 0 ? (
-              <DirectoryViewToggle
-                toolbarLeft={
-                  <DirectorySearchField
-                    basePath="/classes"
-                    placeholder="Find a class by name..."
-                    defaultValue={searchQuery}
-                  />
-                }
-                grid={grid}
-                list={list}
-              />
-            ) : (
-              <>
-                <div className="directory-toolbar">
-                  <div className="directory-toolbar-left">
-                    <DirectorySearchField
-                      basePath="/classes"
-                      placeholder="Find a class by name..."
-                      defaultValue={searchQuery}
-                    />
+        <LiveMatchCountProvider>
+          <div className="directory-body">
+            <div className="directory-content">
+              {entries.length > 0 ? (
+                <DirectoryViewToggle
+                  search={{
+                    basePath: "/classes",
+                    placeholder: "Find a class by name...",
+                    initialQuery: searchQuery ?? "",
+                  }}
+                  entries={entries}
+                  gridShell={{ containerClassName: "class-catalogue-grid" }}
+                  listShell={{ containerClassName: "class-catalogue-list" }}
+                  emptyState={noMatchesState}
+                />
+              ) : (
+                <>
+                  <div className="directory-toolbar">
+                    <div className="directory-toolbar-left">
+                      <DirectorySearchField
+                        basePath="/classes"
+                        placeholder="Find a class by name..."
+                        defaultValue={searchQuery}
+                      />
+                    </div>
                   </div>
-                </div>
-                {searchQuery ? (
-                  <div className="directory-empty-state">
-                    <p className="directory-empty-title">No classes found</p>
-                    <p className="directory-empty-body">
-                      Try a different search term or reset your search.
-                    </p>
-                    <Link href="/classes" className="directory-empty-reset">
-                      Reset search
-                    </Link>
-                  </div>
-                ) : (
                   <EmptyState
                     title="No classes yet"
                     description="Class data will be added when the project reaches this milestone."
                   />
-                )}
-              </>
-            )}
-          </div>
+                </>
+              )}
+            </div>
 
-          <DirectoryOverviewPanel
-            title="Classes Overview"
-            stats={[
-              { label: "Total Classes", value: totalClassCount },
-              { label: "Verified Entries", value: verifiedClassCount },
-              { label: "Matching Now", value: playerClasses.length },
-            ]}
-          />
-        </div>
+            <DirectoryOverviewPanel
+              title="Classes Overview"
+              stats={[
+                { label: "Total Classes", value: totalClassCount },
+                { label: "Verified Entries", value: verifiedClassCount },
+                {
+                  label: "Matching Now",
+                  value: <LiveMatchCount fallback={playerClasses.length} />,
+                },
+              ]}
+            />
+          </div>
+        </LiveMatchCountProvider>
       </div>
     </AppShell>
   );

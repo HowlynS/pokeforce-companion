@@ -2,12 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { AppShell } from "@/components/layout/app-shell";
-import { CataloguePagination } from "@/components/content/catalogue-pagination";
 import { ContentImage } from "@/components/content/content-image";
 import { DirectoryFilterPopover } from "@/components/content/directory-filter-popover";
 import { DirectoryOverviewPanel } from "@/components/content/directory-overview-panel";
 import { DirectorySearchField } from "@/components/content/directory-search-field";
 import { DirectoryViewToggle } from "@/components/content/directory-view-toggle";
+import {
+  LiveMatchCount,
+  LiveMatchCountProvider,
+} from "@/components/content/live-match-count";
+import { LiveResetLink } from "@/components/content/live-filter-reset";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   cataloguePageHref,
@@ -61,20 +65,17 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
     );
   }
 
+  // The Category filter stays a database filter; the search term does not.
+  // Items matching the current Category selection are loaded in full and
+  // filtered live in the browser, so `?q=` only seeds the field and the first
+  // page index.
   const itemWhere =
-    validSlugs.length > 0 || searchQuery
-      ? {
-          ...(validSlugs.length > 0
-            ? { category: { slug: { in: validSlugs } } }
-            : {}),
-          ...(searchQuery
-            ? { name: { contains: searchQuery, mode: "insensitive" as const } }
-            : {}),
-        }
+    validSlugs.length > 0
+      ? { category: { slug: { in: validSlugs } } }
       : undefined;
 
   const itemCount = await prisma.item.count({ where: itemWhere });
-  const { currentPage, pageCount, skip } = resolveCataloguePage(
+  const { currentPage } = resolveCataloguePage(
     rawPage,
     itemCount,
     ITEM_PAGE_SIZE,
@@ -96,8 +97,6 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
       shopListings: { take: 1, select: { id: true } },
     },
     orderBy: [{ name: "asc" }, { id: "asc" }],
-    skip,
-    take: ITEM_PAGE_SIZE,
   });
 
   const cards = items.map((item) => ({
@@ -109,15 +108,12 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
         : null,
   }));
 
-  const activeQuery = {
-    category: validSlugs,
-    q: searchQuery,
-  };
   const hasActiveFilters = validSlugs.length > 0 || !!searchQuery;
 
-  const gridView = (
-    <div className="item-catalogue-grid">
-      {cards.map((item, index) => (
+  const entries = cards.map((item, index) => ({
+    key: item.id,
+    text: item.name,
+    grid: (
         <Link
           key={item.id}
           href={`/items/${item.slug}`}
@@ -151,13 +147,8 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
             <span className="item-catalogue-card-source">{item.source}</span>
           ) : null}
         </Link>
-      ))}
-    </div>
-  );
-
-  const listView = (
-    <div className="item-catalogue-list">
-      {cards.map((item, index) => (
+    ),
+    list: (
         <Link
           key={item.id}
           href={`/items/${item.slug}`}
@@ -182,7 +173,29 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
             {item.source ?? ""}
           </span>
         </Link>
-      ))}
+    ),
+  }));
+
+  const categoryFilter = (
+    <DirectoryFilterPopover
+      label="Categories"
+      paramName="category"
+      basePath="/items"
+      options={categories}
+      selectedSlugs={validSlugs}
+      preserve={{ q: searchQuery }}
+    />
+  );
+
+  const noMatchesState = (
+    <div className="directory-empty-state">
+      <p className="directory-empty-title">No items found</p>
+      <p className="directory-empty-body">
+        Try a different search term or reset your filters.
+      </p>
+      <LiveResetLink href="/items" className="directory-empty-reset" queryOnly={validSlugs.length === 0}>
+        Reset filters
+      </LiveResetLink>
     </div>
   );
 
@@ -192,88 +205,65 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
         <Breadcrumb segments={[{ name: "Home", href: "/" }]} current="Items" />
         <h1 className="directory-title">Items</h1>
 
-        <div className="directory-body">
-          <div className="directory-content">
-            {itemCount > 0 ? (
-              <DirectoryViewToggle
-                toolbarLeft={
-                  <>
-                    <DirectorySearchField
-                      basePath="/items"
-                      placeholder="Find an item by name..."
-                      defaultValue={searchQuery}
-                      preserve={{ category: validSlugs }}
+        <LiveMatchCountProvider>
+          <div className="directory-body">
+            <div className="directory-content">
+              {entries.length > 0 ? (
+                <DirectoryViewToggle
+                  search={{
+                    basePath: "/items",
+                    placeholder: "Find an item by name...",
+                    initialQuery: searchQuery ?? "",
+                    preserve: { category: validSlugs },
+                  }}
+                  toolbarExtra={categoryFilter}
+                  entries={entries}
+                  gridShell={{ containerClassName: "item-catalogue-grid" }}
+                  listShell={{ containerClassName: "item-catalogue-list" }}
+                  pageSize={ITEM_PAGE_SIZE}
+                  initialPage={currentPage}
+                  paginationLabel="Items pagination"
+                  emptyState={noMatchesState}
+                />
+              ) : (
+                <>
+                  <div className="directory-toolbar">
+                    <div className="directory-toolbar-left">
+                      <DirectorySearchField
+                        basePath="/items"
+                        placeholder="Find an item by name..."
+                        defaultValue={searchQuery}
+                        preserve={{ category: validSlugs }}
+                      />
+                      {categoryFilter}
+                    </div>
+                  </div>
+                  {hasActiveFilters ? (
+                    noMatchesState
+                  ) : (
+                    <EmptyState
+                      title="No items yet"
+                      description="Item data will be added during the data model and content milestones."
                     />
-                    <DirectoryFilterPopover
-                      label="Categories"
-                      paramName="category"
-                      basePath="/items"
-                      options={categories}
-                      selectedSlugs={validSlugs}
-                      preserve={{ q: searchQuery }}
-                    />
-                  </>
-                }
-                grid={gridView}
-                list={listView}
-              />
-            ) : (
-              <div className="directory-toolbar">
-                <div className="directory-toolbar-left">
-                  <DirectorySearchField
-                    basePath="/items"
-                    placeholder="Find an item by name..."
-                    defaultValue={searchQuery}
-                    preserve={{ category: validSlugs }}
-                  />
-                  <DirectoryFilterPopover
-                    label="Categories"
-                    paramName="category"
-                    basePath="/items"
-                    options={categories}
-                    selectedSlugs={validSlugs}
-                    preserve={{ q: searchQuery }}
-                  />
-                </div>
-              </div>
-            )}
+                  )}
+                </>
+              )}
+            </div>
 
-            {itemCount > 0 ? (
-              <CataloguePagination
-                basePath="/items"
-                currentPage={currentPage}
-                pageCount={pageCount}
-                label="Items pagination"
-                query={activeQuery}
-              />
-            ) : hasActiveFilters ? (
-              <div className="directory-empty-state">
-                <p className="directory-empty-title">No items found</p>
-                <p className="directory-empty-body">
-                  Try a different search term or reset your filters.
-                </p>
-                <Link href="/items" className="directory-empty-reset">
-                  Reset filters
-                </Link>
-              </div>
-            ) : (
-              <EmptyState
-                title="No items yet"
-                description="Item data will be added during the data model and content milestones."
-              />
-            )}
+            <DirectoryOverviewPanel
+              title="Items Overview"
+              stats={[
+                { label: "Total Items", value: totalItemCount },
+                { label: "Categories", value: totalCategoryCount },
+                { label: "Verified Entries", value: verifiedItemCount },
+                {
+                  label: "Matching Now",
+                  value: <LiveMatchCount fallback={itemCount} />,
+                },
+              ]}
+            />
           </div>
-
-          <DirectoryOverviewPanel
-            title="Items Overview"
-            stats={[
-              { label: "Total Items", value: totalItemCount },
-              { label: "Categories", value: totalCategoryCount },
-              { label: "Verified Entries", value: verifiedItemCount },
-              { label: "Matching Now", value: itemCount },
-            ]}
-          />
-        </div>
+        </LiveMatchCountProvider>
       </div>
     </AppShell>
   );

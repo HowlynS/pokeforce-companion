@@ -2,9 +2,10 @@ import Link from "next/link";
 import { ContentImage } from "@/components/content/content-image";
 import { DirectoryFilterPopover } from "@/components/content/directory-filter-popover";
 import { DirectorySearchField } from "@/components/content/directory-search-field";
-import { LocationDirectoryFold } from "@/components/content/location-directory-fold";
+import { LiveLocationDirectory } from "@/components/content/live-location-directory";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { LiveResetLink } from "@/components/content/live-filter-reset";
 import { EmptyState } from "@/components/ui/empty-state";
 import { readCatalogueQueryValue } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
@@ -63,12 +64,12 @@ export default async function LocationsPage({ searchParams }: LocationsPageProps
   });
 
   const locationsById = new Map(locations.map((location) => [location.id, location]));
-  const query = normalizedSearchQuery.toLocaleLowerCase();
-  const filteredLocations = locations.filter((location) => {
-    const matchesQuery = !query || location.name.toLocaleLowerCase().includes(query);
-    const matchesType = selectedTypes.length === 0 || selectedTypes.includes(location.type);
-    return matchesQuery && matchesType;
-  });
+  // The type filter stays server-side; the search term is applied live in the
+  // browser over these same records, so `?q=` only seeds the field.
+  const filteredLocations = locations.filter(
+    (location) =>
+      selectedTypes.length === 0 || selectedTypes.includes(location.type),
+  );
 
   function findRoot(location: DirectoryLocation): DirectoryLocation {
     let current = location;
@@ -96,27 +97,79 @@ export default async function LocationsPage({ searchParams }: LocationsPageProps
     left.root.name.localeCompare(right.root.name),
   );
 
-  const toolbar = (
-    <div className="directory-toolbar">
-      <div className="directory-toolbar-left">
-        <DirectorySearchField
-          basePath="/locations"
-          placeholder="Find a location by name..."
-          defaultValue={searchQuery}
-          preserve={{ type: selectedTypes }}
-        />
-        <DirectoryFilterPopover
-          label="Location Type"
-          paramName="type"
-          basePath="/locations"
-          options={LOCATION_TYPES.map((type) => ({
-            slug: type,
-            name: LOCATION_TYPE_LABELS[type],
-          }))}
-          selectedSlugs={selectedTypes}
-          preserve={{ q: searchQuery }}
-        />
-      </div>
+  const typeFilter = (
+    <DirectoryFilterPopover
+      label="Location Type"
+      paramName="type"
+      basePath="/locations"
+      options={LOCATION_TYPES.map((type) => ({
+        slug: type,
+        name: LOCATION_TYPE_LABELS[type],
+      }))}
+      selectedSlugs={selectedTypes}
+      preserve={{ q: searchQuery }}
+    />
+  );
+
+  const liveGroups = groups.map(({ root, matches }) => ({
+    key: root.id,
+    title: root.name,
+    href: `/locations/${root.slug}`,
+    // The root region is itself a record that can match, and matching it keeps
+    // its band visible with a count of one — exactly what the server did.
+    headingText: root.name,
+    subGroups: LOCATION_TYPES.map((type) => ({
+      key: type,
+      title: LOCATION_TYPE_LABELS[type],
+      entries: matches
+        .filter(
+          (location) => location.id !== root.id && location.type === type,
+        )
+        .map((location, index) => ({
+          key: location.id,
+          text: location.name,
+          node: (
+            <Link
+              href={`/locations/${location.slug}`}
+              className="location-directory-card cx-item-in"
+              key={location.id}
+              style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
+            >
+              <span className="location-directory-card-media">
+                <ContentImage
+                  imagePath={location.image}
+                  alt={`Image of ${location.name}`}
+                  size="row"
+                />
+              </span>
+              <span className="location-directory-card-copy">
+                <h4>{location.name}</h4>
+                <span className="location-directory-card-type">
+                  {LOCATION_TYPE_LABELS[location.type]}
+                </span>
+                <span className="location-directory-card-meta">
+                  {location._count.shops === 0
+                    ? "No shops"
+                    : `${location._count.shops} ${
+                        location._count.shops === 1 ? "shop" : "shops"
+                      }`}
+                </span>
+              </span>
+            </Link>
+          ),
+        })),
+    })).filter((group) => group.entries.length > 0),
+  }));
+
+  const noMatchesState = (
+    <div className="directory-empty-state">
+      <p className="directory-empty-title">No locations found</p>
+      <p className="directory-empty-body">
+        Try a different search term or reset your filters.
+      </p>
+      <LiveResetLink href="/locations" className="directory-empty-reset" queryOnly={selectedTypes.length === 0}>
+        Reset filters
+      </LiveResetLink>
     </div>
   );
 
@@ -127,83 +180,38 @@ export default async function LocationsPage({ searchParams }: LocationsPageProps
         <h1 className="directory-title">Locations</h1>
 
         <div className="directory-content">
-          {toolbar}
-          {groups.length > 0 ? (
-            <div className="location-directory-groups">
-              {groups.map(({ root, matches }) => {
-                const typeGroups = LOCATION_TYPES.map((type) => ({
-                  type,
-                  locations: matches.filter(
-                    (location) => location.id !== root.id && location.type === type,
-                  ),
-                })).filter((group) => group.locations.length > 0);
-
-                return (
-                  <LocationDirectoryFold
-                    key={root.id}
-                    title={root.name}
-                    variant="region"
-                    href={`/locations/${root.slug}`}
-                    count={matches.length}
-                  >
-                    {typeGroups.map((typeGroup) => (
-                      <LocationDirectoryFold
-                        key={typeGroup.type}
-                        title={LOCATION_TYPE_LABELS[typeGroup.type]}
-                        variant="type"
-                      >
-                        <div className="location-directory-grid">
-                          {typeGroup.locations.map((location, index) => (
-                            <Link
-                              href={`/locations/${location.slug}`}
-                              className="location-directory-card cx-item-in"
-                              key={location.id}
-                              style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
-                            >
-                              <span className="location-directory-card-media">
-                                <ContentImage
-                                  imagePath={location.image}
-                                  alt={`Image of ${location.name}`}
-                                  size="row"
-                                />
-                              </span>
-                              <span className="location-directory-card-copy">
-                                <h4>{location.name}</h4>
-                                <span className="location-directory-card-type">
-                                  {LOCATION_TYPE_LABELS[location.type]}
-                                </span>
-                                <span className="location-directory-card-meta">
-                                  {location._count.shops === 0
-                                    ? "No shops"
-                                    : `${location._count.shops} ${
-                                        location._count.shops === 1 ? "shop" : "shops"
-                                      }`}
-                                </span>
-                              </span>
-                            </Link>
-                          ))}
-                        </div>
-                      </LocationDirectoryFold>
-                    ))}
-                  </LocationDirectoryFold>
-                );
-              })}
-            </div>
-          ) : locations.length === 0 ? (
-            <EmptyState
-              title="No locations yet"
-              description="Locations will be added as the world map is documented."
-            />
+          {locations.length === 0 ? (
+            <>
+              <div className="directory-toolbar">
+                <div className="directory-toolbar-left">
+                  <DirectorySearchField
+                    basePath="/locations"
+                    placeholder="Find a location by name..."
+                    defaultValue={searchQuery}
+                    preserve={{ type: selectedTypes }}
+                  />
+                  {typeFilter}
+                </div>
+              </div>
+              <EmptyState
+                title="No locations yet"
+                description="Locations will be added as the world map is documented."
+              />
+            </>
           ) : (
-            <div className="directory-empty-state">
-              <p className="directory-empty-title">No locations found</p>
-              <p className="directory-empty-body">
-                Try a different search term or reset your filters.
-              </p>
-              <Link href="/locations" className="directory-empty-reset">
-                Reset filters
-              </Link>
-            </div>
+            <LiveLocationDirectory
+              search={{
+                basePath: "/locations",
+                placeholder: "Find a location by name...",
+                initialQuery: normalizedSearchQuery,
+                preserve: { type: selectedTypes },
+              }}
+              toolbarExtra={typeFilter}
+              groupsClassName="location-directory-groups"
+              gridClassName="location-directory-grid"
+              groups={liveGroups}
+              emptyState={noMatchesState}
+            />
           )}
         </div>
       </div>

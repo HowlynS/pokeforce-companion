@@ -105,22 +105,100 @@ test("World Navigation never invents NPC data and hides empty relationships", as
   ).toHaveCount(0);
 });
 
-test("the World filter is a real server-rendered GET query", async ({ page }) => {
+test("the World filter is live, ancestor-preserving, and URL-backed", async ({
+  page,
+}) => {
   await page.goto("/world");
 
   const search = page.getByRole("search", { name: "Filter locations" });
-  await search.getByRole("searchbox").fill(TOWN_NAME);
-  await search.getByRole("button", { name: "Filter locations" }).click();
-
-  await expect(page).toHaveURL(/[?&]q=/);
+  const field = search.getByRole("searchbox");
   const tree = page.getByRole("navigation", { name: "World locations" });
-  await expect(tree.getByRole("link", { name: TOWN_NAME })).toBeVisible();
 
+  await page.evaluate(() => {
+    (window as unknown as { __worldMarker?: boolean }).__worldMarker = true;
+  });
+  await field.click();
+  await page.keyboard.type("Brassmarket");
+
+  // Filtered on the keystroke: no Enter, no submit, no navigation, and the
+  // caret never leaves the field.
+  await expect(tree.getByRole("link", { name: TOWN_NAME })).toBeVisible();
+  await expect(
+    tree.getByRole("link", { name: /Long Caravan Route/ })
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { __worldMarker?: boolean }).__worldMarker
+    )
+  ).toBe(true);
+  await expect(field).toBeFocused();
+
+  // The match keeps its whole containment chain — the region above it is
+  // still listed, and revealed, rather than the result being flattened.
+  await expect(tree.getByRole("link", { name: REGION_NAME })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: `Collapse ${REGION_NAME}` })
+  ).toBeVisible();
+
+  // The URL settles on the query afterwards.
+  await expect(page).toHaveURL(/[?&]q=Brassmarket/);
+
+  // Clearing restores the whole tree immediately, still without navigating.
+  await field.fill("");
+  await expect(
+    tree.getByRole("link", { name: /Long Caravan Route/ })
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { __worldMarker?: boolean }).__worldMarker
+    )
+  ).toBe(true);
+});
+
+test("a World filter with no matches offers a live way back", async ({
+  page,
+}) => {
   await page.goto("/world?q=Test%20E2E%20No%20Such%20Place");
+
   await expect(page.locator(".world-sidebar-empty")).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "World locations" })
   ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Clear the filter" }).click();
+  await expect(
+    page.getByRole("navigation", { name: "World locations" })
+  ).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Filter locations" })).toHaveValue(
+    ""
+  );
+});
+
+test("filtering the World tree leaves the visitor's own disclosure state intact", async ({
+  page,
+}) => {
+  await page.goto(`/world?location=${REGION_SLUG}`);
+
+  // Start from a collapsed region, which is the visitor's own choice.
+  const toggle = branchToggle(page, REGION_NAME);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+  const field = page.getByRole("searchbox", { name: "Filter locations" });
+  await field.fill("Brassmarket");
+
+  // The filter reveals what it must to show the match in context…
+  await expect(
+    page.getByRole("link", { name: TOWN_NAME, exact: true })
+  ).toBeVisible();
+
+  // …and clearing it returns the tree to the collapsed state the visitor set,
+  // rather than leaving every branch the filter opened hanging open.
+  await field.fill("");
+  await expect(branchToggle(page, REGION_NAME)).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
 });
 
 /** The row bubble the visitor sees, and the link that must own all of it. */
