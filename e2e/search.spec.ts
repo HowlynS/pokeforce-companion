@@ -35,10 +35,15 @@ function cardLink(page: Page, name: string) {
 
 // Both the header and the /search page contain a search form; scope every
 // locator to its landmark so the two never collide.
+// The header field is now the quick-search combobox (see
+// public-quick-search.spec.ts); role="combobox" replaces its implicit
+// searchbox role, exactly as the ARIA combobox pattern requires. Everything
+// this spec asserts about it — the shared field styling, the GET fallback to
+// /search — is unchanged.
 function headerSearchInput(page: Page) {
   return page
     .getByRole("navigation", { name: "Main navigation" })
-    .getByRole("searchbox", { name: "Search query" });
+    .getByRole("combobox", { name: "Search query" });
 }
 
 function pageSearchInput(page: Page) {
