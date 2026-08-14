@@ -13218,59 +13218,75 @@ a.shop-detail-chip:focus-visible {
   user-select: none;
 }
 
-.world-tree-branch > .world-tree-list {
+.world-tree-branch-inner > .world-tree-list {
   margin-top: 2px;
   padding-left: 20px;
 }
 
+/* Hit-area ownership: the row itself is a bare flex wrapper with NO padding of
+   its own, so the highlighted rectangle is exactly the union of its two real
+   controls — the disclosure button and the Location link, which carry the
+   row's padding themselves. Clicking anywhere in the bubble therefore always
+   lands on a control (no decorative wrapper, no invisible overlay). */
 .world-tree-row {
+  --world-tree-row-pad-y: 8px;
   display: flex;
-  align-items: center;
-  gap: 7px;
+  align-items: stretch;
   border-radius: 7px;
-  padding: 8px 10px;
-  cursor: pointer;
   list-style: none;
-  transition: background-color 0.15s ease;
-}
-
-.world-tree-row::-webkit-details-marker {
-  display: none;
+  transition:
+    background-color 170ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    color 170ms cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 .world-tree-row--level-1 {
-  padding: 7px 10px;
+  --world-tree-row-pad-y: 7px;
 }
 
 .world-tree-row--level-2 {
+  --world-tree-row-pad-y: 6px;
   border-radius: 6px;
-  padding: 6px 10px;
 }
 
-.world-tree-row:hover {
+.world-tree-row:hover,
+.world-tree-row:focus-within {
   background: var(--color-surface-soft);
 }
 
 /* The handoff tints an open branch by level, and marks the selected row with
    the menu-hover surface plus a gold label. */
-details[open] > .world-tree-row--level-0 {
+.world-tree-row--open.world-tree-row--level-0 {
   background: var(--color-menu-item-hover);
 }
 
-details[open] > .world-tree-row--level-1 {
+.world-tree-row--open.world-tree-row--level-1 {
   background: var(--color-surface-soft);
 }
 
 .world-tree-row--selected,
-details[open] > .world-tree-row--selected {
+.world-tree-row--open.world-tree-row--selected {
   background: var(--color-menu-item-hover);
+}
+
+.world-tree-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  border: 0;
+  border-radius: 7px 0 0 7px;
+  background: none;
+  padding: var(--world-tree-row-pad-y) 0 var(--world-tree-row-pad-y) 10px;
+  color: inherit;
+  cursor: pointer;
 }
 
 .world-tree-chevron {
   flex: none;
   display: inline-flex;
   color: var(--color-accent-soft);
-  transition: transform 0.15s ease;
+  transform-origin: 50% 50%;
+  transition: transform 200ms cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 .world-tree-row--level-1 .world-tree-chevron,
@@ -13278,17 +13294,32 @@ details[open] > .world-tree-row--selected {
   color: var(--color-text-muted);
 }
 
-details[open] > .world-tree-row > .world-tree-chevron {
+.world-tree-toggle[aria-expanded="true"] .world-tree-chevron {
   transform: rotate(90deg);
 }
 
 .world-tree-label {
   min-width: 0;
   flex: 1;
+  display: flex;
+  align-items: center;
+  border-radius: inherit;
+  padding: var(--world-tree-row-pad-y) 10px;
   color: var(--color-text-body);
   font-size: 12.5px;
   text-decoration: none;
   overflow-wrap: anywhere;
+  transition: color 170ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* Text alignment is unchanged from the pre-fix rows: the chevron's own
+   padding plus this gap reproduce the former row padding + flex gap. */
+.world-tree-toggle + .world-tree-label {
+  padding-left: 7px;
+}
+
+.world-tree-row--leaf .world-tree-label {
+  padding-left: 27px;
 }
 
 .world-tree-row--level-0 .world-tree-label {
@@ -13302,16 +13333,52 @@ details[open] > .world-tree-row > .world-tree-chevron {
   font-size: 12px;
 }
 
-.world-tree-row--leaf {
-  padding-left: 27px;
-}
-
 .world-tree-row--selected .world-tree-label {
   color: var(--color-accent-soft);
 }
 
 .world-tree-label:hover {
   color: var(--color-text);
+}
+
+.world-tree-toggle:focus-visible,
+.world-tree-label:focus-visible {
+  outline: 2px solid var(--color-accent-soft);
+  outline-offset: -2px;
+}
+
+/* Branch reveal: the real grid-row technique (0fr → 1fr), never a fake
+   max-height, so arbitrary depth and arbitrarily large branches reveal at
+   their true height with no clipping. `visibility` interpolates discretely
+   with the "from" value held for the whole duration, so a collapsing branch
+   stays visible while it animates and only leaves the tab order once it is
+   closed. */
+.world-tree-branch {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    grid-template-rows 210ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    opacity 180ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    visibility 210ms;
+}
+
+.world-tree-branch--open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  opacity: 1;
+}
+
+.world-tree-branch-inner {
+  min-height: 0;
+  transform: translateY(-5px);
+  transition: transform 210ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.world-tree-branch--open > .world-tree-branch-inner {
+  transform: none;
 }
 
 .world-detail {
@@ -13324,6 +13391,33 @@ details[open] > .world-tree-row > .world-tree-chevron {
 
 .world-detail::-webkit-scrollbar {
   display: none;
+}
+
+/* Right-pane entrance. The wrapper is keyed by the selected Location's slug
+   so React mounts fresh nodes on every selection change and these animations
+   replay — the same narrowly scoped keyed-subtree approach CatalogueViewSwitch
+   already uses for Grid/List. The wrapper itself never moves or resizes; only
+   its content animates, so the column stays stable.
+
+   translateX is negative on purpose: `.world-detail` is an internal scroller
+   at desktop widths and ordinary page flow below 1180px, and leftward offset
+   can never create scrollable overflow the way a rightward one can. */
+@media (prefers-reduced-motion: no-preference) {
+  .world-detail-in {
+    animation: cx-world-detail-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+    animation-delay: var(--world-detail-in-delay, 0ms);
+  }
+}
+
+@keyframes cx-world-detail-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .world-detail-path {
@@ -13607,9 +13701,17 @@ details[open] > .world-tree-row > .world-tree-chevron {
   }
 }
 
+/* Under reduced motion every World transition is dropped: chevrons flip
+   instantly, branches open and close instantly, and the right pane swaps with
+   no fade, delay, or offset. Interaction itself is unaffected — the branch
+   wrapper still snaps between 0fr and 1fr, so collapsed content stays hidden
+   and out of the tab order exactly as it does with motion enabled. */
 @media (prefers-reduced-motion: reduce) {
   .world-tree-row,
   .world-tree-chevron,
+  .world-tree-label,
+  .world-tree-branch,
+  .world-tree-branch-inner,
   .world-detail-full-page,
   .world-item-chips a {
     transition: none;

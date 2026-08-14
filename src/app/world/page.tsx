@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { ContentImage } from "@/components/content/content-image";
 import { DirectorySearchField } from "@/components/content/directory-search-field";
 import { WorldTree } from "@/components/content/world-tree";
@@ -96,6 +97,17 @@ export default async function WorldPage({ searchParams }: WorldPageProps) {
       ].sort((a, b) => a.name.localeCompare(b.name) || a.slug.localeCompare(b.slug))
     : [];
 
+  // A restrained entrance stagger down the right pane, in the order the pane
+  // is actually read: identity first, then each panel that is present. Panels
+  // that are omitted (hide-empty) take no slot, so the last panel is never
+  // waiting on a delay for something that never rendered.
+  const hasShopsPanel = (detail?.shops.length ?? 0) > 0;
+  const panelDelays = {
+    shops: "30ms",
+    facts: hasShopsPanel ? "60ms" : "30ms",
+    items: hasShopsPanel ? "90ms" : "60ms",
+  } as const;
+
   return (
     <AppShell catalogue scenic="catalogue">
       <div className="directory-page world-page">
@@ -120,7 +132,7 @@ export default async function WorldPage({ searchParams }: WorldPageProps) {
                 <WorldTree
                   nodes={visibleTree}
                   selectedId={selection.selected.id}
-                  expandedIds={selection.expandedIds}
+                  expandedIds={[...selection.expandedIds]}
                   query={query}
                 />
               ) : (
@@ -136,130 +148,149 @@ export default async function WorldPage({ searchParams }: WorldPageProps) {
             </div>
 
             <div className="world-detail">
-              <p className="world-detail-path">
-                {selection.path.map((node, index) => (
-                  <span key={node.id}>
-                    {index > 0 ? (
-                      <span className="world-detail-path-separator" aria-hidden="true">
-                        /
+              {/* Keyed by the selected Location so React mounts fresh nodes on
+                  every selection change and the entrance replays — the same
+                  narrow keyed-subtree approach CatalogueViewSwitch uses. The
+                  key is scoped to this presentation content only: the tree's
+                  open branches, the filter field, and the URL all live
+                  outside it and keep their state. */}
+              <div
+                key={detail.slug}
+                className="world-detail-content"
+                data-world-location={detail.slug}
+              >
+                <p className="world-detail-path world-detail-in">
+                  {selection.path.map((node, index) => (
+                    <span key={node.id}>
+                      {index > 0 ? (
+                        <span className="world-detail-path-separator" aria-hidden="true">
+                          /
+                        </span>
+                      ) : null}
+                      <span
+                        className={
+                          index === selection.path.length - 1
+                            ? "world-detail-path-current"
+                            : undefined
+                        }
+                      >
+                        {node.name}
                       </span>
-                    ) : null}
-                    <span
-                      className={
-                        index === selection.path.length - 1
-                          ? "world-detail-path-current"
-                          : undefined
-                      }
-                    >
-                      {node.name}
                     </span>
-                  </span>
-                ))}
-              </p>
+                  ))}
+                </p>
 
-              <div className="world-detail-identity">
-                <span className="world-detail-stage">
-                  <ContentImage
-                    imagePath={detail.image}
-                    alt={`Image of ${detail.name}`}
-                    size="row"
-                  />
-                </span>
-                <div className="world-detail-copy">
-                  <p className="world-detail-eyebrow">
-                    {LOCATION_TYPE_LABELS[detail.type]}
-                  </p>
-                  <div className="world-detail-title-row">
-                    <h2>{detail.name}</h2>
-                    <Link
-                      className="world-detail-full-page"
-                      href={`/locations/${detail.slug}`}
-                    >
-                      View full page <span aria-hidden="true">→</span>
-                    </Link>
+                <div className="world-detail-identity world-detail-in">
+                  <span className="world-detail-stage">
+                    <ContentImage
+                      imagePath={detail.image}
+                      alt={`Image of ${detail.name}`}
+                      size="row"
+                    />
+                  </span>
+                  <div className="world-detail-copy">
+                    <p className="world-detail-eyebrow">
+                      {LOCATION_TYPE_LABELS[detail.type]}
+                    </p>
+                    <div className="world-detail-title-row">
+                      <h2>{detail.name}</h2>
+                      <Link
+                        className="world-detail-full-page"
+                        href={`/locations/${detail.slug}`}
+                      >
+                        View full page <span aria-hidden="true">→</span>
+                      </Link>
+                    </div>
+                    {detail.description ? (
+                      <p className="world-detail-description">{detail.description}</p>
+                    ) : null}
                   </div>
-                  {detail.description ? (
-                    <p className="world-detail-description">{detail.description}</p>
+                </div>
+
+                <div className="world-panels">
+                  {detail.shops.length > 0 ? (
+                    <section
+                      className="world-panel world-detail-in"
+                      style={{ "--world-detail-in-delay": panelDelays.shops } as CSSProperties}
+                    >
+                      <h3>Shops</h3>
+                      <ul className="world-panel-list">
+                        {detail.shops.map((shop) => (
+                          <li key={shop.id}>
+                            <Link href={`/shops/${shop.slug}`}>{shop.name}</Link>
+                            <span className="world-panel-meta">
+                              {shop._count.listings}{" "}
+                              {shop._count.listings === 1 ? "listing" : "listings"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
+
+                  {/* The handoff's second top panel is "NPCs Present". Production
+                      has no NPC model, so that panel is omitted entirely rather
+                      than faked; this factual panel keeps the two-up composition
+                      using fields the Location detail page already exposes. When
+                      a Location has no Shops it is the only panel on its row, so
+                      it spans rather than leaving the handoff's grid half empty. */}
+                  <section
+                    className={
+                      detail.shops.length > 0
+                        ? "world-panel world-detail-in"
+                        : "world-panel world-panel--wide world-detail-in"
+                    }
+                    style={{ "--world-detail-in-delay": panelDelays.facts } as CSSProperties}
+                  >
+                    <h3>Location facts</h3>
+                    <dl className="world-panel-facts">
+                      <div>
+                        <dt>Type</dt>
+                        <dd>{LOCATION_TYPE_LABELS[detail.type]}</dd>
+                      </div>
+                      <div>
+                        <dt>Sub-locations</dt>
+                        <dd>{detail._count.children}</dd>
+                      </div>
+                      <div>
+                        <dt>Shops</dt>
+                        <dd>{detail._count.shops}</dd>
+                      </div>
+                      <div>
+                        <dt>Obtainable items</dt>
+                        <dd>{obtainableItems.length}</dd>
+                      </div>
+                    </dl>
+                    {detail.accessNote ? (
+                      <p className="world-panel-note">{detail.accessNote}</p>
+                    ) : null}
+                  </section>
+
+                  {obtainableItems.length > 0 ? (
+                    <section
+                      className="world-panel world-panel--wide world-detail-in"
+                      style={{ "--world-detail-in-delay": panelDelays.items } as CSSProperties}
+                    >
+                      <h3>Obtainable items here</h3>
+                      <ul className="world-item-chips">
+                        {obtainableItems.map((item) => (
+                          <li key={item.slug}>
+                            <Link href={`/items/${item.slug}`}>
+                              <span className="world-item-chip-stage">
+                                <ContentImage
+                                  imagePath={item.image}
+                                  alt={`Image of ${item.name}`}
+                                  size="row"
+                                />
+                              </span>
+                              <span>{item.name}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
                   ) : null}
                 </div>
-              </div>
-
-              <div className="world-panels">
-                {detail.shops.length > 0 ? (
-                  <section className="world-panel">
-                    <h3>Shops</h3>
-                    <ul className="world-panel-list">
-                      {detail.shops.map((shop) => (
-                        <li key={shop.id}>
-                          <Link href={`/shops/${shop.slug}`}>{shop.name}</Link>
-                          <span className="world-panel-meta">
-                            {shop._count.listings}{" "}
-                            {shop._count.listings === 1 ? "listing" : "listings"}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ) : null}
-
-                {/* The handoff's second top panel is "NPCs Present". Production
-                    has no NPC model, so that panel is omitted entirely rather
-                    than faked; this factual panel keeps the two-up composition
-                    using fields the Location detail page already exposes. When
-                    a Location has no Shops it is the only panel on its row, so
-                    it spans rather than leaving the handoff's grid half empty. */}
-                <section
-                  className={
-                    detail.shops.length > 0
-                      ? "world-panel"
-                      : "world-panel world-panel--wide"
-                  }
-                >
-                  <h3>Location facts</h3>
-                  <dl className="world-panel-facts">
-                    <div>
-                      <dt>Type</dt>
-                      <dd>{LOCATION_TYPE_LABELS[detail.type]}</dd>
-                    </div>
-                    <div>
-                      <dt>Sub-locations</dt>
-                      <dd>{detail._count.children}</dd>
-                    </div>
-                    <div>
-                      <dt>Shops</dt>
-                      <dd>{detail._count.shops}</dd>
-                    </div>
-                    <div>
-                      <dt>Obtainable items</dt>
-                      <dd>{obtainableItems.length}</dd>
-                    </div>
-                  </dl>
-                  {detail.accessNote ? (
-                    <p className="world-panel-note">{detail.accessNote}</p>
-                  ) : null}
-                </section>
-
-                {obtainableItems.length > 0 ? (
-                  <section className="world-panel world-panel--wide">
-                    <h3>Obtainable items here</h3>
-                    <ul className="world-item-chips">
-                      {obtainableItems.map((item) => (
-                        <li key={item.slug}>
-                          <Link href={`/items/${item.slug}`}>
-                            <span className="world-item-chip-stage">
-                              <ContentImage
-                                imagePath={item.image}
-                                alt={`Image of ${item.name}`}
-                                size="row"
-                              />
-                            </span>
-                            <span>{item.name}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ) : null}
               </div>
             </div>
           </div>
