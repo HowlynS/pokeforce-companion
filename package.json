@@ -19,7 +19,10 @@
     "test:public-design": "tsx scripts/test-public-design.ts",
     "public:design:fixtures": "tsx scripts/public-design-fixtures.ts",
     "public:design:capture": "tsx scripts/public-design-capture.ts",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "world:dev:audit": "tsx scripts/world-dev-data-audit.ts",
+    "world:dev:populate": "tsx scripts/world-dev-data-populate.ts",
+    "world:dev:cleanup": "tsx scripts/world-dev-data-cleanup.ts"
   },
   "dependencies": {
     "@daypicker/react": "10.0.1",
