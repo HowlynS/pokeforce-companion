@@ -1082,10 +1082,18 @@ test("Items index owns Category browsing and Category detail stays contextual", 
       };
     })
   );
-  expect(stageGeometry[0]).toMatchObject({
-    width: stageGeometry[1].width,
-    height: stageGeometry[1].height,
-  });
+  // The contract is that a genuine sprite and the "no image" fallback occupy
+  // the SAME stage box. Compared exactly, that box is reported as 78 in one
+  // card and 78.00003051757812 in the other — browser subpixel noise from the
+  // grid's fractional track sizing, not a layout difference. A half-pixel
+  // tolerance (the same one this spec already uses for the ingredient overlay
+  // bounds above) absorbs that while still failing on any real regression: the
+  // smallest meaningful stage change here is a whole pixel, and every value in
+  // DISPLAY_SIZES is an integer.
+  expect(Math.abs(stageGeometry[0].width - stageGeometry[1].width)).toBeLessThanOrEqual(0.5);
+  expect(
+    Math.abs(stageGeometry[0].height - stageGeometry[1].height)
+  ).toBeLessThanOrEqual(0.5);
   for (const geometry of stageGeometry) {
     expect(Math.abs(geometry.centerOffset)).toBeLessThanOrEqual(1);
   }
