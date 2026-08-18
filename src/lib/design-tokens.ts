@@ -47,6 +47,9 @@ export const designTokens = {
     sm: "8px",
     md: "12px",
     lg: "16px",
+    // Mirrors --frame-radius: the one curve every framed public image stage
+    // and everything painted behind one must agree on.
+    frame: "14px",
   },
   shadow: {
     card: "0 20px 45px rgba(0, 0, 0, 0.25)",

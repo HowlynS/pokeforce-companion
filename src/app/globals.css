@@ -29,6 +29,10 @@
   --color-success: #22c55e;
   --color-warning: #f97316;
   --color-danger: #ef4444;
+  /* One radius for every framed public image stage (Item/Recipe/Profession/
+     Class hero art frames) AND for anything painted behind one, so a frame
+     and its backdrop can never disagree about where the corner curve is. */
+  --frame-radius: 14px;
 }
 
 /* ---- Public design review workspace --------------------------------- */
@@ -3714,7 +3718,7 @@ select:focus-visible {
   --sprite-stage-size: 240px;
   --sprite-image-size: 192px;
   border-color: color-mix(in srgb, var(--color-border) 82%, #5e88a6);
-  border-radius: 14px;
+  border-radius: var(--frame-radius);
   background:
     radial-gradient(
       circle at 50% 45%,
@@ -3799,10 +3803,14 @@ select:focus-visible {
   isolation: isolate;
 }
 
+/* The wash follows its host's own rounded geometry. Without this it paints a
+   square shoulder that reads, at a framed stage flush in the host's corner,
+   as the frame's border cutting across its own backdrop. */
 .resource-atmosphere::before {
   position: absolute;
   z-index: 0;
   inset: 0;
+  border-radius: inherit;
   pointer-events: none;
   background: var(--resource-atmosphere-image);
   content: "";
@@ -4028,6 +4036,27 @@ select:focus-visible {
   color: var(--color-text);
 }
 
+/* Only the chips that are actually links get interactive feedback: a gold
+   outer ring drawn with `outline`, so the chip's own box never changes size
+   and the hover state is pixel-identical to the global focus ring. Purely
+   informational chips (Level, Reward, Sell value) stay inert. */
+a.item-info-chip {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    outline-color 165ms ease,
+    border-color 165ms ease,
+    background-color 165ms ease,
+    color 165ms ease;
+}
+
+a.item-info-chip:hover,
+a.item-info-chip:focus-visible {
+  outline-color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+}
+
 .item-info-chip-accent {
   color: var(--color-accent-soft) !important;
 }
@@ -4088,10 +4117,29 @@ select:focus-visible {
   font-weight: 700;
 }
 
+/* The chevron's footprint is shared with the static heading below, so a
+   section that never discloses still lines its title up with the ones that
+   do. Keep --detail-heading-chevron equal to the chevron <svg>'s own width
+   in collapsible-section.tsx. */
+.detail-collapsible-heading {
+  --detail-heading-chevron: 13px;
+  --detail-heading-gap: 9px;
+}
+
+/* A section heading that belongs to the same system as the collapsible ones —
+   same family, size, weight, colour, spacing and gold sweep-rule — but is
+   deliberately static: no button, no chevron, no disclosure. */
+.detail-static-heading-label {
+  position: relative;
+  display: block;
+  padding: 0 0 8px
+    calc(var(--detail-heading-chevron) + var(--detail-heading-gap));
+}
+
 .detail-collapsible-trigger {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--detail-heading-gap);
   position: relative;
   width: 100%;
   border: none;
@@ -4402,14 +4450,18 @@ select:focus-visible {
   gap: 28px;
 }
 
+/* The panel carries the frame's radius even though it paints no border of its
+   own: its atmosphere wash inherits that radius, so the wash and the stage
+   flush in its corner share one curve. `align-items: stretch` lets the copy
+   column fill the frame's height so its metadata row can sit at the bottom. */
 .item-resource-detail-page .item-identity-panel {
   min-height: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 28px;
   overflow: visible;
   border: 0;
-  border-radius: 0;
+  border-radius: var(--frame-radius);
   background: transparent;
 }
 
@@ -4417,9 +4469,10 @@ select:focus-visible {
   width: 180px;
   height: 180px;
   flex: none;
+  overflow: hidden;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--frame-radius);
   background:
     radial-gradient(circle at 50% 44%, rgba(72, 137, 182, 0.16), transparent 68%),
     rgba(19, 27, 33, 0.82);
@@ -4466,8 +4519,13 @@ select:focus-visible {
   line-height: 1.7;
 }
 
+/* The metadata row sits along the bottom of the hero frame, matching Recipe
+   detail's rhythm. `margin-top: auto` claims only the free space that is
+   actually left over, so a long description simply pushes the row down
+   naturally instead of the row being positioned out of flow. */
 .item-resource-detail-page .item-info-chips {
-  margin-top: 18px;
+  margin-top: auto;
+  padding-top: 18px;
 }
 
 .item-resource-detail-page .item-lower-grid {
@@ -4689,22 +4747,25 @@ select:focus-visible {
 .recipe-detail-page .item-identity-panel {
   min-height: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 28px;
   overflow: visible;
   border: 0;
-  border-radius: 0;
+  border-radius: var(--frame-radius);
   background: transparent;
 }
 
+/* overflow: hidden makes the frame the clipping owner, so neither the sprite
+   stage nor the yield badge can cross its rounded corners. */
 .recipe-detail-page .recipe-identity-stage {
   position: relative;
   width: 180px;
   height: 180px;
   flex: none;
+  overflow: hidden;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--frame-radius);
   background:
     radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.14), transparent 62%),
     var(--color-surface);
@@ -11087,8 +11148,9 @@ input[type="checkbox"] {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--frame-radius);
   background:
     radial-gradient(circle at 30% 22%, rgba(235, 228, 208, 0.2), transparent 62%),
     var(--color-surface);

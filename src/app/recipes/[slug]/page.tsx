@@ -206,7 +206,15 @@ export default async function RecipeDetailPage({
               ) : null}
 
               <section className="item-panel recipe-result-panel">
-                <h2>Crafted result</h2>
+                {/* Same section-heading system as Ingredients and Related
+                    Recipes, but always expanded: a plain heading, never a
+                    disclosure trigger. */}
+                <h2 className="detail-collapsible-heading">
+                  <span className="detail-static-heading-label">
+                    Crafted result
+                    <span className="detail-collapsible-rule" aria-hidden="true" />
+                  </span>
+                </h2>
                 <Link
                   className="item-recipe-row recipe-result-row"
                   href={`/items/${recipe.resultingItem.slug}`}
