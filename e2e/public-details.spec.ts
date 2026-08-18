@@ -121,6 +121,19 @@ test.describe("public detail pages", () => {
     await expect(page.getByText("Materials", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Held item").first()).toBeVisible();
     await expect(page.getByText("No", { exact: true }).first()).toBeVisible();
+
+    // The Source chip sits toward the bottom of the hero copy column but
+    // must not touch the frame's bottom edge -- it needs the same
+    // comfortable breathing room Recipe detail's hero chips get.
+    const sourceChip = page.locator(".item-info-chip", { hasText: "Source:" });
+    const heroCopy = page.locator(".item-identity-copy");
+    const sourceChipBounds = await sourceChip.boundingBox();
+    const heroCopyBounds = await heroCopy.boundingBox();
+    expect(sourceChipBounds).not.toBeNull();
+    expect(heroCopyBounds).not.toBeNull();
+    expect(
+      heroCopyBounds!.y + heroCopyBounds!.height - (sourceChipBounds!.y + sourceChipBounds!.height)
+    ).toBeGreaterThanOrEqual(16);
     await expect(
       page.getByRole("heading", { level: 2, name: "Item details", exact: true })
     ).toBeVisible();
@@ -377,6 +390,34 @@ test.describe("public detail pages", () => {
           )
         )
         .toBe(true);
+    });
+
+    // The Grid card's ingredient disclosure panel and tooltips are
+    // absolutely-positioned descendants that must escape this shared shell
+    // to paint above whatever section follows it on the page (e.g. a
+    // Verification strip). They can only do that if the shell itself is
+    // promoted into the browser's "positioned" paint bucket instead of
+    // sitting with the page's other non-positioned in-flow content, which
+    // is what actually causes the panel to paint underneath later sections.
+    test(`${surface.name} collection panel is promoted to paint above later sections`, async ({
+      page,
+    }) => {
+      await page.goto(surface.path);
+
+      const panel = page
+        .locator(".recipe-collection-section")
+        .filter({
+          has: page.getByRole("heading", { level: 2, name: surface.heading, exact: true }),
+        })
+        .locator(".recipe-collection-panel");
+      await expect(panel).toHaveCount(1);
+
+      const style = await panel.evaluate((element) => {
+        const computed = getComputedStyle(element);
+        return { position: computed.position, zIndex: computed.zIndex };
+      });
+      expect(style.position).toBe("relative");
+      expect(Number(style.zIndex)).toBeGreaterThan(0);
     });
   }
 

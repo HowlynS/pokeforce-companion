@@ -42,7 +42,11 @@ async function expectYieldOverlap(
   const badgeBox = await yieldBadge.boundingBox();
   expect(stageBox).not.toBeNull();
   expect(badgeBox).not.toBeNull();
-  expect(badgeBox!.x).toBeLessThan(stageBox!.x + stageBox!.width / 2);
+  // Bottom-right of the result image: badge center sits right of the
+  // stage's center and overhangs the stage's bottom edge.
+  expect(badgeBox!.x + badgeBox!.width / 2).toBeGreaterThan(
+    stageBox!.x + stageBox!.width / 2
+  );
   expect(badgeBox!.y).toBeLessThan(stageBox!.y + stageBox!.height);
   expect(badgeBox!.y + badgeBox!.height).toBeGreaterThan(
     stageBox!.y + stageBox!.height

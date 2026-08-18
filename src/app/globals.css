@@ -4493,7 +4493,7 @@ a.item-info-chip:focus-visible {
 
 .item-resource-detail-page .item-identity-copy {
   justify-content: flex-start;
-  padding: 6px 0 0;
+  padding: 6px 0 24px;
 }
 
 .item-resource-detail-page .item-category-label {
@@ -4815,7 +4815,7 @@ a.item-info-chip:focus-visible {
 
 .recipe-detail-page .item-identity-copy {
   justify-content: flex-start;
-  padding: 6px 0 0;
+  padding: 6px 0 24px;
 }
 
 .recipe-detail-page .item-category-label {
@@ -5285,7 +5285,6 @@ body:has(.recipe-detail-page) .public-site-footer {
 .recipe-result-yield {
   position: absolute;
   bottom: -10px;
-  left: -4px;
   display: inline-flex;
   align-items: center;
   min-height: 22px;
@@ -5300,6 +5299,18 @@ body:has(.recipe-detail-page) .public-site-footer {
   font-weight: 750;
   letter-spacing: 0.01em;
   line-height: 1;
+}
+
+.recipe-output-yield {
+  left: -4px;
+}
+
+/* Crafted result's own quantity badge sits bottom-right of the result
+   image (the compact relationship cards' grid/list variants already read
+   bottom-right; this hero badge previously sat bottom-left). */
+.recipe-result-yield {
+  right: -4px;
+  left: auto;
 }
 
 .recipe-output-copy {
@@ -11333,6 +11344,18 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-collection-panel {
+  /* The cx-panel-in/out entrance animation targets this element's own
+     opacity/transform with animation-fill-mode: both, which makes it a
+     stacking context for as long as the section stays open -- not just
+     while the 200ms animation is actually running. Left non-positioned,
+     that context paints in the "in-flow, non-positioned" bucket, i.e.
+     BEFORE later static siblings (e.g. the Verification section), which
+     traps every card's escaping ingredient disclosure panel/tooltip
+     underneath them no matter how high their own z-index is. Promoting
+     this element itself into the positioned/z-index paint bucket is what
+     actually lets its overlay descendants paint above later content. */
+  position: relative;
+  z-index: 1;
   min-width: 0;
   transform-origin: top left;
 }
@@ -11430,27 +11453,27 @@ a.profession-detail-chip:focus-visible {
   left: auto;
   min-height: 0;
   display: grid;
-  gap: 2px;
+  gap: 1px;
   border-color: rgba(58, 53, 40, 0.75);
   background: rgba(15, 18, 16, 0.78);
-  padding: 4px 8px;
+  padding: 2px 6px;
   text-align: center;
 }
 
 .recipe-output-card--grid .recipe-output-yield > span {
   color: var(--color-text);
-  font-size: 7px;
+  font-size: 6px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   line-height: 1;
   text-transform: uppercase;
 }
 
 .recipe-output-card--grid .recipe-output-yield > strong {
   color: #f4c542;
-  font-size: 12.5px;
+  font-size: 10.5px;
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .recipe-output-card--grid .recipe-output-copy {
@@ -11665,15 +11688,15 @@ a.profession-detail-chip:focus-visible {
 .recipe-collection-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .recipe-collection-list-header {
   display: grid;
-  grid-template-columns: 48px 110px 80px 55px minmax(0, 1fr);
+  grid-template-columns: 48px 100px 72px 50px minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
-  padding: 0 14px 8px;
+  gap: 12px;
+  padding: 0 12px 6px;
   color: var(--color-text-meta-dim);
   font-size: 10.5px;
   font-weight: 700;
@@ -11685,10 +11708,10 @@ a.profession-detail-chip:focus-visible {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border-color: var(--color-border-muted);
   border-radius: 9px;
-  padding: 6px 14px;
+  padding: 4px 12px;
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease,
@@ -11696,13 +11719,13 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-output-card--list .recipe-output-identity {
-  width: 266px;
+  width: 244px;
   min-height: 0;
   flex: none;
   display: grid;
-  grid-template-columns: 48px 110px 80px;
+  grid-template-columns: 48px 100px 72px;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 0;
 }
 
@@ -11781,7 +11804,7 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-output-card--list .recipe-output-experience {
-  width: 55px;
+  width: 50px;
   flex: none;
   display: block;
   order: 2;
