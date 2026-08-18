@@ -244,6 +244,115 @@ test("the whole highlighted Location row is the click target", async ({ page }) 
   await expect(page).toHaveURL(new RegExp(`location=${TOWN_SLUG}`));
 });
 
+/** The branch label: a real link that ALSO owns its branch's disclosure. */
+function branchLabel(page: Page, name: string) {
+  return page
+    .getByRole("navigation", { name: "World locations" })
+    .getByRole("link", { name, exact: true });
+}
+
+test("a branch label toggles its own branch in both directions, like the chevron", async ({
+  page,
+}) => {
+  await page.goto(`/world?location=${REGION_SLUG}`);
+
+  const label = branchLabel(page, REGION_NAME);
+  const toggle = branchToggle(page, REGION_NAME);
+  const child = page.getByRole("link", { name: TOWN_NAME, exact: true });
+
+  // The selected branch starts revealed.
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+  // The label used to only ever open a branch — expansion was a side effect
+  // of the selection revealing its own path, which cannot close anything and
+  // does not run at all when the selection is unchanged. Both directions now
+  // work, repeatedly, from the label alone.
+  for (let pass = 0; pass < 3; pass += 1) {
+    await label.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(child).toBeHidden();
+
+    await label.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(child).toBeVisible();
+  }
+
+  // The chevron performs the identical toggle, in both directions, and the
+  // two controls stay in step with each other rather than each owning their
+  // own idea of the branch's state.
+  for (let pass = 0; pass < 3; pass += 1) {
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(child).toBeHidden();
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(child).toBeVisible();
+  }
+
+  // Mixing the two controls keeps one shared state: close by label, open by
+  // chevron, close by chevron, open by label.
+  await label.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await label.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+  // The label is still a link: it selects its own Location, and never some
+  // other one. The chevron is the disclosure control and must never navigate.
+  await expect(page).toHaveURL(new RegExp(`location=${REGION_SLUG}`));
+  const urlBeforeChevron = page.url();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(page.url()).toBe(urlBeforeChevron);
+});
+
+test("the branch label toggles from the keyboard too", async ({ page }) => {
+  await page.goto(`/world?location=${REGION_SLUG}`);
+
+  const label = branchLabel(page, REGION_NAME);
+  const toggle = branchToggle(page, REGION_NAME);
+
+  await label.focus();
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+  await label.focus();
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+});
+
+test("a filter-revealed branch still answers to its own label", async ({
+  page,
+}) => {
+  await page.goto("/world");
+
+  const field = page.getByRole("searchbox", { name: "Filter locations" });
+  await field.fill("Brassmarket");
+
+  const toggle = branchToggle(page, REGION_NAME);
+  const child = page.getByRole("link", { name: TOWN_NAME, exact: true });
+
+  // The filter reveals the match's containment chain without writing to the
+  // visitor's own disclosure state.
+  await expect(child).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+  // Closing a filter-revealed branch by its label works, and an explicit
+  // collapse outranks the filter's reveal exactly as it outranks it for the
+  // chevron.
+  await branchLabel(page, REGION_NAME).click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(child).toBeHidden();
+
+  await branchLabel(page, REGION_NAME).click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(child).toBeVisible();
+});
+
 test("branch disclosure toggles, and keeps toggling, without losing content", async ({
   page,
 }) => {

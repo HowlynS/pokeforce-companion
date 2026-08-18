@@ -76,6 +76,14 @@ function nodeHref(slug: string, query: string): string {
  * component mounted, so selecting another Location never collapses the branch
  * the visitor is currently working through.
  *
+ * A branch label therefore carries BOTH jobs: it navigates (it is a real
+ * link to a real URL) and it toggles its own branch, exactly as the chevron
+ * does. It used to only appear to expand, as a side effect of the selection
+ * sync below unioning the selection's path into the open set — which can only
+ * ever open, and only runs when the selection actually changes, so clicking
+ * an already-selected open branch did nothing at all. Both controls now call
+ * the same toggle, so the two directions stay symmetrical.
+ *
  * Depth is whatever the real containment chain has. The handoff's three fixed
  * levels only drive styling: level 0 is the region row, level 1 the nested
  * row, and level 2+ reuse the leaf treatment.
@@ -132,6 +140,24 @@ function WorldTreeNodes({
                 href={nodeHref(node.slug, query)}
                 className="world-tree-label"
                 aria-current={selected ? "true" : undefined}
+                onClick={
+                  hasChildren
+                    ? (event) => {
+                        // A modified click is asking for a new tab, not for
+                        // this tree's disclosure to change.
+                        if (
+                          event.metaKey ||
+                          event.ctrlKey ||
+                          event.shiftKey ||
+                          event.altKey ||
+                          event.button !== 0
+                        ) {
+                          return;
+                        }
+                        onToggle(node.id, !open);
+                      }
+                    : undefined
+                }
               >
                 {node.name}
               </Link>
@@ -188,7 +214,14 @@ function WorldTree({
     const collapsed = new Set(state.collapsed);
     for (const id of expandedIds) {
       open.add(id);
-      collapsed.delete(id);
+      // An ANCESTOR must be revealed or the selection could not be seen at
+      // all, so a previous hand-collapse of an ancestor yields here. The
+      // selected node's OWN branch is only a convenience — revealing it is
+      // not required to show the selection — so the visitor's explicit
+      // choice for it stands. That asymmetry is what lets a branch label
+      // close its own branch: the click toggles the node closed and the
+      // selection sync no longer immediately reopens it.
+      if (id !== selectedId) collapsed.delete(id);
     }
     setState({ selectedId, open, collapsed });
   }
