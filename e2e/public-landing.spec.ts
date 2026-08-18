@@ -17,10 +17,14 @@ const resources = [
   { name: "Shops", href: "/shops" },
 ] as const;
 
+// The public container's max-width grows fluidly above 1920px (the
+// ultrawide readability pass's `--pf` progress factor, globals.css) from
+// 1760px at <=1920 up to 2160px at >=3440 -- these are that same formula's
+// values at each calibration width, not independent literals.
 const viewports = [
   { width: 1920, height: 1080, expectedWidth: 1760, expectedSprite: 66 },
-  { width: 2560, height: 1440, expectedWidth: 1760, expectedSprite: 66 },
-  { width: 3440, height: 1440, expectedWidth: 1760, expectedSprite: 66 },
+  { width: 2560, height: 1440, expectedWidth: 1928.42, expectedSprite: 66 },
+  { width: 3440, height: 1440, expectedWidth: 2160, expectedSprite: 66 },
 ] as const;
 
 let pageErrors: string[] = [];

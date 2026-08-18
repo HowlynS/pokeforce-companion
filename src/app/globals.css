@@ -33,6 +33,106 @@
      Class hero art frames) AND for anything painted behind one, so a frame
      and its backdrop can never disagree about where the corner curve is. */
   --frame-radius: 14px;
+
+  /* Public ultrawide readability scale -----------------------------------
+     `--pf` ("progress factor") is a plain unitless number: 0 at <=1920px
+     viewport width, growing linearly to exactly 1 at 3440px. Dividing by
+     1520px (a length, not a bare number) is what makes the division itself
+     resolve to a unitless number -- required so `calc(<base> + <growth>px *
+     var(--pf))` is a valid length*number multiplication; dividing by a bare
+     number instead would leave `--pf` as a length and make every consumer's
+     `length * var(--pf)` an invalid length*length multiply (this shipped
+     broken once already -- every scaled property silently fell back to
+     `auto`/initial, e.g. the header logo rendering at native image size).
+     Every public font-size/spacing/geometry value that scales for
+     ultrawide is written as
+     `clamp(<1920-value>, calc(<1920-value> + <growthpx> * var(--pf)), <3440-value>)`
+     so the floor/ceiling are always the real authority regardless of the
+     calc curve, viewport width below 1920 or above 3440 never moves past
+     the pinned base/cap, and the growth is one continuous ramp rather than
+     a breakpoint jump. Never referenced from any `.admin-*` selector --
+     the admin workspace keeps its own existing `--admin-frame-width`
+     scaling untouched. */
+  --pf: clamp(0, calc((100vw - 1920px) / 1520px), 1);
+
+  /* The 180px art frame / 128px sprite pair repeats near-verbatim across
+     every detail page's hero (Item, Recipe, Profession, Class, Location,
+     Shop) -- one shared pair here means the ultrawide growth curve for the
+     whole hero-stage family is calibrated exactly once. */
+  --detail-hero-stage-size: clamp(180px, calc(180px + 28px * var(--pf)), 208px);
+  --detail-hero-sprite-size: clamp(128px, calc(128px + 20px * var(--pf)), 148px);
+
+  /* Shared with the detail-page description/summary paragraph on every
+     resource (Item, Recipe, Profession, Class, Location, Shop). */
+  --detail-body-font-size: clamp(14.5px, calc(14.5px + 3px * var(--pf)), 17.5px);
+  --detail-body-max-width: clamp(640px, calc(640px + 80px * var(--pf)), 720px);
+
+  /* Small uppercase labels need proportionally more growth than body text
+     to stay comfortably readable at ultrawide (see the eyebrow/category
+     label on every detail hero, and metadata chips). */
+  --detail-label-font-size: clamp(11px, calc(11px + 3px * var(--pf)), 14px);
+
+  /* Shared by every detail-hero metadata chip family (Item/Recipe's
+     .item-info-chip, Profession/Class/Location's .profession-detail-chip,
+     Shop's .shop-detail-chip). */
+  --detail-chip-font-size: clamp(12.5px, calc(12.5px + 2.5px * var(--pf)), 15px);
+  --detail-chip-padding: clamp(8px, calc(8px + 2px * var(--pf)), 10px)
+    clamp(14px, calc(14px + 3px * var(--pf)), 17px);
+
+  /* Header. */
+  --header-nav-font-size: clamp(12.5px, calc(12.5px + 2.5px * var(--pf)), 15px);
+  --header-logo-height: clamp(66px, calc(66px + 10px * var(--pf)), 76px);
+  --header-search-width: clamp(230px, calc(230px + 40px * var(--pf)), 270px);
+
+  /* Directory/catalogue cards -- shared by Item, Related Items, Location,
+     and Shop grids, which all converge on the same 13.5px title / 10.5px
+     meta / 12px gap baseline. */
+  --card-title-font-size: clamp(13.5px, calc(13.5px + 3px * var(--pf)), 16.5px);
+  --card-meta-font-size: clamp(10.5px, calc(10.5px + 3px * var(--pf)), 13.5px);
+  --card-gap: clamp(12px, calc(12px + 4px * var(--pf)), 16px);
+  --item-card-min-width: clamp(148px, calc(148px + 32px * var(--pf)), 180px);
+  --wide-card-min-width: clamp(220px, calc(220px + 40px * var(--pf)), 260px);
+  --wide-card-image-size: clamp(52px, calc(52px + 12px * var(--pf)), 64px);
+  --wide-card-sprite-size: clamp(34px, calc(34px + 8px * var(--pf)), 42px);
+  --wide-card-padding: clamp(11px, calc(11px + 3px * var(--pf)), 14px);
+
+  /* Recipe relationship cards (grid variant: Item "Used in recipes",
+     Recipe "Related Recipes", Profession/Class/Location "Recipes"). */
+  --recipe-card-min-width: clamp(280px, calc(280px + 50px * var(--pf)), 330px);
+  --recipe-card-gap: clamp(14px, calc(14px + 4px * var(--pf)), 18px);
+  --recipe-card-image-size: clamp(78px, calc(78px + 14px * var(--pf)), 92px);
+  --recipe-card-sprite-size: clamp(64px, calc(64px + 12px * var(--pf)), 76px);
+
+  /* Recipe relationship card ingredient chips (grid variant's default
+     36px; the list variant scales its own larger 40px chip separately,
+     see .recipe-output-card--list .recipe-output-ingredient). */
+  --recipe-ingredient-chip-size: clamp(36px, calc(36px + 8px * var(--pf)), 44px);
+
+  /* Recipe relationship card, list variant -- the identity block's three
+     fixed columns (image/name/profession) plus their shared gap, kept as
+     one set so the header row and every card row always agree. */
+  --recipe-list-gap: clamp(12px, calc(12px + 2px * var(--pf)), 14px);
+  --recipe-list-col-image: clamp(48px, calc(48px + 8px * var(--pf)), 56px);
+  --recipe-list-col-name: clamp(100px, calc(100px + 18px * var(--pf)), 118px);
+  --recipe-list-col-profession: clamp(72px, calc(72px + 12px * var(--pf)), 84px);
+  --recipe-list-identity-width: clamp(244px, calc(244px + 42px * var(--pf)), 286px);
+  --recipe-list-col-exp: clamp(50px, calc(50px + 8px * var(--pf)), 58px);
+  --recipe-list-sprite-size: clamp(44px, calc(44px + 8px * var(--pf)), 52px);
+
+  /* Shared by the Item directory rail and Location detail sidebar, both
+     of which converge on 272px today. */
+  --sidebar-width: clamp(272px, calc(272px + 48px * var(--pf)), 320px);
+
+  /* World tree. Indentation grows only modestly (10%) so an 8-deep branch
+     doesn't lose all its horizontal room on an otherwise-generous sidebar. */
+  --world-sidebar-width: clamp(260px, calc(260px + 40px * var(--pf)), 300px);
+  --world-tree-indent: clamp(20px, calc(20px + 2px * var(--pf)), 22px);
+
+  /* Profession/Class catalogue cards (2-col fixed grid). */
+  --codex-card-gap: clamp(20px, calc(20px + 4px * var(--pf)), 24px);
+  --codex-card-media-size: clamp(130px, calc(130px + 20px * var(--pf)), 150px);
+  --codex-card-sprite-size: clamp(88px, calc(88px + 14px * var(--pf)), 102px);
+  --codex-card-title-font-size: clamp(19px, calc(19px + 3px * var(--pf)), 22px);
 }
 
 /* ---- Public design review workspace --------------------------------- */
@@ -1419,17 +1519,17 @@ select:focus-visible {
 
 .public-site-container {
   width: 100%;
-  max-width: 1760px;
+  max-width: clamp(1760px, calc(1760px + 400px * var(--pf)), 2160px);
   margin-inline: auto;
-  padding-inline: 28px;
+  padding-inline: clamp(28px, calc(28px + 8px * var(--pf)), 36px);
 }
 
 .public-site-container--landing {
-  max-width: 1760px;
+  max-width: clamp(1760px, calc(1760px + 400px * var(--pf)), 2160px);
 }
 
 .public-site-container.public-site-container--wide {
-  max-width: 1760px;
+  max-width: clamp(1760px, calc(1760px + 400px * var(--pf)), 2160px);
 }
 
 .public-site-container--landing.public-site-main {
@@ -1464,8 +1564,9 @@ select:focus-visible {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 28px;
-  padding: 10px 22px;
+  gap: clamp(28px, calc(28px + 6px * var(--pf)), 34px);
+  padding: clamp(10px, calc(10px + 3px * var(--pf)), 13px)
+    clamp(22px, calc(22px + 5px * var(--pf)), 27px);
   background: rgba(17, 21, 20, 0.92);
   backdrop-filter: blur(10px);
   border: 1px solid var(--color-border);
@@ -1483,10 +1584,11 @@ select:focus-visible {
 .public-site-logo {
   display: block;
   width: auto;
-  height: 66px;
+  height: var(--header-logo-height);
   /* Negative vertical margin so the mark overhangs the bar, per the
-     handoff's logo treatment. */
-  margin-block: -13px;
+     handoff's logo treatment. Scales with the logo itself to keep the
+     same overhang proportion. */
+  margin-block: clamp(-15px, calc(-13px - 2px * var(--pf)), -13px);
 }
 
 /* The <nav> renders as a grid item's children, not a box itself, so its
@@ -1517,7 +1619,7 @@ select:focus-visible {
   padding-bottom: 4px;
   border-bottom: 2px solid transparent;
   color: var(--color-text);
-  font-size: 12.5px;
+  font-size: var(--header-nav-font-size);
   font-weight: 600;
   line-height: 1.5;
   text-decoration: none;
@@ -1557,7 +1659,7 @@ select:focus-visible {
   padding: 0 0 4px;
   color: var(--color-text);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--header-nav-font-size);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
@@ -1668,7 +1770,8 @@ select:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 9px;
   background: var(--color-surface);
-  padding: 8px 12px;
+  padding: clamp(8px, calc(8px + 2px * var(--pf)), 10px)
+    clamp(12px, calc(12px + 2px * var(--pf)), 14px);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -1722,11 +1825,11 @@ select:focus-visible {
 .public-site-search {
   justify-self: end;
   min-width: 0;
-  width: 230px;
+  width: var(--header-search-width);
 }
 
 .public-site-search-input {
-  font-size: 13px;
+  font-size: clamp(13px, calc(13px + 2px * var(--pf)), 15px);
 }
 
 .public-site-search-submit {
@@ -1769,7 +1872,7 @@ select:focus-visible {
   margin: 6px 0 2px;
   padding: 0 8px;
   color: var(--color-accent);
-  font-size: 10px;
+  font-size: clamp(10px, calc(10px + 3px * var(--pf)), 13px);
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -1779,9 +1882,10 @@ select:focus-visible {
 .public-quick-search-all {
   display: block;
   border-radius: 7px;
-  padding: 7px 8px;
+  padding: clamp(7px, calc(7px + 2px * var(--pf)), 9px)
+    clamp(8px, calc(8px + 2px * var(--pf)), 10px);
   color: var(--color-text-body);
-  font-size: 12.5px;
+  font-size: var(--header-nav-font-size);
   text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -1793,7 +1897,7 @@ select:focus-visible {
 .public-quick-search-option-context {
   display: block;
   color: var(--color-text-meta);
-  font-size: 11px;
+  font-size: clamp(11px, calc(11px + 2.5px * var(--pf)), 13.5px);
 }
 
 .public-quick-search-option--active,
@@ -2684,15 +2788,16 @@ select:focus-visible {
 }
 
 .directory-search-field {
-  width: 220px;
+  width: clamp(220px, calc(220px + 40px * var(--pf)), 260px);
   min-width: 0;
   border-radius: 8px;
-  padding: 7px 12px;
+  padding: clamp(7px, calc(7px + 2px * var(--pf)), 9px)
+    clamp(12px, calc(12px + 2px * var(--pf)), 14px);
   color: var(--color-text-muted);
 }
 
 .directory-search-field input {
-  font-size: 12.5px;
+  font-size: var(--header-nav-font-size);
 }
 
 .directory-search-submit {
@@ -2897,7 +3002,7 @@ select:focus-visible {
 }
 
 .directory-overview {
-  width: 272px;
+  width: var(--sidebar-width);
   flex: none;
   margin-top: 0;
   border: 1px solid var(--color-border);
@@ -2983,9 +3088,9 @@ select:focus-visible {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--item-card-min-width), 1fr));
   align-content: start;
-  gap: 12px;
+  gap: var(--card-gap);
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -3038,7 +3143,7 @@ select:focus-visible {
 
 .item-catalogue-card-title {
   margin: 0;
-  font-size: 13.5px;
+  font-size: var(--card-title-font-size);
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.25;
@@ -3049,7 +3154,7 @@ select:focus-visible {
 }
 
 .item-catalogue-card-category {
-  font-size: 10.5px;
+  font-size: var(--card-meta-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--color-accent);
@@ -3062,7 +3167,7 @@ select:focus-visible {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: 11.5px;
+  font-size: clamp(11.5px, calc(11.5px + 3px * var(--pf)), 14.5px);
   line-height: 1.4;
   color: var(--color-text-muted);
 }
@@ -3070,7 +3175,7 @@ select:focus-visible {
 .item-catalogue-card-source {
   border-top: 1px solid var(--color-border-muted);
   padding-top: 6px;
-  font-size: 10.5px;
+  font-size: var(--card-meta-font-size);
   color: var(--color-text-meta-dim);
 }
 
@@ -3184,7 +3289,7 @@ select:focus-visible {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
-  gap: 20px;
+  gap: var(--codex-card-gap);
   overflow-y: auto;
   padding-right: 2px;
   scrollbar-width: none;
@@ -3200,11 +3305,11 @@ select:focus-visible {
   min-width: 0;
   min-height: 172px;
   display: flex;
-  gap: 20px;
+  gap: var(--codex-card-gap);
   border: 1px solid var(--color-border-muted);
   border-radius: 14px;
   background: var(--color-surface);
-  padding: 20px;
+  padding: var(--codex-card-gap);
   color: inherit;
   text-decoration: none;
   transition:
@@ -3225,8 +3330,8 @@ select:focus-visible {
 }
 
 .profession-catalogue-card-media {
-  width: 130px;
-  height: 130px;
+  width: var(--codex-card-media-size);
+  height: var(--codex-card-media-size);
   flex: none;
   display: flex;
   align-items: center;
@@ -3240,8 +3345,8 @@ select:focus-visible {
 }
 
 .profession-catalogue-card-media .public-sprite-stage--card {
-  --sprite-stage-size: 88px;
-  --sprite-image-size: 88px;
+  --sprite-stage-size: var(--codex-card-sprite-size);
+  --sprite-image-size: var(--codex-card-sprite-size);
   border: 0;
   background: transparent;
   padding: 0;
@@ -3249,8 +3354,8 @@ select:focus-visible {
 
 .profession-catalogue-card-media
   .public-sprite-stage--card.public-sprite-stage--empty {
-  width: 88px;
-  height: 88px;
+  width: var(--codex-card-sprite-size);
+  height: var(--codex-card-sprite-size);
   padding: 8px;
 }
 
@@ -3265,7 +3370,7 @@ select:focus-visible {
 .profession-catalogue-card-title {
   margin: 0 0 4px;
   color: var(--color-text);
-  font-size: 19px;
+  font-size: var(--codex-card-title-font-size);
   font-weight: 700;
   line-height: 1.25;
 }
@@ -3273,7 +3378,7 @@ select:focus-visible {
 .profession-catalogue-card-type,
 .profession-catalogue-list-type {
   color: var(--color-accent);
-  font-size: 10.5px;
+  font-size: var(--card-meta-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -4089,9 +4194,9 @@ select:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
-  padding: 8px 14px;
+  padding: var(--detail-chip-padding);
   color: var(--color-text-muted);
-  font-size: 12.5px;
+  font-size: var(--detail-chip-font-size);
 }
 
 .item-info-chip strong {
@@ -4413,8 +4518,8 @@ a.item-info-chip:focus-visible {
    not an invented association — see the page's own relatedItemsMap. */
 .item-related-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--item-card-min-width), 1fr));
+  gap: var(--card-gap);
 }
 
 .item-related-card {
@@ -4425,7 +4530,7 @@ a.item-info-chip:focus-visible {
   border: 1px solid var(--color-border-muted);
   border-radius: 10px;
   background: var(--color-surface);
-  padding: 12px;
+  padding: var(--card-gap);
   color: inherit;
   text-decoration: none;
   transition:
@@ -4453,7 +4558,7 @@ a.item-info-chip:focus-visible {
 }
 
 .item-related-card-name {
-  font-size: 13.5px;
+  font-size: var(--card-title-font-size);
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.25;
@@ -4463,7 +4568,7 @@ a.item-info-chip:focus-visible {
 }
 
 .item-related-card-category {
-  font-size: 10px;
+  font-size: clamp(10px, calc(10px + 3px * var(--pf)), 13px);
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--color-accent);
@@ -4499,7 +4604,7 @@ a.item-info-chip:focus-visible {
 }
 
 .item-resource-detail-page .item-content-grid {
-  grid-template-columns: minmax(0, 1fr) 272px;
+  grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
   gap: 28px;
 }
 
@@ -4523,8 +4628,8 @@ a.item-info-chip:focus-visible {
 }
 
 .item-resource-detail-page .item-identity-stage {
-  width: 180px;
-  height: 180px;
+  width: var(--detail-hero-stage-size);
+  height: var(--detail-hero-stage-size);
   flex: none;
   overflow: hidden;
   padding: 0;
@@ -4538,8 +4643,8 @@ a.item-info-chip:focus-visible {
 .item-resource-detail-page
   .item-identity-stage
   .public-sprite-stage--hero {
-  --sprite-stage-size: 128px;
-  --sprite-image-size: 128px;
+  --sprite-stage-size: var(--detail-hero-sprite-size);
+  --sprite-image-size: var(--detail-hero-sprite-size);
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -4548,8 +4653,8 @@ a.item-info-chip:focus-visible {
 .item-resource-detail-page
   .item-identity-stage
   .public-sprite-stage--hero.public-sprite-stage--empty {
-  width: 128px;
-  height: 128px;
+  width: var(--detail-hero-sprite-size);
+  height: var(--detail-hero-sprite-size);
   padding: 14px;
 }
 
@@ -4560,19 +4665,19 @@ a.item-info-chip:focus-visible {
 
 .item-resource-detail-page .item-category-label {
   margin-bottom: 8px;
-  font-size: 11px;
+  font-size: var(--detail-label-font-size);
   letter-spacing: 0.06em;
 }
 
 .item-resource-detail-page .public-resource-title {
-  font-size: 40px;
+  font-size: clamp(40px, calc(40px + 6px * var(--pf)), 46px);
   line-height: 1.05;
 }
 
 .item-resource-detail-page .item-description {
-  max-width: 640px;
+  max-width: var(--detail-body-max-width);
   margin-top: 14px;
-  font-size: 14.5px;
+  font-size: var(--detail-body-font-size);
   line-height: 1.7;
 }
 
@@ -4803,8 +4908,8 @@ a.item-info-chip:focus-visible {
    stage nor the yield badge can cross its rounded corners. */
 .recipe-detail-page .recipe-identity-stage {
   position: relative;
-  width: 180px;
-  height: 180px;
+  width: var(--detail-hero-stage-size);
+  height: var(--detail-hero-stage-size);
   flex: none;
   overflow: hidden;
   padding: 0;
@@ -4818,8 +4923,8 @@ a.item-info-chip:focus-visible {
 .recipe-detail-page
   .recipe-identity-stage
   .public-sprite-stage--hero {
-  --sprite-stage-size: 128px;
-  --sprite-image-size: 128px;
+  --sprite-stage-size: var(--detail-hero-sprite-size);
+  --sprite-image-size: var(--detail-hero-sprite-size);
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -4828,8 +4933,8 @@ a.item-info-chip:focus-visible {
 .recipe-detail-page
   .recipe-identity-stage
   .public-sprite-stage--hero.public-sprite-stage--empty {
-  width: 128px;
-  height: 128px;
+  width: var(--detail-hero-sprite-size);
+  height: var(--detail-hero-sprite-size);
   padding: 14px;
 }
 
@@ -4869,20 +4974,20 @@ a.item-info-chip:focus-visible {
 
 .recipe-detail-page .item-category-label {
   margin-bottom: 8px;
-  font-size: 11px;
+  font-size: var(--detail-label-font-size);
   letter-spacing: 0.06em;
 }
 
 .recipe-detail-page .public-resource-title {
-  font-size: 40px;
+  font-size: clamp(40px, calc(40px + 6px * var(--pf)), 46px);
   line-height: 1.05;
 }
 
 .recipe-summary {
-  max-width: 640px;
+  max-width: var(--detail-body-max-width);
   margin: 14px 0 0;
   color: var(--color-text-muted);
-  font-size: 14.5px;
+  font-size: var(--detail-body-font-size);
   line-height: 1.7;
 }
 
@@ -5446,7 +5551,7 @@ body:has(.recipe-detail-page) .public-site-footer {
   min-width: 64px;
   min-height: 48px;
   display: inline-grid;
-  grid-template-columns: 36px auto;
+  grid-template-columns: var(--recipe-ingredient-chip-size) auto;
   align-items: center;
   gap: 6px;
   border: 1px solid color-mix(
@@ -5662,9 +5767,12 @@ body:has(.recipe-detail-page) .public-site-footer {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(clamp(190px, calc(190px + 30px * var(--pf)), 220px), 1fr)
+  );
   align-content: start;
-  gap: 12px;
+  gap: var(--card-gap);
   overflow-y: auto;
   padding-right: 2px;
   scrollbar-width: none;
@@ -11198,8 +11306,8 @@ input[type="checkbox"] {
 }
 
 .profession-detail-stage {
-  width: 180px;
-  height: 180px;
+  width: var(--detail-hero-stage-size);
+  height: var(--detail-hero-stage-size);
   flex: none;
   display: flex;
   align-items: center;
@@ -11213,8 +11321,8 @@ input[type="checkbox"] {
 }
 
 .profession-detail-stage .public-sprite-stage--hero {
-  --sprite-stage-size: 128px;
-  --sprite-image-size: 128px;
+  --sprite-stage-size: var(--detail-hero-sprite-size);
+  --sprite-image-size: var(--detail-hero-sprite-size);
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -11222,8 +11330,8 @@ input[type="checkbox"] {
 }
 
 .profession-detail-stage .public-sprite-stage--hero.public-sprite-stage--empty {
-  width: 128px;
-  height: 128px;
+  width: var(--detail-hero-sprite-size);
+  height: var(--detail-hero-sprite-size);
   padding: 14px;
 }
 
@@ -11236,7 +11344,7 @@ input[type="checkbox"] {
 .profession-detail-eyebrow {
   margin: 0 0 8px;
   color: var(--color-accent);
-  font-size: 11px;
+  font-size: var(--detail-label-font-size);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -11244,15 +11352,15 @@ input[type="checkbox"] {
 
 .profession-detail-copy .public-resource-title {
   margin: 0 0 14px;
-  font-size: 40px;
+  font-size: clamp(40px, calc(40px + 6px * var(--pf)), 46px);
   line-height: 1.05;
 }
 
 .profession-detail-copy .profession-description {
-  max-width: 640px;
+  max-width: var(--detail-body-max-width);
   margin: 0 0 18px;
   color: var(--color-text-muted);
-  font-size: 14.5px;
+  font-size: var(--detail-body-font-size);
   line-height: 1.7;
 }
 
@@ -11275,9 +11383,9 @@ input[type="checkbox"] {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
-  padding: 8px 14px;
+  padding: var(--detail-chip-padding);
   color: var(--color-text-muted);
-  font-size: 12.5px;
+  font-size: var(--detail-chip-font-size);
   text-decoration: none;
   transition:
     border-color 0.18s ease,
@@ -11412,9 +11520,9 @@ a.profession-detail-chip:focus-visible {
 
 .recipe-collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--recipe-card-min-width), 1fr));
   align-items: start;
-  gap: 14px;
+  gap: var(--recipe-card-gap);
 }
 
 .recipe-collection-grid > div,
@@ -11470,8 +11578,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-output-card--grid .recipe-output-image-stage {
-  width: 78px;
-  height: 78px;
+  width: var(--recipe-card-image-size);
+  height: var(--recipe-card-image-size);
   border: 1px solid var(--color-border);
   border-radius: 11px;
   background:
@@ -11482,8 +11590,8 @@ a.profession-detail-chip:focus-visible {
 .recipe-output-card--grid
   .recipe-output-image-stage
   .public-sprite-stage--card {
-  --sprite-stage-size: 64px;
-  --sprite-image-size: 64px;
+  --sprite-stage-size: var(--recipe-card-sprite-size);
+  --sprite-image-size: var(--recipe-card-sprite-size);
   border: 0;
   background: transparent;
   padding: 0;
@@ -11492,8 +11600,8 @@ a.profession-detail-chip:focus-visible {
 .recipe-output-card--grid
   .recipe-output-image-stage
   .public-sprite-stage--card.public-sprite-stage--empty {
-  width: 64px;
-  height: 64px;
+  width: var(--recipe-card-sprite-size);
+  height: var(--recipe-card-sprite-size);
   padding: 7px;
 }
 
@@ -11512,7 +11620,7 @@ a.profession-detail-chip:focus-visible {
 
 .recipe-output-card--grid .recipe-output-yield > span {
   color: var(--color-text);
-  font-size: 6px;
+  font-size: clamp(6px, calc(6px + 1.5px * var(--pf)), 7.5px);
   font-weight: 800;
   letter-spacing: 0.05em;
   line-height: 1;
@@ -11521,7 +11629,7 @@ a.profession-detail-chip:focus-visible {
 
 .recipe-output-card--grid .recipe-output-yield > strong {
   color: #f4c542;
-  font-size: 10.5px;
+  font-size: clamp(10.5px, calc(10.5px + 2px * var(--pf)), 12.5px);
   font-weight: 800;
   line-height: 1.2;
 }
@@ -11535,7 +11643,7 @@ a.profession-detail-chip:focus-visible {
   min-width: 0;
   overflow: hidden;
   color: var(--color-text);
-  font-size: 13.5px;
+  font-size: var(--card-title-font-size);
   font-weight: 700;
   line-height: 1.25;
   text-decoration: none;
@@ -11547,7 +11655,7 @@ a.profession-detail-chip:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 10.5px;
+  font-size: var(--card-meta-font-size);
 }
 
 .recipe-output-card--grid .recipe-output-requirement > span:first-child {
@@ -11586,8 +11694,8 @@ a.profession-detail-chip:focus-visible {
 .recipe-output-card--grid .recipe-output-ingredient,
 .recipe-output-card--list .recipe-output-ingredient {
   min-width: 0;
-  width: 36px;
-  height: 36px;
+  width: var(--recipe-ingredient-chip-size);
+  height: var(--recipe-ingredient-chip-size);
   min-height: 0;
   display: flex;
   flex: none;
@@ -11598,8 +11706,8 @@ a.profession-detail-chip:focus-visible {
 /* The wide list row shows every ingredient, so it can afford the handoff's
    larger icon; the compact grid card keeps the smaller preview size. */
 .recipe-output-card--list .recipe-output-ingredient {
-  width: 40px;
-  height: 40px;
+  width: clamp(40px, calc(40px + 8px * var(--pf)), 48px);
+  height: clamp(40px, calc(40px + 8px * var(--pf)), 48px);
 }
 
 .recipe-output-card--grid .recipe-output-ingredient-toggle {
@@ -11743,12 +11851,15 @@ a.profession-detail-chip:focus-visible {
 
 .recipe-collection-list-header {
   display: grid;
-  grid-template-columns: 48px 100px 72px 50px minmax(0, 1fr);
+  grid-template-columns:
+    var(--recipe-list-col-image) var(--recipe-list-col-name)
+    var(--recipe-list-col-profession) var(--recipe-list-col-exp)
+    minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: var(--recipe-list-gap);
   padding: 0 12px 6px;
   color: var(--color-text-meta-dim);
-  font-size: 10.5px;
+  font-size: var(--card-meta-font-size);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -11758,7 +11869,7 @@ a.profession-detail-chip:focus-visible {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--recipe-list-gap);
   border-color: var(--color-border-muted);
   border-radius: 9px;
   padding: 4px 12px;
@@ -11769,13 +11880,15 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-output-card--list .recipe-output-identity {
-  width: 244px;
+  width: var(--recipe-list-identity-width);
   min-height: 0;
   flex: none;
   display: grid;
-  grid-template-columns: 48px 100px 72px;
+  grid-template-columns:
+    var(--recipe-list-col-image) var(--recipe-list-col-name)
+    var(--recipe-list-col-profession);
   align-items: center;
-  gap: 12px;
+  gap: var(--recipe-list-gap);
   padding: 0;
 }
 
@@ -11784,8 +11897,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-output-card--list .recipe-output-image-stage {
-  width: 48px;
-  height: 48px;
+  width: var(--recipe-list-col-image);
+  height: var(--recipe-list-col-image);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background:
@@ -11796,8 +11909,8 @@ a.profession-detail-chip:focus-visible {
 .recipe-output-card--list
   .recipe-output-image-stage
   .public-sprite-stage--card {
-  --sprite-stage-size: 44px;
-  --sprite-image-size: 44px;
+  --sprite-stage-size: var(--recipe-list-sprite-size);
+  --sprite-image-size: var(--recipe-list-sprite-size);
   border: 0;
   background: transparent;
   padding: 0;
@@ -11813,18 +11926,18 @@ a.profession-detail-chip:focus-visible {
   background: rgba(15, 18, 16, 0.94);
   box-shadow: 0 0 0 2px var(--color-surface);
   padding: 0 4px;
-  font-size: 9.5px;
+  font-size: clamp(9.5px, calc(9.5px + 1.5px * var(--pf)), 11px);
 }
 
 .recipe-output-card--list .recipe-output-recipe-link {
-  font-size: 13px;
+  font-size: clamp(13px, calc(13px + 2.5px * var(--pf)), 15.5px);
 }
 
 .recipe-output-card--list .recipe-output-requirement {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 10.5px;
+  font-size: var(--card-meta-font-size);
 }
 
 .recipe-output-card--list .recipe-output-requirement > span:first-child {
@@ -11854,12 +11967,12 @@ a.profession-detail-chip:focus-visible {
 }
 
 .recipe-output-card--list .recipe-output-experience {
-  width: 50px;
+  width: var(--recipe-list-col-exp);
   flex: none;
   display: block;
   order: 2;
   color: var(--color-accent-soft);
-  font-size: 11.5px;
+  font-size: clamp(11.5px, calc(11.5px + 2px * var(--pf)), 13.5px);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -12135,8 +12248,8 @@ a.profession-detail-chip:focus-visible {
 
 .location-directory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--wide-card-min-width), 1fr));
+  gap: var(--card-gap);
 }
 
 .location-directory-card {
@@ -12147,7 +12260,7 @@ a.profession-detail-chip:focus-visible {
   border: 1px solid var(--color-border-muted);
   border-radius: 10px;
   background: var(--color-surface);
-  padding: 11px;
+  padding: var(--wide-card-padding);
   color: inherit;
   text-decoration: none;
   transition:
@@ -12167,13 +12280,13 @@ a.profession-detail-chip:focus-visible {
 
 .location-directory-card-media,
 .location-directory-card-media .public-sprite-stage--row {
-  width: 52px;
-  height: 52px;
+  width: var(--wide-card-image-size);
+  height: var(--wide-card-image-size);
   flex: none;
 }
 
 .location-directory-card-media .public-sprite-stage--row {
-  --sprite-image-size: 34px;
+  --sprite-image-size: var(--wide-card-sprite-size);
   border-color: var(--color-border);
   background:
     radial-gradient(circle at 30% 22%, rgba(122, 168, 110, 0.2), transparent 62%),
@@ -12206,7 +12319,7 @@ a.profession-detail-chip:focus-visible {
   overflow: hidden;
   margin: 0 0 3px;
   color: var(--color-text);
-  font-size: 13.5px;
+  font-size: var(--card-title-font-size);
   font-weight: 700;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -12222,7 +12335,7 @@ a.profession-detail-chip:focus-visible {
   min-width: 0;
   overflow: hidden;
   color: var(--color-text-meta-dim);
-  font-size: 10.5px;
+  font-size: var(--card-meta-font-size);
   line-height: 1.5;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -12301,7 +12414,7 @@ a.profession-detail-chip:focus-visible {
   position: sticky;
   top: 88px;
   display: flex;
-  width: 272px;
+  width: var(--sidebar-width);
   flex: none;
   flex-direction: column;
   gap: 16px;
@@ -12311,13 +12424,13 @@ a.profession-detail-chip:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
-  padding: 18px;
+  padding: clamp(18px, calc(18px + 4px * var(--pf)), 22px);
 }
 
 .location-detail-sidebar-panel h2 {
   margin: 0 0 14px;
   color: var(--color-accent-soft);
-  font-size: 12px;
+  font-size: clamp(12px, calc(12px + 3px * var(--pf)), 15px);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -12335,7 +12448,7 @@ a.profession-detail-chip:focus-visible {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  font-size: 12.5px;
+  font-size: var(--detail-chip-font-size);
 }
 
 .location-detail-sidebar-panel dt {
@@ -12343,7 +12456,7 @@ a.profession-detail-chip:focus-visible {
 }
 
 .location-detail-sidebar-panel dd {
-  max-width: 138px;
+  max-width: clamp(138px, calc(138px + 24px * var(--pf)), 162px);
   margin: 0;
   color: var(--color-text);
   font-weight: 700;
@@ -12444,8 +12557,8 @@ a.profession-detail-chip:focus-visible {
 .location-detail-child-grid,
 .location-detail-related-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--wide-card-min-width), 1fr));
+  gap: var(--card-gap);
 }
 
 .location-detail-child-card {
@@ -12696,8 +12809,8 @@ a.profession-detail-chip:focus-visible {
 
 .shop-directory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--wide-card-min-width), 1fr));
+  gap: var(--card-gap);
 }
 
 .shop-directory-card {
@@ -12707,7 +12820,7 @@ a.profession-detail-chip:focus-visible {
   border: 1px solid var(--color-border-muted);
   border-radius: 10px;
   background: var(--color-surface);
-  padding: 11px;
+  padding: var(--wide-card-padding);
   color: inherit;
   text-decoration: none;
   transition:
@@ -12725,18 +12838,17 @@ a.profession-detail-chip:focus-visible {
     0 0 20px rgba(216, 181, 98, 0.22);
 }
 
-/* Same 52px catalogue stage the Locations directory uses, differing only in
-   its gold (rather than green) tint — including the compact row fallback,
-   which the 34px content area has room for. */
+/* Same catalogue stage the Locations directory uses, differing only in its
+   gold (rather than green) tint — including the compact row fallback. */
 .shop-directory-card-media,
 .shop-directory-card-media .public-sprite-stage--row {
-  width: 52px;
-  height: 52px;
+  width: var(--wide-card-image-size);
+  height: var(--wide-card-image-size);
   flex: none;
 }
 
 .shop-directory-card-media .public-sprite-stage--row {
-  --sprite-image-size: 34px;
+  --sprite-image-size: var(--wide-card-sprite-size);
   border-color: var(--color-border);
   background:
     radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.2), transparent 62%),
@@ -12778,7 +12890,7 @@ a.profession-detail-chip:focus-visible {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
-  gap: 20px;
+  gap: var(--codex-card-gap);
   overflow-y: auto;
   padding-right: 2px;
   scrollbar-width: none;
@@ -12794,11 +12906,11 @@ a.profession-detail-chip:focus-visible {
   min-width: 0;
   min-height: 172px;
   display: flex;
-  gap: 20px;
+  gap: var(--codex-card-gap);
   border: 1px solid var(--color-border-muted);
   border-radius: 14px;
   background: var(--color-surface);
-  padding: 20px;
+  padding: var(--codex-card-gap);
   color: inherit;
   text-decoration: none;
   transition:
@@ -12819,8 +12931,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 .class-catalogue-card-media {
-  width: 130px;
-  height: 130px;
+  width: var(--codex-card-media-size);
+  height: var(--codex-card-media-size);
   flex: none;
   display: flex;
   align-items: center;
@@ -12834,8 +12946,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 .class-catalogue-card-media .public-sprite-stage--card {
-  --sprite-stage-size: 88px;
-  --sprite-image-size: 88px;
+  --sprite-stage-size: var(--codex-card-sprite-size);
+  --sprite-image-size: var(--codex-card-sprite-size);
   border: 0;
   background: transparent;
   padding: 0;
@@ -12843,8 +12955,8 @@ a.profession-detail-chip:focus-visible {
 
 .class-catalogue-card-media
   .public-sprite-stage--card.public-sprite-stage--empty {
-  width: 88px;
-  height: 88px;
+  width: var(--codex-card-sprite-size);
+  height: var(--codex-card-sprite-size);
   padding: 8px;
 }
 
@@ -12859,7 +12971,7 @@ a.profession-detail-chip:focus-visible {
 .class-catalogue-card-title {
   margin: 0 0 4px;
   color: var(--color-text);
-  font-size: 19px;
+  font-size: var(--codex-card-title-font-size);
   font-weight: 700;
   line-height: 1.25;
 }
@@ -12867,7 +12979,7 @@ a.profession-detail-chip:focus-visible {
 .class-catalogue-card-type,
 .class-catalogue-list-type {
   color: var(--color-accent);
-  font-size: 10.5px;
+  font-size: var(--card-meta-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -13008,8 +13120,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 .shop-detail-stage {
-  width: 180px;
-  height: 180px;
+  width: var(--detail-hero-stage-size);
+  height: var(--detail-hero-stage-size);
   flex: none;
   display: flex;
   align-items: center;
@@ -13022,8 +13134,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 .shop-detail-stage .public-sprite-stage--hero {
-  --sprite-stage-size: 128px;
-  --sprite-image-size: 128px;
+  --sprite-stage-size: var(--detail-hero-sprite-size);
+  --sprite-image-size: var(--detail-hero-sprite-size);
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -13031,8 +13143,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 .shop-detail-stage .public-sprite-stage--hero.public-sprite-stage--empty {
-  width: 128px;
-  height: 128px;
+  width: var(--detail-hero-sprite-size);
+  height: var(--detail-hero-sprite-size);
   padding: 14px;
 }
 
@@ -13045,7 +13157,7 @@ a.profession-detail-chip:focus-visible {
 .shop-detail-eyebrow {
   margin: 0 0 8px;
   color: var(--color-accent);
-  font-size: 11px;
+  font-size: var(--detail-label-font-size);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -13053,15 +13165,15 @@ a.profession-detail-chip:focus-visible {
 
 .shop-detail-copy .public-resource-title {
   margin: 0 0 14px;
-  font-size: 40px;
+  font-size: clamp(40px, calc(40px + 6px * var(--pf)), 46px);
   line-height: 1.05;
 }
 
 .shop-detail-description {
-  max-width: 640px;
+  max-width: var(--detail-body-max-width);
   margin: 0 0 18px;
   color: var(--color-text-muted);
-  font-size: 14.5px;
+  font-size: var(--detail-body-font-size);
   line-height: 1.7;
 }
 
@@ -13084,9 +13196,9 @@ a.profession-detail-chip:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
-  padding: 8px 14px;
+  padding: var(--detail-chip-padding);
   color: var(--color-text-muted);
-  font-size: 12.5px;
+  font-size: var(--detail-chip-font-size);
   text-decoration: none;
   transition:
     border-color 0.18s ease,
@@ -13450,7 +13562,7 @@ a.shop-detail-chip:focus-visible {
 }
 
 .world-sidebar {
-  width: 260px;
+  width: var(--world-sidebar-width);
   flex: none;
   overflow-y: auto;
   border-right: 1px solid var(--color-border-muted);
@@ -13532,7 +13644,7 @@ a.shop-detail-chip:focus-visible {
 
 .world-tree-branch-inner > .world-tree-list {
   margin-top: 2px;
-  padding-left: 20px;
+  padding-left: var(--world-tree-indent);
 }
 
 /* Hit-area ownership: the row itself is a bare flex wrapper with NO padding of
@@ -13618,7 +13730,7 @@ a.shop-detail-chip:focus-visible {
   border-radius: inherit;
   padding: var(--world-tree-row-pad-y) 10px;
   color: var(--color-text-body);
-  font-size: 12.5px;
+  font-size: var(--header-nav-font-size);
   text-decoration: none;
   overflow-wrap: anywhere;
   transition: color 170ms cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -13636,13 +13748,13 @@ a.shop-detail-chip:focus-visible {
 
 .world-tree-row--level-0 .world-tree-label {
   color: var(--color-text);
-  font-size: 13px;
+  font-size: clamp(13px, calc(13px + 2px * var(--pf)), 15px);
   font-weight: 700;
 }
 
 .world-tree-row--level-2 .world-tree-label {
   color: var(--color-text-meta);
-  font-size: 12px;
+  font-size: clamp(12px, calc(12px + 2px * var(--pf)), 14px);
 }
 
 .world-tree-row--selected .world-tree-label {
@@ -13755,13 +13867,13 @@ a.shop-detail-chip:focus-visible {
 
 .world-detail-stage,
 .world-detail-stage .public-sprite-stage--row {
-  width: 110px;
-  height: 110px;
+  width: clamp(110px, calc(110px + 18px * var(--pf)), 128px);
+  height: clamp(110px, calc(110px + 18px * var(--pf)), 128px);
   flex: none;
 }
 
 .world-detail-stage .public-sprite-stage--row {
-  --sprite-image-size: 70px;
+  --sprite-image-size: clamp(70px, calc(70px + 12px * var(--pf)), 82px);
   box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -13778,7 +13890,7 @@ a.shop-detail-chip:focus-visible {
 .world-detail-eyebrow {
   margin: 0 0 6px;
   color: var(--color-accent);
-  font-size: 11px;
+  font-size: var(--detail-label-font-size);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -13796,7 +13908,7 @@ a.shop-detail-chip:focus-visible {
   margin: 0;
   color: var(--color-text);
   font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
-  font-size: 26px;
+  font-size: clamp(26px, calc(26px + 4px * var(--pf)), 30px);
   font-weight: 700;
   line-height: 1.2;
   overflow-wrap: anywhere;
@@ -13826,7 +13938,7 @@ a.shop-detail-chip:focus-visible {
 .world-detail-description {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 12.5px;
+  font-size: var(--detail-chip-font-size);
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -13842,7 +13954,7 @@ a.shop-detail-chip:focus-visible {
   border: 1px solid var(--color-border-muted);
   border-radius: 10px;
   background: var(--color-surface);
-  padding: 16px;
+  padding: clamp(16px, calc(16px + 3px * var(--pf)), 19px);
 }
 
 .world-panel--wide {
@@ -13852,7 +13964,7 @@ a.shop-detail-chip:focus-visible {
 .world-panel h3 {
   margin: 0 0 10px;
   color: var(--color-accent-soft);
-  font-size: 11px;
+  font-size: var(--detail-label-font-size);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -13872,7 +13984,7 @@ a.shop-detail-chip:focus-visible {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  font-size: 12.5px;
+  font-size: var(--detail-chip-font-size);
 }
 
 .world-panel-list a {
@@ -13908,13 +14020,13 @@ a.shop-detail-chip:focus-visible {
 
 .world-panel-facts dt {
   color: var(--color-text-meta);
-  font-size: 12.5px;
+  font-size: var(--detail-chip-font-size);
 }
 
 .world-panel-facts dd {
   margin: 0;
   color: var(--color-text-body);
-  font-size: 12.5px;
+  font-size: var(--detail-chip-font-size);
   font-weight: 600;
 }
 

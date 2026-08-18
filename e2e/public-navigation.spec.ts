@@ -444,8 +444,15 @@ test.describe("public shell layout", () => {
         expect(layout.contentWidth).toBeLessThanOrEqual(layout.viewportWidth);
         // The Items directory adopted the wide (1720px) container in the
         // Claude Design redesign (Slice 4), matching its Overview sidebar
-        // composition — the same width Item detail already used.
-        const expectedWidth = Math.min(layout.viewportWidth, 1760);
+        // composition — the same width Item detail already used. Above
+        // 1920px the container grows fluidly (the ultrawide readability
+        // pass's `--pf` progress factor, globals.css) from 1760px up to a
+        // 2160px cap at >=3440px.
+        const pf = Math.min(
+          1,
+          Math.max(0, (layout.viewportWidth - 1920) / 1520)
+        );
+        const expectedWidth = Math.min(layout.viewportWidth, 1760 + 400 * pf);
         expect(Math.abs(layout.main.width - expectedWidth)).toBeLessThan(1);
         expect(Math.abs(layout.main.left - layout.header.left)).toBeLessThan(1);
         expect(Math.abs(layout.main.right - layout.header.right)).toBeLessThan(
