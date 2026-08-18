@@ -36,6 +36,9 @@ export const recipeOutputCardSelect = {
           name: true,
           slug: true,
           image: true,
+          // Item detail derives its "Related Items" (items crafted alongside
+          // this one) from these same rows, and shows each one's Category.
+          category: { select: { name: true } },
         },
       },
     },

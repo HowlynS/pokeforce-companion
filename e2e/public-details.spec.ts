@@ -134,24 +134,28 @@ test.describe("public detail pages", () => {
     ).toBeVisible();
     await expect(page.getByText("Azure mineral deposit")).toBeVisible();
 
+    // "Used in recipes" is a Recipe collection, so it uses the canonical
+    // relationship card rather than a shortened Item-specific lookalike.
     await expect(
       page.getByRole("heading", { level: 2, name: "Used in recipes" })
     ).toBeVisible();
-    const recipeRow = page.locator(".item-recipe-row").filter({
+    const usedIn = page.locator(".recipe-collection-section").filter({
+      has: page.getByRole("heading", { level: 2, name: "Used in recipes" }),
+    });
+    const recipeCard = usedIn.locator(".recipe-output-card--grid").filter({
       hasText: itemFixture.recipeName,
     });
-    await expect(recipeRow).toHaveAttribute(
-      "href",
-      `/recipes/${itemFixture.item.slug}-recipe`
-    );
-    await expect(recipeRow).toContainText("Smithing");
-    await expect(recipeRow).toContainText(
-      `Requires 2 × ${itemFixture.item.name}`
-    );
-    await expect(recipeRow.getByText("No image", { exact: true })).toBeVisible();
     await expect(
-      recipeRow.locator(".public-sprite-stage--row")
-    ).toHaveCSS("width", "52px");
+      recipeCard.locator(`a[href="/recipes/${itemFixture.item.slug}-recipe"]`)
+    ).toHaveCount(1);
+    await expect(recipeCard).toContainText("Smithing");
+    // The card's own ingredient preview links back to this Item.
+    await expect(
+      recipeCard.locator(`a[href="/items/${itemFixture.item.slug}"]`).first()
+    ).toHaveAttribute(
+      "aria-label",
+      `${itemFixture.item.name}, required quantity ×2`
+    );
 
     const atmosphere = page.locator(".resource-atmosphere--item");
     expect(
@@ -311,6 +315,70 @@ test.describe("public detail pages", () => {
     });
     await expect(leatherStrap).toHaveAttribute("href", "/items/leather-strap");
   });
+
+  // The whole point of the canonical card: these three surfaces present the
+  // same information shape, so they must present the same component rather
+  // than three lookalikes that drift apart.
+  const CANONICAL_SURFACES = [
+    { name: "Item detail Used in recipes", path: "/items/iron-ingot", heading: "Used in recipes" },
+    { name: "Recipe detail Related Recipes", path: "/recipes/iron-sword", heading: "Related Recipes" },
+    { name: "Profession detail Recipes", path: "/professions/smithing", heading: "Recipes" },
+  ] as const;
+
+  for (const surface of CANONICAL_SURFACES) {
+    test(`${surface.name} uses the canonical Recipe card`, async ({ page }) => {
+      await page.goto(surface.path);
+
+      const section = page.locator(".recipe-collection-section").filter({
+        has: page.getByRole("heading", { level: 2, name: surface.heading, exact: true }),
+      });
+      await expect(section).toHaveCount(1);
+
+      // Grid is the default view and uses the canonical grid card.
+      const gridCards = section.locator(".recipe-output-card--grid");
+      expect(await gridCards.count()).toBeGreaterThan(0);
+      await expect(section.locator(".recipe-output-card--list")).toHaveCount(0);
+
+      // Every grid card links to its own Recipe, and any chevron present is
+      // an ingredient control that never navigates.
+      const firstCard = gridCards.first();
+      await expect(
+        firstCard.locator('a[href^="/recipes/"]')
+      ).not.toHaveCount(0);
+
+      // Switching to List swaps the card family and drops every disclosure.
+      const listButton = section.getByRole("button", { name: "List", exact: true });
+      await listButton.click();
+      await expect(listButton).toHaveAttribute("aria-pressed", "true");
+      const listCards = section.locator(".recipe-output-card--list");
+      expect(await listCards.count()).toBeGreaterThan(0);
+      await expect(section.locator(".recipe-output-card--grid")).toHaveCount(0);
+
+      // The List variant NEVER hides ingredient data behind a disclosure.
+      await expect(
+        section.locator(".recipe-output-ingredient-toggle")
+      ).toHaveCount(0);
+      await expect(
+        section.locator(".recipe-output-ingredient-panel")
+      ).toHaveCount(0);
+      await expect(
+        section.locator(".recipe-output-ingredient-disclosure")
+      ).toHaveCount(0);
+
+      // …and it shows EXP, which the compact grid card has no room for.
+      await expect(listCards.first().locator(".recipe-output-experience")).toHaveCount(1);
+
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () =>
+              document.documentElement.scrollWidth <=
+              document.documentElement.clientWidth
+          )
+        )
+        .toBe(true);
+    });
+  }
 
   test("profession detail links its recipes", async ({ page }) => {
     await page.goto("/professions/smithing");

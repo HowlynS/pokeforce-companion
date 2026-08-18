@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContentImage } from "@/components/content/content-image";
-import { ProfessionRecipeDirectory } from "@/components/content/profession-recipe-directory";
-import { RecipeOutputCard } from "@/components/content/recipe-output-card";
+import { RecipeCollectionSection } from "@/components/content/recipe-collection-section";
+import {
+  RecipeCollectionGrid,
+  RecipeCollectionList,
+} from "@/components/content/recipe-collection-views";
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
@@ -45,39 +48,8 @@ export default async function ProfessionDetailPage({
 
   const verification = formatPublicVerification(profession);
   const updatedAt = formatDisplayDate(profession.updatedAt);
-  const grid = (
-    <div className="profession-recipe-grid">
-      {profession.recipes.map((recipe, index) => (
-        <div
-          className="cx-item-in"
-          style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
-          key={recipe.id}
-        >
-          <RecipeOutputCard recipe={recipe} variant="profession-grid" />
-        </div>
-      ))}
-    </div>
-  );
-  const list = (
-    <div className="profession-recipe-list">
-      <div className="profession-recipe-list-header" aria-hidden="true">
-        <span />
-        <span>Recipe</span>
-        <span>Profession</span>
-        <span>EXP</span>
-        <span>Ingredients</span>
-      </div>
-      {profession.recipes.map((recipe, index) => (
-        <div
-          className="cx-item-in"
-          style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
-          key={recipe.id}
-        >
-          <RecipeOutputCard recipe={recipe} variant="profession-list" />
-        </div>
-      ))}
-    </div>
-  );
+  const grid = <RecipeCollectionGrid recipes={profession.recipes} />;
+  const list = <RecipeCollectionList recipes={profession.recipes} />;
 
   return (
     <AppShell scenic="detail" wide>
@@ -126,7 +98,7 @@ export default async function ProfessionDetailPage({
         </section>
 
         {profession.recipes.length > 0 ? (
-          <ProfessionRecipeDirectory grid={grid} list={list} />
+          <RecipeCollectionSection title="Recipes" grid={grid} list={list} />
         ) : null}
 
         <section

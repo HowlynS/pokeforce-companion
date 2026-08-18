@@ -97,7 +97,7 @@ export function LocationDetailDirectory({
           </button>
         </h2>
 
-        <div className="profession-recipes-view-toggle" role="group" aria-label={`${title} layout`}>
+        <div className="collection-view-toggle" role="group" aria-label={`${title} layout`}>
           <button
             type="button"
             className={mode === "grid" ? "is-active" : undefined}

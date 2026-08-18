@@ -82,8 +82,8 @@ const CATALOGUES: CatalogueCase[] = [
   {
     name: "Profession detail Recipes directory",
     path: "/professions/smithing",
-    grid: ".profession-recipe-grid > .cx-item-in",
-    list: ".profession-recipe-list > .cx-item-in",
+    grid: ".recipe-collection-grid > .cx-item-in",
+    list: ".recipe-collection-list > .cx-item-in",
   },
   {
     name: "Location detail Sub-locations directory",

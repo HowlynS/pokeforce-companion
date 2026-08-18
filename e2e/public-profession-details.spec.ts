@@ -89,7 +89,7 @@ test("Profession detail exposes its complete linked Recipe directory", async ({
       }),
     ).toBeVisible();
     await expect(
-      page.locator(".recipe-output-card--profession-grid"),
+      page.locator(".recipe-output-card--grid"),
     ).toHaveCount(fixture.recipes.length);
     await expect(
       page.getByRole("navigation", { name: /pagination/i }),
@@ -105,7 +105,7 @@ test("Profession detail exposes its complete linked Recipe directory", async ({
 
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(professionPath);
-  const recipeCards = page.locator(".recipe-output-card--profession-grid");
+  const recipeCards = page.locator(".recipe-output-card--grid");
   await expect(recipeCards).toHaveCount(fixture.recipes.length);
   await expect(recipeCards.locator("img").first()).toHaveCSS(
     "image-rendering",
@@ -137,25 +137,58 @@ test("Profession detail exposes its complete linked Recipe directory", async ({
     page.locator(".profession-detail-chip").filter({ hasText: "Recipes:" }),
   ).toContainText(String(fixture.recipes.length));
 
-  const moreIngredients = page
+  // The canonical grid card's disclosure: a chevron that discloses EVERY
+  // ingredient, paints above its siblings, and never navigates.
+  // The toggle's accessible name changes from "Show …" to "Hide …" once it is
+  // open, so it is pinned by the id it controls rather than by that name.
+  const controlledId = await page
     .getByRole("button", { name: /Show \d+ more ingredients/ })
-    .first();
+    .first()
+    .getAttribute("aria-controls");
+  const moreIngredients = page.locator(
+    `button[aria-controls="${controlledId}"]`
+  );
+  const disclosingCard = page
+    .locator(".recipe-output-card--grid")
+    .filter({ has: moreIngredients });
+  const urlBeforeDisclosure = page.url();
+
   await moreIngredients.click();
+  await expect(page).toHaveURL(urlBeforeDisclosure);
+  await expect(moreIngredients).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByText("RECIPE INGREDIENTS", { exact: true })).toBeVisible();
+
+  const panel = disclosingCard.locator(".recipe-output-ingredient-panel");
+  const previewCount = await disclosingCard
+    .locator(".recipe-output-ingredient-list .recipe-output-ingredient")
+    .count();
+  const panelRows = await panel
+    .locator(".recipe-output-ingredient-panel-row")
+    .count();
+  expect(previewCount).toBe(3);
+  expect(panelRows).toBeGreaterThan(previewCount);
+  await expect(disclosingCard).toHaveCSS("z-index", "40");
+
+  // Clicking outside the card closes it again, still without navigating.
+  await page.locator("h1").click({ position: { x: 2, y: 2 } });
+  await expect(
+    disclosingCard.locator(".recipe-output-ingredient-panel")
+  ).toHaveCount(0);
+  await expect(page).toHaveURL(urlBeforeDisclosure);
 
   const listButton = page.getByRole("button", { name: "List", exact: true });
   await listButton.click();
   await expect(listButton).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator(".profession-recipe-list")).toBeVisible();
+  await expect(page.locator(".recipe-collection-list")).toBeVisible();
 
   const revealButton = page.getByRole("button", {
     name: "Recipes",
     exact: true,
   });
   await revealButton.click();
-  await expect(page.locator("#profession-recipes-panel")).toHaveCount(0);
+  await expect(page.locator(".recipe-collection-panel")).toHaveCount(0);
   await revealButton.click();
-  await expect(page.locator("#profession-recipes-panel")).toBeVisible();
+  await expect(page.locator(".recipe-collection-panel")).toBeVisible();
 
   await recipeLink.focus();
   await expect(recipeLink).toBeFocused();
@@ -179,7 +212,7 @@ test("zero-Recipe Profession hides its optional directory", async ({ page }) => 
     await expect(
       page.locator(".profession-detail-chip").filter({ hasText: "Recipes:" }),
     ).toContainText("0");
-    await expect(page.locator(".profession-recipes-section")).toHaveCount(0);
+    await expect(page.locator(".recipe-collection-section")).toHaveCount(0);
     await page.screenshot({
       path: path.join(
         SCREENSHOT_DIRECTORY,

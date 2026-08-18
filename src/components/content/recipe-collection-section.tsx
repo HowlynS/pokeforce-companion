@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { CatalogueViewSwitch } from "@/components/content/catalogue-view-switch";
 import { publicMotionDuration } from "@/lib/public-motion";
 
-type ProfessionRecipeDirectoryProps = {
+type RecipeCollectionSectionProps = {
+  /** Section heading text, e.g. "Recipes", "Used in recipes". */
+  title: string;
   grid: ReactNode;
   list: ReactNode;
 };
@@ -26,14 +28,33 @@ const LIST_ICON = (
   </svg>
 );
 
-export function ProfessionRecipeDirectory({
+/**
+ * The shared shell for a public section that presents a COLLECTION of Recipe
+ * records: a disclosure heading, the Grid/List switch, and whichever view is
+ * selected.
+ *
+ * This began as Profession detail's own Recipes section. It is shared rather
+ * than copied because Item detail's "Used in recipes" and Recipe detail's
+ * "Related Recipes" present the same information shape, and three lookalike
+ * implementations are exactly how those surfaces drifted apart before.
+ *
+ * View switching goes through CatalogueViewSwitch, so the entrance stagger
+ * replays on every switch (it keys the presentation subtree by mode) while
+ * the toolbar and this section's own disclosure state stay put. Ids are
+ * generated per instance, so two of these sections can coexist on one page.
+ */
+export function RecipeCollectionSection({
+  title,
   grid,
   list,
-}: ProfessionRecipeDirectoryProps) {
+}: RecipeCollectionSectionProps) {
   const [mode, setMode] = useState<"grid" | "list">("grid");
   const [open, setOpen] = useState(true);
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reactId = useId();
+  const panelId = `recipe-collection-panel-${reactId}`;
+  const titleId = `recipe-collection-title-${reactId}`;
 
   useEffect(
     () => () => {
@@ -60,25 +81,25 @@ export function ProfessionRecipeDirectory({
   }
 
   return (
-    <section className="profession-recipes-section" aria-labelledby="profession-recipes-title">
-      <div className="profession-recipes-toolbar">
-        <h2 id="profession-recipes-title">
+    <section className="recipe-collection-section" aria-labelledby={titleId}>
+      <div className="recipe-collection-toolbar">
+        <h2 id={titleId}>
           <button
             type="button"
-            className="profession-recipes-reveal"
-            aria-controls="profession-recipes-panel"
+            className="recipe-collection-reveal"
+            aria-controls={panelId}
             aria-expanded={open && !closing}
             onClick={toggleOpen}
           >
             <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24">
               <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
             </svg>
-            <span>Recipes</span>
-            {open && !closing ? <span className="profession-recipes-rule cx-line-sweep" /> : null}
+            <span>{title}</span>
+            {open && !closing ? <span className="recipe-collection-rule cx-line-sweep" /> : null}
           </button>
         </h2>
 
-        <div className="profession-recipes-view-toggle" role="group" aria-label="Recipe layout">
+        <div className="collection-view-toggle" role="group" aria-label={`${title} layout`}>
           <button
             type="button"
             className={mode === "grid" ? "is-active" : ""}
@@ -102,8 +123,8 @@ export function ProfessionRecipeDirectory({
 
       {open || closing ? (
         <div
-          id="profession-recipes-panel"
-          className={`profession-recipes-panel${closing ? " cx-panel-out" : " cx-panel-in"}`}
+          id={panelId}
+          className={`recipe-collection-panel${closing ? " cx-panel-out" : " cx-panel-in"}`}
           aria-hidden={closing || undefined}
           inert={closing ? true : undefined}
         >

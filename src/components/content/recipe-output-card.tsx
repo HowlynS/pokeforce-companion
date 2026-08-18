@@ -12,16 +12,37 @@ type RecipeOutputCardProps = {
     | "standard"
     | "directory-grid"
     | "directory-list"
-    | "profession-grid"
-    | "profession-list";
+    | "grid"
+    | "list";
 };
 
 const INGREDIENT_PREVIEW_COUNT = 4;
 
+/** Canonical compact-grid preview budget: past this the chevron appears. */
+const GRID_VISIBLE_INGREDIENTS = 3;
+
 /**
  * Compact collection card for pages whose information shape is genuinely
- * Recipe + crafted result + ingredients. Detail-page relationship patterns
- * intentionally remain separate.
+ * Recipe + crafted result + ingredients.
+ *
+ * `grid` and `list` are the CANONICAL relationship pair, shared by every
+ * public surface that shows Recipe records as a relationship (Profession
+ * detail's Recipes, Item detail's Used in recipes, Recipe detail's Related
+ * Recipes). They are one component and one CSS family precisely so those
+ * surfaces cannot drift into three lookalike cards again.
+ *
+ * The two variants deliberately differ in how they handle ingredients:
+ *
+ * - `grid` is narrow, so it previews GRID_VISIBLE_INGREDIENTS and hands the
+ *   rest to the disclosure chevron, whose panel then lists EVERY ingredient
+ *   (not just the overflow).
+ * - `list` is a wide row that exists for information density, so it renders
+ *   every ingredient inline and has NO chevron, no panel, and no expanded
+ *   state at all. An ingredient-heavy Recipe is a wrapping problem for the
+ *   row, never a reason to hide data behind a disclosure.
+ *
+ * `directory-grid`/`directory-list` remain the /recipes catalogue's own
+ * full-scale cards and are intentionally left at their catalogue geometry.
  */
 export function RecipeOutputCard({
   recipe,
@@ -33,19 +54,22 @@ export function RecipeOutputCard({
     recipe.resultQuantityMax
   );
   const ingredientListId = `recipe-${recipe.id}-ingredients`;
-  const isProfessionVariant = variant.startsWith("profession-");
+  const isCanonicalVariant = variant === "grid" || variant === "list";
   const previewCount =
-    variant === "profession-list"
+    variant === "list"
       ? recipe.ingredients.length
       : variant === "directory-list"
       ? 6
-      : variant === "directory-grid" || variant === "profession-grid"
-      ? 3
+      : variant === "directory-grid" || variant === "grid"
+      ? GRID_VISIBLE_INGREDIENTS
       : INGREDIENT_PREVIEW_COUNT;
   const previewIngredients = recipe.ingredients.slice(
     0,
     previewCount
   );
+  // The canonical list variant slices at the full length, so this is always
+  // empty for it — which is what keeps its chevron and panel from ever
+  // rendering, rather than a separate branch that could drift.
   const remainingIngredients = recipe.ingredients.slice(
     previewCount
   );
@@ -218,7 +242,7 @@ export function RecipeOutputCard({
     );
   }
 
-  if (isProfessionVariant) {
+  if (isCanonicalVariant) {
     return (
       <article className={cardClassName} style={cardStyle}>
         <div className="recipe-output-identity">
@@ -233,11 +257,11 @@ export function RecipeOutputCard({
                 alt={`Image of ${recipe.resultingItem.name}`}
                 size="card"
               />
+              {/* Grid has room for the labelled yield plate; the compact list
+                  row shows the value alone. */}
               <span className="recipe-output-yield" aria-hidden="true">
-                {variant === "profession-grid" ? <span>Yields</span> : null}
-                <strong>
-                  {variant === "profession-grid" ? quantity : `Ã—${quantity}`}
-                </strong>
+                {variant === "grid" ? <span>Yields</span> : null}
+                <strong>{quantity}</strong>
               </span>
             </span>
           </Link>
@@ -248,6 +272,11 @@ export function RecipeOutputCard({
               href={`/recipes/${recipe.slug}`}
               aria-label={recipeLinkLabel}
               title={recipe.name}
+              style={
+                variant === "grid"
+                  ? { fontSize: gridTitleSize }
+                  : { fontSize: listTitleSize }
+              }
             >
               {recipe.name}
             </Link>
@@ -272,13 +301,13 @@ export function RecipeOutputCard({
                 listId={ingredientListId}
                 recipeName={recipe.name}
                 previewIngredients={renderIngredients(previewIngredients)}
-                expandedIngredients={
-                  variant === "profession-grid"
-                    ? renderIngredientPanelRows(recipe.ingredients)
-                    : renderIngredients(remainingIngredients)
-                }
+                // The panel lists EVERY ingredient, not only the overflow, so
+                // the open card answers the whole question on its own.
+                expandedIngredients={renderIngredientPanelRows(
+                  recipe.ingredients,
+                )}
                 remainingCount={remainingIngredients.length}
-                popover={variant === "profession-grid"}
+                popover
               />
             ) : (
               <div className="recipe-output-ingredient-list" id={ingredientListId}>
@@ -288,7 +317,7 @@ export function RecipeOutputCard({
           </section>
         ) : null}
 
-        {variant === "profession-list" ? (
+        {variant === "list" ? (
           <span className="recipe-output-experience">
             +{recipe.experienceReward} EXP
           </span>

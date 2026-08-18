@@ -5,11 +5,16 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { CollapsibleSection } from "@/components/content/collapsible-section";
 import { ContentImage } from "@/components/content/content-image";
 import { CurrencyPrice } from "@/components/content/currency-price";
+import { RecipeCollectionSection } from "@/components/content/recipe-collection-section";
+import {
+  RecipeCollectionGrid,
+  RecipeCollectionList,
+} from "@/components/content/recipe-collection-views";
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { formatPublicVerification } from "@/lib/public-verification";
-import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
+import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 import {
   ACQUISITION_TYPE_LABELS,
   groupAcquisitionSourcesByType,
@@ -42,33 +47,11 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
         select: {
           id: true,
           quantity: true,
-          recipe: {
-            select: {
-              slug: true,
-              name: true,
-              image: true,
-              profession: { select: { name: true } },
-              resultingItem: {
-                select: { name: true, image: true },
-              },
-              // Full ingredient list, real (not invented) — used only to
-              // derive "Related Items" below (items crafted alongside
-              // this one), not shown as a duplicate ingredient list here.
-              ingredients: {
-                select: {
-                  quantity: true,
-                  item: {
-                    select: {
-                      slug: true,
-                      name: true,
-                      image: true,
-                      category: { select: { name: true } },
-                    },
-                  },
-                },
-              },
-            },
-          },
+          // The canonical Recipe relationship card's own shape, so this
+          // surface shows the same card as every other Recipe collection
+          // rather than a shortened lookalike. Its ingredient rows also
+          // supply "Related Items" below (items crafted alongside this one).
+          recipe: { select: recipeOutputCardSelect },
         },
         orderBy: { recipe: { name: "asc" } },
       },
@@ -151,6 +134,10 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     }
   }
   const relatedItems = [...relatedItemsMap.values()].slice(0, 12);
+  // The Recipes this Item is an ingredient of, as canonical collection cards.
+  const usedInRecipes = item.recipeIngredients.map(
+    (ingredient) => ingredient.recipe,
+  );
 
   return (
     <AppShell scenic="detail" wide>
@@ -312,46 +299,12 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                   </CollapsibleSection>
                 ) : null}
 
-                {item.recipeIngredients.length > 0 ? (
-                  <CollapsibleSection
+                {usedInRecipes.length > 0 ? (
+                  <RecipeCollectionSection
                     title="Used in recipes"
-                    className="item-panel item-recipes-panel"
-                    animationVariant="stagger"
-                  >
-                    <div className="item-recipe-rows">
-                      {item.recipeIngredients.map((ingredient) => (
-                        <Link
-                          className="item-recipe-row"
-                          href={`/recipes/${ingredient.recipe.slug}`}
-                          key={ingredient.id}
-                        >
-                          <span className="item-recipe-thumbnail">
-                            <ContentImage
-                              imagePath={resolveRecipeDisplayImage({
-                                recipeImage: ingredient.recipe.image,
-                                resultingItemImage:
-                                  ingredient.recipe.resultingItem.image,
-                              })}
-                              alt={`Image of ${ingredient.recipe.name}`}
-                              size="row"
-                            />
-                          </span>
-                          <span className="item-recipe-copy">
-                            <strong>{ingredient.recipe.name}</strong>
-                            {ingredient.recipe.profession ? (
-                              <span>{ingredient.recipe.profession.name}</span>
-                            ) : null}
-                            <span>
-                              Requires {ingredient.quantity} × {item.name}
-                            </span>
-                          </span>
-                          <span className="item-recipe-affordance" aria-hidden="true">
-                            →
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </CollapsibleSection>
+                    grid={<RecipeCollectionGrid recipes={usedInRecipes} />}
+                    list={<RecipeCollectionList recipes={usedInRecipes} />}
+                  />
                 ) : null}
               </div>
             ) : null}

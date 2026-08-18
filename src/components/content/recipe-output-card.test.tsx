@@ -32,9 +32,19 @@ const recipe: RecipeOutputCardValue = {
       name: `Ingredient ${number}`,
       slug: `ingredient-${number}`,
       image: null,
+      category: { name: "Materials" },
     },
   })),
 };
+
+/** The same Recipe, trimmed to the canonical grid's preview budget. */
+const sparseRecipe: RecipeOutputCardValue = {
+  ...recipe,
+  ingredients: recipe.ingredients.slice(0, 3),
+};
+
+const countIngredients = (html: string) =>
+  html.match(/class="recipe-output-ingredient"/g)?.length ?? 0;
 
 describe("RecipeOutputCard", () => {
   it("renders four ingredient links and discloses the fifth", () => {
@@ -96,5 +106,62 @@ describe("RecipeOutputCard", () => {
     expect(html).toContain(
       'aria-label="Show 2 more ingredients for Dense Recipe"'
     );
+  });
+});
+
+describe("RecipeOutputCard, canonical grid variant", () => {
+  it("previews three ingredients and offers the chevron past that", () => {
+    const html = renderToStaticMarkup(
+      <RecipeOutputCard recipe={recipe} variant="grid" />
+    );
+
+    expect(html).toContain("recipe-output-card--grid");
+    expect(countIngredients(html)).toBe(3);
+    expect(html).toContain("recipe-output-ingredient-toggle-chevron");
+    expect(html).toContain(
+      'aria-label="Show 2 more ingredients for Dense Recipe"'
+    );
+    // The labelled yield plate, and never the list row's bare value.
+    expect(html).toContain("Yields");
+  });
+
+  it("omits the chevron entirely at or below the preview budget", () => {
+    const html = renderToStaticMarkup(
+      <RecipeOutputCard recipe={sparseRecipe} variant="grid" />
+    );
+
+    expect(countIngredients(html)).toBe(3);
+    expect(html).not.toContain("recipe-output-ingredient-toggle");
+    expect(html).not.toContain("recipe-output-ingredient-panel");
+  });
+});
+
+describe("RecipeOutputCard, canonical list variant", () => {
+  it("renders every ingredient inline, with EXP and the yield badge", () => {
+    const html = renderToStaticMarkup(
+      <RecipeOutputCard recipe={recipe} variant="list" />
+    );
+
+    expect(html).toContain("recipe-output-card--list");
+    expect(countIngredients(html)).toBe(recipe.ingredients.length);
+    expect(html).toContain("Ingredient 5");
+    expect(html).toContain("+120 EXP");
+    expect(html).toContain("recipe-output-yield");
+    // The compact row shows the yield value alone — no "Yields" label.
+    expect(html).not.toContain("Yields");
+  });
+
+  it("never renders a chevron or an ingredient panel, at any length", () => {
+    for (const value of [recipe, sparseRecipe]) {
+      const html = renderToStaticMarkup(
+        <RecipeOutputCard recipe={value} variant="list" />
+      );
+
+      expect(html).not.toContain("recipe-output-ingredient-toggle");
+      expect(html).not.toContain("recipe-output-ingredient-panel");
+      expect(html).not.toContain("recipe-output-ingredient-disclosure");
+      expect(html).not.toContain("more ingredients");
+      expect(countIngredients(html)).toBe(value.ingredients.length);
+    }
   });
 });

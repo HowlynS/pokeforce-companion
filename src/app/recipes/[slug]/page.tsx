@@ -4,10 +4,16 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { CollapsibleSection } from "@/components/content/collapsible-section";
 import { ContentImage } from "@/components/content/content-image";
+import { RecipeCollectionSection } from "@/components/content/recipe-collection-section";
+import {
+  RecipeCollectionGrid,
+  RecipeCollectionList,
+} from "@/components/content/recipe-collection-views";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { formatPublicVerification } from "@/lib/public-verification";
 import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
+import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
 
 export const dynamic = "force-dynamic";
@@ -72,14 +78,8 @@ export default async function RecipeDetailPage({
           profession: { slug: recipe.profession.slug },
           slug: { not: slug },
         },
-        select: {
-          slug: true,
-          name: true,
-          image: true,
-          resultQuantityMin: true,
-          resultQuantityMax: true,
-          resultingItem: { select: { name: true, image: true } },
-        },
+        // The canonical Recipe relationship card's own shape.
+        select: recipeOutputCardSelect,
         orderBy: { name: "asc" },
         take: 12,
       })
@@ -241,42 +241,11 @@ export default async function RecipeDetailPage({
             </div>
 
             {relatedRecipes.length > 0 ? (
-              <CollapsibleSection
+              <RecipeCollectionSection
                 title="Related Recipes"
-                className="item-panel item-related-panel"
-              >
-                <div className="item-related-grid">
-                  {relatedRecipes.map((related) => (
-                    <Link
-                      key={related.slug}
-                      href={`/recipes/${related.slug}`}
-                      className="item-related-card"
-                    >
-                      <span className="item-related-card-media">
-                        <ContentImage
-                          imagePath={resolveRecipeDisplayImage({
-                            recipeImage: related.image,
-                            resultingItemImage: related.resultingItem.image,
-                          })}
-                          alt={`Image of ${related.name}`}
-                          size="grid"
-                        />
-                      </span>
-                      <span className="item-related-card-name">
-                        {related.name}
-                      </span>
-                      <span className="item-related-card-category">
-                        ×{" "}
-                        {formatRecipeQuantityRange(
-                          related.resultQuantityMin,
-                          related.resultQuantityMax
-                        )}{" "}
-                        {related.resultingItem.name}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              </CollapsibleSection>
+                grid={<RecipeCollectionGrid recipes={relatedRecipes} />}
+                list={<RecipeCollectionList recipes={relatedRecipes} />}
+              />
             ) : null}
 
             <section
