@@ -55,32 +55,54 @@ export function LocationDirectoryFold({
 
   const isExpanded = mounted && !closing;
 
+  // The whole heading label is the disclosure trigger — chevron and title are
+  // one button, so no interactive element is ever nested inside another. A
+  // region's own page stays reachable through a separate, sibling icon link.
+  const trigger = (
+    <button
+      type="button"
+      className="location-directory-fold-toggle"
+      aria-expanded={isExpanded}
+      aria-controls={panelId}
+      onClick={toggle}
+    >
+      <span className="location-directory-fold-chevron" aria-hidden="true">
+        <svg width="10" height="10" viewBox="0 0 24 24">
+          <path
+            d="M6 9l6 6 6-6"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            fill="none"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+      <span className="location-directory-fold-title">{title}</span>
+    </button>
+  );
+
   return (
     <section className={`location-directory-fold location-directory-fold--${variant}`}>
       <div className="location-directory-fold-heading">
-        <button
-          type="button"
-          className="location-directory-fold-toggle"
-          aria-label={`${isExpanded ? "Collapse" : "Expand"} ${title}`}
-          aria-expanded={isExpanded}
-          aria-controls={panelId}
-          onClick={toggle}
-        >
-          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24">
-            <path
-              d="M6 9l6 6 6-6"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              fill="none"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
+        {href ? <h2>{trigger}</h2> : <h3>{trigger}</h3>}
         {href ? (
-          <h2><Link href={href}>{title}</Link></h2>
-        ) : (
-          <h3>{title}</h3>
-        )}
+          <Link
+            href={href}
+            className="location-directory-fold-link"
+            aria-label={`Open the ${title} page`}
+          >
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24">
+              <path
+                d="M7 17 17 7M9 7h8v8"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Link>
+        ) : null}
         {typeof count === "number" ? (
           <span className="location-directory-fold-count">
             {count} {count === 1 ? countNoun : `${countNoun}s`}

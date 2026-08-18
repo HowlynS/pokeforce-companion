@@ -45,8 +45,10 @@ test("Locations catalogue renders the real root/type hierarchy without NPC data"
   await page.goto("/locations");
 
   await expect(page.getByRole("heading", { level: 1, name: "Locations" })).toBeVisible();
+  // The region heading is the disclosure trigger; its page is reached through
+  // the separate icon link beside it.
   await expect(
-    page.getByRole("link", { name: "Test E2E Northwind Region" }),
+    page.getByRole("link", { name: "Open the Test E2E Northwind Region page" }),
   ).toHaveAttribute(
     "href",
     "/locations/test-e2e-location-public-directory-region",
@@ -61,18 +63,60 @@ test("Locations catalogue renders the real root/type hierarchy without NPC data"
   ).toBeVisible();
   await expect(page.getByText(/NPC/i)).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Collapse Route" }).click();
+  // Location cards carry identity only — no shop-count filler.
+  await expect(page.getByText("No shops")).toHaveCount(0);
+  await expect(page.locator(".location-directory-card-meta")).toHaveCount(0);
+
+  // Scoped to this fixture's own region band: the type label is the trigger.
+  const region = page.locator(".location-directory-fold--region", {
+    hasText: "Test E2E Northwind Region",
+  });
+  const routeToggle = region.getByRole("button", { name: "Route", exact: true });
+  await routeToggle.click();
+  await expect(routeToggle).toHaveAttribute("aria-expanded", "false");
   await expect(
     page.getByRole("link", {
       name: /Test E2E Long Caravan Route Through the Amber Highlands/,
     }),
   ).toBeHidden();
-  await page.getByRole("button", { name: "Expand Route" }).click();
+  await routeToggle.click();
+  await expect(routeToggle).toHaveAttribute("aria-expanded", "true");
   await expect(
     page.getByRole("link", {
       name: /Test E2E Long Caravan Route Through the Amber Highlands/,
     }),
   ).toBeVisible();
+});
+
+test("the region label toggles disclosure while its icon link navigates", async ({
+  page,
+}) => {
+  await page.goto("/locations");
+
+  const regionToggle = page.getByRole("button", {
+    name: "Test E2E Northwind Region",
+    exact: true,
+  });
+  const regionLink = page.getByRole("link", {
+    name: "Open the Test E2E Northwind Region page",
+  });
+
+  // The label itself is the trigger — clicking it never navigates.
+  await expect(regionToggle).toHaveAttribute("aria-expanded", "true");
+  await regionToggle.click();
+  await expect(regionToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(page).toHaveURL(/\/locations(\?|$)/);
+
+  // Keyboard reaches both affordances independently.
+  await regionToggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(regionToggle).toHaveAttribute("aria-expanded", "true");
+
+  await regionLink.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(
+    "/locations/test-e2e-location-public-directory-region",
+  );
 });
 
 test("Location search and type filter are real GET controls", async ({ page }) => {

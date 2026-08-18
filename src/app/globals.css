@@ -11862,7 +11862,25 @@ a.profession-detail-chip:focus-visible {
   margin-bottom: 12px;
 }
 
+/* The trigger owns the chevron AND the label, so clicking either toggles the
+   fold; it inherits the heading's own typography rather than defining a
+   second one. */
 .location-directory-fold-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.location-directory-fold-chevron {
   position: relative;
   top: 1px;
   display: inline-flex;
@@ -11871,19 +11889,44 @@ a.profession-detail-chip:focus-visible {
   justify-content: center;
   width: 12px;
   height: 18px;
-  border: 0;
-  background: transparent;
-  padding: 0;
   color: var(--color-accent-soft);
-  cursor: pointer;
 }
 
-.location-directory-fold-toggle svg {
+.location-directory-fold-chevron svg {
   transition: transform 150ms ease;
 }
 
-.location-directory-fold-toggle[aria-expanded="false"] svg {
+.location-directory-fold-toggle[aria-expanded="false"] .location-directory-fold-chevron svg {
   transform: rotate(-90deg);
+}
+
+/* The region's own page keeps a route of its own, as a small sibling icon
+   link — never the heading itself, which now belongs to the disclosure. */
+.location-directory-fold-link {
+  display: inline-flex;
+  flex: none;
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  /* 24px keeps the icon a real, pointer-sized target beside the label. */
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.location-directory-fold-link:hover,
+.location-directory-fold-link:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  color: var(--color-accent);
 }
 
 .location-directory-fold-heading h2,
@@ -11892,8 +11935,7 @@ a.profession-detail-chip:focus-visible {
   margin: 0;
 }
 
-.location-directory-fold-heading h2,
-.location-directory-fold-heading h2 a {
+.location-directory-fold-heading h2 {
   color: var(--color-accent-soft);
   font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
   font-size: 19px;
@@ -11901,7 +11943,7 @@ a.profession-detail-chip:focus-visible {
   text-decoration: none;
 }
 
-.location-directory-fold-heading h2 a:hover {
+.location-directory-fold-heading h2 .location-directory-fold-toggle:hover {
   color: var(--color-text);
 }
 
@@ -11924,7 +11966,7 @@ a.profession-detail-chip:focus-visible {
   margin-bottom: 9px;
 }
 
-.location-directory-fold--type .location-directory-fold-toggle {
+.location-directory-fold--type .location-directory-fold-chevron {
   top: 0;
   width: 10px;
   height: 14px;
@@ -11938,6 +11980,10 @@ a.profession-detail-chip:focus-visible {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.location-directory-fold-heading h3 .location-directory-fold-toggle:hover {
+  color: var(--color-text);
 }
 
 .location-directory-fold-rule {
@@ -11993,34 +12039,62 @@ a.profession-detail-chip:focus-visible {
     var(--color-background);
 }
 
-.location-directory-card-copy {
+/* Directory card rhythm, shared by the Locations and Shops grids ---------
+   Both grids stack the same blocks (fixed square art, a title that may run to
+   two lines, then single-line supporting rows), so the rules that keep their
+   rows even live together here rather than being tuned twice. The title area
+   always reserves two lines, so a one-word and a five-word name produce the
+   same card height instead of jittering row to row; wrapping is preferred over
+   truncation, and the clamp only engages past the second line. */
+.location-directory-card-copy,
+.shop-directory-card-copy {
+  display: flex;
   flex: 1;
   min-width: 0;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.location-directory-card h4 {
-  margin-bottom: 2px;
+.location-directory-card h4,
+.shop-directory-card h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  min-height: calc(2em * 1.35);
+  overflow: hidden;
+  margin: 0 0 3px;
   color: var(--color-text);
   font-size: 13.5px;
   font-weight: 700;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
-.location-directory-card-type {
+/* Supporting rows stay on exactly one line each, so the block below the title
+   has a fixed height too. */
+.location-directory-card-type,
+.shop-directory-card-type,
+.shop-directory-card-location,
+.shop-directory-card-facts {
   display: block;
-  margin-bottom: 5px;
-  color: var(--color-accent);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-meta-dim);
   font-size: 10.5px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-directory-card-type,
+.shop-directory-card-type {
+  color: var(--color-accent);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.location-directory-card-meta {
-  display: block;
-  color: var(--color-text-meta-dim);
-  font-size: 10.5px;
-}
 
 @media (prefers-reduced-motion: no-preference) {
   .location-directory-fold-content--closing {
@@ -12528,44 +12602,11 @@ a.profession-detail-chip:focus-visible {
     var(--color-background);
 }
 
-.shop-directory-card-copy {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.shop-directory-card h3 {
-  min-height: 17px;
-  overflow: hidden;
-  margin: 0 0 2px;
-  color: var(--color-text);
-  font-size: 13.5px;
-  font-weight: 700;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.shop-directory-card-type {
-  margin-bottom: 3px;
-  color: var(--color-accent);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.shop-directory-card-location,
-.shop-directory-card-facts {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-text-meta-dim);
-  font-size: 10.5px;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Shop cards carry one more supporting row than Location cards (the owning
+   Location's name); everything else — the two-line title area, the single-line
+   rows, the copy column — comes from the shared directory-card rules. */
+.shop-directory-card-location {
+  color: var(--color-text-meta);
 }
 
 @media (max-width: 520px) {
@@ -12575,7 +12616,8 @@ a.profession-detail-chip:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .location-directory-fold-toggle svg,
+  .location-directory-fold-chevron svg,
+  .location-directory-fold-link,
   .location-detail-directory-trigger > svg,
   .profession-recipes-reveal > svg,
   .profession-detail-chip,
@@ -13772,6 +13814,10 @@ a.shop-detail-chip:focus-visible {
   background: var(--color-surface-soft);
 }
 
+/* The chip is already a framed pill, so the sprite inside it needs no second
+   frame: the stage renders as bare artwork, and the missing-image case keeps
+   the same square footprint but reads as a neutral, centered placeholder
+   rather than an empty boxed image stage. */
 .world-item-chip-stage,
 .world-item-chip-stage .public-sprite-stage--row {
   width: 24px;
@@ -13779,17 +13825,32 @@ a.shop-detail-chip:focus-visible {
   flex: none;
 }
 
+.world-item-chip-stage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .world-item-chip-stage .public-sprite-stage--row {
-  --sprite-image-size: 18px;
+  --sprite-image-size: 24px;
   box-sizing: border-box;
-  border: 1px solid var(--color-border);
-  border-radius: 5px;
-  background: var(--color-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: 0;
 }
 
 .world-item-chip-stage .public-sprite-fallback {
-  font-size: 6px;
-  line-height: 1.05;
+  display: block;
+  width: 100%;
+  color: color-mix(in srgb, var(--color-text-muted) 62%, transparent);
+  font-size: 6.5px;
+  font-weight: 500;
+  line-height: 1.1;
+  text-align: center;
 }
 
 /* Below the catalogue shell's own breakpoint the workspace returns to ordinary

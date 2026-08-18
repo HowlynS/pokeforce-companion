@@ -31,7 +31,6 @@ type DirectoryLocation = {
   type: LocationType;
   parentId: string | null;
   image: string | null;
-  _count: { shops: number };
 };
 
 function readLocationTypes(value: string | string[] | undefined): LocationType[] {
@@ -58,7 +57,6 @@ export default async function LocationsPage({ searchParams }: LocationsPageProps
       type: true,
       parentId: true,
       image: true,
-      _count: { select: { shops: true } },
     },
     orderBy: [{ name: "asc" }, { id: "asc" }],
   });
@@ -146,13 +144,6 @@ export default async function LocationsPage({ searchParams }: LocationsPageProps
                 <h4>{location.name}</h4>
                 <span className="location-directory-card-type">
                   {LOCATION_TYPE_LABELS[location.type]}
-                </span>
-                <span className="location-directory-card-meta">
-                  {location._count.shops === 0
-                    ? "No shops"
-                    : `${location._count.shops} ${
-                        location._count.shops === 1 ? "shop" : "shops"
-                      }`}
                 </span>
               </span>
             </Link>

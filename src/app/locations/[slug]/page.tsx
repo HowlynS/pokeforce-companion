@@ -129,13 +129,6 @@ export default async function LocationDetailPage({
                   <span className="location-directory-card-type">
                     {LOCATION_TYPE_LABELS[child.type]}
                   </span>
-                  <span className="location-directory-card-meta">
-                    {child._count.shops === 0
-                      ? "No shops"
-                      : `${child._count.shops} ${
-                          child._count.shops === 1 ? "shop" : "shops"
-                        }`}
-                  </span>
                 </span>
               </Link>
             ))}
