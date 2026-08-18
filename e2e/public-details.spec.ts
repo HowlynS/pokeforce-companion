@@ -19,6 +19,21 @@ import { requireSiteVisibility } from "./helpers/site-visibility";
 // previously-run spec happened to leave behind.
 requireSiteVisibility("PUBLIC");
 
+// Each resource detail page's hero carries a `resource-atmosphere` wash in
+// its own hue (see globals.css); this confirms the modifier class is
+// present and actually resolves to a real gradient, not the `none` default.
+async function expectResourceAtmosphere(page: Page, variant: string) {
+  const atmosphere = page.locator(`.resource-atmosphere--${variant}`);
+  await expect(atmosphere).toHaveCount(1);
+  const atmosphereImage = await atmosphere.evaluate((element) =>
+    getComputedStyle(element)
+      .getPropertyValue("--resource-atmosphere-image")
+      .trim()
+  );
+  expect(atmosphereImage).not.toBe("none");
+  expect(atmosphereImage).not.toBe("");
+}
+
 const PNG_FIXTURE = path.join(__dirname, "fixtures", "tiny-valid.png");
 const SCREENSHOT_DIRECTORY = path.join(
   process.cwd(),
@@ -329,6 +344,48 @@ test.describe("public detail pages", () => {
     await expect(leatherStrap).toHaveAttribute("href", "/items/leather-strap");
   });
 
+  test("recipe detail hero carries the amber resource atmosphere and a clean rounded frame", async ({
+    page,
+  }) => {
+    await page.goto("/recipes/iron-sword");
+
+    await expectResourceAtmosphere(page, "recipe");
+
+    // The hero image stage's frame must stay a clean, uniform, fully
+    // rounded square: the same radius on all four corners, a real border,
+    // and overflow clipping so nothing (e.g. the yield badge) can cross
+    // the curve.
+    const stage = page.locator(".recipe-identity-stage");
+    const geometry = await stage.evaluate((element) => {
+      const cs = getComputedStyle(element);
+      return {
+        overflow: cs.overflow,
+        boxSizing: cs.boxSizing,
+        topLeft: cs.borderTopLeftRadius,
+        topRight: cs.borderTopRightRadius,
+        bottomLeft: cs.borderBottomLeftRadius,
+        bottomRight: cs.borderBottomRightRadius,
+        borderWidth: cs.borderTopWidth,
+      };
+    });
+    expect(geometry.overflow).toBe("hidden");
+    expect(geometry.boxSizing).toBe("border-box");
+    expect(geometry.topLeft).toBe(geometry.topRight);
+    expect(geometry.topLeft).toBe(geometry.bottomLeft);
+    expect(geometry.topLeft).toBe(geometry.bottomRight);
+    expect(geometry.borderWidth).toBe("1px");
+
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.documentElement.scrollWidth <=
+            document.documentElement.clientWidth
+        )
+      )
+      .toBe(true);
+  });
+
   // The whole point of the canonical card: these three surfaces present the
   // same information shape, so they must present the same component rather
   // than three lookalikes that drift apart.
@@ -440,6 +497,13 @@ test.describe("public detail pages", () => {
     });
     await expect(recipeLink).toBeVisible();
     await expect(recipeLink).toHaveAttribute("href", "/recipes/iron-ingot");
+  });
+
+  test("profession detail hero carries the amethyst resource atmosphere", async ({
+    page,
+  }) => {
+    await page.goto("/professions/smithing");
+    await expectResourceAtmosphere(page, "profession");
   });
 
   test("category detail links its items", async ({ page }) => {

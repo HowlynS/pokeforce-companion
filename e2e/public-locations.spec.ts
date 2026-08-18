@@ -179,6 +179,17 @@ test("Location detail renders direct children in the handoff grid/list directory
   ).toBeVisible();
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
 
+  // Location detail carries its own verdant resource-atmosphere wash.
+  const atmosphere = page.locator(".resource-atmosphere--location");
+  await expect(atmosphere).toHaveCount(1);
+  const atmosphereImage = await atmosphere.evaluate((element) =>
+    getComputedStyle(element)
+      .getPropertyValue("--resource-atmosphere-image")
+      .trim(),
+  );
+  expect(atmosphereImage).not.toBe("none");
+  expect(atmosphereImage).not.toBe("");
+
   await page.getByRole("button", { name: "List", exact: true }).click();
   await expect(page.locator(".location-detail-child-list-row")).toHaveCount(3);
   await page.getByRole("button", { name: "Sub-locations", exact: true }).click();

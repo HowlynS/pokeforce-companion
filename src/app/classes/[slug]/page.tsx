@@ -47,7 +47,10 @@ export default async function PlayerClassDetailPage({
           current={playerClass.name}
         />
 
-        <section className="profession-detail-hero" aria-labelledby="player-class-title">
+        <section
+          className="profession-detail-hero resource-atmosphere resource-atmosphere--class"
+          aria-labelledby="player-class-title"
+        >
           <div className="profession-detail-stage">
             <ContentImage
               imagePath={playerClass.image}

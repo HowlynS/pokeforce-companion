@@ -116,6 +116,19 @@ test.describe("public Class detail", () => {
       page.getByRole("heading", { level: 2, name: "Verification", exact: true })
     ).toBeVisible();
 
+    // Class detail carries its own crimson resource-atmosphere wash,
+    // distinct from Profession's amethyst even though both pages share
+    // the same underlying hero markup/CSS classes.
+    const atmosphere = page.locator(".resource-atmosphere--class");
+    await expect(atmosphere).toHaveCount(1);
+    const atmosphereImage = await atmosphere.evaluate((element) =>
+      getComputedStyle(element)
+        .getPropertyValue("--resource-atmosphere-image")
+        .trim()
+    );
+    expect(atmosphereImage).not.toBe("none");
+    expect(atmosphereImage).not.toBe("");
+
     for (const viewport of [
       { name: "desktop-1920x1080", width: 1920, height: 1080 },
       { name: "mobile-390x844", width: 390, height: 844 },

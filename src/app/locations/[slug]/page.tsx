@@ -195,7 +195,7 @@ export default async function LocationDetailPage({
             />
 
             <section
-              className="profession-detail-hero location-detail-hero"
+              className="profession-detail-hero location-detail-hero resource-atmosphere resource-atmosphere--location"
               aria-labelledby="location-title"
             >
               <div className="profession-detail-stage location-detail-stage">

@@ -136,6 +136,18 @@ test("the Shop detail renders hierarchy, independent verification, ordered price
     "Verified for test-gv-current on 25 Jul 2026"
   );
 
+  // Shop detail carries its own wine/rose resource-atmosphere wash,
+  // deliberately separated from Recipe's amber and Class's crimson.
+  const atmosphere = page.locator(".resource-atmosphere--shop");
+  await expect(atmosphere).toHaveCount(1);
+  const atmosphereImage = await atmosphere.evaluate((element) =>
+    getComputedStyle(element)
+      .getPropertyValue("--resource-atmosphere-image")
+      .trim()
+  );
+  expect(atmosphereImage).not.toBe("none");
+  expect(atmosphereImage).not.toBe("");
+
   await expect(
     page.getByRole("heading", { level: 2, name: "Inventory", exact: true })
   ).toBeVisible();

@@ -140,7 +140,10 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           current={shop.name}
         />
 
-        <section className="detail-hero shop-detail-hero" aria-labelledby="shop-title">
+        <section
+          className="detail-hero shop-detail-hero resource-atmosphere resource-atmosphere--shop"
+          aria-labelledby="shop-title"
+        >
           <div className="shop-detail-stage">
             <ContentImage
               imagePath={shop.image}

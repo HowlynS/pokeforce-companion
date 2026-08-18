@@ -3849,6 +3849,68 @@ select:focus-visible {
     );
 }
 
+/* Amethyst / purple: Profession's own identity, distinct from Class's
+   crimson so the two shared-markup detail pages never read as one family. */
+.resource-atmosphere--profession {
+  --resource-atmosphere-image:
+    radial-gradient(
+      circle at 16% 48%,
+      rgba(142, 92, 186, 0.125),
+      transparent 43%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(107, 68, 145, 0.058),
+      transparent 62%
+    );
+}
+
+/* Crimson / red. */
+.resource-atmosphere--class {
+  --resource-atmosphere-image:
+    radial-gradient(
+      circle at 16% 48%,
+      rgba(186, 61, 61, 0.13),
+      transparent 43%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(142, 45, 45, 0.06),
+      transparent 62%
+    );
+}
+
+/* Verdant green -- kept clear of teal/cyan. */
+.resource-atmosphere--location {
+  --resource-atmosphere-image:
+    radial-gradient(
+      circle at 16% 48%,
+      rgba(70, 142, 88, 0.125),
+      transparent 43%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(48, 108, 65, 0.058),
+      transparent 62%
+    );
+}
+
+/* Deep wine / rose / magenta -- deliberately far from Recipe's amber and
+   Class's crimson so Shops read as their own commercial family. */
+.resource-atmosphere--shop {
+  --resource-atmosphere-image:
+    radial-gradient(
+      circle at 16% 48%,
+      rgba(112, 36, 97, 0.135),
+      transparent 43%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(84, 27, 74, 0.062),
+      transparent 62%
+    );
+}
+
 /* Public Item detail --------------------------------------------------- */
 .item-detail-page {
   display: grid;
@@ -4630,19 +4692,6 @@ a.item-info-chip:focus-visible {
       transparent 66%
     ),
     var(--color-surface-soft);
-}
-
-.resource-atmosphere--recipe
-  .public-sprite-stage--hero:not(.public-sprite-stage--empty) {
-  border-color: color-mix(in srgb, var(--color-border) 84%, #9b7040);
-  background:
-    radial-gradient(
-      circle at 50% 45%,
-      rgba(158, 106, 47, 0.115),
-      transparent 68%
-    ),
-    rgba(25, 23, 19, 0.7);
-  box-shadow: inset 0 0 0 1px rgba(203, 163, 105, 0.025);
 }
 
 .recipe-fact-strip {
@@ -11145,6 +11194,7 @@ input[type="checkbox"] {
   display: flex;
   align-items: flex-start;
   gap: 28px;
+  border-radius: var(--frame-radius);
 }
 
 .profession-detail-stage {
@@ -11158,7 +11208,7 @@ input[type="checkbox"] {
   border: 1px solid var(--color-border);
   border-radius: var(--frame-radius);
   background:
-    radial-gradient(circle at 30% 22%, rgba(235, 228, 208, 0.2), transparent 62%),
+    radial-gradient(circle at 30% 22%, rgba(142, 92, 186, 0.2), transparent 62%),
     var(--color-surface);
 }
 
@@ -11911,7 +11961,7 @@ a.profession-detail-chip:focus-visible {
 
 .class-detail-page .profession-detail-stage {
   background:
-    radial-gradient(circle at 30% 22%, rgba(168, 138, 206, 0.2), transparent 62%),
+    radial-gradient(circle at 30% 22%, rgba(186, 61, 61, 0.2), transparent 62%),
     var(--color-surface);
 }
 
@@ -12243,7 +12293,7 @@ a.profession-detail-chip:focus-visible {
 
 .location-detail-stage {
   background:
-    radial-gradient(circle at 30% 22%, rgba(122, 168, 110, 0.2), transparent 62%),
+    radial-gradient(circle at 30% 22%, rgba(70, 142, 88, 0.2), transparent 62%),
     var(--color-surface);
 }
 
@@ -12954,6 +13004,7 @@ a.profession-detail-chip:focus-visible {
   align-items: flex-start;
   gap: 28px;
   margin-bottom: 0;
+  border-radius: var(--frame-radius);
 }
 
 .shop-detail-stage {
@@ -12966,7 +13017,7 @@ a.profession-detail-chip:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 14px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.2), transparent 62%),
+    radial-gradient(circle at 30% 22%, rgba(112, 36, 97, 0.2), transparent 62%),
     var(--color-surface);
 }
 

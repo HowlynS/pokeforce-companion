@@ -62,7 +62,10 @@ export default async function ProfessionDetailPage({
           current={profession.name}
         />
 
-        <section className="profession-detail-hero" aria-labelledby="profession-title">
+        <section
+          className="profession-detail-hero resource-atmosphere resource-atmosphere--profession"
+          aria-labelledby="profession-title"
+        >
           <div className="profession-detail-stage">
             <ContentImage
               imagePath={profession.image}
