@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { publicMotionDuration } from "@/lib/public-motion";
+
+/** Must match the .directory-filter-panel--closing animation duration. */
+const CLOSE_ANIMATION_MS = 140;
 
 export type DirectoryFilterOption = {
   slug: string;
@@ -34,22 +38,56 @@ export function DirectoryFilterPopover({
   preserve,
 }: DirectoryFilterPopoverProps) {
   const [open, setOpen] = useState(false);
+  // The panel keeps rendering while it plays its exit animation; `closing`
+  // is what distinguishes "on screen and interactive" from "on screen and
+  // leaving". Under reduced motion the handoff is zero, so the panel
+  // unmounts on the next tick and no exit is ever seen.
+  const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelId = useId();
 
+  const close = useCallback(() => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setClosing(true);
+    closeTimer.current = setTimeout(() => {
+      closeTimer.current = null;
+      setOpen(false);
+      setClosing(false);
+    }, publicMotionDuration(CLOSE_ANIMATION_MS));
+  }, []);
+
+  // Reopening mid-exit cancels the pending unmount rather than queueing a
+  // second one, so a fast toggle never flickers.
+  const openPanel = useCallback(() => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setClosing(false);
+    setOpen(true);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
   useEffect(() => {
-    if (!open) return;
+    if (!open || closing) return;
 
     function handlePointerDown(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+        close();
       }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false);
+        close();
         buttonRef.current?.focus();
       }
     }
@@ -60,9 +98,10 @@ export function DirectoryFilterPopover({
       document.removeEventListener("mousedown", handlePointerDown, true);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open, closing, close]);
 
   const activeCount = selectedSlugs.length;
+  const expanded = open && !closing;
 
   return (
     <div className="directory-filter" ref={containerRef}>
@@ -74,9 +113,9 @@ export function DirectoryFilterPopover({
           (activeCount > 0 ? " directory-filter-trigger--active" : "")
         }
         aria-haspopup="true"
-        aria-expanded={open}
+        aria-expanded={expanded}
         aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => (expanded ? close() : openPanel())}
       >
         <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none">
           <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -94,7 +133,10 @@ export function DirectoryFilterPopover({
           id={panelId}
           action={basePath}
           method="get"
-          className="directory-filter-panel"
+          className={
+            "directory-filter-panel" +
+            (closing ? " directory-filter-panel--closing" : "")
+          }
         >
           {Object.entries(preserve ?? {}).map(([key, value]) =>
             value ? <input key={key} type="hidden" name={key} value={value} /> : null,

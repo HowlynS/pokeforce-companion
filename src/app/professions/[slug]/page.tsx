@@ -9,6 +9,7 @@ import {
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { cataloguePageHref } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { formatPublicVerification } from "@/lib/public-verification";
@@ -93,9 +94,26 @@ export default async function ProfessionDetailPage({
                   Max Level:&nbsp;<strong>{levelSummary._max.level}</strong>
                 </span>
               ) : null}
-              <span className="profession-detail-chip">
-                Recipes:&nbsp;<strong>{profession.recipes.length}</strong>
-              </span>
+              {profession.recipes.length > 0 ? (
+                // Deep link into the Recipe directory's existing canonical
+                // Profession filter (`/recipes?profession=<slug>`), not a
+                // bespoke route: the directory hydrates the filter from the
+                // URL, so the popover shows this Profession checked and the
+                // link stays shareable and reload-safe.
+                <Link
+                  href={cataloguePageHref("/recipes", 1, {
+                    profession: [slug],
+                  })}
+                  className="profession-detail-chip"
+                  aria-label={`View ${profession.recipes.length} ${profession.name} recipes`}
+                >
+                  Recipes:&nbsp;<strong>{profession.recipes.length}</strong>
+                </Link>
+              ) : (
+                <span className="profession-detail-chip">
+                  Recipes:&nbsp;<strong>{profession.recipes.length}</strong>
+                </span>
+              )}
             </div>
           </div>
         </section>

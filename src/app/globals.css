@@ -141,6 +141,18 @@
     calc(10.5px + 1.25px * var(--pf)),
     11.75px
   );
+  /* The small gold uppercase category/type label directory cards carry
+     beneath their title (Item category, Profession/Class/Location/Shop
+     type). Deliberately a notch below --directory-card-meta-font-size:
+     these labels read as secondary identity, and at the meta size they
+     competed with the card title for attention. The ultrawide ceiling is
+     pulled back with the floor so the Slice "ultrawide readability" gain
+     is preserved -- this is a prominence correction, not a rollback. */
+  --directory-card-eyebrow-font-size: clamp(
+    9.75px,
+    calc(9.75px + 1.25px * var(--pf)),
+    11px
+  );
   --item-card-min-width: clamp(148px, calc(148px + 14px * var(--pf)), 162px);
   --wide-card-min-width: clamp(220px, calc(220px + 20px * var(--pf)), 240px);
   --wide-card-image-size: clamp(52px, calc(52px + 5px * var(--pf)), 57px);
@@ -2985,6 +2997,45 @@ select:focus-visible {
   background: var(--color-surface-soft);
   padding: 12px;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  /* The panel is anchored under the trigger's leading edge, so it should
+     grow from there rather than from its own centre. */
+  transform-origin: top left;
+}
+
+/* Open/close choreography. The panel stays mounted through its exit (the
+   component holds a `closing` state), so the two halves are separate
+   animations rather than a transition. Reduced motion gets neither: the
+   panel simply appears and disappears. */
+@media (prefers-reduced-motion: no-preference) {
+  .directory-filter-panel {
+    animation: cx-directory-filter-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+
+  .directory-filter-panel--closing {
+    animation: cx-directory-filter-out 140ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+}
+
+@keyframes cx-directory-filter-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cx-directory-filter-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
 }
 
 .directory-filter-panel-title {
@@ -3246,7 +3297,7 @@ select:focus-visible {
 }
 
 .item-catalogue-card-category {
-  font-size: var(--directory-card-meta-font-size);
+  font-size: var(--directory-card-eyebrow-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--color-accent);
@@ -3346,7 +3397,7 @@ select:focus-visible {
 .item-catalogue-list-category {
   width: 110px;
   flex: none;
-  font-size: 10.5px;
+  font-size: var(--directory-card-eyebrow-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--color-accent);
@@ -3474,7 +3525,7 @@ select:focus-visible {
 .profession-catalogue-card-type,
 .profession-catalogue-list-type {
   color: var(--color-accent);
-  font-size: var(--directory-card-meta-font-size);
+  font-size: var(--directory-card-eyebrow-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -12480,6 +12531,7 @@ a.profession-detail-chip:focus-visible {
 .location-directory-card-type,
 .shop-directory-card-type {
   color: var(--color-accent);
+  font-size: var(--directory-card-eyebrow-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -13121,7 +13173,7 @@ a.profession-detail-chip:focus-visible {
 .class-catalogue-card-type,
 .class-catalogue-list-type {
   color: var(--color-accent);
-  font-size: var(--directory-card-meta-font-size);
+  font-size: var(--directory-card-eyebrow-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;

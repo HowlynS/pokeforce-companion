@@ -1032,7 +1032,11 @@ test("Items index owns Category browsing and Category detail stays contextual", 
   await expect(firstItemTitle).toHaveCSS("font-size", "13.5px");
   const firstItemCategory = firstItemCard.locator(".item-catalogue-card-category");
   await expect(firstItemCategory).toHaveText(fixture.outputCategory.name);
-  await expect(firstItemCategory).toHaveCSS("font-size", "10.5px");
+  // The gold uppercase category label sits a notch below the directory
+  // meta size (--directory-card-eyebrow-font-size, 9.75px at the 1920
+  // anchor) so it reads as secondary identity rather than competing with
+  // the card title; the relative check below is the durable contract.
+  await expect(firstItemCategory).toHaveCSS("font-size", "9.75px");
   await expect(firstItemCategory).toHaveCSS("font-style", "normal");
   expect(
     await firstItemTitle.evaluate(
