@@ -47,6 +47,7 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
             <PageLinkArrow
               href={`/items/${selected.item.slug}`}
               label={`Open ${selected.item.name} item page`}
+              variant="prominent"
               className="shop-detail-selected-link"
             />
           </div>
@@ -82,6 +83,7 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
                     <PageLinkArrow
                       href={`/items/${listing.item.slug}`}
                       label={`Open ${listing.item.name} item page`}
+                      variant="subtle"
                       className="shop-detail-inventory-link"
                       // The arrow navigates; the row selects. Without this a
                       // click would also re-select the row on the way out.

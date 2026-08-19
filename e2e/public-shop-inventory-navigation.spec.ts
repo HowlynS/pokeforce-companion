@@ -280,3 +280,200 @@ test("PokeYen prices are symbol-only, while other Currencies keep their image", 
   expect(compact.leadingGap).toBeLessThanOrEqual(1);
   expect(compact.trailingGap).toBeLessThanOrEqual(1);
 });
+
+test("inventory icons follow the Recipe Ingredients scale and quiet placeholder", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(shopUrl());
+
+  const stage = page
+    .locator(".shop-detail-inventory-icon .public-sprite-stage--row")
+    .first();
+  await expect(stage).toHaveCSS("width", "32px");
+  await expect(stage).toHaveCSS("height", "32px");
+
+  // The placeholder carries no frame of its own -- the row is the container,
+  // exactly as in the Recipe Ingredients box.
+  const placeholder = page
+    .locator(".shop-detail-inventory-icon .public-sprite-stage--empty")
+    .first();
+  await expect(placeholder).toHaveCount(1);
+  await expect(placeholder).toHaveCSS("border-top-width", "0px");
+  await expect(placeholder).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  // ...and it still states the missing art rather than blanking it out.
+  const fallback = placeholder.locator(".public-sprite-fallback");
+  await expect(fallback).toHaveText(/No image/i);
+  const fontSize = await fallback.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  expect(fontSize).toBeGreaterThan(0);
+  expect(fontSize).toBeLessThan(11);
+
+  // The preview leads the rows without dwarfing them.
+  const preview = page.locator(".shop-detail-selected-stage");
+  await expect(preview).toHaveCSS("width", "64px");
+  await expect(preview).toHaveCSS("border-top-width", "1px");
+});
+
+test("the two arrow variants share one family at two emphasis levels", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(shopUrl());
+
+  const rowArrow = page.locator(".shop-detail-inventory-link").first();
+  const boxArrow = page.locator(".shop-detail-selected-link");
+
+  await expect(rowArrow).toHaveClass(/page-link-arrow--subtle/);
+  await expect(boxArrow).toHaveClass(/page-link-arrow--prominent/);
+
+  const weights = await page.evaluate(() => {
+    // Chrome resolves color-mix() to `color(srgb r g b / a)` and plain
+    // colors to `rgb(...)`/`rgba(...)`, so both shapes have to be read.
+    const alpha = (color: string) => {
+      const slash = color.match(/\/\s*([0-9.]+)\s*\)/);
+      if (slash) return Number.parseFloat(slash[1]);
+      const rgba = color.match(/rgba\(([^)]+)\)/);
+      if (rgba) {
+        const parts = rgba[1].split(",").map((v) => Number.parseFloat(v));
+        return parts.length > 3 ? parts[3] : 1;
+      }
+      return 1;
+    };
+    const read = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const style = getComputedStyle(element);
+      return {
+        borderAlpha: alpha(style.borderTopColor),
+        size: Number.parseFloat(style.width),
+      };
+    };
+    return {
+      row: read(".shop-detail-inventory-link"),
+      box: read(".shop-detail-selected-link"),
+    };
+  });
+
+  // The inline row arrow is the quieter of the two: a visibly lighter
+  // outline and a smaller box.
+  expect(weights.row.borderAlpha).toBeLessThan(weights.box.borderAlpha);
+  expect(weights.row.size).toBeLessThan(weights.box.size);
+});
+
+test("both arrows resolve their shaft on hover and focus without shifting", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(shopUrl());
+
+  for (const selector of [
+    ".shop-detail-inventory-link",
+    ".shop-detail-selected-link",
+  ]) {
+    const arrow = page.locator(selector).first();
+    const shaft = arrow.locator(".page-link-arrow-shaft");
+    // The head is always drawn, so the resting state already reads as an
+    // arrow rather than a bare line.
+    await expect(arrow.locator(".page-link-arrow-head")).toHaveCount(1);
+
+    // Measure the arrow WITHIN its own row: the inventory row has its own
+    // long-standing hover lift, and that is not the arrow moving.
+    const boxWithinParent = () =>
+      arrow.evaluate((element) => {
+        const parent = element.closest(
+          ".shop-detail-inventory-row, .shop-detail-selected-copy",
+        );
+        if (!parent) throw new Error("Expected an anchoring container");
+        const a = element.getBoundingClientRect();
+        const p = parent.getBoundingClientRect();
+        return {
+          width: a.width,
+          height: a.height,
+          left: a.left - p.left,
+          top: a.top - p.top,
+        };
+      });
+
+    const restOffset = await shaft.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).strokeDashoffset),
+    );
+    const restBox = await boxWithinParent();
+
+    await arrow.hover();
+    await page.waitForTimeout(300);
+    const hoverOffset = await shaft.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).strokeDashoffset),
+    );
+    const hoverBox = await boxWithinParent();
+
+    // The shaft extends back toward its tail...
+    expect(restOffset).toBeLessThan(0);
+    expect(hoverOffset).toBe(0);
+    // ...and the control itself never moves or resizes within its row.
+    expect(hoverBox.width).toBeCloseTo(restBox.width, 2);
+    expect(hoverBox.height).toBeCloseTo(restBox.height, 2);
+    expect(hoverBox.left).toBeCloseTo(restBox.left, 2);
+    expect(hoverBox.top).toBeCloseTo(restBox.top, 2);
+
+    // Keyboard focus drives the same resolution.
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(250);
+    await arrow.focus();
+    await page.waitForTimeout(300);
+    const focusOffset = await shaft.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).strokeDashoffset),
+    );
+    expect(focusOffset).toBe(0);
+  }
+});
+
+test("under reduced motion the arrow is simply drawn whole, never morphed", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(shopUrl());
+
+  for (const selector of [
+    ".shop-detail-inventory-link",
+    ".shop-detail-selected-link",
+  ]) {
+    const arrow = page.locator(selector).first();
+    const shaft = arrow.locator(".page-link-arrow-shaft");
+
+    const rest = await shaft.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        offset: Number.parseFloat(style.strokeDashoffset),
+        transition: style.transitionProperty,
+      };
+    });
+    // Full-length shaft at rest, and nothing to transition.
+    expect(rest.offset).toBe(0);
+    expect(rest.transition).toBe("all");
+
+    await arrow.hover();
+    await page.waitForTimeout(250);
+    const hoverOffset = await shaft.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).strokeDashoffset),
+    );
+    expect(hoverOffset).toBe(0);
+
+    // The glyph is not nudged either.
+    const svgTransform = await arrow
+      .locator("svg")
+      .evaluate((element) => getComputedStyle(element).transform);
+    expect(svgTransform === "none" || svgTransform === "matrix(1, 0, 0, 1, 0, 0)").toBe(
+      true,
+    );
+  }
+
+  // Still fully operable.
+  const arrow = page.locator(".shop-detail-inventory-link").first();
+  await arrow.click();
+  await expect(page).toHaveURL(`/items/${fixtures.item.slug}`);
+  await context.close();
+});
