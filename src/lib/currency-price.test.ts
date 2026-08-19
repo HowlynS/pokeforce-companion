@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  currencyShowsPriceImage,
   formatGameCurrencyPrice,
   formatGameCurrencyPriceLabel,
+  POKE_YEN_CURRENCY_SLUG,
 } from "@/lib/currency-price";
 
 describe("formatGameCurrencyPrice", () => {
@@ -48,5 +50,18 @@ describe("formatGameCurrencyPrice", () => {
     expect(() =>
       formatGameCurrencyPrice(1.5, { name: "Runes", symbol: null })
     ).toThrow(RangeError);
+  });
+});
+
+describe("currencyShowsPriceImage", () => {
+  it("suppresses the image for PokeYen, identified by its canonical slug", () => {
+    expect(currencyShowsPriceImage({ slug: POKE_YEN_CURRENCY_SLUG })).toBe(false);
+    expect(currencyShowsPriceImage({ slug: "poke-yen" })).toBe(false);
+  });
+
+  it("leaves every other Currency's image behavior untouched", () => {
+    for (const slug of ["runes", "guild-marks", "shards", "pokeyen", "yen"]) {
+      expect(currencyShowsPriceImage({ slug })).toBe(true);
+    }
   });
 });

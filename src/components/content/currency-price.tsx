@@ -1,11 +1,15 @@
 import { ResourceIcon } from "@/components/admin/resource-icon";
 import {
+  currencyShowsPriceImage,
   formatGameCurrencyPrice,
   formatGameCurrencyPriceLabel,
 } from "@/lib/currency-price";
 import { getImagePublicUrl } from "@/lib/storage/images";
 
 export type CurrencyPriceValue = {
+  /** Canonical identity -- the PokeYen image exception keys on this, never
+      on the rendered name or symbol. */
+  slug: string;
   name: string;
   symbol: string | null;
   image: string | null;
@@ -26,9 +30,12 @@ export async function CurrencyPrice({
   currency,
   className,
 }: CurrencyPriceProps) {
-  const imageUrl = currency.image
-    ? await getImagePublicUrl(currency.image)
-    : null;
+  // PokeYen is symbol-only in public price surfaces; every other Currency
+  // keeps rendering its image exactly as before.
+  const imageUrl =
+    currency.image && currencyShowsPriceImage(currency)
+      ? await getImagePublicUrl(currency.image)
+      : null;
 
   return (
     <span

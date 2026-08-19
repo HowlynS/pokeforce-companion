@@ -174,8 +174,15 @@ test("the Shop detail renders hierarchy, independent verification, ordered price
   ).toHaveText(`2,147,483,647 ${fixtures.alternateCurrency.name}`);
   await expect(rows.nth(1)).not.toContainText("Available after the tutorial.");
   await expect(rows.nth(1)).not.toContainText("Verified for");
+  // The item name itself is no longer a link: a row click only ever selects.
+  // Navigation is the explicit page-link arrow beside the name.
   await expect(
     rows.nth(0).getByRole("link", { name: fixtures.item.name, exact: true })
+  ).toHaveCount(0);
+  await expect(
+    rows
+      .nth(0)
+      .getByRole("link", { name: `Open ${fixtures.item.name} item page` })
   ).toHaveAttribute("href", `/items/${fixtures.item.slug}`);
 
   const inventoryToggle = page.getByRole("button", {

@@ -360,11 +360,12 @@ export async function createE2eShopInventoryFixtures(): Promise<{
     );
     await client.query(
       `insert into "Currency"
-        ("id", "slug", "name", "symbol", "createdAt", "updatedAt")
+        ("id", "slug", "name", "symbol", "image", "createdAt", "updatedAt")
        values
-        ($1, $2, $3, '₽', now(), now()),
-        ($4, $5, $6, null, now(), now())
-       on conflict ("slug") do update set "name" = excluded."name"`,
+        ($1, $2, $3, '₽', null, now(), now()),
+        ($4, $5, $6, null, 'currencies/test-e2e-alternate.png', now(), now())
+       on conflict ("slug") do update set
+          "name" = excluded."name", "image" = excluded."image"`,
       [
         primaryCurrency.id,
         `${E2E_SHOP_CURRENCY_SLUG_PREFIX}-primary`,
@@ -376,6 +377,60 @@ export async function createE2eShopInventoryFixtures(): Promise<{
     );
     return { item, primaryCurrency, alternateCurrency };
   });
+}
+
+/**
+ * The CANONICAL PokeYen Currency, created with a real image so the public
+ * symbol-only rule is proven against the same slug production uses rather
+ * than a stand-in. Deliberately NOT prefixed like the other Shop fixtures --
+ * the rule keys on this exact slug -- so it carries its own exact-slug
+ * cleanup below instead of riding the prefix sweep.
+ */
+export const E2E_POKE_YEN_CURRENCY_SLUG = "poke-yen";
+export const E2E_POKE_YEN_CURRENCY_ID = "test-e2e-poke-yen-currency-id";
+
+export async function createE2ePokeYenCurrency(): Promise<{
+  id: string;
+  name: string;
+}> {
+  const currency = { id: E2E_POKE_YEN_CURRENCY_ID, name: "PokéYen" };
+  return withVerifiedDatabase(async (client) => {
+    await client.query(
+      `insert into "Currency"
+        ("id", "slug", "name", "symbol", "image", "createdAt", "updatedAt")
+       values ($1, $2, $3, '₽', 'currencies/test-e2e-poke-yen.png', now(), now())
+       on conflict ("slug") do update set
+         "name" = excluded."name",
+         "symbol" = excluded."symbol",
+         "image" = excluded."image"`,
+      [currency.id, E2E_POKE_YEN_CURRENCY_SLUG, currency.name]
+    );
+    return currency;
+  });
+}
+
+/** Listings referencing it must already be gone (Currency delete is RESTRICT). */
+export async function deleteE2ePokeYenCurrency(): Promise<void> {
+  await withVerifiedDatabase(async (client) => {
+    await client.query(`delete from "Currency" where "slug" = $1`, [
+      E2E_POKE_YEN_CURRENCY_SLUG,
+    ]);
+  });
+}
+
+export async function createE2ePokeYenListing(shopId: string, itemId: string) {
+  const currency = await createE2ePokeYenCurrency();
+  await withVerifiedDatabase(async (client) => {
+    await client.query(
+      `insert into "ShopListing"
+        ("id", "shopId", "itemId", "currencyId", "priceAmount",
+         "createdAt", "updatedAt")
+       values ($1, $2, $3, $4, 145, now(), now())
+       on conflict ("id") do nothing`,
+      ["test-e2e-poke-yen-listing-id", shopId, itemId, currency.id]
+    );
+  });
+  return currency;
 }
 
 export async function createE2ePublicShopFixtures(): Promise<{

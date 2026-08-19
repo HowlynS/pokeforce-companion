@@ -119,6 +119,62 @@ test("the region label toggles disclosure while its icon link navigates", async 
   );
 });
 
+test("the region page-link uses the canonical navigation arrow, and the disclosure chevron does not", async ({
+  page,
+}) => {
+  await page.goto("/locations");
+
+  const regionLink = page.getByRole("link", {
+    name: "Open the Test E2E Northwind Region page",
+  });
+
+  // It is the shared page-link arrow control.
+  await expect(regionLink).toHaveClass(/page-link-arrow/);
+
+  // Resolve the gold tokens the way the browser does, so the comparison is
+  // against the real design system rather than a hard-coded literal.
+  const gold = await page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.style.display = "none";
+    document.body.append(probe);
+    const read = (token: string) => {
+      probe.style.color = `var(${token})`;
+      return getComputedStyle(probe).color;
+    };
+    const values = {
+      accent: read("--color-accent"),
+      accentSoft: read("--color-accent-soft"),
+    };
+    probe.remove();
+    return values;
+  });
+
+  const rest = await regionLink.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      color: style.color,
+      borderColor: style.borderTopColor,
+      borderWidth: style.borderTopWidth,
+    };
+  });
+
+  // Gold arrow, gold outline — at rest, not only on hover.
+  expect(rest.color).toBe(gold.accent);
+  expect(rest.borderColor).toBe(gold.accentSoft);
+  expect(rest.borderWidth).toBe("1px");
+
+  await regionLink.focus();
+  await expect(regionLink).not.toHaveCSS("outline-style", "none");
+
+  // The disclosure chevron beside it is a DIFFERENT pattern: it opens local
+  // content rather than navigating, so it must not have adopted the
+  // navigation treatment.
+  const chevron = page.locator(".location-directory-fold-chevron").first();
+  await expect(chevron).toHaveCount(1);
+  await expect(chevron).not.toHaveClass(/page-link-arrow/);
+  await expect(chevron).toHaveCSS("border-top-width", "0px");
+});
+
 test("Location search and type filter are real GET controls", async ({ page }) => {
   await page.goto("/locations");
 

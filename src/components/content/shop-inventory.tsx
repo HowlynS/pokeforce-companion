@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { CollapsibleSection } from "@/components/content/collapsible-section";
+import { PageLinkArrow } from "@/components/ui/page-link-arrow";
 
 type ShopInventoryListing = {
   id: string;
@@ -40,8 +40,15 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
         <div className="shop-detail-selected">
           <div className="shop-detail-selected-stage">{selected.previewImage}</div>
           <div className="shop-detail-selected-copy">
-            <Link href={`/items/${selected.item.slug}`}>{selected.item.name}</Link>
+            <span className="shop-detail-selected-name">
+              {selected.item.name}
+            </span>
             {selected.item.description ? <p>{selected.item.description}</p> : null}
+            <PageLinkArrow
+              href={`/items/${selected.item.slug}`}
+              label={`Open ${selected.item.name} item page`}
+              className="shop-detail-selected-link"
+            />
           </div>
         </div>
 
@@ -69,9 +76,17 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
                 <span className="shop-detail-inventory-icon">{listing.rowImage}</span>
                 <div className="public-shop-listing-content">
                   <h3>
-                    <Link href={`/items/${listing.item.slug}`}>
+                    <span className="shop-detail-inventory-name">
                       {listing.item.name}
-                    </Link>
+                    </span>
+                    <PageLinkArrow
+                      href={`/items/${listing.item.slug}`}
+                      label={`Open ${listing.item.name} item page`}
+                      className="shop-detail-inventory-link"
+                      // The arrow navigates; the row selects. Without this a
+                      // click would also re-select the row on the way out.
+                      onClick={(event) => event.stopPropagation()}
+                    />
                   </h3>
                   {listing.price}
                   {listing.notes ? (

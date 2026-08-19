@@ -2863,6 +2863,117 @@ select:focus-visible {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* .directory-body sets align-items: flex-start so the Overview sidebar
+     keeps its natural height. That also stopped THIS column from stretching
+     to the body's constrained height, so it sized to its own content
+     instead -- which meant the catalogue grid below never received a bounded
+     height and its own `overflow-y: auto` never engaged. The overflow then
+     escaped up to .public-site-shell--catalogue's `height: 100vh;
+     overflow: hidden` and the last records were clipped with no scroll path
+     at all. Stretching only this child restores the bounded flex chain the
+     contained-scroll design depends on, while leaving the sidebar alone. */
+  align-self: stretch;
+}
+
+/* Contained public scroll regions ---------------------------------------
+   At >=1181px the catalogue shell is height-locked (see
+   .public-site-shell--catalogue) and each catalogue owns its own bounded
+   scroll area rather than scrolling the document. These regions used to
+   hide their scrollbar completely, which left no visible affordance that
+   more records existed below the fold and nothing to drag. They now keep a
+   thin, restrained Codex-toned scrollbar: the contained-scroll design is
+   preserved, but the scroll path is discoverable and usable. */
+.item-catalogue-grid,
+.item-catalogue-list,
+.profession-catalogue-grid,
+.profession-catalogue-list,
+.class-catalogue-grid,
+.class-catalogue-list,
+.location-directory-groups,
+.shops-directory-groups,
+.recipes-directory-page .recipe-output-grid,
+.world-sidebar,
+.world-detail {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.item-catalogue-grid::-webkit-scrollbar,
+.item-catalogue-list::-webkit-scrollbar,
+.profession-catalogue-grid::-webkit-scrollbar,
+.profession-catalogue-list::-webkit-scrollbar,
+.class-catalogue-grid::-webkit-scrollbar,
+.class-catalogue-list::-webkit-scrollbar,
+.location-directory-groups::-webkit-scrollbar,
+.shops-directory-groups::-webkit-scrollbar,
+.recipes-directory-page .recipe-output-grid::-webkit-scrollbar,
+.world-sidebar::-webkit-scrollbar,
+.world-detail::-webkit-scrollbar {
+  width: 8px;
+}
+
+.item-catalogue-grid::-webkit-scrollbar-thumb,
+.item-catalogue-list::-webkit-scrollbar-thumb,
+.profession-catalogue-grid::-webkit-scrollbar-thumb,
+.profession-catalogue-list::-webkit-scrollbar-thumb,
+.class-catalogue-grid::-webkit-scrollbar-thumb,
+.class-catalogue-list::-webkit-scrollbar-thumb,
+.location-directory-groups::-webkit-scrollbar-thumb,
+.shops-directory-groups::-webkit-scrollbar-thumb,
+.recipes-directory-page .recipe-output-grid::-webkit-scrollbar-thumb,
+.world-sidebar::-webkit-scrollbar-thumb,
+.world-detail::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.item-catalogue-grid::-webkit-scrollbar-thumb:hover,
+.item-catalogue-list::-webkit-scrollbar-thumb:hover,
+.profession-catalogue-grid::-webkit-scrollbar-thumb:hover,
+.profession-catalogue-list::-webkit-scrollbar-thumb:hover,
+.class-catalogue-grid::-webkit-scrollbar-thumb:hover,
+.class-catalogue-list::-webkit-scrollbar-thumb:hover,
+.location-directory-groups::-webkit-scrollbar-thumb:hover,
+.shops-directory-groups::-webkit-scrollbar-thumb:hover,
+.recipes-directory-page .recipe-output-grid::-webkit-scrollbar-thumb:hover,
+.world-sidebar::-webkit-scrollbar-thumb:hover,
+.world-detail::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-soft);
+}
+
+/* Canonical "open the full page for this record" arrow ------------------
+   One treatment for every public page-link arrow: Shop inventory rows, the
+   Shop selected-item box, and the Locations region headings. Gold arrow in
+   a gold-outlined dark square, so it reads as navigation at a glance and is
+   never confused with a disclosure chevron (which stays muted and keeps its
+   own styling). Border and color are the only things that move on hover, so
+   the control never shifts or resizes. */
+.page-link-arrow {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  /* 24px keeps the icon a real, pointer-sized target. */
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-accent-soft);
+  border-radius: 6px;
+  background: var(--color-inset-surface);
+  color: var(--color-accent);
+  text-decoration: none;
+  transition:
+    border-color 165ms ease,
+    background-color 165ms ease,
+    color 165ms ease,
+    box-shadow 165ms ease;
+}
+
+.page-link-arrow:hover,
+.page-link-arrow:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  color: var(--color-accent-bright);
+  box-shadow: 0 0 10px rgba(216, 181, 98, 0.28);
 }
 
 .directory-toolbar {
@@ -3224,8 +3335,6 @@ select:focus-visible {
   grid-template-columns: repeat(auto-fill, minmax(var(--item-card-min-width), 1fr));
   align-content: start;
   gap: var(--card-gap);
-  overflow-y: auto;
-  scrollbar-width: none;
 }
 
 .item-catalogue-card {
@@ -3328,8 +3437,6 @@ select:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: auto;
-  scrollbar-width: none;
 }
 
 @media (min-width: 1181px) {
@@ -3358,6 +3465,24 @@ select:focus-visible {
 
   .public-site-shell--catalogue .public-site-footer {
     display: none;
+  }
+
+  /* Contained catalogue scrolling belongs to the SAME breakpoint that locks
+     the shell to the viewport. Below it the shell is a normal document-
+     scrolling page, and leaving these regions scrollable there created a
+     nested scroll port inside a scrolling document -- its own lower rows
+     sat below the fold with no way to bring them up. */
+  .public-site-shell--catalogue .item-catalogue-grid,
+  .public-site-shell--catalogue .item-catalogue-list,
+  .public-site-shell--catalogue .profession-catalogue-grid,
+  .public-site-shell--catalogue .profession-catalogue-list,
+  .public-site-shell--catalogue .class-catalogue-grid,
+  .public-site-shell--catalogue .class-catalogue-list,
+  .public-site-shell--catalogue .location-directory-groups,
+  .public-site-shell--catalogue .shops-directory-groups,
+  .public-site-shell--catalogue .recipe-output-grid {
+    overflow-y: auto;
+    padding-right: 2px;
   }
 }
 
@@ -3433,14 +3558,6 @@ select:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
   gap: var(--codex-card-gap);
-  overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-width: none;
-}
-
-.profession-catalogue-grid::-webkit-scrollbar,
-.profession-catalogue-list::-webkit-scrollbar {
-  display: none;
 }
 
 .profession-catalogue-card {
@@ -3558,8 +3675,6 @@ select:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: auto;
-  scrollbar-width: none;
 }
 
 .profession-catalogue-list-row {
@@ -3915,6 +4030,10 @@ select:focus-visible {
   text-decoration-color: var(--color-accent);
 }
 
+/* Icon + amount, or -- for a symbol-only Currency such as PokeYen -- the
+   amount alone. `gap` only applies BETWEEN flex items and the width is
+   fit-content, so dropping the icon leaves no reserved gap or placeholder
+   width behind: the symbol and amount collapse into one compact unit. */
 .currency-price {
   display: inline-flex;
   align-items: center;
@@ -5944,13 +6063,6 @@ body:has(.recipe-detail-page) .public-site-footer {
   );
   align-content: start;
   gap: var(--card-gap);
-  overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-width: none;
-}
-
-.recipes-directory-page .recipe-output-grid::-webkit-scrollbar {
-  display: none;
 }
 
 /* One horizontal rhythm for the whole Recipe grid card. Every section — art
@@ -12283,13 +12395,6 @@ a.profession-detail-chip:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 26px;
-  overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-width: none;
-}
-
-.location-directory-groups::-webkit-scrollbar {
-  display: none;
 }
 
 .location-directory-fold-heading {
@@ -12339,31 +12444,11 @@ a.profession-detail-chip:focus-visible {
 
 /* The region's own page keeps a route of its own, as a small sibling icon
    link — never the heading itself, which now belongs to the disclosure. */
+/* The region page-link keeps only its layout role here; its appearance is
+   the shared .page-link-arrow treatment. */
 .location-directory-fold-link {
-  display: inline-flex;
   flex: none;
   align-self: center;
-  align-items: center;
-  justify-content: center;
-  /* 24px keeps the icon a real, pointer-sized target beside the label. */
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--color-border-muted);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--color-text-muted);
-  text-decoration: none;
-  transition:
-    border-color 200ms ease,
-    background-color 200ms ease,
-    color 200ms ease;
-}
-
-.location-directory-fold-link:hover,
-.location-directory-fold-link:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-surface-soft);
-  color: var(--color-accent);
 }
 
 .location-directory-fold-heading h2,
@@ -12991,6 +13076,10 @@ a.profession-detail-chip:focus-visible {
 
 .shops-directory-groups {
   flex: 1;
+  /* Every other catalogue owns its own contained scroll; Shops was the one
+     grouped directory that never declared one, so once the shell is height-
+     locked its lower groups had no scroll path at all. */
+  min-height: 0;
 }
 
 .shop-directory-grid {
@@ -13081,14 +13170,6 @@ a.profession-detail-chip:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
   gap: var(--codex-card-gap);
-  overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-width: none;
-}
-
-.class-catalogue-grid::-webkit-scrollbar,
-.class-catalogue-list::-webkit-scrollbar {
-  display: none;
 }
 
 .class-catalogue-card {
@@ -13203,8 +13284,6 @@ a.profession-detail-chip:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: auto;
-  scrollbar-width: none;
 }
 
 .class-catalogue-list-row {
@@ -13485,24 +13564,30 @@ a.shop-detail-chip:focus-visible {
 }
 
 .shop-detail-selected-copy {
+  position: relative;
   flex: 1;
   min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-inset-surface);
   padding: 8px 12px;
+  /* Reserve the arrow's own column so it can sit in the bottom-right corner
+     without ever overlapping the name or the description, at any length. */
+  padding-right: 44px;
+  min-height: 52px;
 }
 
-.shop-detail-selected-copy a {
+.shop-detail-selected-name {
+  display: block;
   color: var(--color-accent-soft);
   font-size: 11px;
   font-weight: 700;
-  text-decoration: none;
 }
 
-.shop-detail-selected-copy a:hover,
-.shop-detail-selected-copy a:focus-visible {
-  color: var(--color-text);
+.shop-detail-selected-link {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
 }
 
 .shop-detail-selected-copy p {
@@ -13603,19 +13688,37 @@ a.shop-detail-chip:focus-visible {
 }
 
 .shop-detail-inventory-row .public-shop-listing-content h3 {
+  /* The name and its page-link arrow are one unit in the name column; the
+     price keeps its own right-aligned column, so the arrow never drifts
+     over beside the price. */
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
   margin: 0;
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.3;
 }
 
-.shop-detail-inventory-row .public-shop-listing-content h3 a {
+.shop-detail-inventory-name {
+  min-width: 0;
+  overflow: hidden;
   color: var(--color-text);
-  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Slightly tighter than the default control so it sits comfortably inside
+   the compact row without changing the row's height. */
+.shop-detail-inventory-link {
+  width: 20px;
+  height: 20px;
 }
 
 .shop-detail-inventory-row .currency-price {
-  align-self: start;
+  align-self: center;
+  justify-self: end;
   color: var(--color-accent-soft);
   font-size: 11.5px;
   transition:
@@ -13759,11 +13862,6 @@ a.shop-detail-chip:focus-visible {
   border-right: 1px solid var(--color-border-muted);
   background: var(--color-surface);
   padding: 14px 8px;
-  scrollbar-width: none;
-}
-
-.world-sidebar::-webkit-scrollbar {
-  display: none;
 }
 
 .world-sidebar-search {
@@ -14001,11 +14099,6 @@ a.shop-detail-chip:focus-visible {
   min-width: 0;
   overflow-y: auto;
   padding: 22px 26px;
-  scrollbar-width: none;
-}
-
-.world-detail::-webkit-scrollbar {
-  display: none;
 }
 
 /* Right-pane entrance. The wrapper is keyed by the selected Location's slug

@@ -3,6 +3,25 @@ export type PriceCurrency = {
   symbol: string | null;
 };
 
+/**
+ * The canonical PokeYen Currency, identified by its stable slug rather than
+ * by rendered text. PokeYen is deliberately symbol-only in public price
+ * surfaces: its record may still carry an image (admin keeps full Currency
+ * image support), but the public price never renders it, because the bare
+ * "₽" already reads as the price.
+ */
+export const POKE_YEN_CURRENCY_SLUG = "poke-yen";
+
+/**
+ * Whether a Currency's image participates in its PUBLIC price presentation.
+ * This is a PokeYen-only exception, never a general rule -- every other
+ * Currency keeps the existing image behavior, so a future Currency added
+ * with an image renders it without any further change here.
+ */
+export function currencyShowsPriceImage(currency: { slug: string }): boolean {
+  return currency.slug !== POKE_YEN_CURRENCY_SLUG;
+}
+
 function groupIntegerDigits(value: number): string {
   if (!Number.isSafeInteger(value) || value <= 0) {
     throw new RangeError("Currency price amounts must be positive safe integers.");

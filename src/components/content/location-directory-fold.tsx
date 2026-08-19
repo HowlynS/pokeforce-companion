@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { PageLinkArrow } from "@/components/ui/page-link-arrow";
 import { publicMotionDuration } from "@/lib/public-motion";
 
 type LocationDirectoryFoldProps = {
@@ -86,22 +86,11 @@ export function LocationDirectoryFold({
       <div className="location-directory-fold-heading">
         {href ? <h2>{trigger}</h2> : <h3>{trigger}</h3>}
         {href ? (
-          <Link
+          <PageLinkArrow
             href={href}
+            label={`Open the ${title} page`}
             className="location-directory-fold-link"
-            aria-label={`Open the ${title} page`}
-          >
-            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24">
-              <path
-                d="M7 17 17 7M9 7h8v8"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </Link>
+          />
         ) : null}
         {typeof count === "number" ? (
           <span className="location-directory-fold-count">

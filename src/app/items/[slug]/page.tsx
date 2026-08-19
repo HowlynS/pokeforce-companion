@@ -80,7 +80,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
             },
           },
           currency: {
-            select: { name: true, symbol: true, image: true },
+            select: { slug: true, name: true, symbol: true, image: true },
           },
         },
         orderBy: [
