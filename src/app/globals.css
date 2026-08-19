@@ -4390,6 +4390,40 @@ select:focus-visible {
   box-shadow: inset 0 0 26px rgba(var(--resource-hue), 0.14);
 }
 
+/* Embedded Item stage ---------------------------------------------------
+   The small square an Item's art sits on when it appears INSIDE another
+   resource's surface: a Recipe's ingredient rows and preview chips, a Shop's
+   inventory rows and selected preview. The parent surface keeps its own
+   family (Recipe amber, Shop wine); this stage quietly says "the thing on it
+   is an Item" by reusing the one canonical --hue-item triple the Item detail
+   hero and the Item directory thumbnails already derive from -- never a
+   second blue literal.
+
+   Alphas are deliberately below the hero stage's (0.28/0.15): these boxes are
+   32-42px, so the same wash that reads as restrained at 192px would read as a
+   blue tile here. Only the ground and border are tinted. The sprite itself is
+   never filtered, hue-rotated, or recolored. */
+.item-hue-stage {
+  --resource-hue: var(--hue-item);
+  border-color: color-mix(
+    in srgb,
+    var(--color-border) 80%,
+    rgb(var(--resource-hue))
+  );
+  background:
+    radial-gradient(
+      circle at 50% 34%,
+      rgba(var(--resource-hue), 0.2),
+      transparent 74%
+    ),
+    linear-gradient(
+      158deg,
+      rgba(var(--resource-hue), 0.11),
+      transparent 70%
+    ),
+    var(--color-inset-surface);
+}
+
 /* Public Item detail --------------------------------------------------- */
 .item-detail-page {
   display: grid;
@@ -5458,6 +5492,14 @@ body:has(.recipe-detail-page) .public-site-footer {
 
 .recipe-detail-page .recipe-ingredient-row .item-recipe-thumbnail {
   width: 32px;
+  height: 32px;
+  box-sizing: border-box;
+  flex: none;
+  /* Geometry only: border-color and background belong to .item-hue-stage,
+     which this selector out-specifies -- so neither is declared here. */
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 7px;
   transition: filter 0.18s ease;
 }
 
@@ -6034,9 +6076,19 @@ body:has(.recipe-detail-page) .public-site-footer {
 .recipe-output-tooltip-image {
   width: 36px;
   height: 36px;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Geometry only; .item-hue-stage supplies the tint. The radius sits just
+   inside the chip's own 7px so the ground never squares off in its corner. */
+.recipe-output-ingredient-image,
+.recipe-output-ingredient-panel-image {
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
 }
 
 .recipe-output-ingredient-image .public-sprite-stage--row,
@@ -6327,9 +6379,15 @@ body:has(.recipe-detail-page) .public-site-footer {
    the chevron's right edge lands on the card's content inset like the title
    and footer. That also leaves the preview column wide enough for three full
    36px stages plus their two gaps, so they never shrink. */
+/* `auto auto` + start: the preview list column shrinks to exactly the
+   previews it holds, so the trigger follows the last one at the list's own
+   rhythm instead of being parked against the strip's right edge. The strip
+   itself still spans the full column (grid items stretch), which is what the
+   capacity measurement reads. */
 .recipe-output-card--directory-grid .recipe-output-ingredient-disclosure {
   position: relative;
-  grid-template-columns: minmax(0, 1fr) var(--recipe-card-trigger);
+  grid-template-columns: auto auto;
+  justify-content: start;
   gap: var(--recipe-card-rhythm);
 }
 
@@ -12060,7 +12118,8 @@ a.profession-detail-chip:focus-visible {
 
 .recipe-output-card--grid .recipe-output-ingredient-disclosure {
   position: relative;
-  grid-template-columns: minmax(0, 1fr) 24px;
+  grid-template-columns: auto auto;
+  justify-content: start;
   align-items: center;
   gap: 6px;
 }
@@ -13629,13 +13688,16 @@ a.shop-detail-chip:focus-visible {
 .shop-detail-selected-stage {
   width: 64px;
   height: 64px;
+  box-sizing: border-box;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-accent-soft);
+  /* Geometry only: this is an Item's art, so its ground and border colour
+     come from .item-hue-stage rather than the Shop module's gold. */
+  border-width: 1px;
+  border-style: solid;
   border-radius: 10px;
-  background: var(--color-inset-surface);
   overflow: hidden;
 }
 
@@ -13701,14 +13763,21 @@ a.shop-detail-chip:focus-visible {
   gap: 8px;
 }
 
+/* The Recipe detail Ingredients row is the visual authority for this list:
+   same 50px floor, same 11px marker / 32px stage / flexible copy tracks,
+   same 10px gap, same muted border on --color-surface, same 8px 12px inset.
+   Shop keeps its own extras -- the price column, the selection button, the
+   page-link arrow -- and deliberately does NOT borrow Recipe's quantity
+   column, which has no Shop meaning. */
 .shop-detail-inventory-row.public-shop-listing {
+  min-height: 50px;
   grid-template-columns: 11px 32px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   border-color: var(--color-border-muted);
   border-radius: 8px;
-  background: var(--color-inset-surface);
-  padding: 8px 10px;
+  background: var(--color-surface);
+  padding: 8px 12px;
   cursor: pointer;
   transition:
     background-color 0.18s ease,
@@ -13757,9 +13826,15 @@ a.shop-detail-chip:focus-visible {
 .shop-detail-inventory-icon {
   width: 32px;
   height: 32px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Geometry only -- border-color and background come from
+     .item-hue-stage, which this selector out-specifies. */
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 7px;
   transition: transform 0.18s ease;
 }
 
@@ -13775,20 +13850,20 @@ a.shop-detail-chip:focus-visible {
    frame of its own -- matching the Recipe Ingredients box, where the missing
    art is stated quietly rather than boxed in. The label stays readable
    instead of being blanked out with font-size: 0. */
+/* Mirrors .recipe-detail-page .recipe-ingredient-row's own empty stage: the
+   placeholder is the same 32px footprint as a real icon, carries no frame of
+   its own, and simply sits on the Item-hued ground the row already provides.
+   The fallback text keeps the shared --row treatment, so it stays a real,
+   readable, selectable string rather than a font-size: 0 hack. */
 .shop-detail-inventory-icon .public-sprite-stage--empty {
   --sprite-stage-size: 32px;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  padding: 0;
-}
-
-.shop-detail-inventory-icon .public-sprite-fallback {
-  color: color-mix(in srgb, var(--color-text-muted) 74%, transparent);
-  font-size: 7px;
-  font-weight: 500;
-  line-height: 1.1;
+  padding: 3px;
 }
 
 .shop-detail-inventory-row:hover .shop-detail-inventory-icon {

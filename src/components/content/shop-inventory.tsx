@@ -38,7 +38,7 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
     >
       <div className="shop-detail-inventory-panel">
         <div className="shop-detail-selected">
-          <div className="shop-detail-selected-stage">{selected.previewImage}</div>
+          <div className="shop-detail-selected-stage item-hue-stage">{selected.previewImage}</div>
           <div className="shop-detail-selected-copy">
             <span className="shop-detail-selected-name">
               {selected.item.name}
@@ -74,7 +74,7 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
                 >
                   ▶
                 </button>
-                <span className="shop-detail-inventory-icon">{listing.rowImage}</span>
+                <span className="shop-detail-inventory-icon item-hue-stage">{listing.rowImage}</span>
                 <div className="public-shop-listing-content">
                   <h3>
                     <span className="shop-detail-inventory-name">

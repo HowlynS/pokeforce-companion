@@ -9,15 +9,32 @@ import {
   type ReactNode,
 } from "react";
 import { publicMotionDuration } from "@/lib/public-motion";
+import { resolveIngredientCapacity } from "@/lib/recipes/ingredient-preview-capacity";
 
 type RecipeOutputIngredientDisclosureProps = {
   listId: string;
   recipeName: string;
-  previewIngredients: ReactNode;
+  /** Every preview-eligible ingredient, in order. In adaptive mode this
+      component decides how many of them actually render. */
+  previewIngredients: ReactNode[];
   expandedIngredients: ReactNode;
-  remainingCount: number;
+  /** How many previews the server rendered, and the floor before the first
+      measurement lands. Ignored outside adaptive mode. */
+  initialVisibleCount?: number;
+  /** The Recipe's real ingredient count. Adaptive callers pass the whole set
+      as `previewIngredients` so this matches its length, but the fixed-budget
+      callers pass an already-sliced array — and the "Show N more" label has
+      to count what was left out, not what survived the slice. */
+  totalCount?: number;
+  /** Measure the strip and fit as many complete previews as it holds,
+      rather than trusting a fixed count. Grid variants only — the list
+      variant renders every ingredient inline and never discloses. */
+  adaptive?: boolean;
   popover?: boolean;
 };
+
+/** Used only until the trigger has been measured once. */
+const FALLBACK_TRIGGER_WIDTH = 25;
 
 // Keeps the centered overlay clear of whatever actually crops it once it
 // grows past its minimum width; re-measured only when the panel opens, not
@@ -53,7 +70,9 @@ export function RecipeOutputIngredientDisclosure({
   recipeName,
   previewIngredients,
   expandedIngredients,
-  remainingCount,
+  initialVisibleCount,
+  totalCount,
+  adaptive = false,
   popover = false,
 }: RecipeOutputIngredientDisclosureProps) {
   const [expanded, setExpanded] = useState(false);
@@ -62,7 +81,22 @@ export function RecipeOutputIngredientDisclosure({
   const edgeShiftRef = useRef(0);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const disclosureRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const positionerRef = useRef<HTMLDivElement>(null);
+  // The trigger is only in the DOM while it is needed, so its measured width
+  // is remembered for the frame in which capacity is recomputed without it.
+  const triggerWidthRef = useRef(FALLBACK_TRIGGER_WIDTH);
+
+  const total = previewIngredients.length;
+  // The server render is the conservative floor: measurement can widen it,
+  // and on the layouts the current design was tuned around it agrees, so the
+  // common case never changes after hydration.
+  const serverVisible = Math.min(initialVisibleCount ?? total, total);
+  const [visibleCount, setVisibleCount] = useState(serverVisible);
+
+  const visible = adaptive ? Math.min(visibleCount, total) : serverVisible;
+  const remainingCount = (totalCount ?? total) - visible;
+  const showTrigger = adaptive ? remainingCount > 0 : true;
 
   useEffect(
     () => () => {
@@ -70,6 +104,53 @@ export function RecipeOutputIngredientDisclosure({
     },
     [],
   );
+
+  // Capacity comes from the strip's own rendered width, never the viewport:
+  // this same card appears in a /recipes catalogue column, a Profession
+  // detail grid and an Item detail grid, whose widths differ at the SAME
+  // viewport (and do not even move in the same direction as it). A
+  // ResizeObserver reacts to whichever of those is doing the resizing --
+  // window, container query, sidebar, or grid reflow -- and state is only
+  // written when the count actually changes, so a drag across a hundred
+  // widths still costs at most a handful of renders.
+  useLayoutEffect(() => {
+    if (!adaptive) return;
+    const disclosure = disclosureRef.current;
+    const list = listRef.current;
+    if (!disclosure || !list) return;
+
+    function measure() {
+      const strip = disclosureRef.current;
+      const listElement = listRef.current;
+      if (!strip || !listElement) return;
+
+      const cell = listElement.querySelector(".recipe-output-ingredient");
+      if (!cell) return;
+      const cellWidth = cell.getBoundingClientRect().width;
+      if (cellWidth <= 0) return; // Not laid out yet (e.g. display: none).
+
+      const gap = Number.parseFloat(getComputedStyle(listElement).columnGap);
+      const trigger = strip.querySelector(".recipe-output-ingredient-toggle");
+      if (trigger) {
+        triggerWidthRef.current = trigger.getBoundingClientRect().width;
+      }
+
+      const { visible: fitted } = resolveIngredientCapacity({
+        available: strip.clientWidth,
+        cellWidth,
+        gap: Number.isFinite(gap) ? gap : 0,
+        triggerWidth: triggerWidthRef.current,
+        total,
+      });
+
+      setVisibleCount((current) => (current === fitted ? current : fitted));
+    }
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(disclosure);
+    return () => observer.disconnect();
+  }, [adaptive, total]);
 
   useEffect(() => {
     if (!expanded || !popover) return;
@@ -146,10 +227,12 @@ export function RecipeOutputIngredientDisclosure({
       <div
         className="recipe-output-ingredient-list"
         id={popover ? `${listId}-preview` : listId}
+        ref={listRef}
       >
-        {previewIngredients}
+        {previewIngredients.slice(0, visible)}
         {expanded && !popover ? expandedIngredients : null}
       </div>
+      {showTrigger ? (
       <button
         className="recipe-output-ingredient-toggle"
         type="button"
@@ -178,6 +261,7 @@ export function RecipeOutputIngredientDisclosure({
           />
         </svg>
       </button>
+      ) : null}
       {expanded && popover ? (
         <div
           className="recipe-output-ingredient-positioner"

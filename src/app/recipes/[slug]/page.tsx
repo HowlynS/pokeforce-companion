@@ -183,7 +183,7 @@ export default async function RecipeDetailPage({
                         href={`/items/${ingredient.item.slug}`}
                         key={ingredient.id}
                       >
-                        <span className="item-recipe-thumbnail">
+                        <span className="item-recipe-thumbnail item-hue-stage">
                           <ContentImage
                             imagePath={ingredient.item.image}
                             alt={`Image of ${ingredient.item.name}`}

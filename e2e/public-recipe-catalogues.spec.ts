@@ -1236,3 +1236,264 @@ test("Items index owns Category browsing and Category detail stays contextual", 
     });
   }
 });
+
+/**
+ * Reads the ingredient preview strip of one card: how many complete previews
+ * are rendered, whether the disclosure trigger is present, and the gap
+ * between the last preview and that trigger.
+ */
+async function readStrip(card: Locator) {
+  return card.evaluate((element) => {
+    const strip = element.querySelector(".recipe-output-ingredient-disclosure");
+    const chips = Array.from(
+      element.querySelectorAll(
+        ".recipe-output-ingredient-list > .recipe-output-ingredient",
+      ),
+    );
+    const toggle = element.querySelector(".recipe-output-ingredient-toggle");
+    const list = element.querySelector(".recipe-output-ingredient-list");
+    const last = chips[chips.length - 1];
+    const box = element.getBoundingClientRect();
+    return {
+      stripWidth: strip ? strip.clientWidth : null,
+      shown: chips.length,
+      hasTrigger: !!toggle,
+      listGap: list ? getComputedStyle(list).columnGap : null,
+      gapToTrigger:
+        last && toggle
+          ? toggle.getBoundingClientRect().left -
+            last.getBoundingClientRect().right
+          : null,
+      cardWidth: Math.round(box.width),
+      cardHeight: Math.round(box.height),
+    };
+  });
+}
+
+/**
+ * The strip's capacity is decided at hydration, one frame after the server's
+ * conservative default paints. Reads therefore wait for two consecutive
+ * agreeing samples rather than an arbitrary sleep.
+ */
+async function settledStrip(card: Locator) {
+  let previous = await readStrip(card);
+  await expect
+    .poll(async () => {
+      const next = await readStrip(card);
+      const stable = next.shown === previous.shown;
+      previous = next;
+      return stable;
+    })
+    .toBe(true);
+  return previous;
+}
+
+function denseRecipeFixture() {
+  const dense = fixture.recipes.find((recipe) =>
+    recipe.name.includes("Dense Ninefold"),
+  );
+  if (!dense) throw new Error("Expected the dense Recipe fixture");
+  return dense;
+}
+
+test("Grid ingredient previews fill the strip they are actually given", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/professions/${fixture.profession.slug}`);
+
+  const card = page
+    .locator(".recipe-output-card--grid")
+    .filter({ hasText: dense.name })
+    .first();
+  await expect(card).toBeVisible();
+
+  const natural = await settledStrip(card);
+  expect(natural.shown).toBeGreaterThan(0);
+  // The Recipe has more ingredients than any compact strip can hold, so the
+  // trigger must be there...
+  expect(natural.hasTrigger).toBe(true);
+  // ...immediately after the final preview, at the list's own rhythm rather
+  // than parked against the strip's right edge.
+  expect(natural.gapToTrigger).toBeCloseTo(
+    Number.parseFloat(natural.listGap ?? "0"),
+    0,
+  );
+
+  // Every rendered preview is COMPLETE: the trigger still ends inside the
+  // strip, so nothing is clipped.
+  const fitsInside = await card.evaluate((element) => {
+    const strip = element.querySelector(
+      ".recipe-output-ingredient-disclosure",
+    ) as HTMLElement | null;
+    const toggle = element.querySelector(".recipe-output-ingredient-toggle");
+    if (!strip || !toggle) return false;
+    return (
+      toggle.getBoundingClientRect().right <=
+      strip.getBoundingClientRect().right + 1
+    );
+  });
+  expect(fitsInside, "previews and trigger must fit inside the strip").toBe(
+    true,
+  );
+});
+
+test("preview capacity follows the container's width, not the viewport's", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+  // The viewport is pinned for this whole test: every capacity change below
+  // comes from the container being resized, which is exactly the claim.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/professions/${fixture.profession.slug}`);
+
+  const card = page
+    .locator(".recipe-output-card--grid")
+    .filter({ hasText: dense.name })
+    .first();
+  await expect(card).toBeVisible();
+
+  const wide = await settledStrip(card);
+  expect(wide.shown).toBeGreaterThan(1);
+
+  // Squeeze the observed strip. The ResizeObserver must react on its own.
+  await card.evaluate((element) => {
+    const strip = element.querySelector(
+      ".recipe-output-ingredient-disclosure",
+    ) as HTMLElement;
+    strip.style.maxWidth = "90px";
+  });
+  await expect
+    .poll(async () => (await readStrip(card)).shown, {
+      message: "capacity should shrink with its container",
+    })
+    .toBeLessThan(wide.shown);
+
+  const narrow = await settledStrip(card);
+  expect(narrow.hasTrigger).toBe(true);
+  expect(narrow.shown).toBeGreaterThanOrEqual(1);
+  // The card's own geometry is not a function of how many previews fit.
+  expect(narrow.cardWidth).toBe(wide.cardWidth);
+  expect(narrow.cardHeight).toBe(wide.cardHeight);
+
+  // Releasing the constraint restores the wider capacity.
+  await card.evaluate((element) => {
+    const strip = element.querySelector(
+      ".recipe-output-ingredient-disclosure",
+    ) as HTMLElement;
+    strip.style.maxWidth = "";
+  });
+  await expect.poll(async () => (await readStrip(card)).shown).toBe(wide.shown);
+});
+
+test("a Recipe whose ingredients all fit renders no chevron at all", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/professions/${fixture.profession.slug}`);
+
+  const cards = page.locator(".recipe-output-card--grid");
+  const count = await cards.count();
+  expect(count).toBeGreaterThan(0);
+
+  let sawFitting = false;
+  for (let index = 0; index < count; index += 1) {
+    const strip = await readStrip(cards.nth(index));
+    if (!strip.hasTrigger) {
+      sawFitting = true;
+      // No trigger means the strip claims everything fits, so nothing was
+      // silently dropped.
+      expect(strip.shown).toBeGreaterThan(0);
+    }
+  }
+  expect(
+    sawFitting,
+    "at least one fixture Recipe should fit entirely in its strip",
+  ).toBe(true);
+});
+
+test("the disclosure still lists every ingredient once opened", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/professions/${fixture.profession.slug}`);
+
+  const card = page
+    .locator(".recipe-output-card--grid")
+    .filter({ hasText: dense.name })
+    .first();
+  // The accessible name flips from "Show N more..." to "Hide N additional..."
+  // once open, so the control is pinned by the region it controls instead.
+  const controlled = await card
+    .getByRole("button", { name: /more ingredients/ })
+    .getAttribute("aria-controls");
+  const toggle = card.locator(`button[aria-controls="${controlled}"]`);
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+  const panelRows = card.locator(".recipe-output-ingredient-panel-row");
+  await expect(panelRows).toHaveCount(dense.ingredients.length);
+});
+
+test("the List variant renders every ingredient inline and never discloses", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/professions/${fixture.profession.slug}`);
+
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  const row = page
+    .locator(".recipe-output-card--list")
+    .filter({ hasText: dense.name })
+    .first();
+  await expect(row).toBeVisible();
+
+  await expect(
+    row.locator(".recipe-output-ingredient-list > .recipe-output-ingredient"),
+  ).toHaveCount(dense.ingredients.length);
+  await expect(row.locator(".recipe-output-ingredient-toggle")).toHaveCount(0);
+  await expect(row.locator(".recipe-output-ingredient-disclosure")).toHaveCount(
+    0,
+  );
+});
+
+test("ingredient stages carry the canonical Item hue without touching the art", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  // Canonical Recipe card preview stages...
+  await page.goto(`/professions/${fixture.profession.slug}`);
+  await expect(
+    page.locator(".recipe-output-ingredient-image.item-hue-stage").first(),
+  ).toBeVisible();
+
+  // ...and Recipe DETAIL ingredient rows.
+  await page.goto(`/recipes/${dense.slug}`);
+  const rowStage = page
+    .locator(".recipe-ingredient-row .item-recipe-thumbnail.item-hue-stage")
+    .first();
+  await expect(rowStage).toBeVisible();
+
+  // The contract is the token, not a colour literal: the stage resolves
+  // --resource-hue to the same canonical triple --hue-item carries.
+  const hues = await rowStage.evaluate((element) => ({
+    stage: getComputedStyle(element).getPropertyValue("--resource-hue").trim(),
+    canonical: getComputedStyle(document.documentElement)
+      .getPropertyValue("--hue-item")
+      .trim(),
+  }));
+  expect(hues.canonical).not.toBe("");
+  expect(hues.stage).toBe(hues.canonical);
+
+  // The sprite itself is never filtered or recoloured — only its ground.
+  const art = rowStage.locator("img").first();
+  if (await art.count()) {
+    await expect(art).toHaveCSS("filter", "none");
+  }
+});

@@ -477,3 +477,103 @@ test("under reduced motion the arrow is simply drawn whole, never morphed", asyn
   await expect(page).toHaveURL(`/items/${fixtures.item.slug}`);
   await context.close();
 });
+
+test("inventory rows reuse the Recipe Ingredients row language", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(shopUrl());
+
+  const row = page.locator(".shop-detail-inventory-row").first();
+  // The Recipe detail Ingredients row is the visual authority: same floor,
+  // same tracks, same gap, same surface, same inset.
+  const shape = await row.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      minHeight: style.minHeight,
+      columns: style.gridTemplateColumns.split(" ").length,
+      gap: style.columnGap,
+      padding: `${style.paddingTop} ${style.paddingRight}`,
+    };
+  });
+  expect(shape.minHeight).toBe("50px");
+  // Marker / 32px stage / copy — and deliberately NO Recipe quantity column.
+  expect(shape.columns).toBe(3);
+  expect(shape.gap).toBe("10px");
+  expect(shape.padding).toBe("8px 12px");
+
+  // Shop-specific additions all survive the refactor.
+  await expect(row.locator(".currency-price")).toHaveCount(1);
+  await expect(row.locator(".shop-detail-inventory-link")).toHaveCount(1);
+  await expect(
+    row.getByRole("button", { name: /^Preview / }),
+  ).toHaveCount(1);
+});
+
+test("inventory item stages carry the canonical Item hue", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(shopUrl());
+
+  const stage = page.locator(".shop-detail-inventory-icon.item-hue-stage").first();
+  await expect(stage).toBeVisible();
+  await expect(stage).toHaveCSS("width", "32px");
+  await expect(stage).toHaveCSS("height", "32px");
+
+  // The selected preview is the same Item stage at a larger size.
+  await expect(
+    page.locator(".shop-detail-selected-stage.item-hue-stage"),
+  ).toHaveCount(1);
+
+  // Token contract, not a colour literal.
+  const hues = await stage.evaluate((element) => ({
+    stage: getComputedStyle(element).getPropertyValue("--resource-hue").trim(),
+    canonical: getComputedStyle(document.documentElement)
+      .getPropertyValue("--hue-item")
+      .trim(),
+  }));
+  expect(hues.canonical).not.toBe("");
+  expect(hues.stage).toBe(hues.canonical);
+
+  // The Shop module around it still reads as a Shop surface.
+  const shopHue = await page
+    .locator(".shop-detail-hero")
+    .evaluate((element) =>
+      getComputedStyle(element).getPropertyValue("--resource-hue").trim(),
+    );
+  expect(shopHue).not.toBe(hues.canonical);
+
+  // The art is never filtered or recoloured — only its ground.
+  const art = page
+    .locator(".shop-detail-inventory-icon img")
+    .first();
+  if (await art.count()) {
+    await expect(art).toHaveCSS("filter", "none");
+  }
+});
+
+test("the no-image fallback shares the real icon's footprint and stays readable", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(shopUrl());
+
+  const placeholder = page
+    .locator(".shop-detail-inventory-icon .public-sprite-stage--empty")
+    .first();
+  await expect(placeholder).toHaveCount(1);
+  // Same 32px footprint as a real icon, and no frame of its own: the Item
+  // hue on the surrounding stage is the only treatment.
+  await expect(placeholder).toHaveCSS("width", "32px");
+  await expect(placeholder).toHaveCSS("height", "32px");
+  await expect(placeholder).toHaveCSS("border-top-width", "0px");
+  await expect(placeholder).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+
+  // It still SAYS the image is missing, as real text rather than a
+  // font-size: 0 hack.
+  const fallback = placeholder.locator(".public-sprite-fallback");
+  await expect(fallback).toHaveText(/No image/i);
+  const size = await fallback.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  expect(size).toBeGreaterThan(0);
+});

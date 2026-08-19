@@ -18,7 +18,13 @@ type RecipeOutputCardProps = {
 
 const INGREDIENT_PREVIEW_COUNT = 4;
 
-/** Canonical compact-grid preview budget: past this the chevron appears. */
+/**
+ * The count the SERVER renders for the adaptive grid variants, and the floor
+ * the client starts from before it has measured the strip. It matches the
+ * fixed budget these cards carried previously, so the layouts the design was
+ * tuned around render identically and only genuinely roomier strips change
+ * after hydration -- never a visible collapse.
+ */
 const GRID_VISIBLE_INGREDIENTS = 3;
 
 /**
@@ -55,18 +61,23 @@ export function RecipeOutputCard({
   );
   const ingredientListId = `recipe-${recipe.id}-ingredients`;
   const isCanonicalVariant = variant === "grid" || variant === "list";
+  // Only the compact GRID variants measure. The list variants exist for
+  // density and render every ingredient inline with no chevron at all, so
+  // handing them adaptive capacity would be a regression, not a feature.
+  const isAdaptiveVariant = variant === "grid" || variant === "directory-grid";
   const previewCount =
     variant === "list"
       ? recipe.ingredients.length
       : variant === "directory-list"
       ? 6
-      : variant === "directory-grid" || variant === "grid"
+      : isAdaptiveVariant
       ? GRID_VISIBLE_INGREDIENTS
       : INGREDIENT_PREVIEW_COUNT;
-  const previewIngredients = recipe.ingredients.slice(
-    0,
-    previewCount
-  );
+  // Adaptive variants pass the whole set down and let the strip decide; the
+  // others keep slicing here exactly as before.
+  const previewIngredients = isAdaptiveVariant
+    ? recipe.ingredients
+    : recipe.ingredients.slice(0, previewCount);
   // The canonical list variant slices at the full length, so this is always
   // empty for it — which is what keeps its chevron and panel from ever
   // rendering, rather than a separate branch that could drift.
@@ -115,7 +126,7 @@ export function RecipeOutputCard({
           aria-describedby={tooltipId}
           key={ingredient.id}
         >
-          <span className="recipe-output-ingredient-image">
+          <span className="recipe-output-ingredient-image item-hue-stage">
             <ContentImage
               imagePath={ingredient.item.image}
               alt=""
@@ -167,7 +178,7 @@ export function RecipeOutputCard({
           } as CSSProperties
         }
       >
-        <span className="recipe-output-ingredient-panel-image">
+        <span className="recipe-output-ingredient-panel-image item-hue-stage">
           <ContentImage imagePath={ingredient.item.image} alt="" size="row" />
         </span>
         <span className="recipe-output-ingredient-panel-name">
@@ -229,7 +240,8 @@ export function RecipeOutputCard({
               recipeName={recipe.name}
               previewIngredients={renderIngredients(previewIngredients)}
               expandedIngredients={renderIngredientPanelRows(recipe.ingredients)}
-              remainingCount={remainingIngredients.length}
+              initialVisibleCount={previewCount}
+              totalCount={recipe.ingredients.length}
               popover
             />
           ) : (
@@ -296,7 +308,9 @@ export function RecipeOutputCard({
             className="recipe-output-ingredients"
             aria-label={`Ingredients for ${recipe.name}`}
           >
-            {remainingIngredients.length > 0 ? (
+            {variant === "grid" ? (
+              // Always the disclosure: whether a chevron is needed depends on
+              // the strip's measured width, which only the client knows.
               <RecipeOutputIngredientDisclosure
                 listId={ingredientListId}
                 recipeName={recipe.name}
@@ -306,7 +320,9 @@ export function RecipeOutputCard({
                 expandedIngredients={renderIngredientPanelRows(
                   recipe.ingredients,
                 )}
-                remainingCount={remainingIngredients.length}
+                initialVisibleCount={previewCount}
+                totalCount={recipe.ingredients.length}
+                adaptive
                 popover
               />
             ) : (
@@ -390,7 +406,7 @@ export function RecipeOutputCard({
           aria-label={`Ingredients for ${recipe.name}`}
         >
           <p>Ingredients</p>
-          {remainingIngredients.length > 0 ? (
+          {variant === "directory-grid" || remainingIngredients.length > 0 ? (
             <RecipeOutputIngredientDisclosure
               listId={ingredientListId}
               recipeName={recipe.name}
@@ -400,7 +416,9 @@ export function RecipeOutputCard({
                   ? renderIngredientPanelRows(recipe.ingredients)
                   : renderIngredients(remainingIngredients)
               }
-              remainingCount={remainingIngredients.length}
+              initialVisibleCount={previewCount}
+              totalCount={recipe.ingredients.length}
+              adaptive={variant === "directory-grid"}
               popover={variant === "directory-grid"}
             />
           ) : (

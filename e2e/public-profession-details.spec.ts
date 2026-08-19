@@ -165,8 +165,25 @@ test("Profession detail exposes its complete linked Recipe directory", async ({
   const panelRows = await panel
     .locator(".recipe-output-ingredient-panel-row")
     .count();
-  expect(previewCount).toBe(3);
+  // The visible preview count is now measured from the strip's real width
+  // rather than fixed, so pinning an exact number here would assert a layout
+  // constant instead of the contract. What must hold is that previews are
+  // shown, that they do not cover the whole set (or the disclosure would not
+  // exist), and that the panel answers with every ingredient.
+  expect(previewCount).toBeGreaterThanOrEqual(3);
   expect(panelRows).toBeGreaterThan(previewCount);
+  // Every rendered preview is complete: the trigger still ends inside the
+  // strip that measured them.
+  const previewsFit = await disclosingCard.evaluate((card) => {
+    const strip = card.querySelector(".recipe-output-ingredient-disclosure");
+    const toggle = card.querySelector(".recipe-output-ingredient-toggle");
+    if (!strip || !toggle) return false;
+    return (
+      toggle.getBoundingClientRect().right <=
+      strip.getBoundingClientRect().right + 1
+    );
+  });
+  expect(previewsFit).toBe(true);
   await expect(disclosingCard).toHaveCSS("z-index", "40");
 
   // Clicking outside the card closes it again, still without navigating.
