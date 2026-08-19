@@ -447,12 +447,12 @@ test.describe("public shell layout", () => {
         // composition — the same width Item detail already used. Above
         // 1920px the container grows fluidly (the ultrawide readability
         // pass's `--pf` progress factor, globals.css) from 1760px up to a
-        // 2160px cap at >=3440px.
+        // 2080px cap at >=3440px.
         const pf = Math.min(
           1,
           Math.max(0, (layout.viewportWidth - 1920) / 1520)
         );
-        const expectedWidth = Math.min(layout.viewportWidth, 1760 + 400 * pf);
+        const expectedWidth = Math.min(layout.viewportWidth, 1760 + 320 * pf);
         expect(Math.abs(layout.main.width - expectedWidth)).toBeLessThan(1);
         expect(Math.abs(layout.main.left - layout.header.left)).toBeLessThan(1);
         expect(Math.abs(layout.main.right - layout.header.right)).toBeLessThan(
