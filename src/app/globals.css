@@ -34,6 +34,35 @@
      and its backdrop can never disagree about where the corner curve is. */
   --frame-radius: 14px;
 
+  /* Canonical resource hues ----------------------------------------------
+     ONE `R, G, B` triple per resource family, and the only place these
+     numbers are written down. Every surface that carries resource identity
+     -- detail hero banner, detail hero image stage, directory thumbnail,
+     and each of their no-image states -- derives from the matching triple
+     here and varies only its ALPHA, never its base colour. They are bare
+     triples (not `rgb()`) precisely so each consumer can pick its own
+     alpha via `rgba(var(--hue-x), <a>)`.
+
+     Before this existed, every surface carried its own literal, and they
+     had drifted badly: the Profession directory thumbnail was cream
+     (235,228,208), the Class directory thumbnail was still the old purple
+     (168,138,206) from before Class became crimson, the Shop directory
+     thumbnail was Merchants gold (195,154,75), and the Item directory
+     thumbnail was a lighter blue (90,160,210) than Item detail's. World is
+     deliberately absent: it is a navigation surface, not a resource
+     family, and stays neutral charcoal + Merchants gold. */
+  --hue-item: 55, 108, 145;
+  --hue-recipe: 157, 104, 43;
+  --hue-profession: 142, 92, 186;
+  --hue-class: 186, 61, 61;
+  --hue-location: 70, 142, 88;
+  --hue-shop: 112, 36, 97;
+
+  /* The hue the current subtree should paint with. Defaults to a neutral
+     that reads as "no resource identity"; resource detail heroes and
+     resource directory pages each set it to their own canonical triple. */
+  --resource-hue: 148, 150, 152;
+
   /* Public ultrawide readability scale -----------------------------------
      `--pf` ("progress factor") is a plain unitless number: 0 at <=1920px
      viewport width, growing linearly to exactly 1 at 3440px. Dividing by
@@ -84,17 +113,39 @@
   --header-logo-height: clamp(66px, calc(66px + 6px * var(--pf)), 72px);
   --header-search-width: clamp(230px, calc(230px + 28px * var(--pf)), 258px);
 
-  /* Directory/catalogue cards -- shared by Item, Related Items, Location,
-     and Shop grids, which all converge on the same 13.5px title / 10.5px
-     meta / 12px gap baseline. */
+  /* Compact card typography -- the canonical Recipe RELATIONSHIP cards
+     (Item "Used in recipes", Recipe "Related Recipes", Profession
+     "Recipes") and the Related Items grid. Deliberately separate from the
+     directory tokens below so the resource-directory rebalance cannot
+     resize the relationship cards, whose anatomy is settled. */
   --card-title-font-size: clamp(13.5px, calc(13.5px + 2.5px * var(--pf)), 16px);
   --card-meta-font-size: clamp(10.5px, calc(10.5px + 2.5px * var(--pf)), 13px);
   --card-gap: clamp(12px, calc(12px + 3px * var(--pf)), 15px);
-  --item-card-min-width: clamp(148px, calc(148px + 22px * var(--pf)), 170px);
-  --wide-card-min-width: clamp(220px, calc(220px + 28px * var(--pf)), 248px);
-  --wide-card-image-size: clamp(52px, calc(52px + 8px * var(--pf)), 60px);
-  --wide-card-sprite-size: clamp(34px, calc(34px + 6px * var(--pf)), 40px);
-  --wide-card-padding: clamp(11px, calc(11px + 2px * var(--pf)), 13px);
+
+  /* Resource DIRECTORY cards (/items, /professions, /classes, /locations,
+     /shops). The /recipes directory card is the agreed scale authority and
+     its own typography does not scale with --pf at all (title stays 12px,
+     eyebrow 10px at every width) -- which is precisely why the other
+     families drifted: their titles grew to 16px/21px at 3440 while
+     Recipe's stayed put, so an Item card read visibly heavier than a Recipe
+     card beside it. These endpoints are pulled back toward that reference.
+     The 1920 floors are untouched, so the anchor width is unaffected and
+     only the ultrawide interpolation moves. */
+  --directory-card-title-font-size: clamp(
+    13.5px,
+    calc(13.5px + 1px * var(--pf)),
+    14.5px
+  );
+  --directory-card-meta-font-size: clamp(
+    10.5px,
+    calc(10.5px + 1.25px * var(--pf)),
+    11.75px
+  );
+  --item-card-min-width: clamp(148px, calc(148px + 14px * var(--pf)), 162px);
+  --wide-card-min-width: clamp(220px, calc(220px + 20px * var(--pf)), 240px);
+  --wide-card-image-size: clamp(52px, calc(52px + 5px * var(--pf)), 57px);
+  --wide-card-sprite-size: clamp(34px, calc(34px + 4px * var(--pf)), 38px);
+  --wide-card-padding: clamp(11px, calc(11px + 1px * var(--pf)), 12px);
 
   /* Recipe relationship cards (grid variant: Item "Used in recipes",
      Recipe "Related Recipes", Profession/Class/Location "Recipes"). */
@@ -132,10 +183,10 @@
   --world-tree-indent: clamp(20px, calc(20px + 2px * var(--pf)), 22px);
 
   /* Profession/Class catalogue cards (2-col fixed grid). */
-  --codex-card-gap: clamp(20px, calc(20px + 3px * var(--pf)), 23px);
-  --codex-card-media-size: clamp(130px, calc(130px + 14px * var(--pf)), 144px);
-  --codex-card-sprite-size: clamp(88px, calc(88px + 10px * var(--pf)), 98px);
-  --codex-card-title-font-size: clamp(19px, calc(19px + 2px * var(--pf)), 21px);
+  --codex-card-gap: clamp(20px, calc(20px + 2px * var(--pf)), 22px);
+  --codex-card-media-size: clamp(130px, calc(130px + 8px * var(--pf)), 138px);
+  --codex-card-sprite-size: clamp(88px, calc(88px + 6px * var(--pf)), 94px);
+  --codex-card-title-font-size: clamp(19px, calc(19px + 1px * var(--pf)), 20px);
 }
 
 /* ---- Public design review workspace --------------------------------- */
@@ -2740,6 +2791,34 @@ select:focus-visible {
   gap: 4px;
 }
 
+/* Each resource directory declares its family the same way a detail hero
+   does, so its card thumbnails inherit the SAME canonical triple its detail
+   page uses -- the directory/detail pairing is a variable lookup now, not a
+   pair of literals that have to be kept in sync by hand. */
+.items-directory-page {
+  --resource-hue: var(--hue-item);
+}
+
+.recipes-directory-page {
+  --resource-hue: var(--hue-recipe);
+}
+
+.professions-directory-page {
+  --resource-hue: var(--hue-profession);
+}
+
+.classes-directory-page {
+  --resource-hue: var(--hue-class);
+}
+
+.locations-directory-page {
+  --resource-hue: var(--hue-location);
+}
+
+.shops-directory-page {
+  --resource-hue: var(--hue-shop);
+}
+
 .directory-page > .public-breadcrumb {
   margin-bottom: 0;
 }
@@ -3125,6 +3204,12 @@ select:focus-visible {
     0 0 20px rgba(216, 181, 98, 0.22);
 }
 
+/* Directory thumbnail stages carry their family's canonical hue at a
+   restrained-but-visible strength -- stronger than the broad hero banner
+   (which has a whole hero to cover) but weaker than the detail hero stage
+   (which is the page's focal object). Because the sprite is absent on a
+   no-image card, the same wash is what the fallback reads as, so a
+   placeholder card still belongs to its family instead of going neutral. */
 .item-catalogue-card-media {
   width: 100%;
   aspect-ratio: 1;
@@ -3134,7 +3219,11 @@ select:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 7px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(90, 160, 210, 0.18), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--resource-hue), 0.2),
+      transparent 68%
+    ),
     var(--color-surface);
 }
 
@@ -3146,7 +3235,7 @@ select:focus-visible {
 
 .item-catalogue-card-title {
   margin: 0;
-  font-size: var(--card-title-font-size);
+  font-size: var(--directory-card-title-font-size);
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.25;
@@ -3157,7 +3246,7 @@ select:focus-visible {
 }
 
 .item-catalogue-card-category {
-  font-size: var(--card-meta-font-size);
+  font-size: var(--directory-card-meta-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--color-accent);
@@ -3170,7 +3259,7 @@ select:focus-visible {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: clamp(11.5px, calc(11.5px + 2.5px * var(--pf)), 14px);
+  font-size: clamp(11.5px, calc(11.5px + 1px * var(--pf)), 12.5px);
   line-height: 1.4;
   color: var(--color-text-muted);
 }
@@ -3178,7 +3267,7 @@ select:focus-visible {
 .item-catalogue-card-source {
   border-top: 1px solid var(--color-border-muted);
   padding-top: 6px;
-  font-size: var(--card-meta-font-size);
+  font-size: var(--directory-card-meta-font-size);
   color: var(--color-text-meta-dim);
 }
 
@@ -3342,7 +3431,11 @@ select:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(235, 228, 208, 0.18), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--resource-hue), 0.2),
+      transparent 68%
+    ),
     var(--color-surface);
   overflow: hidden;
 }
@@ -3381,7 +3474,7 @@ select:focus-visible {
 .profession-catalogue-card-type,
 .profession-catalogue-list-type {
   color: var(--color-accent);
-  font-size: var(--card-meta-font-size);
+  font-size: var(--directory-card-meta-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -3903,25 +3996,49 @@ select:focus-visible {
   line-height: 1.15;
 }
 
-/* Resource pages can provide one restrained atmosphere image through this
-   custom property. The layout and contrast remain complete when it is none.
+/* Resource atmosphere -----------------------------------------------------
+   A resource detail hero declares WHICH family it belongs to by setting
+   `--resource-hue` (see the canonical triples in :root); everything else --
+   the gradient shape, the alphas, and the horizontal falloff -- is defined
+   once, here. Previously each of the six variants restated the whole
+   two-layer gradient with its own literals, which is exactly how the
+   families drifted apart from their directory counterparts.
 
-   `--resource-stage-hue` is the same family's hue as a bare `R, G, B`
-   triple so the hero's own image stage can mix it at several alphas (see
-   the shared stage rule below). It inherits down to the stage rather than
-   being re-declared per page, so a family's banner and its image stage can
-   never drift apart -- and it is the SAME rgb triple already used by that
-   variant's `--resource-atmosphere-image`, not a new shade. */
+   `--resource-atmosphere-image` is still the property the ::before paints,
+   so the existing public contract (and the E2E assertions that read it)
+   is unchanged; it is simply composed from the shared hue now. */
 .resource-atmosphere {
-  --resource-atmosphere-image: none;
-  --resource-stage-hue: 148, 150, 152;
+  --resource-atmosphere-image:
+    radial-gradient(
+      circle at 36% 46%,
+      rgba(var(--resource-hue), 0.13),
+      transparent 48%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(var(--resource-hue), 0.062),
+      transparent 66%
+    );
   position: relative;
   isolation: isolate;
 }
 
 /* The wash follows its host's own rounded geometry. Without this it paints a
    square shoulder that reads, at a framed stage flush in the host's corner,
-   as the frame's border cutting across its own backdrop. */
+   as the frame's border cutting across its own backdrop.
+
+   The mask is the banner-bleed fix. The radial used to be centred at 16%,
+   which on a ~1760-2080px hero puts its hottest point directly on top of
+   the 180-200px image stage, and the linear layer started at full strength
+   at the very left edge -- together they painted a thick hue slab under and
+   around the frame, so the left of the hero read as one heavy wash rather
+   than a self-contained tinted stage. The origin now sits at 36% (over the
+   title/description, where the atmosphere actually belongs) and this mask
+   fades the whole layer out across the stage's own column. It is a gradual
+   falloff, not a cut, so there is no vertical seam and atmospheric
+   continuity across the hero is preserved -- the stage simply supplies its
+   own local tint there (see the shared stage rule below) instead of sitting
+   in the banner's. */
 .resource-atmosphere::before {
   position: absolute;
   z-index: 0;
@@ -3929,6 +4046,20 @@ select:focus-visible {
   border-radius: inherit;
   pointer-events: none;
   background: var(--resource-atmosphere-image);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    rgba(0, 0, 0, 0.15) 9%,
+    rgba(0, 0, 0, 0.62) 17%,
+    #000 27%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    rgba(0, 0, 0, 0.15) 9%,
+    rgba(0, 0, 0, 0.62) 17%,
+    #000 27%
+  );
   content: "";
 }
 
@@ -3938,99 +4069,33 @@ select:focus-visible {
 }
 
 .resource-atmosphere--item {
-  --resource-stage-hue: 55, 108, 145;
-  --resource-atmosphere-image:
-    radial-gradient(
-      circle at 16% 48%,
-      rgba(55, 108, 145, 0.12),
-      transparent 43%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(37, 76, 101, 0.055),
-      transparent 62%
-    );
+  --resource-hue: var(--hue-item);
 }
 
 .resource-atmosphere--recipe {
-  --resource-stage-hue: 157, 104, 43;
-  --resource-atmosphere-image:
-    radial-gradient(
-      circle at 16% 48%,
-      rgba(157, 104, 43, 0.135),
-      transparent 43%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(124, 78, 31, 0.065),
-      transparent 62%
-    );
+  --resource-hue: var(--hue-recipe);
 }
 
 /* Amethyst / purple: Profession's own identity, distinct from Class's
    crimson so the two shared-markup detail pages never read as one family. */
 .resource-atmosphere--profession {
-  --resource-stage-hue: 142, 92, 186;
-  --resource-atmosphere-image:
-    radial-gradient(
-      circle at 16% 48%,
-      rgba(142, 92, 186, 0.125),
-      transparent 43%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(107, 68, 145, 0.058),
-      transparent 62%
-    );
+  --resource-hue: var(--hue-profession);
 }
 
 /* Crimson / red. */
 .resource-atmosphere--class {
-  --resource-stage-hue: 186, 61, 61;
-  --resource-atmosphere-image:
-    radial-gradient(
-      circle at 16% 48%,
-      rgba(186, 61, 61, 0.13),
-      transparent 43%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(142, 45, 45, 0.06),
-      transparent 62%
-    );
+  --resource-hue: var(--hue-class);
 }
 
 /* Verdant green -- kept clear of teal/cyan. */
 .resource-atmosphere--location {
-  --resource-stage-hue: 70, 142, 88;
-  --resource-atmosphere-image:
-    radial-gradient(
-      circle at 16% 48%,
-      rgba(70, 142, 88, 0.125),
-      transparent 43%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(48, 108, 65, 0.058),
-      transparent 62%
-    );
+  --resource-hue: var(--hue-location);
 }
 
 /* Deep wine / rose / magenta -- deliberately far from Recipe's amber and
    Class's crimson so Shops read as their own commercial family. */
 .resource-atmosphere--shop {
-  --resource-stage-hue: 112, 36, 97;
-  --resource-atmosphere-image:
-    radial-gradient(
-      circle at 16% 48%,
-      rgba(112, 36, 97, 0.135),
-      transparent 43%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(84, 27, 74, 0.062),
-      transparent 62%
-    );
+  --resource-hue: var(--hue-shop);
 }
 
 /* One shared hero image-stage treatment for every resource family --------
@@ -4039,8 +4104,9 @@ select:focus-visible {
    its banner read amethyst: the tint was a single 0.2-alpha wash covering
    only the box's top-left 62%, most of which the sprite then sat on top of.
    This replaces all six copies with one rule driven by the inherited
-   `--resource-stage-hue`, so a family's stage can never drift from its
-   banner again. Geometry is deliberately untouched -- size, border width,
+   `--resource-hue`, so a family's stage can never drift from its banner --
+   or from its own directory thumbnail, which now derives from the same
+   canonical triple. Geometry is deliberately untouched -- size, border width,
    radius, overflow, box-sizing and sprite sizing all still come from the
    per-page rules; only hue/tint is set here. The inner glow is a soft wash
    rather than a 1px inset ring precisely so it never reads as a second
@@ -4055,21 +4121,21 @@ select:focus-visible {
   border-color: color-mix(
     in srgb,
     var(--color-border) 78%,
-    rgb(var(--resource-stage-hue))
+    rgb(var(--resource-hue))
   );
   background:
     radial-gradient(
       circle at 50% 38%,
-      rgba(var(--resource-stage-hue), 0.28),
+      rgba(var(--resource-hue), 0.28),
       transparent 72%
     ),
     linear-gradient(
       158deg,
-      rgba(var(--resource-stage-hue), 0.15),
+      rgba(var(--resource-hue), 0.15),
       transparent 68%
     ),
     var(--color-inset-surface);
-  box-shadow: inset 0 0 26px rgba(var(--resource-stage-hue), 0.14);
+  box-shadow: inset 0 0 26px rgba(var(--resource-hue), 0.14);
 }
 
 /* Public Item detail --------------------------------------------------- */
@@ -4609,7 +4675,11 @@ a.item-info-chip:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 7px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(90, 160, 210, 0.18), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--hue-item), 0.2),
+      transparent 68%
+    ),
     var(--color-surface);
 }
 
@@ -5888,8 +5958,17 @@ body:has(.recipe-detail-page) .public-site-footer {
      the card's own focus-within/hover border, which uses that token at 100%. */
   border: 1px solid color-mix(in srgb, var(--color-accent) 58%, transparent);
   border-radius: 8px;
+  /* The wash is Recipe's canonical amber, NOT the Merchants gold it used to
+     restate literally -- that gold was what made the Recipe directory read
+     as a different family from Recipe detail. The gold FRAME above is a
+     separate, deliberate brand decision (see the comment on the border) and
+     is kept. */
   background:
-    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.14), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--hue-recipe), 0.2),
+      transparent 68%
+    ),
     var(--color-surface);
   overflow: hidden;
 }
@@ -6196,7 +6275,11 @@ body:has(.recipe-detail-page) .public-site-footer {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.14), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--hue-recipe), 0.2),
+      transparent 68%
+    ),
     var(--color-surface);
 }
 
@@ -11630,7 +11713,11 @@ a.profession-detail-chip:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 11px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.14), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--hue-recipe), 0.2),
+      transparent 68%
+    ),
     var(--color-surface);
 }
 
@@ -11949,7 +12036,11 @@ a.profession-detail-chip:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.14), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--hue-recipe), 0.2),
+      transparent 68%
+    ),
     var(--color-surface);
 }
 
@@ -12330,7 +12421,11 @@ a.profession-detail-chip:focus-visible {
   --sprite-image-size: var(--wide-card-sprite-size);
   border-color: var(--color-border);
   background:
-    radial-gradient(circle at 30% 22%, rgba(122, 168, 110, 0.2), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--resource-hue), 0.22),
+      transparent 68%
+    ),
     var(--color-background);
 }
 
@@ -12360,7 +12455,7 @@ a.profession-detail-chip:focus-visible {
   overflow: hidden;
   margin: 0 0 3px;
   color: var(--color-text);
-  font-size: var(--card-title-font-size);
+  font-size: var(--directory-card-title-font-size);
   font-weight: 700;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -12376,7 +12471,7 @@ a.profession-detail-chip:focus-visible {
   min-width: 0;
   overflow: hidden;
   color: var(--color-text-meta-dim);
-  font-size: var(--card-meta-font-size);
+  font-size: var(--directory-card-meta-font-size);
   line-height: 1.5;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -12703,7 +12798,11 @@ a.profession-detail-chip:focus-visible {
   width: 52px;
   height: 52px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(122, 168, 110, 0.2), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--hue-location), 0.22),
+      transparent 68%
+    ),
     var(--color-background);
 }
 
@@ -12873,8 +12972,8 @@ a.profession-detail-chip:focus-visible {
     0 0 20px rgba(216, 181, 98, 0.22);
 }
 
-/* Same catalogue stage the Locations directory uses, differing only in its
-   gold (rather than green) tint — including the compact row fallback. */
+/* Same catalogue stage the Locations directory uses; the tint differs only
+   because each page supplies its own canonical --resource-hue. */
 .shop-directory-card-media,
 .shop-directory-card-media .public-sprite-stage--row {
   width: var(--wide-card-image-size);
@@ -12886,7 +12985,11 @@ a.profession-detail-chip:focus-visible {
   --sprite-image-size: var(--wide-card-sprite-size);
   border-color: var(--color-border);
   background:
-    radial-gradient(circle at 30% 22%, rgba(195, 154, 75, 0.2), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--resource-hue), 0.22),
+      transparent 68%
+    ),
     var(--color-background);
 }
 
@@ -12975,7 +13078,11 @@ a.profession-detail-chip:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(168, 138, 206, 0.18), transparent 62%),
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--resource-hue), 0.2),
+      transparent 68%
+    ),
     var(--color-surface);
   overflow: hidden;
 }
@@ -13014,7 +13121,7 @@ a.profession-detail-chip:focus-visible {
 .class-catalogue-card-type,
 .class-catalogue-list-type {
   color: var(--color-accent);
-  font-size: var(--card-meta-font-size);
+  font-size: var(--directory-card-meta-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
