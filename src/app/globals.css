@@ -14011,14 +14011,26 @@ a.shop-detail-chip:focus-visible {
   flex: none;
 }
 
+/* World is a navigation surface, not a resource family, so this stage
+   carries NO resource hue -- it is charcoal only. It used to restate
+   Location's green literal, which read as a World identity the design
+   language deliberately does not have; the records it shows are Locations,
+   but the World navigator itself stays neutral (see the Merchants gold
+   accents elsewhere on this page, which are the ordinary shared accent and
+   are unchanged). Geometry, sizing and the sprite scale above are
+   untouched. */
 .world-detail-stage .public-sprite-stage--row {
   --sprite-image-size: clamp(70px, calc(70px + 12px * var(--pf)), 82px);
   box-sizing: border-box;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background:
-    radial-gradient(circle at 30% 22%, rgba(122, 168, 110, 0.2), transparent 62%),
-    var(--color-surface);
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(255, 255, 255, 0.028),
+      transparent 68%
+    ),
+    var(--color-inset-surface);
 }
 
 .world-detail-copy {
