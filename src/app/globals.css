@@ -51,7 +51,15 @@
      thumbnail was a lighter blue (90,160,210) than Item detail's. World is
      deliberately absent: it is a navigation surface, not a resource
      family, and stays neutral charcoal + Merchants gold. */
-  --hue-item: 55, 108, 145;
+  /* Lightened from 55,108,145 (2026-08-20). The old value was a deep steel
+     blue tuned for the 192px Item detail hero, where a low-alpha wash has a
+     lot of area to read across. On the small embedded Item stages -- 32-42px
+     ingredient and inventory squares -- the same wash sat too close to the
+     charcoal ground to register as blue at all. This is the same sapphire
+     family raised toward sky: B > G > R is preserved at similar spacing
+     (G-R 56, B-G 46), so it never crosses into cyan, and it still holds
+     contrast against ivory text, gold borders and the sprites themselves. */
+  --hue-item: 96, 152, 198;
   --hue-recipe: 157, 104, 43;
   --hue-profession: 142, 92, 186;
   --hue-class: 186, 61, 61;
@@ -4390,40 +4398,6 @@ select:focus-visible {
   box-shadow: inset 0 0 26px rgba(var(--resource-hue), 0.14);
 }
 
-/* Embedded Item stage ---------------------------------------------------
-   The small square an Item's art sits on when it appears INSIDE another
-   resource's surface: a Recipe's ingredient rows and preview chips, a Shop's
-   inventory rows and selected preview. The parent surface keeps its own
-   family (Recipe amber, Shop wine); this stage quietly says "the thing on it
-   is an Item" by reusing the one canonical --hue-item triple the Item detail
-   hero and the Item directory thumbnails already derive from -- never a
-   second blue literal.
-
-   Alphas are deliberately below the hero stage's (0.28/0.15): these boxes are
-   32-42px, so the same wash that reads as restrained at 192px would read as a
-   blue tile here. Only the ground and border are tinted. The sprite itself is
-   never filtered, hue-rotated, or recolored. */
-.item-hue-stage {
-  --resource-hue: var(--hue-item);
-  border-color: color-mix(
-    in srgb,
-    var(--color-border) 80%,
-    rgb(var(--resource-hue))
-  );
-  background:
-    radial-gradient(
-      circle at 50% 34%,
-      rgba(var(--resource-hue), 0.2),
-      transparent 74%
-    ),
-    linear-gradient(
-      158deg,
-      rgba(var(--resource-hue), 0.11),
-      transparent 70%
-    ),
-    var(--color-inset-surface);
-}
-
 /* Public Item detail --------------------------------------------------- */
 .item-detail-page {
   display: grid;
@@ -5495,10 +5469,6 @@ body:has(.recipe-detail-page) .public-site-footer {
   height: 32px;
   box-sizing: border-box;
   flex: none;
-  /* Geometry only: border-color and background belong to .item-hue-stage,
-     which this selector out-specifies -- so neither is declared here. */
-  border-width: 1px;
-  border-style: solid;
   border-radius: 7px;
   transition: filter 0.18s ease;
 }
@@ -6082,15 +6052,6 @@ body:has(.recipe-detail-page) .public-site-footer {
   justify-content: center;
 }
 
-/* Geometry only; .item-hue-stage supplies the tint. The radius sits just
-   inside the chip's own 7px so the ground never squares off in its corner. */
-.recipe-output-ingredient-image,
-.recipe-output-ingredient-panel-image {
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 6px;
-}
-
 .recipe-output-ingredient-image .public-sprite-stage--row,
 .recipe-output-tooltip-image .public-sprite-stage--row {
   --sprite-stage-size: 36px;
@@ -6209,8 +6170,14 @@ body:has(.recipe-detail-page) .public-site-footer {
    where the slip leaves that frame 2px wider than every sibling. */
 .recipe-output-card--directory-grid {
   --recipe-card-preview: 36px;
-  --recipe-card-trigger: 25px;
-  --recipe-card-rhythm: 9px;
+  /* The trigger holds a 12px chevron; 25px reserved more than it needs and,
+     with a full 9px rhythm, left the strip 4px short of a fourth complete
+     36px preview on ultrawide -- ~41px of visibly empty trailing space that
+     could not be used. The preview size itself is untouched (it is the
+     approved one); only the chevron's own reserve and the rhythm give, and
+     both stay comfortable. */
+  --recipe-card-trigger: 22px;
+  --recipe-card-rhythm: 8px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -12151,6 +12118,11 @@ a.profession-detail-chip:focus-visible {
 .recipe-output-card--grid .recipe-output-ingredient-toggle {
   width: 24px;
   min-height: 24px;
+  /* The shared base rule pins the trigger to `align-self: start`, which
+     out-specifies the strip's own `align-items: center` and left the chevron
+     hanging at the top of a 42px preview row. It centres against the
+     previews it follows. */
+  align-self: center;
   border-radius: 6px;
   padding: 0;
   font-size: 10.5px;
@@ -13693,8 +13665,9 @@ a.shop-detail-chip:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Geometry only: this is an Item's art, so its ground and border colour
-     come from .item-hue-stage rather than the Shop module's gold. */
+  /* This stage already WAS the module's single framed image area, so it
+     keeps its frame -- only the colour of that frame and its ground move to
+     the Item hue. No nested stage is introduced. */
   border-width: 1px;
   border-style: solid;
   border-radius: 10px;
@@ -13830,10 +13803,6 @@ a.shop-detail-chip:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Geometry only -- border-color and background come from
-     .item-hue-stage, which this selector out-specifies. */
-  border-width: 1px;
-  border-style: solid;
   border-radius: 7px;
   transition: transform 0.18s ease;
 }
@@ -14644,4 +14613,93 @@ a.shop-detail-chip:focus-visible {
   .world-item-chips a {
     transition: none;
   }
+}
+
+/* ===== Embedded Item stage =============================================
+   The surface an Item's art sits on when it appears INSIDE another
+   resource: a Recipe's ingredient chips and rows, its crafted result, a
+   Shop's inventory rows and selected preview. The parent keeps its own
+   family (Recipe amber, Shop wine); this says "the thing on this stage is
+   an Item" using the ONE canonical --hue-item triple that Item detail's
+   hero and the Item directory thumbnails already derive from.
+
+   The rule paints the element that is ALREADY that surface's single framed
+   image area. It never adds a border of its own and never introduces a
+   nested stage -- doing that is exactly what produced the double-frame look
+   this replaces (an outer chip frame with a second blue framed box inside
+   it). Where the surface has no frame at all, the hue is simply the ground
+   the sprite sits on, and that stays frameless.
+
+   Declared at the end of the sheet on purpose: several consumers set their
+   own background/border-color at higher specificity than a single class,
+   and ordering is the honest way to let the hue win without selector
+   inflation. Alphas stay below the 192px hero stage's (0.28/0.15) because
+   these boxes are 28-88px. The sprite itself is never filtered,
+   hue-rotated, or recolored -- only its ground. */
+.item-hue-stage {
+  --resource-hue: var(--hue-item);
+}
+
+.item-hue-stage,
+.recipe-output-card--directory-grid
+  .recipe-output-ingredient-list
+  > .recipe-output-ingredient.item-hue-stage,
+.recipe-result-image-stage.item-hue-stage .public-sprite-stage--card {
+  border-color: color-mix(
+    in srgb,
+    var(--color-border) 72%,
+    rgb(var(--resource-hue))
+  );
+  background:
+    radial-gradient(
+      circle at 50% 34%,
+      rgba(var(--resource-hue), 0.22),
+      transparent 74%
+    ),
+    linear-gradient(
+      158deg,
+      rgba(var(--resource-hue), 0.13),
+      transparent 70%
+    ),
+    var(--color-inset-surface);
+}
+
+/* The directory preview is deliberately frameless (border: 0 from its own
+   rule); it only gains the ground, plus the same corner radius the canonical
+   chip uses so the wash never reads as a hard square. */
+.recipe-output-card--directory-grid
+  .recipe-output-ingredient-list
+  > .recipe-output-ingredient.item-hue-stage {
+  border-radius: 7px;
+}
+
+/* The crafted result's outer span is a bare positioning wrapper -- the
+   sprite stage inside it is the framed area, so the wrapper itself must
+   stay unpainted or it would become the second frame. */
+.recipe-result-image-stage.item-hue-stage {
+  background: none;
+}
+
+/* Hover keeps the Item ground and only warms the frame, so the Recipe
+   card's amber interaction language still reads without the stage losing
+   the identity it is there to carry. */
+.recipe-output-ingredient.item-hue-stage:hover,
+.recipe-output-ingredient.item-hue-stage:focus-visible {
+  border-color: color-mix(
+    in srgb,
+    var(--color-border) 58%,
+    var(--color-accent)
+  );
+  background:
+    radial-gradient(
+      circle at 50% 34%,
+      rgba(var(--resource-hue), 0.3),
+      transparent 74%
+    ),
+    linear-gradient(
+      158deg,
+      rgba(var(--resource-hue), 0.17),
+      transparent 70%
+    ),
+    var(--color-surface-soft);
 }

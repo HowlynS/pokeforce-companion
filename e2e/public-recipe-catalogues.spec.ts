@@ -1469,8 +1469,10 @@ test("ingredient stages carry the canonical Item hue without touching the art", 
 
   // Canonical Recipe card preview stages...
   await page.goto(`/professions/${fixture.profession.slug}`);
+  // The hue lives on the CHIP -- the preview's own framed stage -- not on a
+  // nested span inside it.
   await expect(
-    page.locator(".recipe-output-ingredient-image.item-hue-stage").first(),
+    page.locator(".recipe-output-ingredient.item-hue-stage").first(),
   ).toBeVisible();
 
   // ...and Recipe DETAIL ingredient rows.
@@ -1493,6 +1495,148 @@ test("ingredient stages carry the canonical Item hue without touching the art", 
 
   // The sprite itself is never filtered or recoloured — only its ground.
   const art = rowStage.locator("img").first();
+  if (await art.count()) {
+    await expect(art).toHaveCSS("filter", "none");
+  }
+});
+
+test("the disclosure chevron centres against the previews it follows", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+
+  for (const [route, selector] of [
+    [`/professions/${fixture.profession.slug}`, ".recipe-output-card--grid"],
+    ["/recipes", ".recipe-output-card--directory-grid"],
+  ] as const) {
+    for (const viewport of [
+      { name: "1920x1080", width: 1920, height: 1080 },
+      { name: "2560x1440", width: 2560, height: 1440 },
+      { name: "3440x1440", width: 3440, height: 1440 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto(route);
+      const card = page.locator(selector).filter({ hasText: dense.name }).first();
+      await expect(card).toBeVisible();
+      await settledStrip(card);
+
+      const alignment = await card.evaluate((element) => {
+        const chips = Array.from(
+          element.querySelectorAll(
+            ".recipe-output-ingredient-list > .recipe-output-ingredient",
+          ),
+        );
+        const toggle = element.querySelector(
+          ".recipe-output-ingredient-toggle",
+        );
+        if (chips.length === 0 || !toggle) return null;
+        const chip = chips[0].getBoundingClientRect();
+        const trigger = toggle.getBoundingClientRect();
+        return {
+          centreDelta:
+            (trigger.top + trigger.bottom) / 2 - (chip.top + chip.bottom) / 2,
+          alignSelf: getComputedStyle(toggle).alignSelf,
+        };
+      });
+      if (!alignment) continue;
+
+      // Centred against the preview row, not pinned to its top edge.
+      expect(
+        Math.abs(alignment.centreDelta),
+        `${route} @ ${viewport.name}: chevron must centre on the previews`,
+      ).toBeLessThanOrEqual(1);
+      expect(alignment.alignSelf).not.toBe("start");
+    }
+  }
+});
+
+test("the Item hue fills the existing stage instead of nesting a second one", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/professions/${fixture.profession.slug}`);
+
+  const card = page
+    .locator(".recipe-output-card--grid")
+    .filter({ hasText: dense.name })
+    .first();
+  await expect(card).toBeVisible();
+
+  // The chip itself is the hued stage...
+  const chip = card.locator(".recipe-output-ingredient").first();
+  await expect(chip).toHaveClass(/item-hue-stage/);
+
+  // ...and the image span inside it is NOT a second framed stage. This is the
+  // exact shape of the double-frame regression: an outer chip frame with a
+  // bordered blue box drawn inside it.
+  const inner = chip.locator(".recipe-output-ingredient-image");
+  await expect(inner).toHaveCount(1);
+  await expect(inner).not.toHaveClass(/item-hue-stage/);
+  await expect(inner).toHaveCSS("border-top-width", "0px");
+  await expect(inner).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(inner).toHaveCSS("background-image", "none");
+
+  // Exactly one element in the chip draws a border: the chip.
+  const borderedBoxes = await chip.evaluate((element) => {
+    const nodes = [element, ...Array.from(element.querySelectorAll("*"))];
+    return nodes.filter(
+      (node) =>
+        Number.parseFloat(getComputedStyle(node).borderTopWidth) > 0 &&
+        !node.classList.contains("recipe-output-tooltip") &&
+        !node.closest(".recipe-output-tooltip") &&
+        !node.classList.contains("recipe-output-ingredient-quantity-badge"),
+    ).length;
+  });
+  expect(borderedBoxes, "one visible frame per preview stage").toBe(1);
+});
+
+test("the crafted result Item carries the Item hue on its own single stage", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`/recipes/${dense.slug}`);
+
+  const stage = page.locator(".recipe-result-image-stage.item-hue-stage");
+  await expect(stage).toHaveCount(1);
+
+  const painted = await stage.evaluate((element) => {
+    const wrapper = getComputedStyle(element);
+    const inner = element.querySelector(".public-sprite-stage--card");
+    const innerStyle = inner ? getComputedStyle(inner) : null;
+    return {
+      // The positioning wrapper must stay unpainted, or it becomes the
+      // second frame behind the sprite stage.
+      wrapperBackground: wrapper.backgroundImage,
+      wrapperBorder: wrapper.borderTopWidth,
+      innerBackground: innerStyle?.backgroundImage ?? "",
+      hue: wrapper.getPropertyValue("--resource-hue").trim(),
+    };
+  });
+  expect(painted.wrapperBackground).toBe("none");
+  expect(Number.parseFloat(painted.wrapperBorder)).toBe(0);
+  // The framed sprite stage inside it is what carries the hue.
+  expect(painted.innerBackground).toContain("gradient");
+
+  const canonical = await page.evaluate(() =>
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--hue-item")
+      .trim(),
+  );
+  expect(painted.hue).toBe(canonical);
+
+  // The Recipe page around it stays amber.
+  const recipeHue = await page
+    .locator(".resource-atmosphere")
+    .first()
+    .evaluate((element) =>
+      getComputedStyle(element).getPropertyValue("--resource-hue").trim(),
+    );
+  expect(recipeHue).not.toBe(canonical);
+
+  // The art is never recoloured.
+  const art = stage.locator("img").first();
   if (await art.count()) {
     await expect(art).toHaveCSS("filter", "none");
   }

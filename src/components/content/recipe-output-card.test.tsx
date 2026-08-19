@@ -43,8 +43,13 @@ const sparseRecipe: RecipeOutputCardValue = {
   ingredients: recipe.ingredients.slice(0, 3),
 };
 
+/** Preview chips only. The chip carries the Item-hue marker alongside its
+    own class, so the name is matched at a token boundary rather than as the
+    entire attribute value. */
+const CHIP_CLASS = /class="recipe-output-ingredient[ "]/g;
+
 const countIngredients = (html: string) =>
-  html.match(/class="recipe-output-ingredient"/g)?.length ?? 0;
+  html.match(CHIP_CLASS)?.length ?? 0;
 
 describe("RecipeOutputCard", () => {
   it("renders four ingredient links and discloses the fifth", () => {
@@ -55,7 +60,7 @@ describe("RecipeOutputCard", () => {
       'aria-label="Dense Recipe, produces ×2–4 Dense Result, category Tools, Smithing level 25"'
     );
     expect(html).toContain("×2–4");
-    expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(4);
+    expect(html.match(CHIP_CLASS)).toHaveLength(4);
     expect(html).toContain("Smithing");
     expect(html).toContain("Level 25");
     expect(html).toContain("recipe-output-ingredient-toggle-chevron");
@@ -91,7 +96,7 @@ describe("RecipeOutputCard", () => {
     expect(html).toContain("recipe-output-experience");
     expect(html).toContain("+120 EXP");
     expect(html).toContain('href="/recipes/dense-recipe"');
-    expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(5);
+    expect(html.match(CHIP_CLASS)).toHaveLength(5);
   });
 
   it("caps the directory grid preview at three ingredients", () => {
@@ -99,7 +104,7 @@ describe("RecipeOutputCard", () => {
       <RecipeOutputCard recipe={recipe} variant="directory-grid" />
     );
 
-    expect(html.match(/class="recipe-output-ingredient"/g)).toHaveLength(3);
+    expect(html.match(CHIP_CLASS)).toHaveLength(3);
     expect(html).toContain("recipe-output-ingredient-toggle-chevron");
     expect(html).not.toContain(">+2<");
     expect(html).toContain("recipe-output-ingredient-quantity-badge");

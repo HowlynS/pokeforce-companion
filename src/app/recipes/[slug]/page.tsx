@@ -219,7 +219,7 @@ export default async function RecipeDetailPage({
                   className="item-recipe-row recipe-result-row"
                   href={`/items/${recipe.resultingItem.slug}`}
                 >
-                  <span className="recipe-result-image-stage">
+                  <span className="recipe-result-image-stage item-hue-stage">
                     <ContentImage
                       imagePath={recipe.resultingItem.image}
                       alt={`Image of ${recipe.resultingItem.name}`}

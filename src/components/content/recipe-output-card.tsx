@@ -120,13 +120,13 @@ export function RecipeOutputCard({
 
       return (
         <Link
-          className="recipe-output-ingredient"
+          className="recipe-output-ingredient item-hue-stage"
           href={`/items/${ingredient.item.slug}`}
           aria-label={`${ingredient.item.name}, required quantity ×${ingredient.quantity}`}
           aria-describedby={tooltipId}
           key={ingredient.id}
         >
-          <span className="recipe-output-ingredient-image item-hue-stage">
+          <span className="recipe-output-ingredient-image">
             <ContentImage
               imagePath={ingredient.item.image}
               alt=""
