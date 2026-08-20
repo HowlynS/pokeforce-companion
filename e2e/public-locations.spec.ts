@@ -260,3 +260,37 @@ test("Location detail renders direct children in the handoff grid/list directory
     await expectNoHorizontalOverflow(page);
   }
 });
+
+test("Location detail carries the shared verification card in its sidebar", async ({
+  page,
+}) => {
+  await page.goto("/locations/test-e2e-location-public-directory-region");
+
+  // Locations participate in the same structured verification system as
+  // every other resource detail page: one card, in the page's own
+  // information column, never a badge in the hero.
+  const card = page.locator(".public-verification-card");
+  await expect(card).toHaveCount(1);
+  await expect(card).toBeVisible();
+  await expect(
+    page.locator(".location-detail-sidebar .public-verification-card"),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(".location-detail-hero .public-verification-card"),
+  ).toHaveCount(0);
+  await expect(card).toContainText(/Verified|Unverified/);
+
+  // The sidebar collapses on narrow layouts; the card follows it to the end
+  // of the page rather than breaking out of the layout.
+  for (const viewport of [
+    { width: 1920, height: 1080 },
+    { width: 3440, height: 1440 },
+    { width: 1100, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.reload();
+    await expect(card).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  }
+});

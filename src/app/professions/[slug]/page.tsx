@@ -9,7 +9,7 @@ import {
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
-import { VerificationStatus } from "@/components/ui/verification-status";
+import { VerificationCard } from "@/components/ui/verification-card";
 import { cataloguePageHref } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
@@ -75,10 +75,7 @@ export default async function ProfessionDetailPage({
           </div>
 
           <div className="profession-detail-copy">
-            <div className="detail-hero-topline">
-              <p className="profession-detail-eyebrow">Profession</p>
-              <VerificationStatus stamp={profession} />
-            </div>
+            <p className="profession-detail-eyebrow">Profession</p>
             <h1 id="profession-title" className="public-resource-title">
               {profession.name}
             </h1>
@@ -124,6 +121,11 @@ export default async function ProfessionDetailPage({
           <RecipeCollectionSection title="Recipes" grid={grid} list={list} />
         ) : null}
 
+
+        <VerificationCard
+          stamp={profession}
+          className="public-verification-card--standalone"
+        />
         {updatedAt ? (
           <p className="profession-updated">Updated {updatedAt}</p>
         ) : null}

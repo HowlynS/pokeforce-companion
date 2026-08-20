@@ -8,7 +8,7 @@ import { RichTextContent } from "@/components/content/rich-text-content";
 import { ShopInventory } from "@/components/content/shop-inventory";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
-import { VerificationStatus } from "@/components/ui/verification-status";
+import { VerificationCard } from "@/components/ui/verification-card";
 import { canExposePublicContent } from "@/lib/access/require-site-access";
 import { prisma } from "@/lib/db";
 import {
@@ -152,10 +152,7 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
             />
           </div>
           <div className="shop-detail-copy">
-            <div className="detail-hero-topline">
-              <p className="shop-detail-eyebrow">Shop</p>
-              <VerificationStatus stamp={shop} />
-            </div>
+            <p className="shop-detail-eyebrow">Shop</p>
             <h1 id="shop-title" className="public-resource-title">
               {shop.name}
             </h1>
@@ -227,6 +224,11 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
             }))}
           />
         ) : null}
+
+        <VerificationCard
+          stamp={shop}
+          className="public-verification-card--standalone"
+        />
       </article>
     </AppShell>
   );

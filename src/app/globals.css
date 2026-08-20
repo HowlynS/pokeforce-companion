@@ -181,17 +181,23 @@
 
   /* Recipe relationship card, list variant -- the identity block's three
      fixed columns (image/name/profession) plus their shared gap, kept as
-     one set so the header row and every card row always agree. The identity
-     width is the sum of the three columns plus two gaps at BOTH ends of the
-     ramp (48+100+72+2*12 = 244; 54+112+80+2*13.5 = 273), so the header row
-     and every card row stay aligned at every viewport width. */
-  --recipe-list-gap: clamp(12px, calc(12px + 1.5px * var(--pf)), 13.5px);
-  --recipe-list-col-image: clamp(48px, calc(48px + 6px * var(--pf)), 54px);
-  --recipe-list-col-name: clamp(100px, calc(100px + 12px * var(--pf)), 112px);
-  --recipe-list-col-profession: clamp(72px, calc(72px + 8px * var(--pf)), 80px);
-  --recipe-list-identity-width: clamp(244px, calc(244px + 29px * var(--pf)), 273px);
-  --recipe-list-col-exp: clamp(50px, calc(50px + 6px * var(--pf)), 56px);
-  --recipe-list-sprite-size: clamp(44px, calc(44px + 6px * var(--pf)), 50px);
+     one set so the header row and every card row always agree.
+
+     These are FIXED, not --pf ramps, because the /recipes directory list is
+     this row's visual authority and that list is itself fixed (48px stage,
+     44px sprite, 14px gap, 6px 14px inset). Scaling them made the compact
+     row grow to a 72px height on ultrawide against the directory row's
+     ~62px -- the "oversized" reading -- and, worse, the sprite ramp topped
+     out at 50px inside a 48px border-box stage, so the art escaped its own
+     rounded frame at wide widths. One fixed rhythm removes both.
+     Identity width = 48 + 110 + 80 + 2*14 = 266. */
+  --recipe-list-gap: 14px;
+  --recipe-list-col-image: 48px;
+  --recipe-list-col-name: 110px;
+  --recipe-list-col-profession: 80px;
+  --recipe-list-identity-width: 266px;
+  --recipe-list-col-exp: 56px;
+  --recipe-list-sprite-size: 44px;
 
   /* Shared by the Item directory rail and Location detail sidebar, both
      of which converge on 272px today. */
@@ -2726,153 +2732,85 @@ select:focus-visible {
   min-width: 0;
 }
 
-/* Shared resource-hero top line -- row 1 of every detail header:
-   the resource eyebrow on the left, the verification chip on the right.
-
-   The chip lives INSIDE the hero's own copy column rather than being
-   absolutely positioned against whichever ancestor happened to be
-   `position: relative` on that page (which is what previously made it land
-   in a different place on Item/Recipe than on Profession/Class/Shop, and
-   read as an orphan badge floating above the header box). Because it is now
-   an ordinary flex child, the same structure holds whether the hero has a
-   long eyebrow or a short one, and the row never collapses: the eyebrow is
-   always rendered, so `space-between` always has two ends to work with. */
-.detail-hero-topline {
+/* Verified-information card -------------------------------------------
+   Verification is structured detail information, shown as an ordinary panel
+   in whatever information column the page already has, never as a badge
+   floating in a hero. Item and Location put it in their sidebars; the
+   sidebar-less pages (Recipe, Profession, Class, Shop) close with it. When a
+   sidebar layout collapses at narrow widths its own existing media query
+   already reflows the column to the end of the page, so the card follows
+   the host column rather than needing placement rules of its own. */
+.public-verification-card {
   min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  padding: clamp(18px, calc(18px + 3px * var(--pf)), 21px);
+}
+
+.public-verification-card > h2 {
+  margin: 0 0 14px;
+  color: var(--color-accent-soft);
+  font-size: clamp(12px, calc(12px + 2.5px * var(--pf)), 14.5px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.public-verification-card-status {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  /* Inherits the bottom margin the page's own eyebrow used to carry, so
-     moving the eyebrow into this row changes placement, never rhythm. */
-  margin-bottom: var(--detail-hero-topline-gap, 14px);
-}
-
-/* The eyebrow keeps whatever type styling its own page already gave it; the
-   top line only takes over its bottom margin, so the row's rhythm is owned
-   in exactly one place per hero family. */
-.detail-hero-topline > .item-category-label,
-.detail-hero-topline > .profession-detail-eyebrow,
-.detail-hero-topline > .shop-detail-eyebrow {
-  min-width: 0;
+  gap: 6px;
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* The Profession/Class and Shop heroes run a smaller type scale and always
-   used an 8px eyebrow gap; the Item/Recipe hero used 14px. */
-.profession-detail-copy .detail-hero-topline,
-.shop-detail-copy .detail-hero-topline {
-  --detail-hero-topline-gap: 8px;
-}
-
-.verification-status {
-  position: relative;
-  flex: none;
-  display: inline-flex;
-}
-
-.verification-status-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-inset-surface);
-  padding: 3px 10px;
   color: var(--color-text-meta-dim);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    color 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.verification-status--verified .verification-status-trigger {
-  border-color: color-mix(in srgb, var(--color-accent-soft) 50%, transparent);
-  color: var(--color-accent-soft);
-}
-
-.verification-status-trigger:hover,
-.verification-status-trigger:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-surface-soft);
-  color: var(--color-accent-bright);
-}
-
-/* Anchored to the chip, always dropping straight DOWN from it and aligned to
-   its right edge -- the chip is itself the right-hand end of the hero's top
-   line, so a right-aligned panel always grows back across the hero it belongs
-   to and can never reach the opposite side of the screen. `max-width` keeps
-   it inside the viewport on the narrowest layouts without needing a
-   measure-and-flip pass. */
-.verification-status-panel {
-  position: absolute;
-  z-index: 6;
-  top: calc(100% + 6px);
-  right: 0;
-  left: auto;
-  width: max-content;
-  max-width: min(260px, calc(100vw - 32px));
-  display: grid;
-  gap: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-inset-surface);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-  padding: 10px 12px;
-  color: var(--color-text-body);
-  font-size: 12px;
-  line-height: 1.4;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-4px);
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease,
-    visibility 0.15s ease;
-}
-
-.verification-status:hover .verification-status-panel,
-.verification-status:focus-within .verification-status-panel,
-.verification-status-panel[data-open] {
-  visibility: visible;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.verification-status-heading {
-  margin: 0;
-  color: var(--color-text);
+  font-size: var(--detail-chip-font-size);
   font-weight: 700;
 }
 
-.verification-status-note {
-  margin: 0;
+.public-verification-card--verified .public-verification-card-status {
+  color: var(--color-accent-soft);
+}
+
+.public-verification-card-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.public-verification-card-facts > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--detail-chip-font-size);
+}
+
+.public-verification-card-facts dt {
   color: var(--color-text-muted);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .verification-status-panel {
-    transition: none;
-  }
+.public-verification-card-facts dd {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
-/* Narrow heroes: the top line stays a real row (eyebrow left, chip right) --
-   it is in-flow now, so nothing has to be un-positioned here. The panel only
-   needs a little more of the viewport's width to stay readable. */
-@media (max-width: 480px) {
-  .detail-hero-topline {
-    margin-bottom: 10px;
-  }
+.public-verification-card-note {
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--detail-chip-font-size);
+  line-height: 1.55;
+}
 
-  .verification-status-panel {
-    max-width: min(280px, calc(100vw - 24px));
-  }
+/* Pages with no information column close with the card instead. It is
+   capped so a full-bleed detail page never stretches one short panel across
+   an ultrawide viewport. */
+.public-verification-card--standalone {
+  width: min(100%, 420px);
+  margin-top: 4px;
 }
 
 .public-filter-nav {
@@ -5199,8 +5137,11 @@ a.item-info-chip:focus-visible {
   text-overflow: ellipsis;
 }
 
+/* A subtle step down from the previous 10-12.5px ramp: the gold category
+   line is supporting metadata, so it must stay clearly secondary to the
+   card's own title rather than competing with it at wide widths. */
 .item-related-card-category {
-  font-size: clamp(10px, calc(10px + 2.5px * var(--pf)), 12.5px);
+  font-size: clamp(9px, calc(9px + 2px * var(--pf)), 11px);
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--color-accent);
@@ -12267,10 +12208,13 @@ a.profession-detail-chip:focus-visible {
 }
 
 /* The wide list row shows every ingredient, so it can afford the handoff's
-   larger icon; the compact grid card keeps the smaller preview size. */
+   larger icon; the compact grid card keeps the smaller preview size. Fixed
+   at the /recipes directory list's own 40px rather than ramping with --pf,
+   so the row's height stays put across the whole width range. The GRID
+   card's own --recipe-ingredient-chip-size ramp is untouched. */
 .recipe-output-card--list .recipe-output-ingredient {
-  width: clamp(40px, calc(40px + 6px * var(--pf)), 46px);
-  height: clamp(40px, calc(40px + 6px * var(--pf)), 46px);
+  width: 40px;
+  height: 40px;
 }
 
 /* Preview art fills its chip.
@@ -12469,11 +12413,9 @@ a.profession-detail-chip:focus-visible {
   gap: var(--recipe-list-gap);
   border-color: var(--color-border-muted);
   border-radius: 9px;
-  /* Vertical padding sized so the row's own content -- the 48-54px result
-     stage, its tallest sibling -- lands in a compact ~64-72px row rather
-     than a bare content-height wrap, matching the Recipe Ingredients row's
-     own "content plus a little air" rhythm rather than a hardcoded height. */
-  padding: 8px 12px;
+  /* The /recipes directory list's own inset, so the two lists share one row
+     rhythm: 6px above and below a 50px stage lands a ~62px row. */
+  padding: 6px 14px;
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease,
@@ -12497,9 +12439,19 @@ a.profession-detail-chip:focus-visible {
   display: contents;
 }
 
+/* content-box, exactly as the /recipes directory list sizes its own stage:
+   the 1px frame sits OUTSIDE the 48px content area, so the 44px sprite
+   stage nested inside always has room and can never push past the rounded
+   corner. Under the previous border-box sizing the content area was only
+   46px while the sprite ramped to 50px on ultrawide, which is what made the
+   result art visibly escape its frame. `overflow: hidden` is deliberately
+   NOT used here -- the yield badge is a child of this stage and is meant to
+   sit just outside its bottom-right corner. */
 .recipe-output-card--list .recipe-output-image-stage {
+  box-sizing: content-box;
   width: var(--recipe-list-col-image);
   height: var(--recipe-list-col-image);
+  flex: none;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background:
@@ -12518,7 +12470,29 @@ a.profession-detail-chip:focus-visible {
   --sprite-image-size: var(--recipe-list-sprite-size);
   border: 0;
   background: transparent;
+  box-shadow: none;
   padding: 0;
+}
+
+/* The stage is 44px in list view, so the shared 11px "No image available"
+   fallback would spill past the rounded frame -- the same compact treatment
+   the directory list already applies to its own 44px stage. */
+.recipe-output-card--list
+  .recipe-output-image-stage
+  .public-sprite-stage--card.public-sprite-stage--empty {
+  width: var(--recipe-list-sprite-size);
+  height: var(--recipe-list-sprite-size);
+  padding: 5px;
+  overflow: hidden;
+}
+
+.recipe-output-card--list
+  .recipe-output-image-stage
+  .public-sprite-stage--card.public-sprite-stage--empty
+  .public-sprite-fallback {
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.15;
 }
 
 .recipe-output-card--list .recipe-output-yield {

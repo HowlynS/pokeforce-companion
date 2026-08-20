@@ -11,7 +11,7 @@ import {
   RecipeCollectionList,
 } from "@/components/content/recipe-collection-views";
 import { RichTextContent } from "@/components/content/rich-text-content";
-import { VerificationStatus } from "@/components/ui/verification-status";
+import { VerificationCard } from "@/components/ui/verification-card";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
@@ -178,16 +178,12 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               </div>
 
               <div className="item-identity-copy">
-                <div className="detail-hero-topline">
-                  {/* Always rendered so the top line keeps both of its ends
-                      and the header never collapses: the category when the
-                      Item has one, the resource name itself when it does
-                      not. Never invented data either way. */}
-                  <p className="item-category-label">
-                    {item.category ? item.category.name : "Item"}
-                  </p>
-                  <VerificationStatus stamp={item} />
-                </div>
+                {/* Always rendered, so every resource hero opens with an
+                    eyebrow: the category when the Item has one, the resource
+                    name itself when it does not. Never invented data. */}
+                <p className="item-category-label">
+                  {item.category ? item.category.name : "Item"}
+                </p>
                 <h1 id="item-title" className="public-resource-title">
                   {item.name}
                 </h1>
@@ -443,6 +439,8 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                 ) : null}
               </dl>
             </section>
+
+            <VerificationCard stamp={item} className="item-panel" />
           </aside>
         </div>
       </article>

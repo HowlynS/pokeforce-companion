@@ -132,9 +132,16 @@ test("the Shop detail renders hierarchy, independent verification, ordered price
     `/locations/${fixtures.location.slug}`
   );
   await expect(locationCard).toContainText(fixtures.location.name);
-  await expect(page.locator(".detail-hero")).toContainText(
-    "Verified for test-gv-current on 25 Jul 2026"
-  );
+
+  // Verification is structured detail information in its own card, not hero
+  // copy: the Shop's stamp still names the exact build and date, it just
+  // lives in the page's closing panel now.
+  const verificationCard = page.locator(".public-verification-card");
+  await expect(verificationCard).toHaveCount(1);
+  await expect(verificationCard).toContainText("Verified");
+  await expect(verificationCard).toContainText("test-gv-current");
+  await expect(verificationCard).toContainText("25 Jul 2026");
+  await expect(page.locator(".detail-hero")).not.toContainText("Verified for");
 
   // Shop detail carries its own wine/rose resource-atmosphere wash,
   // deliberately separated from Recipe's amber and Class's crimson.

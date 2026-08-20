@@ -152,10 +152,14 @@ test.describe("public detail pages", () => {
     await expect(
       page.getByRole("heading", { level: 2, name: "Item details", exact: true })
     ).toBeVisible();
-    // Verification moved from a sidebar panel into a discreet hero badge.
+    // Verification is a structured sidebar panel beside "Item details",
+    // never a badge floating in the hero.
     await expect(
-      page.locator(".item-main-column .verification-status")
+      page.locator(".item-sidebar .public-verification-card")
     ).toHaveCount(1);
+    await expect(
+      page.locator(".item-identity-panel .public-verification-card")
+    ).toHaveCount(0);
 
     await expect(
       page.getByRole("heading", { level: 2, name: "How to obtain" })
@@ -318,100 +322,108 @@ test.describe("public detail pages", () => {
     });
   });
 
-  test("the hero verification badge is reachable by click, hover, focus, and Escape", async ({
+  test("every detail page shows verification as one structured card, never a hero badge", async ({
     page,
   }) => {
-    await page.goto(`/items/${itemFixture.item.slug}`);
-
-    const status = page.locator(".item-main-column .verification-status");
-    const trigger = status.locator(".verification-status-trigger");
-    const panel = status.locator(".verification-status-panel");
-
-    // Always visible, never hover-only.
-    await expect(trigger).toBeVisible();
-    await expect(panel).not.toBeVisible();
-
-    // Click toggles it open...
-    await trigger.click();
-    await expect(panel).toBeVisible();
-    await expect(panel).toContainText("Verified");
-
-    // ...and an outside click closes it. The hero image is a real,
-    // unobstructed target inside the same hero: the open panel drops down
-    // over the title beside it, so the title is not a valid "outside" click.
-    await page.locator(".item-identity-stage").click();
-    await expect(panel).not.toBeVisible();
-
-    // Keyboard: focus reveals it via :focus-within, Escape closes it.
-    await trigger.focus();
-    await expect(panel).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(panel).not.toBeVisible();
-
-    // Hover alone reveals it for pointer users, with no click needed.
-    await trigger.hover();
-    await expect(panel).toBeVisible();
-    await page.mouse.move(0, 0);
-  });
-
-  test("every resource hero puts its verification chip in the same structural slot", async ({
-    page,
-  }) => {
-    const heroes: Array<[string, string]> = [
-      [`/items/${itemFixture.item.slug}`, ".item-identity-panel"],
-      ["/recipes/iron-sword", ".item-identity-panel"],
-      ["/professions/smithing", ".profession-detail-hero"],
+    // One predictable place per page type: the page's own information column
+    // where it has one, its closing panel where it does not. No page may
+    // show a verification badge inside its hero any more.
+    const pages = [
+      {
+        route: `/items/${itemFixture.item.slug}`,
+        host: ".item-sidebar",
+        hero: ".item-identity-panel",
+      },
+      {
+        route: "/recipes/iron-sword",
+        host: ".item-main-column",
+        hero: ".item-identity-panel",
+      },
+      {
+        route: "/professions/smithing",
+        host: ".profession-detail-page",
+        hero: ".profession-detail-hero",
+      },
+      {
+        route: "/classes/artisan",
+        host: ".profession-detail-page",
+        hero: ".profession-detail-hero",
+      },
     ];
 
-    for (const [route, heroSelector] of heroes) {
-      for (const width of [1920, 390]) {
+    for (const entry of pages) {
+      for (const width of [1920, 3440, 1100, 390]) {
         await page.setViewportSize({ width, height: 900 });
-        await page.goto(route);
+        await page.goto(entry.route);
 
-        const hero = page.locator(heroSelector).first();
-        const topline = hero.locator(".detail-hero-topline").first();
-        const chip = topline.locator(".verification-status");
+        const label = `${entry.route} @${width}`;
+        const card = page.locator(".public-verification-card");
 
-        // Row 1 of the hero: eyebrow on the left, chip on the right -- the
-        // chip is a real child of the header structure on every page type,
-        // never an absolutely positioned orphan above the box.
-        await expect(topline, `${route} @${width}`).toHaveCount(1);
-        await expect(chip, `${route} @${width}`).toHaveCount(1);
+        // Exactly one, always rendered, never hidden behind an interaction.
+        await expect(card, label).toHaveCount(1);
+        await expect(card, label).toBeVisible();
+        await expect(
+          page.locator(`${entry.host} .public-verification-card`),
+          label
+        ).toHaveCount(1);
 
-        const geometry = await topline.evaluate((element) => {
-          const eyebrow = element.firstElementChild!.getBoundingClientRect();
-          const status = element
-            .querySelector(".verification-status")!
-            .getBoundingClientRect();
-          return { eyebrowLeft: eyebrow.left, chipLeft: status.left };
-        });
-        expect(geometry.chipLeft, `${route} @${width}`).toBeGreaterThan(
-          geometry.eyebrowLeft,
-        );
+        // ...and never inside the hero.
+        await expect(
+          page.locator(`${entry.hero} .public-verification-card`),
+          label
+        ).toHaveCount(0);
 
-        // The popover drops straight down from the chip and stays inside the
-        // viewport -- never sideways, never on the opposite side of the page.
-        await chip.locator(".verification-status-trigger").click();
-        const panel = await chip
-          .locator(".verification-status-panel")
-          .evaluate((element) => {
-            const p = element.getBoundingClientRect();
-            const anchor =
-              element.parentElement!.getBoundingClientRect();
-            return {
-              below: p.top >= anchor.bottom - 1,
-              rightAligned: Math.abs(p.right - anchor.right) <= 1,
-              withinViewport:
-                p.left >= 0 && p.right <= document.documentElement.clientWidth,
-            };
-          });
-        expect(panel, `${route} @${width}`).toEqual({
-          below: true,
-          rightAligned: true,
-          withinViewport: true,
-        });
+        // It states a real status with no hover needed to read it.
+        await expect(card, label).toContainText(/Verified|Unverified/);
+
+        // ...and it never pushes the page sideways.
+        const overflow = await page.evaluate(() => ({
+          client: document.documentElement.clientWidth,
+          scroll: document.documentElement.scrollWidth,
+        }));
+        expect(overflow.scroll, label).toBeLessThanOrEqual(overflow.client);
       }
     }
+  });
+
+  test("a collapsed sidebar moves the verification card to the end of the page", async ({
+    page,
+  }) => {
+    // Wide: the card sits in the sidebar column, to the RIGHT of the main
+    // column. Narrow: the sidebar stacks, so the card lands BELOW it.
+    await page.setViewportSize({ width: 1920, height: 1000 });
+    await page.goto(`/items/${itemFixture.item.slug}`);
+    const wide = await page.evaluate(() => {
+      const card = document
+        .querySelector(".public-verification-card")!
+        .getBoundingClientRect();
+      const main = document
+        .querySelector(".item-main-column")!
+        .getBoundingClientRect();
+      return card.left >= main.right - 1;
+    });
+    expect(wide, "wide: card sits beside the main column").toBe(true);
+
+    await page.setViewportSize({ width: 900, height: 1000 });
+    await page.goto(`/items/${itemFixture.item.slug}`);
+    const narrow = await page.evaluate(() => {
+      const card = document
+        .querySelector(".public-verification-card")!
+        .getBoundingClientRect();
+      const main = document
+        .querySelector(".item-main-column")!
+        .getBoundingClientRect();
+      return {
+        belowMain: card.top >= main.bottom - 1,
+        withinViewport:
+          card.left >= 0 &&
+          card.right <= document.documentElement.clientWidth,
+      };
+    });
+    expect(narrow.belowMain, "narrow: card falls to the end of the page").toBe(
+      true
+    );
+    expect(narrow.withinViewport).toBe(true);
   });
 
   test("recipe detail links the resulting item and its ingredients", async ({

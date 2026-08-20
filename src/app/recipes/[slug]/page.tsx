@@ -9,7 +9,7 @@ import {
   RecipeCollectionGrid,
   RecipeCollectionList,
 } from "@/components/content/recipe-collection-views";
-import { VerificationStatus } from "@/components/ui/verification-status";
+import { VerificationCard } from "@/components/ui/verification-card";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
@@ -125,17 +125,14 @@ export default async function RecipeDetailPage({
               </div>
 
               <div className="item-identity-copy">
-                <div className="detail-hero-topline">
-                  {/* Always rendered so the top line keeps both of its ends:
-                      the owning Profession when the Recipe has one, the
-                      resource name itself when it does not. */}
-                  <p className="item-category-label">
-                    {recipe.profession
-                      ? `${recipe.profession.name} Recipe`
-                      : "Recipe"}
-                  </p>
-                  <VerificationStatus stamp={recipe} />
-                </div>
+                {/* Always rendered, so every resource hero opens with an
+                    eyebrow: the owning Profession when the Recipe has one,
+                    the resource name itself when it does not. */}
+                <p className="item-category-label">
+                  {recipe.profession
+                    ? `${recipe.profession.name} Recipe`
+                    : "Recipe"}
+                </p>
                 <h1 id="recipe-title" className="public-resource-title">
                   {recipe.name}
                 </h1>
@@ -252,6 +249,11 @@ export default async function RecipeDetailPage({
                 list={<RecipeCollectionList recipes={relatedRecipes} />}
               />
             ) : null}
+
+            <VerificationCard
+              stamp={recipe}
+              className="public-verification-card--standalone"
+            />
 
             {updatedAt ? (
               <p className="recipe-updated-at">Last updated {updatedAt}</p>

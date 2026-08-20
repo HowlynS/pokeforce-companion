@@ -4,7 +4,7 @@ import { ContentImage } from "@/components/content/content-image";
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
-import { VerificationStatus } from "@/components/ui/verification-status";
+import { VerificationCard } from "@/components/ui/verification-card";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
 
@@ -59,10 +59,7 @@ export default async function PlayerClassDetailPage({
           </div>
 
           <div className="profession-detail-copy">
-            <div className="detail-hero-topline">
-              <p className="profession-detail-eyebrow">Class</p>
-              <VerificationStatus stamp={playerClass} />
-            </div>
+            <p className="profession-detail-eyebrow">Class</p>
             <h1 id="player-class-title" className="public-resource-title">
               {playerClass.name}
             </h1>
@@ -79,6 +76,11 @@ export default async function PlayerClassDetailPage({
           </div>
         </section>
 
+
+        <VerificationCard
+          stamp={playerClass}
+          className="public-verification-card--standalone"
+        />
         {updatedAt ? (
           <p className="profession-updated">Updated {updatedAt}</p>
         ) : null}

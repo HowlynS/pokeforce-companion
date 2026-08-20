@@ -1477,11 +1477,12 @@ test("the compact List row is dense and vertically centres its cells", async ({
 
   // Materially shorter than a stack of large cards: the old min-height leak
   // from the Grid/directory ingredients rule (91px) made this row nearly
-  // twice this tall.
+  // twice this tall. It now tracks the /recipes directory list's own fixed
+  // ~62px rhythm instead of ramping to 72px on ultrawide.
   const rowHeight = await row.evaluate(
     (element) => element.getBoundingClientRect().height,
   );
-  expect(rowHeight).toBeLessThan(80);
+  expect(rowHeight).toBeLessThan(68);
 
   // Every major cell shares one visual centreline: the result stage, the
   // recipe title, and the ingredient chips must not be pinned to the top of
@@ -1560,6 +1561,58 @@ test("compact ingredient previews fill their chip like the directory card does",
     expect(list!.ratio, `list @${viewport.name} preview fill`).toBeGreaterThan(
       0.9,
     );
+  }
+});
+
+test("the compact List row matches the Recipes directory list's own rhythm", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+
+  for (const width of [1920, 2560, 3440, 1000]) {
+    await page.setViewportSize({ width, height: 1000 });
+
+    // The /recipes directory list is the stated visual authority.
+    await page.goto("/recipes");
+    await page.getByRole("button", { name: "List", exact: true }).first().click();
+    const reference = await page
+      .locator(".recipe-output-card--directory-list")
+      .first()
+      .evaluate((element) => element.getBoundingClientRect().height);
+
+    await page.goto(`/professions/${fixture.profession.slug}`);
+    await page.getByRole("button", { name: "List", exact: true }).click();
+    const row = page
+      .locator(".recipe-output-card--list")
+      .filter({ hasText: dense.name })
+      .first();
+    await expect(row).toBeVisible();
+
+    const shape = await row.evaluate((element) => {
+      const rowBox = element.getBoundingClientRect();
+      const stage = element.querySelector(".recipe-output-image-stage")!;
+      const stageBox = stage.getBoundingClientRect();
+      const sprite = element
+        .querySelector(".recipe-output-image-stage .public-sprite-stage")!
+        .getBoundingClientRect();
+      return {
+        height: rowBox.height,
+        // The result art must stay inside its own rounded frame at every
+        // width -- the sprite ramp used to overshoot the stage's content box.
+        escapesRight: +(sprite.right - stageBox.right).toFixed(2),
+        escapesBottom: +(sprite.bottom - stageBox.bottom).toFixed(2),
+      };
+    });
+
+    // Within a couple of pixels of the directory row it is modelled on.
+    expect(
+      Math.abs(shape.height - reference),
+      `@${width}: compact list row must match the directory row's height`,
+    ).toBeLessThanOrEqual(2);
+
+    // Nothing escapes the rounded frame.
+    expect(shape.escapesRight, `@${width}: art escapes right`).toBeLessThanOrEqual(0);
+    expect(shape.escapesBottom, `@${width}: art escapes bottom`).toBeLessThanOrEqual(0);
   }
 });
 

@@ -6,6 +6,7 @@ import { LocationDirectoryFold } from "@/components/content/location-directory-f
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { VerificationCard } from "@/components/ui/verification-card";
 import { prisma } from "@/lib/db";
 import {
   loadLocationAncestors,
@@ -44,6 +45,10 @@ export default async function LocationDetailPage({
   const location = await prisma.location.findUnique({
     where: { slug },
     include: {
+      // `include` already carries the scalar verifiedAt; the Game Version's
+      // own name is a relation, so it has to be asked for explicitly before
+      // the verification card can name the build it was checked against.
+      verifiedGameVersion: { select: { name: true } },
       children: {
         select: {
           id: true,
@@ -338,6 +343,8 @@ export default async function LocationDetailPage({
                 <p>{location.accessNote}</p>
               </section>
             ) : null}
+
+            <VerificationCard stamp={location} />
           </aside>
         </div>
       </article>

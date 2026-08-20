@@ -110,11 +110,14 @@ test.describe("public Class detail", () => {
     ).toHaveCount(0);
     await expect(page.locator(".profession-hero-counts")).toHaveCount(0);
 
-    // Verification renders as a discreet hero badge, factually (unverified
-    // seed data has no stamp).
+    // Verification renders as a structured card closing the page, factually
+    // (unverified seed data has no stamp) -- never a hero badge.
     await expect(
-      page.locator(".profession-detail-hero .verification-status--unverified")
+      page.locator(".public-verification-card--unverified")
     ).toHaveCount(1);
+    await expect(
+      page.locator(".profession-detail-hero .public-verification-card")
+    ).toHaveCount(0);
 
     // Class detail carries its own crimson resource-atmosphere wash,
     // distinct from Profession's amethyst even though both pages share
