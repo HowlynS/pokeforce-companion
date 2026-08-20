@@ -272,6 +272,24 @@ test("Item acquisition presents every structured purchase and preserves the lega
   ).toHaveAttribute("href", `/shops/${fixtures.secondShop.slug}`);
   await expect(purchases.nth(2).locator(".currency-price")).toContainText("750");
 
+  // A Currency icon in a public price is artwork beside an amount, not a
+  // record thumbnail: it must carry none of the shared ResourceIcon's admin
+  // frame, which read as a placeholder box drawn around the rune.
+  const currencyIcons = obtainSection.locator(".currency-price .resource-icon");
+  for (let index = 0; index < (await currencyIcons.count()); index += 1) {
+    const framing = await currencyIcons.nth(index).evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        borderWidth: style.borderTopWidth,
+        backgroundColor: style.backgroundColor,
+        backgroundImage: style.backgroundImage,
+      };
+    });
+    expect(framing.borderWidth).toBe("0px");
+    expect(framing.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(framing.backgroundImage).toBe("none");
+  }
+
   // No explicit relationship marks the free-text row as equivalent to a
   // ShopListing, so the legacy source remains visible instead of being
   // silently guessed away.

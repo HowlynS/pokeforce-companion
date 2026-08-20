@@ -2726,19 +2726,51 @@ select:focus-visible {
   min-width: 0;
 }
 
-/* Discreet, top-right verification cue for a resource hero. Kept out of the
-   facts row so it never competes with the record's own identity/facts; a
-   narrow hero simply wraps it below the title's line via its own max-width
-   and right-anchored position rather than colliding with it. */
-.detail-hero-verification {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 2;
+/* Shared resource-hero top line -- row 1 of every detail header:
+   the resource eyebrow on the left, the verification chip on the right.
+
+   The chip lives INSIDE the hero's own copy column rather than being
+   absolutely positioned against whichever ancestor happened to be
+   `position: relative` on that page (which is what previously made it land
+   in a different place on Item/Recipe than on Profession/Class/Shop, and
+   read as an orphan badge floating above the header box). Because it is now
+   an ordinary flex child, the same structure holds whether the hero has a
+   long eyebrow or a short one, and the row never collapses: the eyebrow is
+   always rendered, so `space-between` always has two ends to work with. */
+.detail-hero-topline {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* Inherits the bottom margin the page's own eyebrow used to carry, so
+     moving the eyebrow into this row changes placement, never rhythm. */
+  margin-bottom: var(--detail-hero-topline-gap, 14px);
+}
+
+/* The eyebrow keeps whatever type styling its own page already gave it; the
+   top line only takes over its bottom margin, so the row's rhythm is owned
+   in exactly one place per hero family. */
+.detail-hero-topline > .item-category-label,
+.detail-hero-topline > .profession-detail-eyebrow,
+.detail-hero-topline > .shop-detail-eyebrow {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The Profession/Class and Shop heroes run a smaller type scale and always
+   used an 8px eyebrow gap; the Item/Recipe hero used 14px. */
+.profession-detail-copy .detail-hero-topline,
+.shop-detail-copy .detail-hero-topline {
+  --detail-hero-topline-gap: 8px;
 }
 
 .verification-status {
   position: relative;
+  flex: none;
   display: inline-flex;
 }
 
@@ -2772,11 +2804,18 @@ select:focus-visible {
   color: var(--color-accent-bright);
 }
 
+/* Anchored to the chip, always dropping straight DOWN from it and aligned to
+   its right edge -- the chip is itself the right-hand end of the hero's top
+   line, so a right-aligned panel always grows back across the hero it belongs
+   to and can never reach the opposite side of the screen. `max-width` keeps
+   it inside the viewport on the narrowest layouts without needing a
+   measure-and-flip pass. */
 .verification-status-panel {
   position: absolute;
   z-index: 6;
   top: calc(100% + 6px);
   right: 0;
+  left: auto;
   width: max-content;
   max-width: min(260px, calc(100vw - 32px));
   display: grid;
@@ -2823,19 +2862,15 @@ select:focus-visible {
   }
 }
 
-/* Narrow heroes: keep the pill reachable and its panel on-screen rather than
-   letting it collide with the title or spill past the viewport edge. */
+/* Narrow heroes: the top line stays a real row (eyebrow left, chip right) --
+   it is in-flow now, so nothing has to be un-positioned here. The panel only
+   needs a little more of the viewport's width to stay readable. */
 @media (max-width: 480px) {
-  .detail-hero-verification {
-    position: static;
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 8px;
+  .detail-hero-topline {
+    margin-bottom: 10px;
   }
 
   .verification-status-panel {
-    right: 0;
-    left: auto;
     max-width: min(280px, calc(100vw - 24px));
   }
 }
@@ -3152,30 +3187,31 @@ select:focus-visible {
 }
 
 /* Subtle: the secondary, inline emphasis used beside a record's name in a
-   dense list. The gold arrow stays legible, but the outline is a fraction of
-   the default's weight so a long list never reads as a column of buttons.
-   Slightly smaller box and glyph than default/prominent so a dense row of
-   these never reads as a column of full-size buttons. */
+   dense list (today, the Shop inventory row). It is deliberately the
+   lightest member of the family -- no resting outline at all, just the gold
+   glyph -- so a scrolling list reads as names with an affordance beside
+   them, never as a column of outlined buttons. The frame only appears on
+   hover/focus, which is also when the depart animation runs. */
 .page-link-arrow--subtle {
-  width: 26px;
-  height: 26px;
-  border-color: color-mix(in srgb, var(--color-accent-soft) 42%, transparent);
+  width: 22px;
+  height: 22px;
+  border-color: transparent;
   background: transparent;
-  color: color-mix(in srgb, var(--color-accent) 82%, transparent);
+  color: color-mix(in srgb, var(--color-accent) 78%, transparent);
 }
 
 .page-link-arrow--subtle .page-link-arrow-glyph {
-  width: 12px;
-  height: 12px;
-  --page-link-arrow-travel: 12px;
+  width: 11px;
+  height: 11px;
+  --page-link-arrow-travel: 11px;
 }
 
 .page-link-arrow--subtle:hover,
 .page-link-arrow--subtle:focus-visible {
-  border-color: color-mix(in srgb, var(--color-accent) 78%, transparent);
-  background: var(--color-surface-soft);
+  border-color: color-mix(in srgb, var(--color-accent-soft) 55%, transparent);
+  background: transparent;
   color: var(--color-accent-bright);
-  box-shadow: 0 0 8px rgba(216, 181, 98, 0.2);
+  box-shadow: none;
 }
 
 /* Prominent: the primary "open this record" action on a surface that has
@@ -3916,13 +3952,24 @@ select:focus-visible {
 /* The thumbnail's stage always carries the Profession hue, real image or
    not -- image availability only changes what sits inside it, matching the
    Grid card's own media wrapper. */
-.profession-catalogue-list-media {
+/* Profession and Class list-view thumbnails are ONE implementation, not two
+   that can drift: the stage itself always carries the page's own
+   --resource-hue (Profession amethyst, Class crimson), exactly like the Grid
+   card's media wrapper, so a record with no artwork still reads as its own
+   resource family. Image availability only changes what sits INSIDE the
+   stage; it never changes the stage. */
+.profession-catalogue-list-media,
+.class-catalogue-list-media {
   width: 52px;
   height: 52px;
+  /* Border-box so the 1px frame is inside the 52px square -- otherwise the
+     52px sprite stage nested in it overflowed by 2px and sat off-centre. */
+  box-sizing: border-box;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background:
@@ -3934,9 +3981,19 @@ select:focus-visible {
     var(--color-surface);
 }
 
-.profession-catalogue-list-media .public-sprite-stage--row {
+/* The nested sprite stage is a plain, centred content area: the hue, frame
+   and radius all belong to the wrapper above, so nothing is drawn twice and
+   the real image and the no-image fallback occupy the identical box. */
+.profession-catalogue-list-media .public-sprite-stage--row,
+.class-catalogue-list-media .public-sprite-stage--row {
+  --sprite-stage-size: 100%;
+  --sprite-image-size: 100%;
+  width: 100%;
+  height: 100%;
   border: 0;
+  border-radius: 0;
   background: transparent;
+  padding: 3px;
 }
 
 .profession-catalogue-list-name {
@@ -4289,6 +4346,20 @@ select:focus-visible {
   color: var(--color-accent-soft);
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+/* A price's Currency icon is artwork sitting beside an amount, not a record
+   thumbnail in a table. It reuses the shared ResourceIcon component, whose
+   own .resource-icon base carries admin chrome -- a 1px border, a filled
+   surface and a rounded corner -- which on a public price read as a framed
+   placeholder box around the rune. Public prices drop the frame and keep the
+   art; a Currency with no image (PokeYen, symbol-only) renders no icon at
+   all, so nothing here can leave an empty box behind. */
+.currency-price .resource-icon {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .public-shop-listing-notes {
@@ -11560,8 +11631,7 @@ input[type="checkbox"] {
     animation: cx-item-out 120ms ease both;
   }
 
-  .cx-fade-in-stagger,
-  .cx-fade-stagger {
+  .cx-fade-in-stagger {
     animation: cx-fade-in-stagger 320ms ease both;
   }
 
@@ -12201,6 +12271,35 @@ a.profession-detail-chip:focus-visible {
 .recipe-output-card--list .recipe-output-ingredient {
   width: clamp(40px, calc(40px + 6px * var(--pf)), 46px);
   height: clamp(40px, calc(40px + 6px * var(--pf)), 46px);
+}
+
+/* Preview art fills its chip.
+   -----------------------------------------------------------------------
+   The shared base sizes .recipe-output-ingredient-image at a FIXED 36px
+   holding a 32px sprite (--sprite-image-size: 32px). Both /recipes
+   directory variants re-pin wrapper == stage == image to their own chip
+   size, which is why their previews look right. These two compact variants
+   never did -- so a chip that scales to 42px (grid, ultrawide) or 46px
+   (list, ultrawide) still rendered a 32px sprite: a 10-14px shortfall the
+   art floated inside. Transparent-margin sprites hid it; sprites with a
+   light or white ground made the gap read as a misfit image, and it also
+   lifted the art's visual bottom edge clear of the result stage's, which is
+   what made the compact grid's bottom rhythm look off even once the chip
+   boxes themselves aligned exactly.
+   Percentages rather than a repeated literal, so any future chip size stays
+   correct without a fourth copy of this block. */
+.recipe-output-card--grid .recipe-output-ingredient-image,
+.recipe-output-card--list .recipe-output-ingredient-image {
+  width: 100%;
+  height: 100%;
+}
+
+.recipe-output-card--grid .recipe-output-ingredient-image .public-sprite-stage--row,
+.recipe-output-card--list .recipe-output-ingredient-image .public-sprite-stage--row {
+  --sprite-stage-size: 100%;
+  --sprite-image-size: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 .recipe-output-card--grid .recipe-output-ingredient-toggle {
@@ -13507,32 +13606,6 @@ a.profession-detail-chip:focus-visible {
     box-shadow 0.2s ease;
 }
 
-/* The thumbnail's stage always carries the Class hue, real image or not --
-   image availability only changes what sits inside it, matching the Grid
-   card's own media wrapper. */
-.class-catalogue-list-media {
-  width: 52px;
-  height: 52px;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background:
-    radial-gradient(
-      circle at 38% 30%,
-      rgba(var(--resource-hue), 0.2),
-      transparent 68%
-    ),
-    var(--color-surface);
-}
-
-.class-catalogue-list-media .public-sprite-stage--row {
-  border: 0;
-  background: transparent;
-}
-
 .class-catalogue-list-name {
   width: 150px;
   flex: none;
@@ -13868,17 +13941,22 @@ a.shop-detail-chip:focus-visible {
     box-shadow 0.18s ease;
 }
 
-.shop-detail-inventory-row:hover,
-.shop-detail-inventory-row:focus-within,
-.shop-detail-inventory-row--selected {
-  border-color: var(--color-accent) !important;
-  background: var(--color-surface-soft) !important;
+/* Exactly the Recipe Ingredients row's own hover treatment, down to the two
+   shadow alphas. Each selector carries `.public-shop-listing` so it
+   out-specifies the base listing card's border/background the honest way --
+   the `!important` that used to be here existed only because the selected
+   modifier was a single class losing to a two-class rule. */
+.shop-detail-inventory-row.public-shop-listing:hover,
+.shop-detail-inventory-row.public-shop-listing:focus-within,
+.shop-detail-inventory-row--selected.public-shop-listing {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
   box-shadow:
-    0 0 16px rgba(216, 181, 98, 0.2),
-    inset 0 0 0 1px rgba(195, 154, 75, 0.26);
+    0 0 16px rgba(216, 181, 98, 0.18),
+    inset 0 0 0 1px rgba(195, 154, 75, 0.25);
 }
 
-.shop-detail-inventory-row:hover {
+.shop-detail-inventory-row.public-shop-listing:hover {
   transform: translateX(4px);
 }
 
@@ -13911,7 +13989,9 @@ a.shop-detail-chip:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.18s ease;
+  /* The Recipe Ingredients thumbnail glows rather than scales on hover;
+     scaling made the Shop row's art jump out of the list's rhythm. */
+  transition: filter 0.18s ease;
 }
 
 .shop-detail-inventory-icon .public-sprite-stage--row {
@@ -13931,8 +14011,9 @@ a.shop-detail-chip:focus-visible {
   padding: 4px;
 }
 
-.shop-detail-inventory-row:hover .shop-detail-inventory-icon {
-  transform: scale(1.12);
+.shop-detail-inventory-row:hover .shop-detail-inventory-icon,
+.shop-detail-inventory-row:focus-within .shop-detail-inventory-icon {
+  filter: drop-shadow(0 0 6px rgba(216, 181, 98, 0.6));
 }
 
 .shop-detail-inventory-row .public-shop-listing-content {
@@ -13950,7 +14031,9 @@ a.shop-detail-chip:focus-visible {
   align-items: center;
   gap: 7px;
   margin: 0;
-  font-size: 12.5px;
+  /* 13px / 600 is the Recipe Ingredients row's own name treatment
+     (.recipe-ingredient-row .item-recipe-copy > strong). */
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -13963,17 +14046,20 @@ a.shop-detail-chip:focus-visible {
   white-space: nowrap;
 }
 
+/* The price is Shop's analogue of the Recipe row's trailing quantity, so it
+   takes that column's 13px scale and the same hover emphasis. */
 .shop-detail-inventory-row .currency-price {
   align-self: center;
   justify-self: end;
   color: var(--color-accent-soft);
-  font-size: 11.5px;
+  font-size: 13px;
   transition:
     color 0.18s ease,
     text-shadow 0.18s ease;
 }
 
-.shop-detail-inventory-row:hover .currency-price {
+.shop-detail-inventory-row:hover .currency-price,
+.shop-detail-inventory-row:focus-within .currency-price {
   color: var(--color-accent-bright);
   text-shadow: 0 0 8px rgba(244, 197, 66, 0.5);
 }

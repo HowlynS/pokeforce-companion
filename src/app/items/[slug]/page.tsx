@@ -165,10 +165,6 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
 
         <div className="item-content-grid">
           <div className="item-main-column">
-            <VerificationStatus
-              stamp={item}
-              className="detail-hero-verification"
-            />
             <section
               className="item-identity-panel resource-atmosphere resource-atmosphere--item"
               aria-labelledby="item-title"
@@ -182,9 +178,16 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
               </div>
 
               <div className="item-identity-copy">
-                {item.category ? (
-                  <p className="item-category-label">{item.category.name}</p>
-                ) : null}
+                <div className="detail-hero-topline">
+                  {/* Always rendered so the top line keeps both of its ends
+                      and the header never collapses: the category when the
+                      Item has one, the resource name itself when it does
+                      not. Never invented data either way. */}
+                  <p className="item-category-label">
+                    {item.category ? item.category.name : "Item"}
+                  </p>
+                  <VerificationStatus stamp={item} />
+                </div>
                 <h1 id="item-title" className="public-resource-title">
                   {item.name}
                 </h1>

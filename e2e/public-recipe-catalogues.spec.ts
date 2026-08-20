@@ -1510,6 +1510,59 @@ test("the compact List row is dense and vertically centres its cells", async ({
   expect(Math.abs(centres.chip!)).toBeLessThanOrEqual(2);
 });
 
+test("compact ingredient previews fill their chip like the directory card does", async ({
+  page,
+}) => {
+  const dense = denseRecipeFixture();
+
+  // The /recipes directory card is the reference: its preview art fills the
+  // chip because the variant re-pins wrapper == stage == image to the chip's
+  // own size. The compact grid/list variants must reach the same ratio at
+  // every width, not render a fixed 32px sprite inside a chip that scales.
+  const measure = (selector: string) =>
+    page.locator(selector).first().evaluate((card) => {
+      const chip = card.querySelector(
+        ".recipe-output-ingredient-list > .recipe-output-ingredient",
+      );
+      const art = card.querySelector(".recipe-output-ingredient-list img");
+      if (!chip || !art) return null;
+      const c = chip.getBoundingClientRect();
+      const a = art.getBoundingClientRect();
+      return { chip: c.width, art: a.width, ratio: a.width / c.width };
+    });
+
+  await page.goto("/recipes");
+  const reference = await measure(".recipe-output-card--directory-grid");
+  expect(reference).not.toBeNull();
+  expect(reference!.ratio).toBeGreaterThan(0.9);
+
+  for (const viewport of [
+    { name: "1920", width: 1920, height: 1080 },
+    { name: "2560", width: 2560, height: 1440 },
+    { name: "3440", width: 3440, height: 1440 },
+    { name: "1000", width: 1000, height: 1100 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`/professions/${fixture.profession.slug}`);
+    await settledStrip(
+      page.locator(".recipe-output-card--grid").filter({ hasText: dense.name }).first(),
+    );
+
+    const grid = await measure(".recipe-output-card--grid");
+    expect(grid, `grid @${viewport.name}`).not.toBeNull();
+    expect(grid!.ratio, `grid @${viewport.name} preview fill`).toBeGreaterThan(
+      0.9,
+    );
+
+    await page.getByRole("button", { name: "List", exact: true }).click();
+    const list = await measure(".recipe-output-card--list");
+    expect(list, `list @${viewport.name}`).not.toBeNull();
+    expect(list!.ratio, `list @${viewport.name} preview fill`).toBeGreaterThan(
+      0.9,
+    );
+  }
+});
+
 test("the disclosure chevron centres against the previews it follows", async ({
   page,
 }) => {

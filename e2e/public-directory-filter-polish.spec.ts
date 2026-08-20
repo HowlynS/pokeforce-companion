@@ -237,3 +237,68 @@ test("live text search composes with a deep-linked Profession filter", async ({
   await expect(cards).toHaveCount(filteredCount);
   await expect(page.locator(".directory-filter-count")).toHaveText("1");
 });
+
+// Profession and Class list-view thumbnails are ONE shared implementation
+// (a single CSS rule serves both selectors), so this asserts the shared
+// contract for both resources rather than letting either drift: the stage
+// itself always carries its own resource hue, whether or not the record has
+// artwork, and the sprite stage inside it stays contained and centred.
+test("Profession and Class List thumbnails keep their resource hue with no artwork", async ({
+  page,
+}) => {
+  const resources = [
+    {
+      name: "Profession",
+      path: "/professions",
+      media: ".profession-catalogue-list-media",
+      token: "--hue-profession",
+    },
+    {
+      name: "Class",
+      path: "/classes",
+      media: ".class-catalogue-list-media",
+      token: "--hue-class",
+    },
+  ] as const;
+
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  for (const resource of resources) {
+    await page.goto(resource.path);
+    await page.getByRole("button", { name: "List", exact: true }).click();
+
+    const media = page.locator(resource.media).first();
+    await expect(media, resource.name).toBeVisible();
+
+    const painted = await media.evaluate(
+      (element, token) => {
+        const style = getComputedStyle(element);
+        const stage = element.querySelector(".public-sprite-stage");
+        const stageBox = stage?.getBoundingClientRect();
+        const mediaBox = element.getBoundingClientRect();
+        return {
+          hue: style.getPropertyValue("--resource-hue").trim(),
+          canonical: getComputedStyle(document.documentElement)
+            .getPropertyValue(token)
+            .trim(),
+          hasImage: Boolean(element.querySelector("img")),
+          backgroundImage: style.backgroundImage,
+          contained:
+            !!stageBox &&
+            stageBox.width <= mediaBox.width + 0.5 &&
+            stageBox.height <= mediaBox.height + 0.5,
+        };
+      },
+      resource.token,
+    );
+
+    // The seeded records carry no artwork, so this is the no-image path.
+    expect(painted.hasImage, resource.name).toBe(false);
+    expect(painted.canonical, resource.name).not.toBe("");
+    // Resolved through the canonical token, never a colour literal...
+    expect(painted.hue, resource.name).toBe(painted.canonical);
+    // ...and actually painted, not merely declared.
+    expect(painted.backgroundImage, resource.name).toContain("radial-gradient");
+    expect(painted.contained, resource.name).toBe(true);
+  }
+});

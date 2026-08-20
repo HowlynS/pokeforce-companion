@@ -336,8 +336,10 @@ test.describe("public detail pages", () => {
     await expect(panel).toBeVisible();
     await expect(panel).toContainText("Verified");
 
-    // ...and an outside click closes it.
-    await page.getByRole("heading", { level: 1 }).click();
+    // ...and an outside click closes it. The hero image is a real,
+    // unobstructed target inside the same hero: the open panel drops down
+    // over the title beside it, so the title is not a valid "outside" click.
+    await page.locator(".item-identity-stage").click();
     await expect(panel).not.toBeVisible();
 
     // Keyboard: focus reveals it via :focus-within, Escape closes it.
@@ -350,6 +352,66 @@ test.describe("public detail pages", () => {
     await trigger.hover();
     await expect(panel).toBeVisible();
     await page.mouse.move(0, 0);
+  });
+
+  test("every resource hero puts its verification chip in the same structural slot", async ({
+    page,
+  }) => {
+    const heroes: Array<[string, string]> = [
+      [`/items/${itemFixture.item.slug}`, ".item-identity-panel"],
+      ["/recipes/iron-sword", ".item-identity-panel"],
+      ["/professions/smithing", ".profession-detail-hero"],
+    ];
+
+    for (const [route, heroSelector] of heroes) {
+      for (const width of [1920, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(route);
+
+        const hero = page.locator(heroSelector).first();
+        const topline = hero.locator(".detail-hero-topline").first();
+        const chip = topline.locator(".verification-status");
+
+        // Row 1 of the hero: eyebrow on the left, chip on the right -- the
+        // chip is a real child of the header structure on every page type,
+        // never an absolutely positioned orphan above the box.
+        await expect(topline, `${route} @${width}`).toHaveCount(1);
+        await expect(chip, `${route} @${width}`).toHaveCount(1);
+
+        const geometry = await topline.evaluate((element) => {
+          const eyebrow = element.firstElementChild!.getBoundingClientRect();
+          const status = element
+            .querySelector(".verification-status")!
+            .getBoundingClientRect();
+          return { eyebrowLeft: eyebrow.left, chipLeft: status.left };
+        });
+        expect(geometry.chipLeft, `${route} @${width}`).toBeGreaterThan(
+          geometry.eyebrowLeft,
+        );
+
+        // The popover drops straight down from the chip and stays inside the
+        // viewport -- never sideways, never on the opposite side of the page.
+        await chip.locator(".verification-status-trigger").click();
+        const panel = await chip
+          .locator(".verification-status-panel")
+          .evaluate((element) => {
+            const p = element.getBoundingClientRect();
+            const anchor =
+              element.parentElement!.getBoundingClientRect();
+            return {
+              below: p.top >= anchor.bottom - 1,
+              rightAligned: Math.abs(p.right - anchor.right) <= 1,
+              withinViewport:
+                p.left >= 0 && p.right <= document.documentElement.clientWidth,
+            };
+          });
+        expect(panel, `${route} @${width}`).toEqual({
+          below: true,
+          rightAligned: true,
+          withinViewport: true,
+        });
+      }
+    }
   });
 
   test("recipe detail links the resulting item and its ingredients", async ({

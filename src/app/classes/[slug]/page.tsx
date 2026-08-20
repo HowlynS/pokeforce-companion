@@ -50,10 +50,6 @@ export default async function PlayerClassDetailPage({
           className="profession-detail-hero resource-atmosphere resource-atmosphere--class"
           aria-labelledby="player-class-title"
         >
-          <VerificationStatus
-            stamp={playerClass}
-            className="detail-hero-verification"
-          />
           <div className="profession-detail-stage">
             <ContentImage
               imagePath={playerClass.image}
@@ -63,7 +59,10 @@ export default async function PlayerClassDetailPage({
           </div>
 
           <div className="profession-detail-copy">
-            <p className="profession-detail-eyebrow">Class</p>
+            <div className="detail-hero-topline">
+              <p className="profession-detail-eyebrow">Class</p>
+              <VerificationStatus stamp={playerClass} />
+            </div>
             <h1 id="player-class-title" className="public-resource-title">
               {playerClass.name}
             </h1>

@@ -30,11 +30,13 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
   if (!selected) return null;
 
   return (
+    // Reveal motion is the Recipe detail Ingredients section's own: the
+    // default "item" variant, with no per-row stagger. The rows are the same
+    // compact family, so they enter as one block rather than cascading.
     <CollapsibleSection
       title="Inventory"
       meta={`${listings.length} ${listings.length === 1 ? "item" : "items"}`}
       className="shop-detail-inventory"
-      animationVariant="stagger"
     >
       <div className="shop-detail-inventory-panel">
         <div className="shop-detail-selected">
@@ -54,14 +56,13 @@ export function ShopInventory({ listings }: ShopInventoryProps) {
         </div>
 
         <div className="shop-detail-inventory-list">
-          {listings.map((listing, index) => {
+          {listings.map((listing) => {
             const isSelected = listing.id === selected.id;
             return (
               <article
-                className={`public-shop-listing shop-detail-inventory-row cx-fade-stagger${
+                className={`public-shop-listing shop-detail-inventory-row${
                   isSelected ? " shop-detail-inventory-row--selected" : ""
                 }`}
-                style={{ animationDelay: `${Math.min(index * 40, 360)}ms` }}
                 onClick={() => setSelectedId(listing.id)}
                 key={listing.id}
               >

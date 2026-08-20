@@ -66,10 +66,6 @@ export default async function ProfessionDetailPage({
           className="profession-detail-hero resource-atmosphere resource-atmosphere--profession"
           aria-labelledby="profession-title"
         >
-          <VerificationStatus
-            stamp={profession}
-            className="detail-hero-verification"
-          />
           <div className="profession-detail-stage">
             <ContentImage
               imagePath={profession.image}
@@ -79,7 +75,10 @@ export default async function ProfessionDetailPage({
           </div>
 
           <div className="profession-detail-copy">
-            <p className="profession-detail-eyebrow">Profession</p>
+            <div className="detail-hero-topline">
+              <p className="profession-detail-eyebrow">Profession</p>
+              <VerificationStatus stamp={profession} />
+            </div>
             <h1 id="profession-title" className="public-resource-title">
               {profession.name}
             </h1>

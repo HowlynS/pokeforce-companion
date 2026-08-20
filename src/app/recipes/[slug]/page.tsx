@@ -108,10 +108,6 @@ export default async function RecipeDetailPage({
 
         <div className="item-content-grid">
           <div className="item-main-column">
-            <VerificationStatus
-              stamp={recipe}
-              className="detail-hero-verification"
-            />
             <section
               className="item-identity-panel resource-atmosphere resource-atmosphere--recipe"
               aria-labelledby="recipe-title"
@@ -129,11 +125,17 @@ export default async function RecipeDetailPage({
               </div>
 
               <div className="item-identity-copy">
-                {recipe.profession ? (
+                <div className="detail-hero-topline">
+                  {/* Always rendered so the top line keeps both of its ends:
+                      the owning Profession when the Recipe has one, the
+                      resource name itself when it does not. */}
                   <p className="item-category-label">
-                    {recipe.profession.name} Recipe
+                    {recipe.profession
+                      ? `${recipe.profession.name} Recipe`
+                      : "Recipe"}
                   </p>
-                ) : null}
+                  <VerificationStatus stamp={recipe} />
+                </div>
                 <h1 id="recipe-title" className="public-resource-title">
                   {recipe.name}
                 </h1>

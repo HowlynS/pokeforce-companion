@@ -360,6 +360,19 @@ test("the two arrow variants share one family at two emphasis levels", async ({
   // outline and a smaller box.
   expect(weights.row.borderAlpha).toBeLessThan(weights.box.borderAlpha);
   expect(weights.row.size).toBeLessThan(weights.box.size);
+
+  // The inline arrow carries NO resting outline at all -- a scrolling
+  // inventory must read as names with an affordance beside them, never as a
+  // column of outlined buttons. The frame only appears on hover/focus.
+  expect(weights.row.borderAlpha).toBe(0);
+  await rowArrow.hover();
+  await expect
+    .poll(async () =>
+      rowArrow.evaluate(
+        (element) => getComputedStyle(element).borderTopColor,
+      ),
+    )
+    .not.toBe("rgba(0, 0, 0, 0)");
 });
 
 test("both arrows loop the depart & return animation on hover and focus without shifting the box", async ({

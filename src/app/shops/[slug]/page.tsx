@@ -144,10 +144,6 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           className="detail-hero shop-detail-hero resource-atmosphere resource-atmosphere--shop"
           aria-labelledby="shop-title"
         >
-          <VerificationStatus
-            stamp={shop}
-            className="detail-hero-verification"
-          />
           <div className="shop-detail-stage">
             <ContentImage
               imagePath={shop.image}
@@ -156,7 +152,10 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
             />
           </div>
           <div className="shop-detail-copy">
-            <p className="shop-detail-eyebrow">Shop</p>
+            <div className="detail-hero-topline">
+              <p className="shop-detail-eyebrow">Shop</p>
+              <VerificationStatus stamp={shop} />
+            </div>
             <h1 id="shop-title" className="public-resource-title">
               {shop.name}
             </h1>
