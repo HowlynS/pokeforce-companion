@@ -848,3 +848,61 @@ the 8px radius, warm border, dark elevated surface, shadow, z-index 40 open
 card, 200ms/180ms panel motion, 220ms staggered row entrance, 120ms row exit,
 delayed trigger-close unmount, and immediate outside-card dismissal. Missing
 images keep the same stage geometry with the restrained `No image` fallback.
+
+## Public detail-page geometry is shared (normalization pass, 2026-08-20)
+
+**PUBLIC DETAIL PAGE GEOMETRY IS SHARED.** Recipe detail was the reference
+when the canonical values were calibrated, but they are owned by the shared
+system, not by Recipe or any other resource family.
+
+Every public resource detail page — Item, Recipe, Profession, Class,
+Location, Shop — renders its root `<article>` with `.public-detail-page`
+alongside its own resource class. The shell owns the page frame; the
+resource class owns only identity and content.
+
+Centrally owned, in `:root` as `--detail-*` tokens and the
+`.public-detail-*` classes:
+
+- `--detail-gutter` — the full-bleed origin. The shell cancels
+  `.public-site-container`'s horizontal padding using this token, which is
+  the *same ramp* the container itself uses. Never hard-code the number: two
+  families previously wrote `-28px` against a `clamp(28px … 34px)` padding
+  and were 6px out at 3440.
+- `--detail-stack-gap` — vertical rhythm between a page's top-level blocks,
+  and therefore also the hero-to-first-section rhythm.
+- `--detail-breadcrumb-font-size`, `--detail-breadcrumb-item-gap`,
+  `--detail-breadcrumb-space` — one breadcrumb treatment site-wide.
+- `--detail-title-size`, `--detail-title-line-height` — the canonical
+  `.public-resource-title` scale, including its single narrow-width step.
+- `--detail-eyebrow-space` (with `--detail-label-font-size`) — the hero
+  eyebrow. `.item-category-label`, `.profession-detail-eyebrow` and
+  `.shop-detail-eyebrow` are one declaration wearing three names.
+- `--detail-sidebar-gap`, `--detail-sidebar-stack-gap`, `--sidebar-width`
+  and `.public-detail-layout` / `.public-detail-main` /
+  `.public-detail-sidebar` — one information-column system with one
+  collapse point (1040px).
+
+A resource detail page MAY customise: its hue and resource atmosphere, its
+content, its own sections and relationship panels, and genuinely intentional
+image-stage dimensions.
+
+A resource detail page MUST NOT independently redefine: breadcrumb geometry
+or type, content origin or width, page scale, the title or eyebrow scale,
+detail top spacing, the scenic background coordinate system, sidebar
+geometry, or section rhythm. Change the token instead — every detail page
+moves together, which is the point.
+
+`e2e/public-detail-geometry.spec.ts` enforces this at 1920/2560/3440 and
+fails if any family reintroduces a private copy of a shared measurement.
+
+Known intentional exceptions:
+
+- Hero *height*, section content and breadcrumb *wrapping* differ by
+  resource. Those are content, not frame, and the guard does not assert them.
+- Pages with an information column (Item, Location) are narrower in the main
+  column than pages without one (Recipe, Profession, Class, Shop). Both share
+  the same left origin.
+- `/categories/[slug]` deliberately does NOT participate. It predates this
+  system: it uses the plain `AppShell` with no scenic layer, no breadcrumb,
+  no resource atmosphere, and Category has no canonical hue. Bringing it in
+  would be a redesign, not a normalization.

@@ -131,7 +131,7 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
 
   return (
     <AppShell scenic="detail" wide>
-      <article className="shop-detail-page">
+      <article className="public-detail-page shop-detail-page">
         <Breadcrumb
           segments={[
             ...shopBreadcrumbSegments(ancestors),

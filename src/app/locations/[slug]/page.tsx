@@ -191,14 +191,18 @@ export default async function LocationDetailPage({
 
   return (
     <AppShell scenic="detail" wide>
-      <article className="location-detail-page">
-        <div className="location-detail-layout">
-          <div className="location-detail-main">
-            <Breadcrumb
-              segments={locationBreadcrumbSegments(ancestors)}
-              current={location.name}
-            />
+      <article className="public-detail-page location-detail-page">
+        {/* The breadcrumb is a sibling of the main/sidebar layout, exactly as
+            on every other detail page. It used to sit INSIDE the main column,
+            which pulled the information column's top edge up to the
+            breadcrumb's line instead of the hero's. */}
+        <Breadcrumb
+          segments={locationBreadcrumbSegments(ancestors)}
+          current={location.name}
+        />
 
+        <div className="public-detail-layout location-detail-layout">
+          <div className="public-detail-main location-detail-main">
             <section
               className="profession-detail-hero location-detail-hero resource-atmosphere resource-atmosphere--location"
               aria-labelledby="location-title"
@@ -326,7 +330,10 @@ export default async function LocationDetailPage({
             ) : null}
           </div>
 
-          <aside className="location-detail-sidebar" aria-label="Location details">
+          <aside
+            className="public-detail-sidebar location-detail-sidebar"
+            aria-label="Location details"
+          >
             <section className="location-detail-sidebar-panel">
               <h2>Location Details</h2>
               <dl>

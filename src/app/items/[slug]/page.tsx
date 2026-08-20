@@ -154,7 +154,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
 
   return (
     <AppShell scenic="detail" wide>
-      <article className="item-detail-page item-resource-detail-page">
+      <article className="public-detail-page item-detail-page item-resource-detail-page">
         <Breadcrumb
           segments={[
             { name: "Home", href: "/" },
@@ -405,7 +405,10 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
             ) : null}
           </div>
 
-          <aside className="item-sidebar" aria-label="Item information">
+          <aside
+            className="public-detail-sidebar item-sidebar"
+            aria-label="Item information"
+          >
             <section className="item-panel item-sidebar-panel">
               <h2>Item details</h2>
               <dl className="item-detail-list">

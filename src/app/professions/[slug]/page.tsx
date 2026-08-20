@@ -53,7 +53,7 @@ export default async function ProfessionDetailPage({
 
   return (
     <AppShell scenic="detail" wide>
-      <article className="profession-detail-page">
+      <article className="public-detail-page profession-detail-page">
         <Breadcrumb
           segments={[
             { name: "Home", href: "/" },

@@ -213,6 +213,56 @@
   --codex-card-media-size: clamp(130px, calc(130px + 8px * var(--pf)), 138px);
   --codex-card-sprite-size: clamp(88px, calc(88px + 6px * var(--pf)), 94px);
   --codex-card-title-font-size: clamp(19px, calc(19px + 1px * var(--pf)), 20px);
+
+  /* ===== Canonical public detail-page geometry ========================
+     ONE source of truth for the frame every public resource detail page
+     sits in. Recipe detail was the reference when these were calibrated,
+     so these values are its measured geometry -- but they are owned here,
+     not by any resource family. A resource page may customise its hue,
+     its content and its own sections; it must NOT redefine these.
+
+     Changing a value here moves every detail page together, which is the
+     entire point: the drift this replaced came from six families each
+     holding a private copy of the same measurement. */
+
+  /* Matches .public-site-container's own padding-inline exactly, because
+     the detail shell cancels that padding to sit flush with the container
+     box (see .public-detail-page). Previously two families hard-coded
+     -28px against this same ramp, so they were 6px out at 3440. */
+  --detail-gutter: clamp(28px, calc(28px + 6px * var(--pf)), 34px);
+
+  /* Vertical rhythm between a detail page's top-level blocks. */
+  --detail-stack-gap: 32px;
+
+  /* Breadcrumb: one treatment for every detail page. */
+  --detail-breadcrumb-font-size: 12.5px;
+  --detail-breadcrumb-item-gap: 8px;
+  /* Breadcrumb baseline to hero top. */
+  --detail-breadcrumb-space: 20px;
+
+  /* Hero typography. */
+  --detail-title-size: clamp(40px, calc(40px + 4px * var(--pf)), 44px);
+  --detail-title-line-height: 1.05;
+
+  /* Main column to sidebar, and the sidebar's own card stack. */
+  --detail-eyebrow-space: 8px;
+  --detail-sidebar-gap: 28px;
+  --detail-sidebar-stack-gap: 18px;
+}
+
+/* The hero title steps down on narrow layouts. One ramp, one breakpoint --
+   this replaced seven conflicting per-family ramps across three different
+   breakpoints, which is why the same title rendered 40px on Item and
+   37.8px on Recipe at the same 390px width. */
+@media (max-width: 700px) {
+  :root {
+    --detail-title-size: clamp(32px, 9.7vw, 40px);
+    --detail-title-line-height: 1.01;
+    /* Narrow layouts tighten the block rhythm. One value for every detail
+       page -- Profession used 28 and Shop 26 privately, which is what made
+       their heroes start on a different line to Item/Recipe at 390. */
+    --detail-stack-gap: 28px;
+  }
 }
 
 /* ---- Public design review workspace --------------------------------- */
@@ -4151,6 +4201,85 @@ select:focus-visible {
   color: var(--color-text-muted);
 }
 
+/* ===== Canonical public detail-page shell =============================
+   Every public resource detail page's root <article> carries
+   .public-detail-page in addition to its own resource class. This class
+   owns the page frame -- origin, width, block rhythm, breadcrumb
+   treatment -- and the resource class owns only hue, content and its own
+   sections. See the --detail-* tokens for the values themselves. */
+.public-detail-page {
+  min-width: 0;
+  display: grid;
+  gap: var(--detail-stack-gap);
+}
+
+/* The detail shell cancels the site container's horizontal padding so a
+   detail page's hero sits flush with the container box, which is the
+   origin the Recipe hero established. Tied to --detail-gutter (the same
+   ramp the container itself uses) rather than a hard-coded number, so it
+   stays exact at every width including ultrawide. Below this breakpoint
+   the page keeps the container's own gutter. */
+@media (min-width: 1181px) {
+  .public-detail-page {
+    width: calc(100% + var(--detail-gutter) * 2);
+    margin-inline: calc(var(--detail-gutter) * -1);
+  }
+}
+
+/* The grid gap above already separates blocks by --detail-stack-gap; the
+   breadcrumb sits closer to its hero than that, so it trims the shared gap
+   back to --detail-breadcrumb-space. Expressed as the difference rather
+   than a magic negative number, so the intent survives a token change. */
+.public-detail-page > .public-breadcrumb {
+  margin-bottom: calc(
+    var(--detail-breadcrumb-space) - var(--detail-stack-gap)
+  );
+}
+
+.public-detail-page .public-breadcrumb ol {
+  gap: var(--detail-breadcrumb-item-gap);
+  font-size: var(--detail-breadcrumb-font-size);
+}
+
+/* Main content beside an optional information column. Pages with no
+   sidebar simply render one child and inherit the identical origin. */
+.public-detail-layout {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--detail-sidebar-gap);
+}
+
+.public-detail-layout > .public-detail-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: var(--detail-stack-gap);
+}
+
+.public-detail-sidebar {
+  width: var(--sidebar-width);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--detail-sidebar-stack-gap);
+}
+
+/* One collapse point for every detail page's information column. Both
+   children go full width -- `align-items: flex-start` above would otherwise
+   shrink-wrap them once the axis turns vertical. */
+@media (max-width: 1040px) {
+  .public-detail-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .public-detail-layout > .public-detail-main,
+  .public-detail-sidebar {
+    width: 100%;
+  }
+}
+
 .public-breadcrumb {
   margin-bottom: 16px;
 }
@@ -4564,10 +4693,8 @@ select:focus-visible {
 }
 
 /* Public Item detail --------------------------------------------------- */
-.item-detail-page {
-  display: grid;
-  gap: 28px;
-}
+/* Page frame comes from .public-detail-page. */
+
 
 .item-breadcrumb {
   margin-bottom: -8px;
@@ -4589,7 +4716,7 @@ select:focus-visible {
   position: relative;
   min-width: 0;
   display: grid;
-  gap: 22px;
+  gap: var(--detail-stack-gap);
 }
 
 .item-identity-panel,
@@ -4632,23 +4759,31 @@ select:focus-visible {
   padding: clamp(30px, 2.8vw, 46px);
 }
 
-.item-category-label {
-  margin: 0 0 14px;
+/* The canonical detail-hero eyebrow. All three class names below are the
+   same control wearing a different resource family's name; they share one
+   declaration so the scale can never drift between page types again. */
+.item-category-label,
+.profession-detail-eyebrow,
+.shop-detail-eyebrow {
+  margin: 0 0 var(--detail-eyebrow-space);
   color: var(--color-accent);
-  font-size: 13px;
+  font-size: var(--detail-label-font-size);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
+/* The canonical public detail-page title. Only detail heroes use this
+   class, so it carries the shared scale directly rather than leaving each
+   resource family to restate it. */
 .public-resource-title {
   margin: 0;
   color: var(--color-text);
   font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
-  font-size: clamp(43px, 3.35vw, 60px);
+  font-size: var(--detail-title-size);
   font-weight: 700;
   letter-spacing: -0.01em;
-  line-height: 1;
+  line-height: var(--detail-title-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -4806,10 +4941,8 @@ a.item-info-chip:focus-visible {
   font-weight: 600;
 }
 
-.item-sidebar {
-  display: grid;
-  gap: 18px;
-}
+/* Stacking and gap come from .public-detail-sidebar. */
+
 
 .item-panel {
   padding: 26px;
@@ -5156,34 +5289,19 @@ a.item-info-chip:focus-visible {
   padding-top: 28px;
 }
 
-.item-resource-detail-page {
-  display: block;
-}
+/* Page frame (grid + shared rhythm) comes from .public-detail-page.
+   This used to force display:block, which out-ordered the shared rule. */
 
-@media (min-width: 1181px) {
-  .item-resource-detail-page {
-    width: calc(100% + 56px);
-    margin-inline: -28px;
-  }
-}
 
-.item-resource-detail-page > .public-breadcrumb {
-  margin-bottom: 20px;
-}
 
-.item-resource-detail-page .public-breadcrumb ol {
-  gap: 8px;
-  font-size: 12.5px;
-}
 
 .item-resource-detail-page .item-content-grid {
   grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
-  gap: 28px;
+  gap: var(--detail-sidebar-gap);
 }
 
-.item-resource-detail-page .item-main-column {
-  gap: 28px;
-}
+/* Section rhythm is the shared --detail-stack-gap. */
+
 
 /* The panel carries the frame's radius even though it paints no border of its
    own: its atmosphere wash inherits that radius, so the wash and the stage
@@ -5233,16 +5351,6 @@ a.item-info-chip:focus-visible {
   padding: 6px 0 24px;
 }
 
-.item-resource-detail-page .item-category-label {
-  margin-bottom: 8px;
-  font-size: var(--detail-label-font-size);
-  letter-spacing: 0.06em;
-}
-
-.item-resource-detail-page .public-resource-title {
-  font-size: clamp(40px, calc(40px + 4px * var(--pf)), 44px);
-  line-height: 1.05;
-}
 
 .item-resource-detail-page .item-description {
   max-width: var(--detail-body-max-width);
@@ -5332,10 +5440,6 @@ a.item-info-chip:focus-visible {
     padding: 0;
   }
 
-  .item-resource-detail-page .public-resource-title {
-    font-size: clamp(34px, 10.5vw, 40px);
-  }
-
   .item-resource-detail-page .item-sidebar {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -5422,33 +5526,18 @@ a.item-info-chip:focus-visible {
 /* Recipe detail calibration follows its own archived handoff: unlike Item
    detail it has no visible fact rail. Production relationships and
    verification continue below the reference hero + Ingredient composition. */
-.recipe-detail-page {
-  display: block;
-}
+/* Page frame (grid + shared rhythm) comes from .public-detail-page.
+   This used to force display:block, which out-ordered the shared rule. */
 
-@media (min-width: 1181px) {
-  .recipe-detail-page {
-    width: calc(100% + 56px);
-    margin-inline: -28px;
-  }
-}
 
-.recipe-detail-page > .public-breadcrumb {
-  margin-bottom: 20px;
-}
 
-.recipe-detail-page .public-breadcrumb ol {
-  gap: 8px;
-  font-size: 12.5px;
-}
 
 .recipe-detail-page .item-content-grid {
   display: block;
 }
 
-.recipe-detail-page .item-main-column {
-  gap: 32px;
-}
+/* Section rhythm is the shared --detail-stack-gap. */
+
 
 .recipe-detail-page .item-content-grid > .item-sidebar {
   display: none;
@@ -5530,16 +5619,6 @@ a.item-info-chip:focus-visible {
   padding: 6px 0 24px;
 }
 
-.recipe-detail-page .item-category-label {
-  margin-bottom: 8px;
-  font-size: var(--detail-label-font-size);
-  letter-spacing: 0.06em;
-}
-
-.recipe-detail-page .public-resource-title {
-  font-size: clamp(40px, calc(40px + 4px * var(--pf)), 44px);
-  line-height: 1.05;
-}
 
 .recipe-summary {
   max-width: var(--detail-body-max-width);
@@ -5726,10 +5805,6 @@ body:has(.recipe-detail-page) .public-site-footer {
     padding: 0;
   }
 
-  .recipe-detail-page .public-resource-title {
-    font-size: clamp(32px, 9.7vw, 40px);
-  }
-
 }
 
 /* Public Profession detail: a compact discipline identity followed by a
@@ -5788,13 +5863,6 @@ body:has(.recipe-detail-page) .public-site-footer {
   padding: 32px 38px;
 }
 
-.profession-identity-copy .item-category-label {
-  margin-bottom: 10px;
-}
-
-.profession-identity-copy .public-resource-title {
-  font-size: clamp(40px, 3vw, 54px);
-}
 
 .profession-description {
   max-width: 62ch;
@@ -7220,20 +7288,6 @@ body:has(.recipe-detail-page) .public-site-footer {
 }
 
 @media (max-width: 520px) {
-  .public-resource-title {
-    font-size: clamp(36px, 11vw, 48px);
-  }
-
-  .recipe-detail-page .public-resource-title {
-    font-size: clamp(32px, 9.7vw, 42px);
-    line-height: 1.01;
-  }
-
-  .profession-detail-page .public-resource-title {
-    font-size: clamp(34px, 10.4vw, 46px);
-    line-height: 1.01;
-  }
-
   .recipe-fact-strip {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -7254,10 +7308,6 @@ body:has(.recipe-detail-page) .public-site-footer {
 
   .item-panel {
     padding: 22px;
-  }
-
-  .profession-identity-copy .public-resource-title {
-    font-size: clamp(34px, 10.4vw, 46px);
   }
 
   .profession-description {
@@ -11782,15 +11832,9 @@ input[type="checkbox"] {
    Flat identity and Recipe relationship directory from the archived handoff.
    Production-only rich text, canonical links, ingredients, verification,
    timestamps, and fallbacks remain intact around that geometry. */
-.profession-detail-page {
-  min-width: 0;
-  display: grid;
-  gap: 32px;
-}
+/* Page frame comes from .public-detail-page. */
 
-.profession-detail-page > .public-breadcrumb {
-  margin-bottom: -12px;
-}
+
 
 .profession-detail-hero {
   position: relative;
@@ -11834,19 +11878,9 @@ input[type="checkbox"] {
   padding-top: 6px;
 }
 
-.profession-detail-eyebrow {
-  margin: 0 0 8px;
-  color: var(--color-accent);
-  font-size: var(--detail-label-font-size);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
 
 .profession-detail-copy .public-resource-title {
   margin: 0 0 14px;
-  font-size: clamp(40px, calc(40px + 4px * var(--pf)), 44px);
-  line-height: 1.05;
 }
 
 .profession-detail-copy .profession-description {
@@ -12593,9 +12627,6 @@ a.profession-detail-chip:focus-visible {
 }
 
 @media (max-width: 700px) {
-  .profession-detail-page {
-    gap: 28px;
-  }
 
   .profession-detail-hero {
     flex-direction: column;
@@ -12603,10 +12634,6 @@ a.profession-detail-chip:focus-visible {
 
   .profession-detail-copy {
     padding-top: 0;
-  }
-
-  .profession-detail-copy .public-resource-title {
-    font-size: clamp(32px, 9.7vw, 40px);
   }
 
   .recipe-collection-toolbar {
@@ -12935,33 +12962,20 @@ a.profession-detail-chip:focus-visible {
 
 /* Location detail: the handoff's identity + sticky details composition,
    extended with production-owned child, Shop, and obtainable-Item relations. */
-.location-detail-layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 28px;
-}
+/* Geometry (flex, alignment, column gap) comes from
+   .public-detail-layout; Location adds nothing of its own. */
 
-.location-detail-main {
-  flex: 1;
-  min-width: 0;
-}
+/* Geometry comes from .public-detail-main. */
 
-.location-detail-main > .public-breadcrumb {
-  margin-bottom: 20px;
-}
 
-.location-detail-hero {
-  margin-bottom: 32px;
-}
+/* Section rhythm comes from .public-detail-main's own grid gap; this
+   hero used to add a private 32px margin on top of it. */
 
+/* Width, stacking and gap come from .public-detail-sidebar; only the
+   sticky behaviour is Location-specific. */
 .location-detail-sidebar {
   position: sticky;
   top: 88px;
-  display: flex;
-  width: var(--sidebar-width);
-  flex: none;
-  flex-direction: column;
-  gap: 16px;
 }
 
 .location-detail-sidebar-panel {
@@ -13273,14 +13287,11 @@ a.profession-detail-chip:focus-visible {
   to { transform: scaleX(0); }
 }
 
-@media (max-width: 940px) {
-  .location-detail-layout {
-    flex-direction: column;
-  }
-
+/* Matches the shared .public-detail-layout collapse point. Once the
+   information column is full width it lays its cards out two-up. */
+@media (max-width: 1040px) {
   .location-detail-sidebar {
     position: static;
-    width: 100%;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -13650,15 +13661,9 @@ a.profession-detail-chip:focus-visible {
    The handoff's compact merchant identity and selectable Inventory ledger,
    populated exclusively from production Shop, Location, Item, Currency, and
    verification records. */
-.shop-detail-page {
-  min-width: 0;
-  display: grid;
-  gap: 32px;
-}
+/* Page frame comes from .public-detail-page. */
 
-.shop-detail-page > .public-breadcrumb {
-  margin-bottom: -12px;
-}
+
 
 .shop-detail-hero {
   min-width: 0;
@@ -13702,19 +13707,9 @@ a.profession-detail-chip:focus-visible {
   padding-top: 6px;
 }
 
-.shop-detail-eyebrow {
-  margin: 0 0 8px;
-  color: var(--color-accent);
-  font-size: var(--detail-label-font-size);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
 
 .shop-detail-copy .public-resource-title {
   margin: 0 0 14px;
-  font-size: clamp(40px, calc(40px + 4px * var(--pf)), 44px);
-  line-height: 1.05;
 }
 
 .shop-detail-description {
@@ -14047,9 +14042,6 @@ a.shop-detail-chip:focus-visible {
 }
 
 @media (max-width: 700px) {
-  .shop-detail-page {
-    gap: 26px;
-  }
 
   .shop-detail-hero {
     flex-direction: column;
@@ -14074,10 +14066,6 @@ a.shop-detail-chip:focus-visible {
 
   .shop-detail-copy {
     padding-top: 0;
-  }
-
-  .shop-detail-copy .public-resource-title {
-    font-size: clamp(30px, 10vw, 40px);
   }
 
   .shop-detail-inventory-panel {

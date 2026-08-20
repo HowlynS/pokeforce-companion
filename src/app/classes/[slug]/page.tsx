@@ -37,7 +37,7 @@ export default async function PlayerClassDetailPage({
 
   return (
     <AppShell scenic="detail" wide>
-      <article className="profession-detail-page class-detail-page">
+      <article className="public-detail-page profession-detail-page class-detail-page">
         <Breadcrumb
           segments={[
             { name: "Home", href: "/" },

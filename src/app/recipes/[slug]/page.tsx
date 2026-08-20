@@ -97,7 +97,7 @@ export default async function RecipeDetailPage({
 
   return (
     <AppShell scenic="detail" wide>
-      <article className="item-detail-page recipe-detail-page">
+      <article className="public-detail-page item-detail-page recipe-detail-page">
         <Breadcrumb
           segments={[
             { name: "Home", href: "/" },
