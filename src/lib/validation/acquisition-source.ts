@@ -85,7 +85,7 @@ export type AcquisitionSourceForDisplay = {
   sourceLabel: string | null;
   quantity: string | null;
   notes: string | null;
-  location: { name: string; slug: string } | null;
+  location: { name: string; slug: string; image?: string | null } | null;
   profession: { name: string; slug?: string } | null;
 };
 

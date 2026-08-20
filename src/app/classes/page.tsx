@@ -86,11 +86,13 @@ export default async function PlayerClassesPage({
           key={playerClass.id}
           style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
         >
-          <ContentImage
-            imagePath={playerClass.image}
-            alt={`Image of ${playerClass.name}`}
-            size="row"
-          />
+          <span className="class-catalogue-list-media">
+            <ContentImage
+              imagePath={playerClass.image}
+              alt={`Image of ${playerClass.name}`}
+              size="row"
+            />
+          </span>
           <h2 className="class-catalogue-list-name">{playerClass.name}</h2>
           <span className="class-catalogue-list-type">Class</span>
           <span className="class-catalogue-list-description">

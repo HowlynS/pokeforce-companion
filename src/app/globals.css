@@ -2711,6 +2711,7 @@ select:focus-visible {
    side on desktop and stack on narrow screens (flex-wrap plus the facts
    column's 260px flex-basis force the wrap around 375px widths). */
 .detail-hero {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -2723,6 +2724,120 @@ select:focus-visible {
   gap: 16px;
   flex: 1 1 260px;
   min-width: 0;
+}
+
+/* Discreet, top-right verification cue for a resource hero. Kept out of the
+   facts row so it never competes with the record's own identity/facts; a
+   narrow hero simply wraps it below the title's line via its own max-width
+   and right-anchored position rather than colliding with it. */
+.detail-hero-verification {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+}
+
+.verification-status {
+  position: relative;
+  display: inline-flex;
+}
+
+.verification-status-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-inset-surface);
+  padding: 3px 10px;
+  color: var(--color-text-meta-dim);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.verification-status--verified .verification-status-trigger {
+  border-color: color-mix(in srgb, var(--color-accent-soft) 50%, transparent);
+  color: var(--color-accent-soft);
+}
+
+.verification-status-trigger:hover,
+.verification-status-trigger:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  color: var(--color-accent-bright);
+}
+
+.verification-status-panel {
+  position: absolute;
+  z-index: 6;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 32px));
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-inset-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px;
+  color: var(--color-text-body);
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+}
+
+.verification-status:hover .verification-status-panel,
+.verification-status:focus-within .verification-status-panel,
+.verification-status-panel[data-open] {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.verification-status-heading {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.verification-status-note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verification-status-panel {
+    transition: none;
+  }
+}
+
+/* Narrow heroes: keep the pill reachable and its panel on-screen rather than
+   letting it collide with the title or spill past the viewport edge. */
+@media (max-width: 480px) {
+  .detail-hero-verification {
+    position: static;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+
+  .verification-status-panel {
+    right: 0;
+    left: auto;
+    max-width: min(280px, calc(100vw - 24px));
+  }
 }
 
 .public-filter-nav {
@@ -2954,16 +3069,19 @@ select:focus-visible {
    Shop selected-item box, and the Locations region headings. Gold arrow in
    a gold-outlined dark square, so it reads as navigation at a glance and is
    never confused with a disclosure chevron (which stays muted and keeps its
-   own styling). Border and color are the only things that move on hover, so
-   the control never shifts or resizes. */
+   own styling). The box itself MUST clip its glyph -- the depart animation
+   below carries the glyph past the box's own edges. */
 .page-link-arrow {
+  position: relative;
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  /* 24px keeps the icon a real, pointer-sized target. */
-  width: 24px;
-  height: 24px;
+  overflow: hidden;
+  /* 28px keeps the icon a real, pointer-sized target and gives the diagonal
+     glyph room to depart/return without visibly clipping mid-stroke. */
+  width: 28px;
+  height: 28px;
   border: 1px solid var(--color-accent-soft);
   border-radius: 6px;
   background: var(--color-inset-surface);
@@ -2984,55 +3102,72 @@ select:focus-visible {
   box-shadow: 0 0 10px rgba(216, 181, 98, 0.28);
 }
 
-/* The arrow itself. The head is fixed and always drawn, so the control reads
-   as navigation at rest; only the shaft moves, extending back toward its
-   tail on hover/focus -- a short stroke resolving into a full arrow. All of
-   it happens inside the SVG, so nothing about the button's box changes. */
-.page-link-arrow svg {
-  overflow: visible;
+/* The arrow glyph: a complete, static diagonal up-right arrow at rest. Its
+   own travel distance is a custom property so the subtle/dense variant can
+   scale the same keyframes down without a second animation. */
+.page-link-arrow-glyph {
+  width: 13px;
+  height: 13px;
+  --page-link-arrow-travel: 13px;
 }
 
-/* Full-length shaft is the base (and the whole story under reduced motion). */
-.page-link-arrow-shaft {
-  stroke-dasharray: 15;
-  stroke-dashoffset: 0;
+/* Claude Design "2B Depart & Return": the glyph rests, flies out through the
+   top-right, fades, silently teleports to the bottom-left (opacity already
+   0, so the jump is invisible), and returns -- looping while hovered or
+   focused. Pointer-out / focus-out simply removes the animation, which
+   snaps the glyph back to its rest transform/opacity immediately. */
+@keyframes page-link-arrow-depart {
+  0%,
+  10% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  45% {
+    transform: translate(
+      var(--page-link-arrow-travel),
+      calc(var(--page-link-arrow-travel) * -1)
+    );
+    opacity: 0;
+  }
+  46% {
+    transform: translate(
+      calc(var(--page-link-arrow-travel) * -1),
+      var(--page-link-arrow-travel)
+    );
+    opacity: 0;
+  }
+  80%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* A negative offset pushes the dash forward along the path, trimming the
-     TAIL rather than the head -- the stroke stays attached to the arrowhead
-     and simply starts further along it. */
-  .page-link-arrow-shaft {
-    stroke-dashoffset: -4.6;
-    transition: stroke-dashoffset 190ms cubic-bezier(0.2, 0.9, 0.3, 1);
-  }
-
-  .page-link-arrow:hover .page-link-arrow-shaft,
-  .page-link-arrow:focus-visible .page-link-arrow-shaft {
-    stroke-dashoffset: 0;
-  }
-
-  .page-link-arrow svg {
-    transition: transform 190ms cubic-bezier(0.2, 0.9, 0.3, 1);
-  }
-
-  /* A single-pixel drift along the arrow's own diagonal. Enough to feel
-     alive, far short of a bounce. */
-  .page-link-arrow:hover svg,
-  .page-link-arrow:focus-visible svg {
-    transform: translate(1px, -1px);
+  .page-link-arrow:hover .page-link-arrow-glyph,
+  .page-link-arrow:focus-visible .page-link-arrow-glyph {
+    animation: page-link-arrow-depart 1.05s cubic-bezier(0.4, 0, 0.3, 1)
+      infinite;
   }
 }
 
 /* Subtle: the secondary, inline emphasis used beside a record's name in a
    dense list. The gold arrow stays legible, but the outline is a fraction of
-   the default's weight so a long list never reads as a column of buttons. */
+   the default's weight so a long list never reads as a column of buttons.
+   Slightly smaller box and glyph than default/prominent so a dense row of
+   these never reads as a column of full-size buttons. */
 .page-link-arrow--subtle {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-color: color-mix(in srgb, var(--color-accent-soft) 42%, transparent);
   background: transparent;
   color: color-mix(in srgb, var(--color-accent) 82%, transparent);
+}
+
+.page-link-arrow--subtle .page-link-arrow-glyph {
+  width: 12px;
+  height: 12px;
+  --page-link-arrow-travel: 12px;
 }
 
 .page-link-arrow--subtle:hover,
@@ -3044,18 +3179,12 @@ select:focus-visible {
 }
 
 /* Prominent: the primary "open this record" action on a surface that has
-   exactly one. Larger, fully saturated, and outlined at full strength. */
+   exactly one. Fully saturated and outlined at full strength; same box/glyph
+   geometry as the default variant. */
 .page-link-arrow--prominent {
-  width: 28px;
-  height: 28px;
   border-color: var(--color-accent);
   background: var(--color-surface-soft);
   color: var(--color-accent);
-}
-
-.page-link-arrow--prominent svg {
-  width: 14px;
-  height: 14px;
 }
 
 .page-link-arrow--prominent:hover,
@@ -3655,6 +3784,7 @@ select:focus-visible {
   min-width: 0;
   min-height: 172px;
   display: flex;
+  align-items: center;
   gap: var(--codex-card-gap);
   border: 1px solid var(--color-border-muted);
   border-radius: 14px;
@@ -3781,6 +3911,32 @@ select:focus-visible {
     border-color 0.2s ease,
     background-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+/* The thumbnail's stage always carries the Profession hue, real image or
+   not -- image availability only changes what sits inside it, matching the
+   Grid card's own media wrapper. */
+.profession-catalogue-list-media {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background:
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--resource-hue), 0.2),
+      transparent 68%
+    ),
+    var(--color-surface);
+}
+
+.profession-catalogue-list-media .public-sprite-stage--row {
+  border: 0;
+  background: transparent;
 }
 
 .profession-catalogue-list-name {
@@ -4421,6 +4577,7 @@ select:focus-visible {
 }
 
 .item-main-column {
+  position: relative;
   min-width: 0;
   display: grid;
   gap: 22px;
@@ -4743,31 +4900,6 @@ a.item-info-chip:focus-visible {
   overflow-wrap: anywhere;
 }
 
-.item-verification-state {
-  margin: 0 0 8px;
-  color: var(--color-text);
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.item-verification-state::before {
-  width: 8px;
-  height: 8px;
-  display: inline-block;
-  margin-right: 9px;
-  border: 1px solid var(--color-accent);
-  border-radius: 50%;
-  background: var(--color-accent);
-  content: "";
-}
-
-.item-verification-copy {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  line-height: 1.65;
-}
-
 .item-lower-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4788,60 +4920,103 @@ a.item-info-chip:focus-visible {
   text-transform: uppercase;
 }
 
-.item-source-rows,
 .item-recipe-rows {
   border-top: 1px solid var(--color-border);
 }
 
-.item-acquisition-row {
-  min-width: 0;
+/* How to obtain: a responsive card grid, not a table. Each acquisition
+   source becomes a compact card with only the fields it actually carries --
+   a Shop card and a Location/Profession-derived card share this same
+   vocabulary (compact media stage, strong title, secondary context, an
+   emphasized value line) without being forced into identical fields. */
+.item-obtain-cards {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 6px 18px;
-  border-bottom: 1px solid var(--color-border);
-  padding: 14px 4px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
 }
 
-.item-row-primary {
+.item-acquisition-row {
+  position: relative;
   min-width: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 5px 12px;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  padding: 12px;
 }
 
-.item-row-primary > strong,
-.item-row-primary > a:first-child {
+.item-obtain-card-media {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-inset-surface);
+}
+
+.item-obtain-card-body {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.item-obtain-card-title {
   color: var(--color-text);
   font-weight: 650;
   overflow-wrap: anywhere;
 }
 
-.item-row-context {
+.item-obtain-card-context {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
-.item-shop-price,
-.item-source-quantity {
-  justify-self: end;
-  font-size: 14px;
+.item-obtain-card-value {
+  margin-top: 2px;
+  color: var(--color-accent-soft);
+  font-size: 13.5px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.item-source-quantity {
-  color: var(--color-accent-soft);
-  font-weight: 600;
+.item-obtain-card-notes {
+  margin: 2px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
-.item-row-notes {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 13px;
-  line-height: 1.55;
-  overflow-wrap: anywhere;
+/* The cheapest Shop listing (only computed when every listing shares one
+   Currency, so the comparison is never a guess across different monies). */
+.item-acquisition-row.item-obtain-card--best {
+  border-color: color-mix(in srgb, var(--color-border) 45%, var(--color-accent));
+  background: var(--color-surface-soft);
+}
+
+.item-obtain-card-best-badge {
+  position: absolute;
+  top: -9px;
+  right: 10px;
+  border: 1px solid var(--color-accent-soft);
+  border-radius: 999px;
+  background: var(--color-inset-surface);
+  padding: 1px 8px;
+  color: var(--color-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.item-obtain-cheapest {
+  color: var(--color-accent-soft);
+  font-weight: 600;
 }
 
 .item-recipe-row {
@@ -5118,15 +5293,6 @@ a.item-info-chip:focus-visible {
 .item-resource-detail-page .item-detail-list dt,
 .item-resource-detail-page .item-detail-list dd {
   font-size: 12.5px;
-}
-
-.item-resource-detail-page .item-verification-state {
-  font-size: 14px;
-}
-
-.item-resource-detail-page .item-verification-copy {
-  font-size: 11.5px;
-  line-height: 1.55;
 }
 
 @media (max-width: 1040px) {
@@ -5466,10 +5632,6 @@ body:has(.recipe-detail-page) .public-site-footer {
 
 .recipe-detail-page .recipe-ingredient-row .item-recipe-thumbnail {
   width: 32px;
-  height: 32px;
-  box-sizing: border-box;
-  flex: none;
-  border-radius: 7px;
   transition: filter 0.18s ease;
 }
 
@@ -5530,38 +5692,7 @@ body:has(.recipe-detail-page) .public-site-footer {
   max-width: 1000px;
 }
 
-.recipe-verification-strip {
-  width: min(100%, 520px);
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: 8px 16px;
-  border-top: 1px solid var(--color-border);
-  padding-top: 18px;
-}
-
-.recipe-verification-strip h2 {
-  margin: 0;
-  color: var(--color-accent-soft);
-  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
-  font-size: 18px;
-}
-
-.recipe-verification-strip .item-verification-state,
-.recipe-verification-strip .item-verification-copy {
-  margin: 0;
-}
-
-.recipe-verification-strip .item-verification-state {
-  font-size: 13px;
-}
-
-.recipe-verification-strip .item-verification-copy {
-  font-size: 12px;
-}
-
 .recipe-updated-at {
-  grid-column: 1 / -1;
   margin: 0;
   color: var(--color-text-meta-dim);
   font-size: 11px;
@@ -5587,13 +5718,6 @@ body:has(.recipe-detail-page) .public-site-footer {
     font-size: clamp(32px, 9.7vw, 40px);
   }
 
-  .recipe-verification-strip {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .recipe-updated-at {
-    grid-column: auto;
-  }
 }
 
 /* Public Profession detail: a compact discipline identity followed by a
@@ -6925,35 +7049,6 @@ body:has(.recipe-detail-page) .public-site-footer {
   overflow-wrap: anywhere;
 }
 
-.profession-verification {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(210px, 0.34fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 28px;
-  border-top: 1px solid var(--color-border);
-  padding: 22px 4px 0;
-}
-
-.profession-verification-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 10px 18px;
-}
-
-.profession-verification h2 {
-  margin: 0;
-  color: var(--color-accent-soft);
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.profession-verification .item-verification-state,
-.profession-verification .item-verification-copy {
-  margin: 0;
-}
-
 @media (max-width: 1180px) {
   .recipe-output-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7042,11 +7137,6 @@ body:has(.recipe-detail-page) .public-site-footer {
 
   .profession-hero-counts {
     grid-column: auto;
-  }
-
-  .profession-verification {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
   }
 }
 
@@ -7152,15 +7242,6 @@ body:has(.recipe-detail-page) .public-site-footer {
 
   .item-panel {
     padding: 22px;
-  }
-
-  .item-acquisition-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .item-shop-price,
-  .item-source-quantity {
-    justify-self: start;
   }
 
   .profession-identity-copy .public-resource-title {
@@ -11701,6 +11782,7 @@ input[type="checkbox"] {
 }
 
 .profession-detail-hero {
+  position: relative;
   min-width: 0;
   display: flex;
   align-items: flex-start;
@@ -11941,7 +12023,13 @@ a.profession-detail-chip:focus-visible {
   display: grid;
   grid-template-columns: 78px minmax(0, 1fr);
   grid-template-rows: auto auto;
-  align-items: center;
+  /* Bottom-anchored rather than centred: the result image spans both rows,
+     and align-items: end pins its bottom edge to the bottom of the grid
+     area it occupies -- the same row-2 bottom line the ingredients cell
+     (a plain row-2 item) is also pinned to. That shared bottom line is what
+     makes the two stages align, regardless of how the two "auto" row
+     tracks split any extra height the spanning image needs. */
+  align-items: end;
   gap: 9px 16px;
   border-color: var(--color-border-muted);
   padding: 14px 20px 14px 12px;
@@ -12282,7 +12370,11 @@ a.profession-detail-chip:focus-visible {
   gap: var(--recipe-list-gap);
   border-color: var(--color-border-muted);
   border-radius: 9px;
-  padding: 4px 12px;
+  /* Vertical padding sized so the row's own content -- the 48-54px result
+     stage, its tallest sibling -- lands in a compact ~64-72px row rather
+     than a bare content-height wrap, matching the Recipe Ingredients row's
+     own "content plus a little air" rhythm rather than a hardcoded height. */
+  padding: 8px 12px;
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease,
@@ -12364,15 +12456,27 @@ a.profession-detail-chip:focus-visible {
   white-space: nowrap;
 }
 
+/* The base .recipe-output-ingredients rule is tuned for the Grid/directory
+   cards, where its own 91px min-height and grid layout give the ingredient
+   strip room below a much taller identity block. In the List row every cell
+   shares one shallow line, so every one of those properties is overridden
+   here rather than left to fall through -- the min-height alone was the
+   single largest source of the row's excess height, and align-content:start
+   (inherited unless reset) is what pinned the ingredient chips to the top of
+   that tall box instead of centering them against the row. */
 .recipe-output-card--list .recipe-output-ingredients {
   min-width: 0;
+  min-height: 0;
   flex: 1;
   order: 3;
+  display: flex;
+  align-items: center;
   border: 0;
   padding: 0;
 }
 
 .recipe-output-card--list .recipe-output-ingredient-list {
+  align-items: center;
   flex-wrap: nowrap;
   gap: 8px;
   overflow-x: auto;
@@ -12389,11 +12493,6 @@ a.profession-detail-chip:focus-visible {
   font-size: clamp(11.5px, calc(11.5px + 1.5px * var(--pf)), 13px);
   font-weight: 700;
   white-space: nowrap;
-}
-
-.profession-detail-page .profession-verification {
-  grid-template-columns: minmax(210px, 0.22fr) minmax(0, 1fr);
-  padding-inline: 0;
 }
 
 .profession-detail-page .profession-updated {
@@ -12448,10 +12547,6 @@ a.profession-detail-chip:focus-visible {
   .recipe-collection-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  .profession-detail-page .profession-verification {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 @media (max-width: 520px) {
@@ -12484,10 +12579,6 @@ a.profession-detail-chip:focus-visible {
     grid-column: 1 / -1;
     order: 4;
   }
-}
-
-.class-detail-page .profession-verification {
-  margin-top: 0;
 }
 
 /* Locations catalogue: nested root/type ledger from the Claude Design
@@ -13290,6 +13381,7 @@ a.profession-detail-chip:focus-visible {
   min-width: 0;
   min-height: 172px;
   display: flex;
+  align-items: center;
   gap: var(--codex-card-gap);
   border: 1px solid var(--color-border-muted);
   border-radius: 14px;
@@ -13413,6 +13505,32 @@ a.profession-detail-chip:focus-visible {
     border-color 0.2s ease,
     background-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+/* The thumbnail's stage always carries the Class hue, real image or not --
+   image availability only changes what sits inside it, matching the Grid
+   card's own media wrapper. */
+.class-catalogue-list-media {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background:
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--resource-hue), 0.2),
+      transparent 68%
+    ),
+    var(--color-surface);
+}
+
+.class-catalogue-list-media .public-sprite-stage--row {
+  border: 0;
+  background: transparent;
 }
 
 .class-catalogue-list-name {
@@ -13612,12 +13730,6 @@ a.shop-detail-chip:focus-visible {
   box-shadow: 0 0 14px rgba(216, 181, 98, 0.25);
 }
 
-.shop-detail-verification {
-  margin: 12px 0 0;
-  color: var(--color-text-meta-dim);
-  font-size: 11.5px;
-}
-
 .shop-detail-inventory {
   min-width: 0;
   user-select: none;
@@ -13665,12 +13777,9 @@ a.shop-detail-chip:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* This stage already WAS the module's single framed image area, so it
-     keeps its frame -- only the colour of that frame and its ground move to
-     the Item hue. No nested stage is introduced. */
-  border-width: 1px;
-  border-style: solid;
+  border: 1px solid var(--color-accent-soft);
   border-radius: 10px;
+  background: var(--color-inset-surface);
   overflow: hidden;
 }
 
@@ -13794,16 +13903,14 @@ a.shop-detail-chip:focus-visible {
   transform: translateX(0);
 }
 
-/* Icon rhythm follows the Recipe Ingredients list: a borderless 32px stage
-   whose art is the only thing that carries weight. */
+/* Icon rhythm follows the Recipe Ingredients list exactly: a borderless 32px
+   stage whose art is the only thing that carries weight. */
 .shop-detail-inventory-icon {
   width: 32px;
   height: 32px;
-  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 7px;
   transition: transform 0.18s ease;
 }
 
@@ -13816,23 +13923,12 @@ a.shop-detail-chip:focus-visible {
 }
 
 /* The placeholder is the same size family as the real stage and carries no
-   frame of its own -- matching the Recipe Ingredients box, where the missing
-   art is stated quietly rather than boxed in. The label stays readable
-   instead of being blanked out with font-size: 0. */
-/* Mirrors .recipe-detail-page .recipe-ingredient-row's own empty stage: the
-   placeholder is the same 32px footprint as a real icon, carries no frame of
-   its own, and simply sits on the Item-hued ground the row already provides.
-   The fallback text keeps the shared --row treatment, so it stays a real,
-   readable, selectable string rather than a font-size: 0 hack. */
-.shop-detail-inventory-icon .public-sprite-stage--empty {
-  --sprite-stage-size: 32px;
+   frame of its own -- matching the Recipe Ingredients box exactly, down to
+   the same 4px empty-state padding. */
+.shop-detail-inventory-icon .public-sprite-stage--row.public-sprite-stage--empty {
   width: 32px;
   height: 32px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 3px;
+  padding: 4px;
 }
 
 .shop-detail-inventory-row:hover .shop-detail-inventory-icon {
@@ -13865,13 +13961,6 @@ a.shop-detail-chip:focus-visible {
   color: var(--color-text);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* Slightly tighter than the default control so it sits comfortably inside
-   the compact row without changing the row's height. */
-.shop-detail-inventory-link {
-  width: 20px;
-  height: 20px;
 }
 
 .shop-detail-inventory-row .currency-price {
@@ -14613,93 +14702,4 @@ a.shop-detail-chip:focus-visible {
   .world-item-chips a {
     transition: none;
   }
-}
-
-/* ===== Embedded Item stage =============================================
-   The surface an Item's art sits on when it appears INSIDE another
-   resource: a Recipe's ingredient chips and rows, its crafted result, a
-   Shop's inventory rows and selected preview. The parent keeps its own
-   family (Recipe amber, Shop wine); this says "the thing on this stage is
-   an Item" using the ONE canonical --hue-item triple that Item detail's
-   hero and the Item directory thumbnails already derive from.
-
-   The rule paints the element that is ALREADY that surface's single framed
-   image area. It never adds a border of its own and never introduces a
-   nested stage -- doing that is exactly what produced the double-frame look
-   this replaces (an outer chip frame with a second blue framed box inside
-   it). Where the surface has no frame at all, the hue is simply the ground
-   the sprite sits on, and that stays frameless.
-
-   Declared at the end of the sheet on purpose: several consumers set their
-   own background/border-color at higher specificity than a single class,
-   and ordering is the honest way to let the hue win without selector
-   inflation. Alphas stay below the 192px hero stage's (0.28/0.15) because
-   these boxes are 28-88px. The sprite itself is never filtered,
-   hue-rotated, or recolored -- only its ground. */
-.item-hue-stage {
-  --resource-hue: var(--hue-item);
-}
-
-.item-hue-stage,
-.recipe-output-card--directory-grid
-  .recipe-output-ingredient-list
-  > .recipe-output-ingredient.item-hue-stage,
-.recipe-result-image-stage.item-hue-stage .public-sprite-stage--card {
-  border-color: color-mix(
-    in srgb,
-    var(--color-border) 72%,
-    rgb(var(--resource-hue))
-  );
-  background:
-    radial-gradient(
-      circle at 50% 34%,
-      rgba(var(--resource-hue), 0.22),
-      transparent 74%
-    ),
-    linear-gradient(
-      158deg,
-      rgba(var(--resource-hue), 0.13),
-      transparent 70%
-    ),
-    var(--color-inset-surface);
-}
-
-/* The directory preview is deliberately frameless (border: 0 from its own
-   rule); it only gains the ground, plus the same corner radius the canonical
-   chip uses so the wash never reads as a hard square. */
-.recipe-output-card--directory-grid
-  .recipe-output-ingredient-list
-  > .recipe-output-ingredient.item-hue-stage {
-  border-radius: 7px;
-}
-
-/* The crafted result's outer span is a bare positioning wrapper -- the
-   sprite stage inside it is the framed area, so the wrapper itself must
-   stay unpainted or it would become the second frame. */
-.recipe-result-image-stage.item-hue-stage {
-  background: none;
-}
-
-/* Hover keeps the Item ground and only warms the frame, so the Recipe
-   card's amber interaction language still reads without the stage losing
-   the identity it is there to carry. */
-.recipe-output-ingredient.item-hue-stage:hover,
-.recipe-output-ingredient.item-hue-stage:focus-visible {
-  border-color: color-mix(
-    in srgb,
-    var(--color-border) 58%,
-    var(--color-accent)
-  );
-  background:
-    radial-gradient(
-      circle at 50% 34%,
-      rgba(var(--resource-hue), 0.3),
-      transparent 74%
-    ),
-    linear-gradient(
-      158deg,
-      rgba(var(--resource-hue), 0.17),
-      transparent 70%
-    ),
-    var(--color-surface-soft);
 }

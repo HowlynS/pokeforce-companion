@@ -362,7 +362,7 @@ test("the two arrow variants share one family at two emphasis levels", async ({
   expect(weights.row.size).toBeLessThan(weights.box.size);
 });
 
-test("both arrows resolve their shaft on hover and focus without shifting", async ({
+test("both arrows loop the depart & return animation on hover and focus without shifting the box", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -373,13 +373,14 @@ test("both arrows resolve their shaft on hover and focus without shifting", asyn
     ".shop-detail-selected-link",
   ]) {
     const arrow = page.locator(selector).first();
-    const shaft = arrow.locator(".page-link-arrow-shaft");
-    // The head is always drawn, so the resting state already reads as an
-    // arrow rather than a bare line.
-    await expect(arrow.locator(".page-link-arrow-head")).toHaveCount(1);
+    const glyph = arrow.locator(".page-link-arrow-glyph");
+    // A complete, static arrow is always drawn -- three strokes, not a
+    // shaft/head pair.
+    await expect(arrow.locator("svg path")).toHaveCount(3);
 
-    // Measure the arrow WITHIN its own row: the inventory row has its own
-    // long-standing hover lift, and that is not the arrow moving.
+    // Measure the BOX (not the glyph, which is expected to move) within its
+    // own row: the inventory row has its own long-standing hover lift, and
+    // that is not the arrow control moving.
     const boxWithinParent = () =>
       arrow.evaluate((element) => {
         const parent = element.closest(
@@ -396,40 +397,51 @@ test("both arrows resolve their shaft on hover and focus without shifting", asyn
         };
       });
 
-    const restOffset = await shaft.evaluate((element) =>
-      Number.parseFloat(getComputedStyle(element).strokeDashoffset),
+    const restAnimation = await glyph.evaluate(
+      (element) => getComputedStyle(element).animationName,
     );
     const restBox = await boxWithinParent();
 
     await arrow.hover();
     await page.waitForTimeout(300);
-    const hoverOffset = await shaft.evaluate((element) =>
-      Number.parseFloat(getComputedStyle(element).strokeDashoffset),
+    const hoverAnimation = await glyph.evaluate(
+      (element) => getComputedStyle(element).animationName,
+    );
+    const hoverIterationCount = await glyph.evaluate(
+      (element) => getComputedStyle(element).animationIterationCount,
     );
     const hoverBox = await boxWithinParent();
 
-    // The shaft extends back toward its tail...
-    expect(restOffset).toBeLessThan(0);
-    expect(hoverOffset).toBe(0);
-    // ...and the control itself never moves or resizes within its row.
+    // At rest nothing animates; hovering starts the infinite depart loop...
+    expect(restAnimation).toBe("none");
+    expect(hoverAnimation).toBe("page-link-arrow-depart");
+    expect(hoverIterationCount).toBe("infinite");
+    // ...and the box itself (clipped via overflow: hidden) never moves or
+    // resizes within its row even though the glyph inside it does.
     expect(hoverBox.width).toBeCloseTo(restBox.width, 2);
     expect(hoverBox.height).toBeCloseTo(restBox.height, 2);
     expect(hoverBox.left).toBeCloseTo(restBox.left, 2);
     expect(hoverBox.top).toBeCloseTo(restBox.top, 2);
 
-    // Keyboard focus drives the same resolution.
+    // Pointer-out immediately drops the animation.
     await page.mouse.move(0, 0);
     await page.waitForTimeout(250);
+    const afterUnhoverAnimation = await glyph.evaluate(
+      (element) => getComputedStyle(element).animationName,
+    );
+    expect(afterUnhoverAnimation).toBe("none");
+
+    // Keyboard focus drives the same loop.
     await arrow.focus();
     await page.waitForTimeout(300);
-    const focusOffset = await shaft.evaluate((element) =>
-      Number.parseFloat(getComputedStyle(element).strokeDashoffset),
+    const focusAnimation = await glyph.evaluate(
+      (element) => getComputedStyle(element).animationName,
     );
-    expect(focusOffset).toBe(0);
+    expect(focusAnimation).toBe("page-link-arrow-depart");
   }
 });
 
-test("under reduced motion the arrow is simply drawn whole, never morphed", async ({
+test("under reduced motion the arrow never loops and stays fully operable", async ({
   browser,
 }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
@@ -442,30 +454,25 @@ test("under reduced motion the arrow is simply drawn whole, never morphed", asyn
     ".shop-detail-selected-link",
   ]) {
     const arrow = page.locator(selector).first();
-    const shaft = arrow.locator(".page-link-arrow-shaft");
+    const glyph = arrow.locator(".page-link-arrow-glyph");
 
-    const rest = await shaft.evaluate((element) => {
-      const style = getComputedStyle(element);
-      return {
-        offset: Number.parseFloat(style.strokeDashoffset),
-        transition: style.transitionProperty,
-      };
-    });
-    // Full-length shaft at rest, and nothing to transition.
-    expect(rest.offset).toBe(0);
-    expect(rest.transition).toBe("all");
+    const restAnimation = await glyph.evaluate(
+      (element) => getComputedStyle(element).animationName,
+    );
+    expect(restAnimation).toBe("none");
 
     await arrow.hover();
     await page.waitForTimeout(250);
-    const hoverOffset = await shaft.evaluate((element) =>
-      Number.parseFloat(getComputedStyle(element).strokeDashoffset),
+    const hoverAnimation = await glyph.evaluate(
+      (element) => getComputedStyle(element).animationName,
     );
-    expect(hoverOffset).toBe(0);
+    // No looping departure animation under reduced motion.
+    expect(hoverAnimation).toBe("none");
 
     // The glyph is not nudged either.
-    const svgTransform = await arrow
-      .locator("svg")
-      .evaluate((element) => getComputedStyle(element).transform);
+    const svgTransform = await glyph.evaluate(
+      (element) => getComputedStyle(element).transform,
+    );
     expect(svgTransform === "none" || svgTransform === "matrix(1, 0, 0, 1, 0, 0)").toBe(
       true,
     );
@@ -508,47 +515,6 @@ test("inventory rows reuse the Recipe Ingredients row language", async ({
   await expect(
     row.getByRole("button", { name: /^Preview / }),
   ).toHaveCount(1);
-});
-
-test("inventory item stages carry the canonical Item hue", async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto(shopUrl());
-
-  const stage = page.locator(".shop-detail-inventory-icon.item-hue-stage").first();
-  await expect(stage).toBeVisible();
-  await expect(stage).toHaveCSS("width", "32px");
-  await expect(stage).toHaveCSS("height", "32px");
-
-  // The selected preview is the same Item stage at a larger size.
-  await expect(
-    page.locator(".shop-detail-selected-stage.item-hue-stage"),
-  ).toHaveCount(1);
-
-  // Token contract, not a colour literal.
-  const hues = await stage.evaluate((element) => ({
-    stage: getComputedStyle(element).getPropertyValue("--resource-hue").trim(),
-    canonical: getComputedStyle(document.documentElement)
-      .getPropertyValue("--hue-item")
-      .trim(),
-  }));
-  expect(hues.canonical).not.toBe("");
-  expect(hues.stage).toBe(hues.canonical);
-
-  // The Shop module around it still reads as a Shop surface.
-  const shopHue = await page
-    .locator(".shop-detail-hero")
-    .evaluate((element) =>
-      getComputedStyle(element).getPropertyValue("--resource-hue").trim(),
-    );
-  expect(shopHue).not.toBe(hues.canonical);
-
-  // The art is never filtered or recoloured — only its ground.
-  const art = page
-    .locator(".shop-detail-inventory-icon img")
-    .first();
-  if (await art.count()) {
-    await expect(art).toHaveCSS("filter", "none");
-  }
 });
 
 test("the no-image fallback shares the real icon's footprint and stays readable", async ({

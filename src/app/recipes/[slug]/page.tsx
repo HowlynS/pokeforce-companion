@@ -9,9 +9,9 @@ import {
   RecipeCollectionGrid,
   RecipeCollectionList,
 } from "@/components/content/recipe-collection-views";
+import { VerificationStatus } from "@/components/ui/verification-status";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
-import { formatPublicVerification } from "@/lib/public-verification";
 import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
 import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
@@ -93,7 +93,6 @@ export default async function RecipeDetailPage({
     recipe.resultQuantityMin,
     recipe.resultQuantityMax
   );
-  const verification = formatPublicVerification(recipe);
   const updatedAt = formatDisplayDate(recipe.updatedAt);
 
   return (
@@ -109,6 +108,10 @@ export default async function RecipeDetailPage({
 
         <div className="item-content-grid">
           <div className="item-main-column">
+            <VerificationStatus
+              stamp={recipe}
+              className="detail-hero-verification"
+            />
             <section
               className="item-identity-panel resource-atmosphere resource-atmosphere--recipe"
               aria-labelledby="recipe-title"
@@ -183,7 +186,7 @@ export default async function RecipeDetailPage({
                         href={`/items/${ingredient.item.slug}`}
                         key={ingredient.id}
                       >
-                        <span className="item-recipe-thumbnail item-hue-stage">
+                        <span className="item-recipe-thumbnail">
                           <ContentImage
                             imagePath={ingredient.item.image}
                             alt={`Image of ${ingredient.item.name}`}
@@ -219,7 +222,7 @@ export default async function RecipeDetailPage({
                   className="item-recipe-row recipe-result-row"
                   href={`/items/${recipe.resultingItem.slug}`}
                 >
-                  <span className="recipe-result-image-stage item-hue-stage">
+                  <span className="recipe-result-image-stage">
                     <ContentImage
                       imagePath={recipe.resultingItem.image}
                       alt={`Image of ${recipe.resultingItem.name}`}
@@ -248,22 +251,9 @@ export default async function RecipeDetailPage({
               />
             ) : null}
 
-            <section
-              className="recipe-verification-strip"
-              aria-labelledby="recipe-verification-title"
-            >
-              <h2 id="recipe-verification-title">Verification</h2>
-              <p className="item-verification-state">
-                {verification ? "Verified" : "Unverified"}
-              </p>
-              <p className="item-verification-copy">
-                {verification ??
-                  "This Recipe’s gameplay information has not been verified for a Game Version."}
-              </p>
-              {updatedAt ? (
-                <p className="recipe-updated-at">Last updated {updatedAt}</p>
-              ) : null}
-            </section>
+            {updatedAt ? (
+              <p className="recipe-updated-at">Last updated {updatedAt}</p>
+            ) : null}
           </div>
 
         </div>

@@ -8,6 +8,7 @@ import { RichTextContent } from "@/components/content/rich-text-content";
 import { ShopInventory } from "@/components/content/shop-inventory";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { VerificationStatus } from "@/components/ui/verification-status";
 import { canExposePublicContent } from "@/lib/access/require-site-access";
 import { prisma } from "@/lib/db";
 import {
@@ -123,7 +124,6 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
     ? await loadLocationAncestors(prisma, shop.location.parentId)
     : [];
   const rootLocation = ancestors[0] ?? shop.location;
-  const verification = formatPublicVerification(shop);
   const description = resolveRichTextValue(
     shop.descriptionRich,
     shop.description,
@@ -144,6 +144,10 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           className="detail-hero shop-detail-hero resource-atmosphere resource-atmosphere--shop"
           aria-labelledby="shop-title"
         >
+          <VerificationStatus
+            stamp={shop}
+            className="detail-hero-verification"
+          />
           <div className="shop-detail-stage">
             <ContentImage
               imagePath={shop.image}
@@ -186,9 +190,6 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
                 <strong>{LOCATION_TYPE_LABELS[shop.location.type]}</strong>
               </span>
             </div>
-            {verification ? (
-              <p className="shop-detail-verification">{verification}</p>
-            ) : null}
           </div>
         </section>
 

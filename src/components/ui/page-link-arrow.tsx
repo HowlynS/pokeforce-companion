@@ -22,17 +22,17 @@ type PageLinkArrowProps = {
  *
  * This is deliberately NOT a disclosure control. A disclosure chevron opens
  * and closes content in place and keeps its own muted styling; this arrow
- * always navigates to another record's page, and reads that way: an outward
- * arrow in a gold-outlined square. Every public surface that offers this
- * exact affordance uses this one component, so the treatment can never drift
- * apart per page.
+ * always navigates to another record's page, and reads that way: a diagonal
+ * up-right arrow in a gold-outlined square. Every public surface that offers
+ * this exact affordance uses this one component, so the treatment can never
+ * drift apart per page.
  *
- * The glyph is split into a shaft and a fixed arrowhead so the shaft can
- * extend back toward its tail on hover/focus — a short stroke resolving into
- * a full arrow. The arrowhead never moves or fades, so the resting state is
- * already unambiguously an arrow rather than a bare line. See
- * `.page-link-arrow-shaft` in globals.css; under reduced motion the shaft is
- * simply drawn at full length and nothing animates.
+ * The glyph draws a complete, static up-right arrow at rest (never a bare
+ * line) and, on hover/focus, plays a looping "depart & return" motion: the
+ * whole glyph flies out through the top-right corner, fades, silently resets
+ * to the bottom-left, and flies back in. See `.page-link-arrow-glyph` and the
+ * `page-link-arrow-depart` keyframes in globals.css; under reduced motion the
+ * glyph simply stays put and only the surrounding box's colors respond.
  */
 export function PageLinkArrow({
   href,
@@ -52,9 +52,8 @@ export function PageLinkArrow({
   return (
     <Link href={href} aria-label={label} onClick={onClick} className={classes}>
       <svg
+        className="page-link-arrow-glyph"
         aria-hidden="true"
-        width="12"
-        height="12"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -62,8 +61,9 @@ export function PageLinkArrow({
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path className="page-link-arrow-shaft" d="M7 17 17 7" />
-        <path className="page-link-arrow-head" d="M9 7h8v8" />
+        <path d="M7 17 17 7" />
+        <path d="M17 7h-7" />
+        <path d="M17 7v7" />
       </svg>
     </Link>
   );

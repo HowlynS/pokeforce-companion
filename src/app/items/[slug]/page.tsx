@@ -11,9 +11,9 @@ import {
   RecipeCollectionList,
 } from "@/components/content/recipe-collection-views";
 import { RichTextContent } from "@/components/content/rich-text-content";
+import { VerificationStatus } from "@/components/ui/verification-status";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
-import { formatPublicVerification } from "@/lib/public-verification";
 import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 import {
   ACQUISITION_TYPE_LABELS,
@@ -62,7 +62,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
           sourceLabel: true,
           quantity: true,
           notes: true,
-          location: { select: { name: true, slug: true } },
+          location: { select: { name: true, slug: true, image: true } },
           profession: { select: { name: true, slug: true } },
         },
         orderBy: { createdAt: "asc" },
@@ -76,6 +76,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
             select: {
               name: true,
               slug: true,
+              image: true,
               location: { select: { name: true, slug: true } },
             },
           },
@@ -99,10 +100,22 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
   const acquisitionGroups = groupAcquisitionSourcesByType(
     item.acquisitionSources
   );
-  const verification = formatPublicVerification(item);
   const updatedAt = formatDisplayDate(item.updatedAt);
   const hasAcquisition =
     item.shopListings.length > 0 || acquisitionGroups.length > 0;
+
+  // Only worth comparing when every listing shares the same Currency --
+  // there is no exchange rate to make a cross-Currency comparison honest, so
+  // a mixed set simply omits the enhancement rather than guessing.
+  const shopCurrencySlugs = new Set(
+    item.shopListings.map((listing) => listing.currency.slug)
+  );
+  const cheapestListing =
+    shopCurrencySlugs.size === 1 && item.shopListings.length > 0
+      ? item.shopListings.reduce((cheapest, listing) =>
+          listing.priceAmount < cheapest.priceAmount ? listing : cheapest
+        )
+      : null;
 
   // Real "source" chip, matching the same derivation as the Items
   // directory card: first acquisition source's type, else a Shop
@@ -152,6 +165,10 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
 
         <div className="item-content-grid">
           <div className="item-main-column">
+            <VerificationStatus
+              stamp={item}
+              className="detail-hero-verification"
+            />
             <section
               className="item-identity-panel resource-atmosphere resource-atmosphere--item"
               aria-labelledby="item-title"
@@ -202,42 +219,73 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                 {hasAcquisition ? (
                   <CollapsibleSection
                     title="How to obtain"
+                    meta={
+                      cheapestListing ? (
+                        <span className="item-obtain-cheapest">
+                          Cheapest{" "}
+                          <CurrencyPrice
+                            amount={cheapestListing.priceAmount}
+                            currency={cheapestListing.currency}
+                          />
+                        </span>
+                      ) : null
+                    }
                     className="item-panel item-obtain-panel"
                     animationVariant="stagger"
                   >
                     {item.shopListings.length > 0 ? (
                       <div className="item-source-group">
                         <h3>Shops</h3>
-                        <div className="item-source-rows">
-                          {item.shopListings.map((listing) => (
-                            <article
-                              className="item-acquisition-row item-shop-row"
-                              key={listing.id}
-                            >
-                              <div className="item-row-primary">
-                                <Link
-                                  href={`/shops/${listing.shop.slug}`}
-                                  className="public-content-link"
-                                >
-                                  {listing.shop.name}
-                                </Link>
-                                <Link
-                                  href={`/locations/${listing.shop.location.slug}`}
-                                  className="item-row-context public-content-link"
-                                >
-                                  {listing.shop.location.name}
-                                </Link>
-                              </div>
-                              <CurrencyPrice
-                                amount={listing.priceAmount}
-                                currency={listing.currency}
-                                className="item-shop-price"
-                              />
-                              {listing.notes ? (
-                                <p className="item-row-notes">{listing.notes}</p>
-                              ) : null}
-                            </article>
-                          ))}
+                        <div className="item-obtain-cards">
+                          {item.shopListings.map((listing) => {
+                            const isCheapest =
+                              cheapestListing?.id === listing.id;
+                            return (
+                              <article
+                                className={`item-acquisition-row item-shop-row item-obtain-card${
+                                  isCheapest ? " item-obtain-card--best" : ""
+                                }`}
+                                key={listing.id}
+                              >
+                                {isCheapest ? (
+                                  <span className="item-obtain-card-best-badge">
+                                    Best price
+                                  </span>
+                                ) : null}
+                                <span className="item-obtain-card-media">
+                                  <ContentImage
+                                    imagePath={listing.shop.image}
+                                    alt=""
+                                    size="row"
+                                  />
+                                </span>
+                                <span className="item-obtain-card-body">
+                                  <Link
+                                    href={`/shops/${listing.shop.slug}`}
+                                    className="item-obtain-card-title public-content-link"
+                                  >
+                                    {listing.shop.name}
+                                  </Link>
+                                  <Link
+                                    href={`/locations/${listing.shop.location.slug}`}
+                                    className="item-obtain-card-context public-content-link"
+                                  >
+                                    {listing.shop.location.name}
+                                  </Link>
+                                  <CurrencyPrice
+                                    amount={listing.priceAmount}
+                                    currency={listing.currency}
+                                    className="item-obtain-card-value"
+                                  />
+                                  {listing.notes ? (
+                                    <p className="item-obtain-card-notes">
+                                      {listing.notes}
+                                    </p>
+                                  ) : null}
+                                </span>
+                              </article>
+                            );
+                          })}
                         </div>
                       </div>
                     ) : null}
@@ -245,7 +293,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                     {acquisitionGroups.map((group) => (
                       <div className="item-source-group" key={group.type}>
                         <h3>{group.label}</h3>
-                        <div className="item-source-rows">
+                        <div className="item-obtain-cards">
                           {group.sources.map((source) => {
                             const title =
                               source.sourceLabel ??
@@ -253,21 +301,33 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                               source.profession?.name ??
                               ACQUISITION_TYPE_LABELS[source.type];
                             return (
-                              <article className="item-acquisition-row" key={source.id}>
-                                <div className="item-row-primary">
-                                  <strong>{title}</strong>
+                              <article
+                                className="item-acquisition-row item-obtain-card"
+                                key={source.id}
+                              >
+                                <span className="item-obtain-card-media">
+                                  <ContentImage
+                                    imagePath={source.location?.image ?? null}
+                                    alt=""
+                                    size="row"
+                                  />
+                                </span>
+                                <span className="item-obtain-card-body">
+                                  <strong className="item-obtain-card-title">
+                                    {title}
+                                  </strong>
                                   {source.location &&
                                   title !== source.location.name ? (
                                     <Link
                                       href={`/locations/${source.location.slug}`}
-                                      className="item-row-context public-content-link"
+                                      className="item-obtain-card-context public-content-link"
                                     >
                                       {source.location.name}
                                     </Link>
                                   ) : source.location ? (
                                     <Link
                                       href={`/locations/${source.location.slug}`}
-                                      className="item-row-context public-content-link"
+                                      className="item-obtain-card-context public-content-link"
                                     >
                                       View location
                                     </Link>
@@ -276,20 +336,22 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                                   title !== source.profession.name ? (
                                     <Link
                                       href={`/professions/${source.profession.slug}`}
-                                      className="item-row-context public-content-link"
+                                      className="item-obtain-card-context public-content-link"
                                     >
                                       {source.profession.name}
                                     </Link>
                                   ) : null}
-                                </div>
-                                {source.quantity ? (
-                                  <span className="item-source-quantity">
-                                    Quantity: {source.quantity}
-                                  </span>
-                                ) : null}
-                                {source.notes ? (
-                                  <p className="item-row-notes">{source.notes}</p>
-                                ) : null}
+                                  {source.quantity ? (
+                                    <span className="item-obtain-card-value">
+                                      Quantity: {source.quantity}
+                                    </span>
+                                  ) : null}
+                                  {source.notes ? (
+                                    <p className="item-obtain-card-notes">
+                                      {source.notes}
+                                    </p>
+                                  ) : null}
+                                </span>
                               </article>
                             );
                           })}
@@ -377,17 +439,6 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                   </div>
                 ) : null}
               </dl>
-            </section>
-
-            <section className="item-panel item-sidebar-panel">
-              <h2>Verification</h2>
-              <p className="item-verification-state">
-                {verification ? "Verified" : "Unverified"}
-              </p>
-              <p className="item-verification-copy">
-                {verification ??
-                  "This item's gameplay information has not been verified for a Game Version."}
-              </p>
             </section>
           </aside>
         </div>

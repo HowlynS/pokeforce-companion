@@ -110,11 +110,11 @@ test.describe("public Class detail", () => {
     ).toHaveCount(0);
     await expect(page.locator(".profession-hero-counts")).toHaveCount(0);
 
-    // Verification renders inline, factually (unverified seed data has no
-    // stamp).
+    // Verification renders as a discreet hero badge, factually (unverified
+    // seed data has no stamp).
     await expect(
-      page.getByRole("heading", { level: 2, name: "Verification", exact: true })
-    ).toBeVisible();
+      page.locator(".profession-detail-hero .verification-status--unverified")
+    ).toHaveCount(1);
 
     // Class detail carries its own crimson resource-atmosphere wash,
     // distinct from Profession's amethyst even though both pages share

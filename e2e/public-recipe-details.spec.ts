@@ -232,14 +232,10 @@ test("populated Recipe uses the shared detail composition and real relationships
     page.getByRole("link", { name: "Profession: Smithing", exact: true })
   ).toHaveAttribute("href", "/professions/smithing");
   await expect(page.getByText("+10 EXP", { exact: true })).toBeVisible();
+  // Verification moved from a bottom strip into a discreet hero badge.
   await expect(
-    page.getByRole("heading", {
-      level: 2,
-      name: "Verification",
-      exact: true,
-    })
-  ).toBeVisible();
-  await expect(page.getByText("Verified", { exact: true })).toBeVisible();
+    page.locator(".item-main-column .verification-status")
+  ).toHaveCount(1);
   await expect(page.getByText("Quick Links", { exact: true })).toHaveCount(0);
   for (const speculative of [
     "Required level",

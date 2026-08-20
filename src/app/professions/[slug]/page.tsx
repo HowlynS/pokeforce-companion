@@ -9,10 +9,10 @@ import {
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { VerificationStatus } from "@/components/ui/verification-status";
 import { cataloguePageHref } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
-import { formatPublicVerification } from "@/lib/public-verification";
 import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +47,6 @@ export default async function ProfessionDetailPage({
 
   if (!profession) notFound();
 
-  const verification = formatPublicVerification(profession);
   const updatedAt = formatDisplayDate(profession.updatedAt);
   const grid = <RecipeCollectionGrid recipes={profession.recipes} />;
   const list = <RecipeCollectionList recipes={profession.recipes} />;
@@ -67,6 +66,10 @@ export default async function ProfessionDetailPage({
           className="profession-detail-hero resource-atmosphere resource-atmosphere--profession"
           aria-labelledby="profession-title"
         >
+          <VerificationStatus
+            stamp={profession}
+            className="detail-hero-verification"
+          />
           <div className="profession-detail-stage">
             <ContentImage
               imagePath={profession.image}
@@ -122,26 +125,9 @@ export default async function ProfessionDetailPage({
           <RecipeCollectionSection title="Recipes" grid={grid} list={list} />
         ) : null}
 
-        <section
-          className="profession-verification"
-          aria-labelledby="profession-verification-title"
-        >
-          <div className="profession-verification-heading">
-            <h2 id="profession-verification-title">Verification</h2>
-            <p className="item-verification-state">
-              {verification ? "Verified" : "Unverified"}
-            </p>
-          </div>
-          <div>
-            <p className="item-verification-copy">
-              {verification ??
-                "This Profession’s gameplay information has not been verified for a Game Version."}
-            </p>
-            {updatedAt ? (
-              <p className="profession-updated">Updated {updatedAt}</p>
-            ) : null}
-          </div>
-        </section>
+        {updatedAt ? (
+          <p className="profession-updated">Updated {updatedAt}</p>
+        ) : null}
       </article>
     </AppShell>
   );

@@ -4,9 +4,9 @@ import { ContentImage } from "@/components/content/content-image";
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { VerificationStatus } from "@/components/ui/verification-status";
 import { prisma } from "@/lib/db";
 import { formatDisplayDate } from "@/lib/format-date";
-import { formatPublicVerification } from "@/lib/public-verification";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +33,6 @@ export default async function PlayerClassDetailPage({
 
   if (!playerClass) notFound();
 
-  const verification = formatPublicVerification(playerClass);
   const updatedAt = formatDisplayDate(playerClass.updatedAt);
 
   return (
@@ -51,6 +50,10 @@ export default async function PlayerClassDetailPage({
           className="profession-detail-hero resource-atmosphere resource-atmosphere--class"
           aria-labelledby="player-class-title"
         >
+          <VerificationStatus
+            stamp={playerClass}
+            className="detail-hero-verification"
+          />
           <div className="profession-detail-stage">
             <ContentImage
               imagePath={playerClass.image}
@@ -77,26 +80,9 @@ export default async function PlayerClassDetailPage({
           </div>
         </section>
 
-        <section
-          className="profession-verification"
-          aria-labelledby="player-class-verification-title"
-        >
-          <div className="profession-verification-heading">
-            <h2 id="player-class-verification-title">Verification</h2>
-            <p className="item-verification-state">
-              {verification ? "Verified" : "Unverified"}
-            </p>
-          </div>
-          <div>
-            <p className="item-verification-copy">
-              {verification ??
-                "This Class’s gameplay information has not been verified for a Game Version."}
-            </p>
-            {updatedAt ? (
-              <p className="profession-updated">Updated {updatedAt}</p>
-            ) : null}
-          </div>
-        </section>
+        {updatedAt ? (
+          <p className="profession-updated">Updated {updatedAt}</p>
+        ) : null}
       </article>
     </AppShell>
   );

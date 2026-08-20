@@ -120,7 +120,7 @@ export function RecipeOutputCard({
 
       return (
         <Link
-          className="recipe-output-ingredient item-hue-stage"
+          className="recipe-output-ingredient"
           href={`/items/${ingredient.item.slug}`}
           aria-label={`${ingredient.item.name}, required quantity ×${ingredient.quantity}`}
           aria-describedby={tooltipId}
@@ -178,7 +178,7 @@ export function RecipeOutputCard({
           } as CSSProperties
         }
       >
-        <span className="recipe-output-ingredient-panel-image item-hue-stage">
+        <span className="recipe-output-ingredient-panel-image">
           <ContentImage imagePath={ingredient.item.image} alt="" size="row" />
         </span>
         <span className="recipe-output-ingredient-panel-name">

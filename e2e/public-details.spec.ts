@@ -152,10 +152,10 @@ test.describe("public detail pages", () => {
     await expect(
       page.getByRole("heading", { level: 2, name: "Item details", exact: true })
     ).toBeVisible();
+    // Verification moved from a sidebar panel into a discreet hero badge.
     await expect(
-      page.getByRole("heading", { level: 2, name: "Verification", exact: true })
-    ).toBeVisible();
-    await expect(page.getByText("Verified", { exact: true })).toBeVisible();
+      page.locator(".item-main-column .verification-status")
+    ).toHaveCount(1);
 
     await expect(
       page.getByRole("heading", { level: 2, name: "How to obtain" })
@@ -316,6 +316,40 @@ test.describe("public detail pages", () => {
       ),
       fullPage: true,
     });
+  });
+
+  test("the hero verification badge is reachable by click, hover, focus, and Escape", async ({
+    page,
+  }) => {
+    await page.goto(`/items/${itemFixture.item.slug}`);
+
+    const status = page.locator(".item-main-column .verification-status");
+    const trigger = status.locator(".verification-status-trigger");
+    const panel = status.locator(".verification-status-panel");
+
+    // Always visible, never hover-only.
+    await expect(trigger).toBeVisible();
+    await expect(panel).not.toBeVisible();
+
+    // Click toggles it open...
+    await trigger.click();
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText("Verified");
+
+    // ...and an outside click closes it.
+    await page.getByRole("heading", { level: 1 }).click();
+    await expect(panel).not.toBeVisible();
+
+    // Keyboard: focus reveals it via :focus-within, Escape closes it.
+    await trigger.focus();
+    await expect(panel).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(panel).not.toBeVisible();
+
+    // Hover alone reveals it for pointer users, with no click needed.
+    await trigger.hover();
+    await expect(panel).toBeVisible();
+    await page.mouse.move(0, 0);
   });
 
   test("recipe detail links the resulting item and its ingredients", async ({
