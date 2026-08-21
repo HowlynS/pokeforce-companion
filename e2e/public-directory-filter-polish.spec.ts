@@ -238,11 +238,13 @@ test("live text search composes with a deep-linked Profession filter", async ({
   await expect(page.locator(".directory-filter-count")).toHaveText("1");
 });
 
-// Profession and Class list-view thumbnails are ONE shared implementation
-// (a single CSS rule serves both selectors), so this asserts the shared
-// contract for both resources rather than letting either drift: the stage
-// itself always carries its own resource hue, whether or not the record has
-// artwork, and the sprite stage inside it stays contained and centred.
+// Profession and Class list-view thumbnails are ONE shared implementation --
+// now literally the same class, .directory-list-media, that every main
+// directory List row uses (see public-directory-list-geometry.spec.ts for the
+// geometry contract). This asserts the HUE contract for both resources rather
+// than letting either drift: the frame always carries its own resource hue,
+// whether or not the record has artwork, and the sprite stage inside it stays
+// contained and centred.
 test("Profession and Class List thumbnails keep their resource hue with no artwork", async ({
   page,
 }) => {
@@ -250,13 +252,13 @@ test("Profession and Class List thumbnails keep their resource hue with no artwo
     {
       name: "Profession",
       path: "/professions",
-      media: ".profession-catalogue-list-media",
+      media: ".directory-list-media",
       token: "--hue-profession",
     },
     {
       name: "Class",
       path: "/classes",
-      media: ".class-catalogue-list-media",
+      media: ".directory-list-media",
       token: "--hue-class",
     },
   ] as const;

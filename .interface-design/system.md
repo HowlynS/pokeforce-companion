@@ -98,6 +98,24 @@ same focused commit.
   result scrolling and no desktop footer; return to document flow below
   `1180px`.
 - Do not redesign the shell within a resource-page slice.
+- **One page coordinate system for every public page.** Page type changes
+  content structure; it never redefines the scenic origin, the
+  header-to-content top origin, the horizontal origin, the gutter system,
+  breadcrumb geometry, or page scaling. Owned in `:root` as
+  `--public-page-top`, `--public-page-gutter`, `--public-breadcrumb-*` and
+  `--public-scenic-content-depth`; `--detail-*` are aliases of these.
+- `.public-page-frame` (with `.public-detail-page` and `.directory-page`)
+  cancels exactly `--public-page-gutter` at >=1181px, so every page's
+  breadcrumb, title and first row are flush with the header card's own box.
+- The scenic layer hangs off `.public-site-shell`, never off a content
+  wrapper, so its geometry never depends on a page's record count. Scenic
+  DEPTH is part of that coordinate system: `cover` crops the same photograph
+  differently at different depths, so a private depth makes the scene move.
+- Exceptions, all deliberate: the landing hero keeps its full-viewport depth;
+  Search renders no scenic layer but shares both origins; World keeps its
+  bounded inner panes; `/categories` and `/account/password` remain on the
+  pre-redesign `PageHeader` shape pending their own pass.
+- Guarded by `e2e/public-shell-geometry.spec.ts` at 1920/2560/3440.
 - The official Merchants Codex image logo (`public/images/branding/
   merchants-codex-logo.png`) is the authoritative brand mark, replacing the
   prior temporary text lockup. It is the header's one home link, implemented
@@ -658,3 +676,22 @@ up to 300ms; closing uses 120ms rows inside the 180ms panel exit and delayed
 unmount. The open card sits at z-index 40. Clicking outside its card dismisses
 immediately, matching the handoff; trigger-driven close retains the exit state.
 Missing images preserve the 24px stage and restrained `No image` fallback.
+
+## Main-Directory List Density
+
+- The `/recipes` directory List is the density authority, owned centrally as
+  `--directory-list-*`: a `44px` image stage inside a `48px` content-box
+  frame (`50px` with its border), in a `6px/14px` row with a `14px` gap and a
+  `9px` radius, giving a `64px` row.
+- `.directory-list-media` is the shared frame, rendered by Items, Professions
+  and Classes. Recipe keeps its own frame selector -- the yield badge is a
+  child of that stage and must not be clipped -- but reads the same tokens.
+- List CONTENT still differs per resource and should. Standardizing density
+  is not flattening content.
+- Locations and Shops have no List view: they present grouped wide cards with
+  their own art scale, a different primitive, deliberately out of scope.
+- The Items List frame is unhued (`--directory-list-media-hue: 0`): at 44px
+  the Item sapphire reads as a blue box rather than resource identity.
+- The compact relationship lists (`.recipe-output-card--list`) are NOT
+  governed by these tokens and have their own pass.
+- Guarded by `e2e/public-directory-list-geometry.spec.ts`.

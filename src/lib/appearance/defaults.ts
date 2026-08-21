@@ -64,6 +64,11 @@ export const DEFAULT_SITE_APPEARANCE: ResolvedSiteAppearance = {
     desktop: { x: 55, y: 50 },
     mobile: { x: 82, y: 50 },
   },
+  // Every scenic surface defaults to the SAME anchor. The catalogue default
+  // used to be y: 60, which cropped the shared photograph differently from
+  // home/itemDetail and made the scene appear to move between a directory and
+  // a detail page. An admin may still tune each surface independently; what
+  // must agree is where they all start from.
   catalogue: {
     background: {
       url: "/images/backgrounds/merchants-codex-coastal-overlook.png",
@@ -71,7 +76,7 @@ export const DEFAULT_SITE_APPEARANCE: ResolvedSiteAppearance = {
       height: null,
       custom: false,
     },
-    desktop: { x: 55, y: 60 },
+    desktop: { x: 55, y: 50 },
     mobile: { x: 82, y: 50 },
   },
   itemDetail: {

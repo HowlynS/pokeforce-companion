@@ -75,121 +75,126 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <AppShell>
-      <PageHeader
-        title="Search"
-        description="Search items, recipes, professions, categories, locations, shops, and classes by name or description."
-      />
+      {/* Search renders no scenic layer, but it is still a public page and
+          shares the global page frame: its content sits flush with the
+          header card's own box, exactly like a detail page or a directory. */}
+      <div className="public-page-frame">
+        <PageHeader
+          title="Search"
+          description="Search items, recipes, professions, categories, locations, shops, and classes by name or description."
+        />
 
-      {/* Plain GET form: the query lives in the URL, no client JavaScript.
-          The aria-label keeps this search landmark distinguishable from the
-          compact one in the header. */}
-      <form
-        action="/search"
-        method="get"
-        role="search"
-        aria-label="Search the wiki"
-        className="public-search-page-form"
-        style={{
-          marginBottom: designTokens.layout.sectionGap,
-        }}
-      >
-        <label className="public-search-page-label">
-          <span className="public-search-page-label-text">Search query</span>
-          <span className="public-search-field public-search-page-field">
-            <input
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder="e.g. iron"
-              className="public-search-page-input"
-            />
-          </span>
-        </label>
-
-        <button
-          type="submit"
-          className="btn btn-primary"
-          style={{ alignSelf: "end" }}
+        {/* Plain GET form: the query lives in the URL, no client JavaScript.
+            The aria-label keeps this search landmark distinguishable from the
+            compact one in the header. */}
+        <form
+          action="/search"
+          method="get"
+          role="search"
+          aria-label="Search the wiki"
+          className="public-search-page-form"
+          style={{
+            marginBottom: designTokens.layout.sectionGap,
+          }}
         >
-          Search
-        </button>
-      </form>
+          <label className="public-search-page-label">
+            <span className="public-search-page-label-text">Search query</span>
+            <span className="public-search-field public-search-page-field">
+              <input
+                type="search"
+                name="q"
+                defaultValue={query}
+                placeholder="e.g. iron"
+                className="public-search-page-input"
+              />
+            </span>
+          </label>
 
-      {query === "" ? (
-        <EmptyState
-          title="Start searching"
-          description="Search Items, Recipes, Professions, Categories, Locations, Shops, and Classes by name or description — for example a material like iron. Recipes are also found through their resulting item, profession, or ingredients."
-        />
-      ) : totalResults === 0 ? (
-        // React escapes the interpolated query, so it renders as plain
-        // text. The form above keeps the submitted query so it can be
-        // edited directly.
-        <EmptyState
-          title="No results"
-          description={`No items, recipes, professions, categories, locations, shops, or classes matched "${query}". Check the spelling or try a shorter, broader term.`}
-        />
-      ) : (
-        <>
-          {/* Query feedback: what was searched and how much is shown. The
-              per-type cap means this counts displayed results, and the
-              summary wording says so. */}
-          <section style={{ marginBottom: "24px" }}>
-            <h2
-              style={{
-                fontSize: "24px",
-                lineHeight: 1.2,
-                margin: "0 0 8px",
-              }}
-            >
-              Search results for &quot;{query}&quot;
-            </h2>
-            <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
-              {buildSearchSummary(results)}
-            </p>
-          </section>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ alignSelf: "end" }}
+          >
+            Search
+          </button>
+        </form>
 
-          {RESULT_GROUPS.map((group) => {
-          const entries: SearchResultEntry[] = results[group.key];
-
-          if (entries.length === 0) {
-            return null;
-          }
-
-          return (
-            <section key={group.key}>
+        {query === "" ? (
+          <EmptyState
+            title="Start searching"
+            description="Search Items, Recipes, Professions, Categories, Locations, Shops, and Classes by name or description — for example a material like iron. Recipes are also found through their resulting item, profession, or ingredients."
+          />
+        ) : totalResults === 0 ? (
+          // React escapes the interpolated query, so it renders as plain
+          // text. The form above keeps the submitted query so it can be
+          // edited directly.
+          <EmptyState
+            title="No results"
+            description={`No items, recipes, professions, categories, locations, shops, or classes matched "${query}". Check the spelling or try a shorter, broader term.`}
+          />
+        ) : (
+          <>
+            {/* Query feedback: what was searched and how much is shown. The
+                per-type cap means this counts displayed results, and the
+                summary wording says so. */}
+            <section style={{ marginBottom: "24px" }}>
               <h2
                 style={{
                   fontSize: "24px",
                   lineHeight: 1.2,
-                  margin: "0 0 16px",
+                  margin: "0 0 8px",
                 }}
               >
-                {group.heading} ({entries.length})
+                Search results for &quot;{query}&quot;
               </h2>
-
-              <ContentGrid>
-                {entries.map((entry) => (
-                  // The card line always starts with the record's own
-                  // description (or its resource-type label), and a
-                  // relational match appends its one context line — so the
-                  // type and the reason it matched stay distinguishable:
-                  // "Recipe · Ingredient: Leather Strap".
-                  <Card
-                    key={entry.slug}
-                    title={entry.name}
-                    description={[
-                      entry.description ?? group.fallback,
-                      ...(entry.context ? [entry.context] : []),
-                    ].join(" · ")}
-                    href={`${group.basePath}/${entry.slug}`}
-                  />
-                ))}
-              </ContentGrid>
+              <p style={{ margin: 0, color: designTokens.colors.textMuted }}>
+                {buildSearchSummary(results)}
+              </p>
             </section>
-          );
-          })}
-        </>
-      )}
+
+            {RESULT_GROUPS.map((group) => {
+            const entries: SearchResultEntry[] = results[group.key];
+
+            if (entries.length === 0) {
+              return null;
+            }
+
+            return (
+              <section key={group.key}>
+                <h2
+                  style={{
+                    fontSize: "24px",
+                    lineHeight: 1.2,
+                    margin: "0 0 16px",
+                  }}
+                >
+                  {group.heading} ({entries.length})
+                </h2>
+
+                <ContentGrid>
+                  {entries.map((entry) => (
+                    // The card line always starts with the record's own
+                    // description (or its resource-type label), and a
+                    // relational match appends its one context line — so the
+                    // type and the reason it matched stay distinguishable:
+                    // "Recipe · Ingredient: Leather Strap".
+                    <Card
+                      key={entry.slug}
+                      title={entry.name}
+                      description={[
+                        entry.description ?? group.fallback,
+                        ...(entry.context ? [entry.context] : []),
+                      ].join(" · ")}
+                      href={`${group.basePath}/${entry.slug}`}
+                    />
+                  ))}
+                </ContentGrid>
+              </section>
+            );
+            })}
+          </>
+        )}
+      </div>
     </AppShell>
   );
 }

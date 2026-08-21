@@ -96,7 +96,7 @@ export default async function ProfessionsPage({
           className="profession-catalogue-list-row cx-item-in"
           style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
         >
-          <span className="profession-catalogue-list-media">
+          <span className="directory-list-media">
             <ContentImage
               imagePath={profession.image}
               alt={`Image of ${profession.name}`}

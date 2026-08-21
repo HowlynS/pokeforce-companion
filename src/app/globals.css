@@ -214,6 +214,69 @@
   --codex-card-sprite-size: clamp(88px, calc(88px + 6px * var(--pf)), 94px);
   --codex-card-title-font-size: clamp(19px, calc(19px + 1px * var(--pf)), 20px);
 
+  /* ===== Canonical public PAGE frame ==================================
+     The global coordinate system EVERY public page family sits in --
+     detail pages, directories, World, Search. A page family owns its
+     content structure, its resource hue and its inner grid widths. It
+     must NOT redefine any of the three values below.
+
+     Before this existed, each family had a private origin: detail pages
+     started 28px under the header and flush with the header card's box,
+     directories started 16px under it and inset by a whole gutter, and
+     the remaining pages started 40px under it. Same header, three
+     different page origins. */
+
+  /* Header card to the first content row. */
+  --public-page-top: 28px;
+
+  /* The site container's own horizontal padding. A page frame that wants
+     to sit flush with the header/footer card box cancels exactly this
+     much (see .public-page-frame); nothing may hard-code the number. */
+  --public-page-gutter: clamp(28px, calc(28px + 6px * var(--pf)), 34px);
+
+  /* Breadcrumb treatment, shared by every public page family. The
+     breadcrumb is page-frame furniture, not page content: it renders at the
+     same size, with the same item spacing, and the same distance to the
+     first block below it, whether that block is a detail hero or a
+     directory title. */
+  --public-breadcrumb-font-size: 12.5px;
+  --public-breadcrumb-item-gap: 8px;
+  --public-breadcrumb-space: 20px;
+
+  /* Vertical rhythm between a directory's own top-level blocks. */
+  --directory-stack-gap: 4px;
+
+  /* ---- Canonical main-directory List row geometry ------------------
+     The /recipes directory List is the density authority; these are its
+     measured values, owned here rather than by any one directory. Items,
+     Professions and Classes each used to carry a private copy that had
+     drifted 2px larger, so the same list row rendered at two densities
+     depending on which resource you were browsing.
+
+     The frame is CONTENT-BOX: its 1px border sits outside the 48px content
+     area, so the stage nested inside always has room, and the row is
+     6 + (48 + 2) + 6 + 2 = 64px tall.
+
+     This concerns MAIN DIRECTORY List views only. The compact relationship
+     lists (Used in Recipes, Related Recipes) have their own vocabulary and
+     are deliberately not driven from here. */
+  --directory-list-row-gap: 14px;
+  --directory-list-row-padding-block: 6px;
+  --directory-list-row-padding-inline: 14px;
+  --directory-list-row-radius: 9px;
+  --directory-list-frame-size: 48px;
+  --directory-list-frame-radius: 8px;
+  /* The approved image stage inside the frame. */
+  --directory-list-stage-size: 44px;
+
+  /* Visible depth of the scenic layer on a CONTENT page. Depth is part of
+     the background's coordinate system, not decoration: the layer paints
+     `background-size: cover`, so two page families with different depths
+     crop the same photograph differently and the scene appears to move
+     between them. The landing hero is the one documented exception (see
+     .public-scenic-background--home). */
+  --public-scenic-content-depth: 760px;
+
   /* ===== Canonical public detail-page geometry ========================
      ONE source of truth for the frame every public resource detail page
      sits in. Recipe detail was the reference when these were calibrated,
@@ -225,20 +288,21 @@
      entire point: the drift this replaced came from six families each
      holding a private copy of the same measurement. */
 
-  /* Matches .public-site-container's own padding-inline exactly, because
-     the detail shell cancels that padding to sit flush with the container
-     box (see .public-detail-page). Previously two families hard-coded
-     -28px against this same ramp, so they were 6px out at 3440. */
-  --detail-gutter: clamp(28px, calc(28px + 6px * var(--pf)), 34px);
+  /* Detail pages align on the GLOBAL public gutter -- they no longer own a
+     private copy of it. See --public-page-gutter for the definition; this
+     alias is kept because the --detail-* set is the documented vocabulary
+     detail families read, and public-detail-geometry.spec.ts asserts it. */
+  --detail-gutter: var(--public-page-gutter);
 
   /* Vertical rhythm between a detail page's top-level blocks. */
   --detail-stack-gap: 32px;
 
-  /* Breadcrumb: one treatment for every detail page. */
-  --detail-breadcrumb-font-size: 12.5px;
-  --detail-breadcrumb-item-gap: 8px;
-  /* Breadcrumb baseline to hero top. */
-  --detail-breadcrumb-space: 20px;
+  /* Breadcrumb: the shared public treatment. Kept as --detail-* aliases
+     because that is the vocabulary the detail families and
+     public-detail-geometry.spec.ts read. */
+  --detail-breadcrumb-font-size: var(--public-breadcrumb-font-size);
+  --detail-breadcrumb-item-gap: var(--public-breadcrumb-item-gap);
+  --detail-breadcrumb-space: var(--public-breadcrumb-space);
 
   /* Hero typography. */
   --detail-title-size: clamp(40px, calc(40px + 4px * var(--pf)), 44px);
@@ -1547,7 +1611,7 @@ select:focus-visible {
     --public-scenic-position-desktop,
     55% center
   );
-  --public-scenic-depth: 640px;
+  --public-scenic-depth: var(--public-scenic-content-depth);
   --public-scenic-wash-top: rgba(17, 21, 20, 0.72);
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.82);
   --public-scenic-vignette-left: rgba(17, 21, 20, 0.78);
@@ -1607,12 +1671,14 @@ select:focus-visible {
     url("/images/backgrounds/merchants-codex-coastal-overlook.png");
 }
 
+/* Catalogue pages differ from detail pages ONLY in atmosphere (the wash and
+   vignette below), never in geometry: the anchor and the depth both come from
+   the shared coordinate system above. This variant used to pin its own
+   `55% 60%` anchor and a 100vh depth, which cropped the same photograph
+   differently and made the scene visibly move between a directory and a
+   detail page -- and pushed the scene's bright content below the fold, so a
+   directory opened onto a flat dark band under the header. */
 .public-scenic-background--catalogue {
-  --public-scenic-position: var(
-    --public-scenic-position-desktop,
-    55% 60%
-  );
-  --public-scenic-depth: 100vh;
   --public-scenic-wash-top: rgba(17, 21, 20, 0.62);
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.55);
   --public-scenic-vignette-left: rgba(17, 21, 20, 0.7);
@@ -1635,8 +1701,9 @@ select:focus-visible {
     url("/images/backgrounds/merchants-codex-coastal-overlook.png");
 }
 
+/* Detail pages likewise customise atmosphere only; 760px was this variant's
+   private depth and is now --public-scenic-content-depth for every page. */
 .public-scenic-background--detail {
-  --public-scenic-depth: 760px;
   --public-scenic-wash-top: rgba(17, 21, 20, 0.68);
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.8);
 }
@@ -1647,20 +1714,48 @@ select:focus-visible {
   z-index: 1;
 }
 
+/* ---- Shared public page frame -----------------------------------------
+   A public page's content column sits flush with the header/footer card's
+   own box rather than being inset by the site container's gutter, so the
+   breadcrumb, the page title and the first content row all share one left
+   edge with the header card above them.
+
+   This is expressed by cancelling exactly the container's own padding, via
+   the same --public-page-gutter ramp the container reads, so the two stay
+   exact at every width including ultrawide. Below the breakpoint the
+   container's gutter IS the page gutter and no breakout applies.
+
+   Every redesigned public page family opts in, either by carrying
+   .public-page-frame directly or by being one of the two family roots listed
+   below. Detail pages used to own this rule privately (as .public-detail-page
+   with --detail-gutter) while directories had no equivalent at all, which is
+   why a directory breadcrumb sat 28px right of a detail breadcrumb on the
+   same viewport.
+
+   NOT opted in, deliberately: the landing page (a centred full-viewport hero
+   that is not a content page frame at all) and the Categories/account pages,
+   which are the last surfaces still on the pre-redesign PageHeader shape --
+   moving only their horizontal origin would be half a conversion. */
+@media (min-width: 1181px) {
+  .public-page-frame,
+  .public-detail-page,
+  .directory-page {
+    width: calc(100% + var(--public-page-gutter) * 2);
+    margin-inline: calc(var(--public-page-gutter) * -1);
+  }
+}
+
 .public-site-container {
   width: 100%;
   max-width: clamp(1760px, calc(1760px + 320px * var(--pf)), 2080px);
   margin-inline: auto;
-  padding-inline: clamp(28px, calc(28px + 6px * var(--pf)), 34px);
+  padding-inline: var(--public-page-gutter);
 }
 
-.public-site-container--landing {
-  max-width: clamp(1760px, calc(1760px + 320px * var(--pf)), 2080px);
-}
-
-.public-site-container.public-site-container--wide {
-  max-width: clamp(1760px, calc(1760px + 320px * var(--pf)), 2080px);
-}
+/* --landing and --wide previously restated this same max-width verbatim, so
+   all three modifiers resolved to one identical box. The overrides were
+   removed rather than kept alive as no-ops; the modifier classes themselves
+   remain, and still mark landing/wide intent for their other rules. */
 
 .public-site-container--landing.public-site-main {
   padding-top: 0;
@@ -2083,10 +2178,12 @@ select:focus-visible {
   }
 }
 
+/* ONE public page top origin. Detail pages, directories, World and Search
+   all begin the same distance under the header card. */
 .public-site-main {
   flex: 1 0 auto;
   min-width: 0;
-  padding-top: 40px;
+  padding-top: var(--public-page-top);
 }
 
 .public-site-footer {
@@ -2128,8 +2225,8 @@ select:focus-visible {
 }
 
 @media (max-width: 1120px) {
-  .public-site-container {
-    padding-inline: 20px;
+  :root {
+    --public-page-gutter: 20px;
   }
 }
 
@@ -2698,6 +2795,12 @@ select:focus-visible {
     margin-block: 0;
   }
 
+  :root {
+    /* One narrow-viewport depth for every scenic content page, replacing the
+       catalogue's 100vh and detail's 700px private values. */
+    --public-scenic-content-depth: 700px;
+  }
+
   .public-scenic-background {
     --public-scenic-position: var(
       --public-scenic-position-mobile,
@@ -2720,7 +2823,6 @@ select:focus-visible {
   }
 
   .public-scenic-background--catalogue {
-    --public-scenic-depth: 100vh;
     --public-scenic-wash-top: rgba(17, 21, 20, 0.56);
     --public-scenic-wash-middle: rgba(17, 21, 20, 0.64);
     --public-scenic-vignette-left: rgba(17, 21, 20, 0.52);
@@ -2728,9 +2830,6 @@ select:focus-visible {
     --public-scenic-vignette-right: rgba(17, 21, 20, 0.42);
   }
 
-  .public-scenic-background--detail {
-    --public-scenic-depth: 700px;
-  }
 
   .landing-page {
     padding-bottom: 40px;
@@ -2946,7 +3045,7 @@ select:focus-visible {
 .directory-page {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--directory-stack-gap);
 }
 
 /* Each resource directory declares its family the same way a detail hero
@@ -2977,13 +3076,16 @@ select:focus-visible {
   --resource-hue: var(--hue-shop);
 }
 
+/* Same idiom as .public-detail-page's own rule: the parent's gap already
+   separates these blocks, so the shared breadcrumb space is expressed as the
+   difference rather than as a second magic number. The directory title
+   therefore starts at exactly the Y a detail hero starts at. This used to be
+   `margin-bottom: 0`, which put the title 16px above its detail counterpart,
+   and a private 8px/12.5px copy of the shared list treatment. */
 .directory-page > .public-breadcrumb {
-  margin-bottom: 0;
-}
-
-.directory-page > .public-breadcrumb ol {
-  gap: 8px;
-  font-size: 12.5px;
+  margin-bottom: calc(
+    var(--public-breadcrumb-space) - var(--directory-stack-gap)
+  );
 }
 
 .directory-title {
@@ -3692,12 +3794,15 @@ select:focus-visible {
     flex: none;
   }
 
+  /* The height-locked catalogue shell keeps its bounded flex chain, but NOT
+     a private top origin: padding-top stays --public-page-top so a directory
+     starts level with a detail page. Only the bottom inset is a catalogue
+     concern (it is what keeps the last row clear of the viewport edge). */
   .public-site-shell--catalogue .public-site-main {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    padding-top: 16px;
     padding-bottom: 16px;
   }
 
@@ -3729,20 +3834,117 @@ select:focus-visible {
   }
 }
 
-.item-catalogue-list-row {
+/* ---- Shared main-directory List row -----------------------------------
+   ONE row geometry for every main directory's List view. Items, Recipes,
+   Professions and Classes all render this shape; only the cells inside it
+   differ per resource, which is the point -- a Profession row may show a
+   description and a recipe count where an Item row shows a category and a
+   source, but both rows are the same object at the same density.
+
+   Locations and Shops are deliberately absent: those directories have no
+   List view at all. They present grouped wide CARDS
+   (.location-directory-card / .shop-directory-card), a different primitive
+   with its own art scale, and forcing this row geometry onto them would be
+   a false abstraction rather than a shared system. */
+/* The Recipe selector is doubled deliberately. .recipe-output-card declares
+   `display: grid` and a 14px radius further down this file, and a single
+   modifier class ties with it on specificity -- so source order would decide,
+   and the base would win from here. Doubling says what is actually meant: the
+   directory-List modifier beats its own base. */
+.item-catalogue-list-row,
+.profession-catalogue-list-row,
+.class-catalogue-list-row,
+.recipe-output-card.recipe-output-card--directory-list {
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 14px;
-  border: 1px solid var(--color-border-muted);
-  border-radius: 9px;
-  background: var(--color-surface);
-  padding: 6px 14px;
-  color: inherit;
-  text-decoration: none;
+  gap: var(--directory-list-row-gap);
+  border-radius: var(--directory-list-row-radius);
+  padding: var(--directory-list-row-padding-block)
+    var(--directory-list-row-padding-inline);
   transition:
     border-color 0.2s ease,
-    background-color 0.2s ease;
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
+/* The Recipe card is an <article> that already paints its own surface through
+   .recipe-output-card and wraps its own links; the other three rows ARE the
+   link, so the surface and the anchor reset belong to them alone. */
+.item-catalogue-list-row,
+.profession-catalogue-list-row,
+.class-catalogue-list-row {
+  border: 1px solid var(--color-border-muted);
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.recipe-output-card.recipe-output-card--directory-list {
+  border-color: var(--color-border-muted);
+}
+
+/* ---- Shared main-directory List image frame ---------------------------
+   The frame carries the resource hue, the border and the radius; the sprite
+   stage nested inside is a plain, centred 44px content area. Image
+   availability changes only what sits INSIDE the frame, never the frame, so
+   a record with no artwork still reads as its own resource family. */
+.directory-list-media {
+  box-sizing: content-box;
+  width: var(--directory-list-frame-size);
+  height: var(--directory-list-frame-size);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--directory-list-frame-radius);
+  background:
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(var(--resource-hue), var(--directory-list-media-hue, 0.2)),
+      transparent 68%
+    ),
+    var(--color-surface);
+}
+
+/* Items opt OUT of the frame hue. This is the one main directory whose List
+   thumbnails have never been tinted, and they must not start now: at 44px the
+   Item sapphire reads as a blue box rather than as resource identity, which is
+   the exact regression the earlier Item-hue repair pass removed. Geometry is
+   shared; this tint is not. */
+.items-directory-page .directory-list-media {
+  --directory-list-media-hue: 0;
+}
+
+.directory-list-media .public-sprite-stage {
+  --sprite-stage-size: var(--directory-list-stage-size);
+  --sprite-image-size: var(--directory-list-stage-size);
+  width: var(--directory-list-stage-size);
+  height: var(--directory-list-stage-size);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* The stage is 44px, so the shared 11px "No image available" fallback would
+   spill past the frame's rounded corner. Same compact treatment the Recipe
+   directory List already applied to its own 44px stage. */
+.directory-list-media .public-sprite-stage--empty {
+  width: var(--directory-list-stage-size);
+  height: var(--directory-list-stage-size);
+  padding: 5px;
+}
+
+.directory-list-media .public-sprite-stage--empty .public-sprite-fallback {
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
 
 .item-catalogue-list-row:hover,
 .item-catalogue-list-row:focus-visible {
@@ -3921,68 +4123,10 @@ select:focus-visible {
   gap: 8px;
 }
 
-.profession-catalogue-list-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border: 1px solid var(--color-border-muted);
-  border-radius: 9px;
-  background: var(--color-surface);
-  padding: 6px 14px;
-  color: inherit;
-  text-decoration: none;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-/* The thumbnail's stage always carries the Profession hue, real image or
-   not -- image availability only changes what sits inside it, matching the
-   Grid card's own media wrapper. */
-/* Profession and Class list-view thumbnails are ONE implementation, not two
-   that can drift: the stage itself always carries the page's own
-   --resource-hue (Profession amethyst, Class crimson), exactly like the Grid
-   card's media wrapper, so a record with no artwork still reads as its own
-   resource family. Image availability only changes what sits INSIDE the
-   stage; it never changes the stage. */
-.profession-catalogue-list-media,
-.class-catalogue-list-media {
-  width: 52px;
-  height: 52px;
-  /* Border-box so the 1px frame is inside the 52px square -- otherwise the
-     52px sprite stage nested in it overflowed by 2px and sat off-centre. */
-  box-sizing: border-box;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background:
-    radial-gradient(
-      circle at 38% 30%,
-      rgba(var(--resource-hue), 0.2),
-      transparent 68%
-    ),
-    var(--color-surface);
-}
-
-/* The nested sprite stage is a plain, centred content area: the hue, frame
-   and radius all belong to the wrapper above, so nothing is drawn twice and
-   the real image and the no-image fallback occupy the identical box. */
-.profession-catalogue-list-media .public-sprite-stage--row,
-.class-catalogue-list-media .public-sprite-stage--row {
-  --sprite-stage-size: 100%;
-  --sprite-image-size: 100%;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 3px;
-}
+/* Profession and Class list thumbnails now use the shared
+   .directory-list-media frame. They used to carry a private 52px border-box
+   copy of it, which rendered 2px larger than the Recipe directory List's own
+   frame at the same density. */
 
 .profession-catalogue-list-name {
   width: 150px;
@@ -4213,18 +4357,9 @@ select:focus-visible {
   gap: var(--detail-stack-gap);
 }
 
-/* The detail shell cancels the site container's horizontal padding so a
-   detail page's hero sits flush with the container box, which is the
-   origin the Recipe hero established. Tied to --detail-gutter (the same
-   ramp the container itself uses) rather than a hard-coded number, so it
-   stays exact at every width including ultrawide. Below this breakpoint
-   the page keeps the container's own gutter. */
-@media (min-width: 1181px) {
-  .public-detail-page {
-    width: calc(100% + var(--detail-gutter) * 2);
-    margin-inline: calc(var(--detail-gutter) * -1);
-  }
-}
+/* SHARED public page frame -- see .public-page-frame in the shell section.
+   Detail pages opt in there alongside directories, so this family no longer
+   owns a private breakout rule. */
 
 /* The grid gap above already separates blocks by --detail-stack-gap; the
    breadcrumb sits closer to its hero than that, so it trims the shared gap
@@ -4234,11 +4369,6 @@ select:focus-visible {
   margin-bottom: calc(
     var(--detail-breadcrumb-space) - var(--detail-stack-gap)
   );
-}
-
-.public-detail-page .public-breadcrumb ol {
-  gap: var(--detail-breadcrumb-item-gap);
-  font-size: var(--detail-breadcrumb-font-size);
 }
 
 /* Main content beside an optional information column. Pages with no
@@ -4280,19 +4410,23 @@ select:focus-visible {
   }
 }
 
+/* The shared breadcrumb treatment lives here, so no page family needs its
+   own copy. Detail pages and directories each only restate the MARGIN, and
+   only because both lay their children out with a gap that has to be
+   subtracted back off (see below). */
 .public-breadcrumb {
-  margin-bottom: 16px;
+  margin-bottom: var(--public-breadcrumb-space);
 }
 
 .public-breadcrumb ol {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 14px;
+  gap: var(--public-breadcrumb-item-gap);
+  font-size: var(--public-breadcrumb-font-size);
 }
 
 .public-breadcrumb li {
@@ -5281,13 +5415,9 @@ a.item-info-chip:focus-visible {
   text-transform: uppercase;
 }
 
-/* Item detail calibration: match the archived Claude Design handoff's flat
-   identity composition while retaining production relationships, disclosure
-   controls, verification, and schema-backed facts. Recipe detail is calibrated
-   independently so page-by-page screenshots remain meaningful. */
-.public-site-shell--scenic-detail .public-site-main {
-  padding-top: 28px;
-}
+/* Detail pages used to set their own 28px top origin here. That value is now
+   --public-page-top and applies to every public page family, so this override
+   would only be a second copy of the shared rule. */
 
 /* Page frame (grid + shared rhythm) comes from .public-detail-page.
    This used to force display:block, which out-ordered the shared rule. */
@@ -6676,8 +6806,8 @@ body:has(.recipe-detail-page) .public-site-footer {
 .recipe-output-list-heading {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 14px 8px;
+  gap: var(--directory-list-row-gap);
+  padding: 0 var(--directory-list-row-padding-inline) 8px;
   color: var(--color-text-meta-dim);
   font-size: 10.5px;
   font-weight: 700;
@@ -6689,8 +6819,8 @@ body:has(.recipe-detail-page) .public-site-footer {
   width: 172px;
   flex: none;
   display: grid;
-  grid-template-columns: 48px 110px;
-  gap: 14px;
+  grid-template-columns: var(--directory-list-frame-size) 110px;
+  gap: var(--directory-list-row-gap);
 }
 
 .recipe-output-list-heading > span:nth-child(2) {
@@ -6716,38 +6846,29 @@ body:has(.recipe-detail-page) .public-site-footer {
   gap: 8px;
 }
 
-.recipe-output-card--directory-list {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border-color: var(--color-border-muted);
-  border-radius: 9px;
-  padding: 6px 14px;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
 .recipe-output-list-identity {
   width: 174px;
   flex: none;
   display: grid;
-  grid-template-columns: 48px 110px;
+  grid-template-columns: var(--directory-list-frame-size) 110px;
   align-items: center;
-  gap: 14px;
+  gap: var(--directory-list-row-gap);
   color: inherit;
   text-decoration: none;
 }
 
+/* The Recipe frame keeps its own selector rather than adopting
+   .directory-list-media: the yield badge is a child of this stage and is
+   positioned just OUTSIDE its bottom-right corner, so this frame must stay
+   a positioning context and must not clip. Its geometry is the shared
+   token set all the same, so it cannot drift from the other three. */
 .recipe-output-card--directory-list .recipe-output-image-stage {
   box-sizing: content-box;
-  width: 48px;
-  height: 48px;
+  width: var(--directory-list-frame-size);
+  height: var(--directory-list-frame-size);
   flex: none;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--directory-list-frame-radius);
   background:
     radial-gradient(
       circle at 38% 30%,
@@ -6760,8 +6881,8 @@ body:has(.recipe-detail-page) .public-site-footer {
 .recipe-output-card--directory-list
   .recipe-output-image-stage
   .public-sprite-stage--card {
-  --sprite-stage-size: 44px;
-  --sprite-image-size: 44px;
+  --sprite-stage-size: var(--directory-list-stage-size);
+  --sprite-image-size: var(--directory-list-stage-size);
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -6771,8 +6892,8 @@ body:has(.recipe-detail-page) .public-site-footer {
 .recipe-output-card--directory-list
   .recipe-output-image-stage
   .public-sprite-stage--card.public-sprite-stage--empty {
-  width: 44px;
-  height: 44px;
+  width: var(--directory-list-stage-size);
+  height: var(--directory-list-stage-size);
   padding: 5px;
   overflow: hidden;
 }
@@ -6956,7 +7077,11 @@ body:has(.recipe-detail-page) .public-site-footer {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .recipe-output-card--directory-list {
+  /* Doubled for the same reason the desktop rule is (see the shared
+     main-directory List row): this narrow-viewport transform has to beat
+     BOTH .recipe-output-card and the shared row geometry, and a single
+     modifier class ties with the doubled selector rather than winning. */
+  .recipe-output-card.recipe-output-card--directory-list {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px 14px;
@@ -13573,22 +13698,6 @@ a.profession-detail-chip:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.class-catalogue-list-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border: 1px solid var(--color-border-muted);
-  border-radius: 9px;
-  background: var(--color-surface);
-  padding: 6px 14px;
-  color: inherit;
-  text-decoration: none;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
 }
 
 .class-catalogue-list-name {

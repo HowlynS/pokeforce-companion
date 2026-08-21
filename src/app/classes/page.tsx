@@ -86,7 +86,7 @@ export default async function PlayerClassesPage({
           key={playerClass.id}
           style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
         >
-          <span className="class-catalogue-list-media">
+          <span className="directory-list-media">
             <ContentImage
               imagePath={playerClass.image}
               alt={`Image of ${playerClass.name}`}

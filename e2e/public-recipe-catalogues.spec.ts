@@ -188,9 +188,27 @@ async function findEdgeCardIndices(page: Page) {
         (a, b) =>
           a.card.getBoundingClientRect().left - b.card.getBoundingClientRect().left
       );
+    // "Middle" means a card the grid's own edges cannot reach, so it is the
+    // toggle-bearing card whose centre is nearest the GRID's centre -- not
+    // the median of the filtered list. How many first-row cards carry a
+    // disclosure toggle depends on how many ingredient previews fit in a
+    // card, which changes with the card's width; the median of that subset
+    // can therefore sit right beside a grid edge, where the panel is
+    // deliberately edge-shifted and is NOT centred on its card.
+    const grid = cards[0]?.parentElement?.getBoundingClientRect();
+    const gridCentre = grid ? (grid.left + grid.right) / 2 : 0;
+    const centremost = firstRow
+      .slice()
+      .sort((a, b) => {
+        const centre = (entry: (typeof firstRow)[number]) => {
+          const box = entry.card.getBoundingClientRect();
+          return Math.abs((box.left + box.right) / 2 - gridCentre);
+        };
+        return centre(a) - centre(b);
+      })[0];
     return {
       leftmost: firstRow[0]?.index ?? -1,
-      middle: firstRow[Math.floor(firstRow.length / 2)]?.index ?? -1,
+      middle: centremost?.index ?? -1,
       rightmost: firstRow[firstRow.length - 1]?.index ?? -1,
     };
   });
@@ -281,10 +299,16 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
       previewLeft: preview ? inset(preview).left : null,
     };
   });
-  expect(gridGeometry.card.width).toBeCloseTo(190, 0);
-  expect(gridGeometry.card.height).toBeCloseTo(315, 0);
-  expect(gridGeometry.stage.width).toBeCloseTo(164, 0);
-  expect(gridGeometry.stage.height).toBeCloseTo(164, 0);
+  // Recalibrated when the directory adopted the shared public page frame
+  // (public-shell-geometry.spec.ts): the directory content column now sits
+  // flush with the header card's box instead of being inset by a gutter, so
+  // the catalogue reclaimed 2 x 28px and each of its 7 columns grew by 8px.
+  // The card's own internal rhythm is unchanged -- the art frame keeps its
+  // 13px inset on each side (198 - 172 = 26, exactly as 190 - 164 = 26 did).
+  expect(gridGeometry.card.width).toBeCloseTo(198, 0);
+  expect(gridGeometry.card.height).toBeCloseTo(323, 0);
+  expect(gridGeometry.stage.width).toBeCloseTo(172, 0);
+  expect(gridGeometry.stage.height).toBeCloseTo(172, 0);
 
   // One internal horizontal rhythm: the art frame, title, footer and the first
   // Ingredient preview all resolve to the same card content box, and previews
@@ -774,14 +798,19 @@ test("Recipes index is the canonical Profession-filtered catalogue", async ({
       ingredients: ingredients.getBoundingClientRect().width,
     };
   });
-  expect(listGeometry.row.width).toBeCloseTo(1402, 0);
+  // Only the row's overall width and its one flexible column moved when the
+  // directory adopted the shared public page frame: the content column
+  // reclaimed 2 x 28px of gutter, and Ingredients is the column that grows.
+  // Every fixed cell -- and the row's own 64px height -- is unchanged, which
+  // is the point: the frame moved, the row's density did not.
+  expect(listGeometry.row.width).toBeCloseTo(1458, 0);
   expect(listGeometry.row.height).toBeCloseTo(64, 0);
   expect(listGeometry.identity).toBeCloseTo(174, 0);
   expect(listGeometry.stage).toBeCloseTo(50, 0);
   expect(listGeometry.title).toBeCloseTo(110, 0);
   expect(listGeometry.profession).toBeCloseTo(80, 0);
   expect(listGeometry.experience).toBeCloseTo(55, 0);
-  expect(listGeometry.ingredients).toBeCloseTo(1011, 0);
+  expect(listGeometry.ingredients).toBeCloseTo(1067, 0);
   const denseListCard = listCards.filter({ hasText: denseRecipe.name });
   const denseListDisclosure = denseListCard.locator(
     ".recipe-output-ingredient-toggle"
@@ -1574,14 +1603,34 @@ test("the compact List row matches the Recipes directory list's own rhythm", asy
 
     // The /recipes directory list is the stated visual authority.
     await page.goto("/recipes");
-    await page.getByRole("button", { name: "List", exact: true }).first().click();
-    const reference = await page
+    // View mode is client state, so a click that lands before the toggle
+    // hydrates is silently a no-op and the List rows never appear -- which
+    // then shows up as an unexplained locator timeout below rather than as a
+    // failed assertion. Retry the click until the view has actually changed.
+    const listToggle = page
+      .getByRole("button", { name: "List", exact: true })
+      .first();
+    await expect(async () => {
+      await listToggle.click();
+      await expect(listToggle).toHaveAttribute("aria-pressed", "true");
+    }).toPass({ timeout: 15_000 });
+    const referenceRow = page
       .locator(".recipe-output-card--directory-list")
-      .first()
-      .evaluate((element) => element.getBoundingClientRect().height);
+      .first();
+    await expect(referenceRow).toBeVisible();
+    const reference = await referenceRow.evaluate(
+      (element) => element.getBoundingClientRect().height,
+    );
 
     await page.goto(`/professions/${fixture.profession.slug}`);
-    await page.getByRole("button", { name: "List", exact: true }).click();
+    const compactToggle = page.getByRole("button", {
+      name: "List",
+      exact: true,
+    });
+    await expect(async () => {
+      await compactToggle.click();
+      await expect(compactToggle).toHaveAttribute("aria-pressed", "true");
+    }).toPass({ timeout: 15_000 });
     const row = page
       .locator(".recipe-output-card--list")
       .filter({ hasText: dense.name })

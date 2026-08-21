@@ -16,7 +16,7 @@ describe("appearance defaults", () => {
     });
     expect(DEFAULT_SITE_APPEARANCE.favicon.url).toBeNull();
     expect(DEFAULT_SITE_APPEARANCE.home.desktop).toEqual({ x: 55, y: 50 });
-    expect(DEFAULT_SITE_APPEARANCE.catalogue.desktop).toEqual({ x: 55, y: 60 });
+    expect(DEFAULT_SITE_APPEARANCE.catalogue.desktop).toEqual({ x: 55, y: 50 });
     expect(DEFAULT_SITE_APPEARANCE.itemDetail.mobile).toEqual({ x: 82, y: 50 });
     expect(DEFAULT_SITE_APPEARANCE.admin).toMatchObject({
       background: {

@@ -906,3 +906,127 @@ Known intentional exceptions:
   system: it uses the plain `AppShell` with no scenic layer, no breadcrumb,
   no resource atmosphere, and Category has no canonical hue. Bringing it in
   would be a redesign, not a normalization.
+
+## The public page frame is global (shell normalization pass, 2026-08-21)
+
+**ALL PUBLIC PAGES SHARE ONE PAGE COORDINATE SYSTEM.** The normalized detail
+pages are the authority for it; directories, World and Search were brought
+onto that same frame rather than the frame being re-derived per page family.
+
+A page type may change **content structure**. It may NOT silently redefine
+the scenic background origin, the header-to-content top origin, the page's
+horizontal origin, the gutter system, breadcrumb geometry, or global page
+scaling.
+
+### Centrally owned, in `:root`
+
+- `--public-page-top` (`28px`) — header card to the first content row.
+  Applied once, on `.public-site-main`. Before this, detail pages started
+  28px under the header, directories 16px and every other page 40px: one
+  header, three page origins.
+- `--public-page-gutter` — `.public-site-container`'s horizontal padding,
+  and therefore the exact amount a page frame cancels to sit flush with the
+  header/footer card's own box. `--detail-gutter` is now an alias of it, so
+  the two can never drift.
+- `--public-breadcrumb-font-size`, `--public-breadcrumb-item-gap`,
+  `--public-breadcrumb-space` — one breadcrumb treatment for every family.
+  The `--detail-breadcrumb-*` tokens are aliases. Both families restate only
+  the *margin*, and only because each lays its children out with a gap that
+  has to be subtracted back off.
+- `--public-scenic-content-depth` (`760px`, `700px` narrow) — the visible
+  depth of the scenic layer on a content page. Depth is part of the
+  background's coordinate system, not decoration: the layer paints
+  `background-size: cover`, so two families with different depths crop the
+  same photograph differently and the scene visibly moves between them.
+
+### The shared frame
+
+`.public-page-frame` is the opt-in class; `.public-detail-page` and
+`.directory-page` are opted in by name alongside it. At ≥1181px it cancels
+exactly `--public-page-gutter`, so a page's breadcrumb, title and first
+content row share one left edge with the header card above them. Below that
+breakpoint the container's gutter *is* the page gutter and no breakout
+applies.
+
+The scenic layer hangs off `.public-site-shell` itself, never off a content
+wrapper, so its geometry can never depend on how many records a page holds.
+
+### What page families still own
+
+Content structure, resource hue and atmosphere, inner grid and catalogue
+widths, sidebar composition, and page-specific controls. A directory keeps
+its compact title, search field, filters, Grid/List toggle and overview
+column — normalizing the frame is not a mandate to grow a detail-style hero.
+
+Directory content **width** may still differ: the outer frame aligns
+globally even where the inner grid does not. When the directories adopted
+the shared frame they reclaimed `2 × 28px`, which their catalogue grids
+absorbed — the Recipe grid card grew from 190px to 198px while keeping its
+26px internal art inset, and the Recipe List row grew from 1402px to 1458px
+while every fixed cell and its 64px height stayed exactly as calibrated.
+
+`e2e/public-shell-geometry.spec.ts` enforces this at 1920/2560/3440.
+
+### Known intentional exceptions
+
+- **The landing page** keeps its own full-viewport scenic depth
+  (`max(880px, 100vh)`) and its own wash. It is a centred full-bleed hero,
+  not a content page frame, and it is not opted into `.public-page-frame`.
+- **World** keeps its bounded-pane inner scrolling and the height-locked
+  catalogue shell. That is inner behavior; its scenic origin, header
+  relationship and outer coordinate system are the shared ones.
+- **Search** renders no scenic layer by design. It is opted into
+  `.public-page-frame`, so it shares the top and left origins regardless.
+- **`/categories`, `/categories/[slug]` and `/account/password`** remain on
+  the pre-redesign `PageHeader` shape and the container gutter. Moving only
+  their horizontal origin would be half a conversion; they need their own
+  pass.
+- **Per-surface scenic anchors stay admin-configurable.** Appearance still
+  stores an independent position for home, catalogue and item detail. What
+  changed is that all three now *default* to the same `55% / 50%` desktop
+  anchor — the catalogue's `y: 60` default was what made the scene appear to
+  move between a directory and a detail page, and pushed the scene's bright
+  content below the fold so a directory opened onto a flat dark band.
+
+## Main-directory List rows share one density
+
+**The `/recipes` directory List is the density authority.** Its measured
+geometry is owned centrally as `--directory-list-*` tokens:
+
+- `--directory-list-stage-size` (`44px`) — the approved image stage.
+- `--directory-list-frame-size` (`48px`, content-box, `+1px` border each
+  side) — the frame around it, so the outer square is `50px`.
+- `--directory-list-row-gap` (`14px`),
+  `--directory-list-row-padding-block` (`6px`),
+  `--directory-list-row-padding-inline` (`14px`),
+  `--directory-list-row-radius` (`9px`) — giving a `64px` row.
+
+`.directory-list-media` is the shared frame; Items, Professions and Classes
+all render it. Recipe keeps its own frame selector because the yield badge is
+a child of that stage and sits just outside its corner, so it must remain a
+positioning context and must not clip — but it reads the same tokens, so it
+cannot drift. Items, Professions and Classes previously carried private 52px
+copies that rendered 2px larger than the authority.
+
+Resource-specific List *content* still differs and should: a Profession row
+carries a description and a recipe count where an Item row carries a category
+and a source. Standardizing density is not flattening content.
+
+### Known intentional exceptions
+
+- **Locations and Shops have no List view at all.** They present grouped
+  wide cards (`.location-directory-card`, `.shop-directory-card`) with their
+  own art scale — a different primitive. Forcing the row geometry onto them
+  would be a false abstraction, so they are deliberately out of scope.
+- **The Items List frame is unhued.** Every other List frame carries its
+  resource hue. At 44px the Item sapphire reads as a blue box rather than as
+  resource identity — the regression an earlier Item-hue repair pass
+  removed — so Items sets `--directory-list-media-hue: 0`. The opt-out is a
+  token, so it is visible in the cascade rather than hidden in an override.
+- **The compact relationship lists are NOT governed by these tokens.** Used
+  in Recipes, Related Recipes and the Profession recipe lists
+  (`.recipe-output-card--list`) share no vocabulary with a main directory
+  row and have their own pass.
+
+`e2e/public-directory-list-geometry.spec.ts` enforces the row geometry, the
+token ownership, and the Items hue opt-out at 1920/2560/3440.

@@ -155,11 +155,13 @@ export default async function ItemsPage({ searchParams }: ItemsPageProps) {
           className="item-catalogue-list-row cx-item-in"
           style={{ animationDelay: `${Math.min(index * 30, 330)}ms` }}
         >
-          <ContentImage
-            imagePath={item.image}
-            alt={`Image of ${item.name}`}
-            size="row"
-          />
+          <span className="directory-list-media">
+            <ContentImage
+              imagePath={item.image}
+              alt={`Image of ${item.name}`}
+              size="row"
+            />
+          </span>
           <h3 className="item-catalogue-list-name" title={item.name}>
             {item.name}
           </h3>
