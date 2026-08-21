@@ -1449,22 +1449,33 @@
   padding-inline: 20px;
 }
 
+/* The Appearance workspace's mobile mock simulates narrow-viewport exposure
+   inside a desktop-width pane, so it restates the narrow values rather than
+   relying on the 620px media query. It carries the SAME invariant the real
+   pages do: one exposure for every scenic surface, declared once, with only
+   the preview depths differing per variant so each mock fits its pane.
+   Catalogue used to hold these values privately while detail inherited the
+   desktop exposure, which made the mock disagree with itself exactly as the
+   live pages did. */
+.appearance-public-preview--mobile .public-scenic-background {
+  --public-scenic-wash-top: rgba(17, 21, 20, 0.56);
+  --public-scenic-wash-middle: rgba(17, 21, 20, 0.64);
+  --public-scenic-vignette-left: rgba(17, 21, 20, 0.52);
+  --public-scenic-vignette-center: rgba(17, 21, 20, 0.32);
+}
+
+/* Home keeps its own preview exposure, mirroring the landing page's own
+   documented exception on the live site. */
 .appearance-public-preview--mobile .public-scenic-background--home {
   --public-scenic-depth: 760px;
   --public-scenic-wash-top: rgba(17, 21, 20, 0.36);
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.42);
   --public-scenic-vignette-left: rgba(17, 21, 20, 0.4);
   --public-scenic-vignette-center: rgba(17, 21, 20, 0.2);
-  --public-scenic-vignette-right: rgba(17, 21, 20, 0.26);
 }
 
 .appearance-public-preview--mobile .public-scenic-background--catalogue {
   --public-scenic-depth: 560px;
-  --public-scenic-wash-top: rgba(17, 21, 20, 0.56);
-  --public-scenic-wash-middle: rgba(17, 21, 20, 0.64);
-  --public-scenic-vignette-left: rgba(17, 21, 20, 0.52);
-  --public-scenic-vignette-center: rgba(17, 21, 20, 0.32);
-  --public-scenic-vignette-right: rgba(17, 21, 20, 0.42);
 }
 
 .appearance-public-preview--mobile .public-scenic-background--detail {
@@ -1603,20 +1614,37 @@ select:focus-visible {
   isolation: isolate;
 }
 
-/* Shared upper-page atmosphere for the approved public rollout. One original
-   lossless source is requested once as CSS decoration; variant custom
-   properties control only crop, visible depth, and wash strength. */
+/* ONE canonical scenic exposure for every public page.
+   ------------------------------------------------------------------------
+   One original lossless source, requested once as CSS decoration. This rule
+   owns the whole compositing stack -- the vertical wash, the vignette, the
+   image, and the crop -- so a page family CANNOT be brighter or darker than
+   another simply because of which route it is.
+
+   The values are the DIRECTORY exposure, which is the approved reference.
+   They used to live only on .public-scenic-background--catalogue, which
+   re-declared this entire `background-image` (its own stop positions AND a
+   radial vignette). The detail variant overrode two wash custom properties
+   but NOT the image, so it silently fell back to this rule's older, much
+   heavier stack: a 0.80 wash at the 48% stop against the directory's 0.55 at
+   30%, plus a horizontal linear vignette whose LIGHTEST point was 0.46
+   against the directory radial's 0.15 centre. Composited, that is roughly
+   0.83-0.89 total darkness on a detail page against 0.62-0.73 on a
+   directory -- which is why opening any resource made the whole scene drop
+   a stop or two.
+
+   A page family may still tint LOCALLY through .resource-atmosphere (a
+   contained, hero-sized hue wash). It may not darken the scenic page. */
 .public-scenic-background {
   --public-scenic-position: var(
     --public-scenic-position-desktop,
     55% center
   );
   --public-scenic-depth: var(--public-scenic-content-depth);
-  --public-scenic-wash-top: rgba(17, 21, 20, 0.72);
-  --public-scenic-wash-middle: rgba(17, 21, 20, 0.82);
-  --public-scenic-vignette-left: rgba(17, 21, 20, 0.78);
-  --public-scenic-vignette-center: rgba(17, 21, 20, 0.46);
-  --public-scenic-vignette-right: rgba(17, 21, 20, 0.66);
+  --public-scenic-wash-top: rgba(17, 21, 20, 0.62);
+  --public-scenic-wash-middle: rgba(17, 21, 20, 0.55);
+  --public-scenic-vignette-left: rgba(17, 21, 20, 0.7);
+  --public-scenic-vignette-center: rgba(17, 21, 20, 0.15);
   position: absolute;
   inset: 0 0 auto;
   height: var(--public-scenic-depth);
@@ -1624,17 +1652,16 @@ select:focus-visible {
   pointer-events: none;
   background-image:
     linear-gradient(
-      to bottom,
+      180deg,
       var(--public-scenic-wash-top) 0%,
-      var(--public-scenic-wash-middle) 48%,
-      rgba(17, 21, 20, 0.95) 78%,
+      var(--public-scenic-wash-middle) 30%,
+      rgba(17, 21, 20, 0.86) 78%,
       var(--color-background) 100%
     ),
-    linear-gradient(
-      90deg,
-      var(--public-scenic-vignette-left) 0%,
-      var(--public-scenic-vignette-center) 52%,
-      var(--public-scenic-vignette-right) 100%
+    radial-gradient(
+      ellipse 60% 50% at 50% 8%,
+      var(--public-scenic-vignette-center),
+      var(--public-scenic-vignette-left) 70%
     ),
     var(--public-scenic-image, none),
     url("/images/backgrounds/merchants-codex-coastal-overlook.png");
@@ -1653,7 +1680,6 @@ select:focus-visible {
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.5);
   --public-scenic-vignette-left: rgba(17, 21, 20, 0.72);
   --public-scenic-vignette-center: rgba(17, 21, 20, 0.1);
-  --public-scenic-vignette-right: rgba(17, 21, 20, 0.72);
   background-image:
     linear-gradient(
       180deg,
@@ -1671,42 +1697,14 @@ select:focus-visible {
     url("/images/backgrounds/merchants-codex-coastal-overlook.png");
 }
 
-/* Catalogue pages differ from detail pages ONLY in atmosphere (the wash and
-   vignette below), never in geometry: the anchor and the depth both come from
-   the shared coordinate system above. This variant used to pin its own
-   `55% 60%` anchor and a 100vh depth, which cropped the same photograph
-   differently and made the scene visibly move between a directory and a
-   detail page -- and pushed the scene's bright content below the fold, so a
-   directory opened onto a flat dark band under the header. */
-.public-scenic-background--catalogue {
-  --public-scenic-wash-top: rgba(17, 21, 20, 0.62);
-  --public-scenic-wash-middle: rgba(17, 21, 20, 0.55);
-  --public-scenic-vignette-left: rgba(17, 21, 20, 0.7);
-  --public-scenic-vignette-center: rgba(17, 21, 20, 0.15);
-  --public-scenic-vignette-right: rgba(17, 21, 20, 0.7);
-  background-image:
-    linear-gradient(
-      180deg,
-      var(--public-scenic-wash-top) 0%,
-      var(--public-scenic-wash-middle) 30%,
-      rgba(17, 21, 20, 0.86) 78%,
-      var(--color-background) 100%
-    ),
-    radial-gradient(
-      ellipse 60% 50% at 50% 8%,
-      var(--public-scenic-vignette-center),
-      var(--public-scenic-vignette-left) 70%
-    ),
-    var(--public-scenic-image, none),
-    url("/images/backgrounds/merchants-codex-coastal-overlook.png");
-}
-
-/* Detail pages likewise customise atmosphere only; 760px was this variant's
-   private depth and is now --public-scenic-content-depth for every page. */
-.public-scenic-background--detail {
-  --public-scenic-wash-top: rgba(17, 21, 20, 0.68);
-  --public-scenic-wash-middle: rgba(17, 21, 20, 0.8);
-}
+/* .public-scenic-background--catalogue and --detail deliberately declare NO
+   exposure of their own any more; their values ARE the shared rule above.
+   Both classes remain in the markup because the Appearance workspace targets
+   them to publish a per-surface crop, and because the public contract specs
+   assert one scenic layer per page family -- but they are identity hooks
+   now, not a second and third exposure. Do not reintroduce a wash, vignette,
+   opacity, filter, or blend mode on either: that is exactly the drift this
+   rule removed. */
 
 .public-site-shell--scenic > .public-site-main,
 .public-site-shell--scenic > .public-site-footer {
@@ -2801,16 +2799,17 @@ select:focus-visible {
     --public-scenic-content-depth: 700px;
   }
 
+  /* Narrow viewports take the directory exposure too, for the same reason:
+     one scenic brightness per viewport, not one per route family. */
   .public-scenic-background {
     --public-scenic-position: var(
       --public-scenic-position-mobile,
       82% center
     );
-    --public-scenic-wash-top: rgba(17, 21, 20, 0.8);
-    --public-scenic-wash-middle: rgba(17, 21, 20, 0.88);
-    --public-scenic-vignette-left: rgba(17, 21, 20, 0.72);
-    --public-scenic-vignette-center: rgba(17, 21, 20, 0.54);
-    --public-scenic-vignette-right: rgba(17, 21, 20, 0.62);
+    --public-scenic-wash-top: rgba(17, 21, 20, 0.56);
+    --public-scenic-wash-middle: rgba(17, 21, 20, 0.64);
+    --public-scenic-vignette-left: rgba(17, 21, 20, 0.52);
+    --public-scenic-vignette-center: rgba(17, 21, 20, 0.32);
   }
 
   .public-scenic-background--home {
@@ -2819,15 +2818,6 @@ select:focus-visible {
     --public-scenic-wash-middle: rgba(17, 21, 20, 0.58);
     --public-scenic-vignette-left: rgba(17, 21, 20, 0.56);
     --public-scenic-vignette-center: rgba(17, 21, 20, 0.24);
-    --public-scenic-vignette-right: rgba(17, 21, 20, 0.4);
-  }
-
-  .public-scenic-background--catalogue {
-    --public-scenic-wash-top: rgba(17, 21, 20, 0.56);
-    --public-scenic-wash-middle: rgba(17, 21, 20, 0.64);
-    --public-scenic-vignette-left: rgba(17, 21, 20, 0.52);
-    --public-scenic-vignette-center: rgba(17, 21, 20, 0.32);
-    --public-scenic-vignette-right: rgba(17, 21, 20, 0.42);
   }
 
 

@@ -215,17 +215,17 @@ test("landing composition stays centered and bounded at all target widths", asyn
           vignetteCenter: style
             .getPropertyValue("--public-scenic-vignette-center")
             .trim(),
-          vignetteRight: style
-            .getPropertyValue("--public-scenic-vignette-right")
-            .trim(),
         };
       })
+    // The landing hero keeps its own documented exposure. It no longer reads
+    // a --public-scenic-vignette-right: every scenic variant now composes a
+    // RADIAL vignette, which takes only a centre and an edge, so that token
+    // was retired rather than left declared but unreachable.
     ).toEqual({
       washTop: "#1115148c",
       washMiddle: "#11151480",
       vignetteLeft: "#111514b8",
       vignetteCenter: "#1115141a",
-      vignetteRight: "#111514b8",
     });
 
     await page.screenshot({
@@ -355,17 +355,16 @@ test("the landing page reflows safely below desktop widths", async ({
             vignetteCenter: style
               .getPropertyValue("--public-scenic-vignette-center")
               .trim(),
-            vignetteRight: style
-              .getPropertyValue("--public-scenic-vignette-right")
-              .trim(),
           };
         })
+      // The landing hero keeps its own narrow-viewport exposure.
+      // --public-scenic-vignette-right was retired when every variant moved
+      // to a radial vignette, which takes only a centre and an edge.
       ).toEqual({
         washTop: "#11151485",
         washMiddle: "#11151494",
         vignetteLeft: "#1115148f",
         vignetteCenter: "#1115143d",
-        vignetteRight: "#11151466",
       });
       await page.screenshot({
         path: "test-results/landing-page-visual-pass/landing-390x844.png",

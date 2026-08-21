@@ -255,17 +255,18 @@ test.describe("public detail pages", () => {
           vignetteCenter: style
             .getPropertyValue("--public-scenic-vignette-center")
             .trim(),
-          vignetteRight: style
-            .getPropertyValue("--public-scenic-vignette-right")
-            .trim(),
         };
       })
+    // The SHARED public scenic exposure -- deliberately identical to the one
+    // a directory renders. These were a detail-only 0.68/0.80 wash and a
+    // 0.78/0.46/0.66 linear vignette, which made every resource page read a
+    // stop or two darker than the directory it was opened from. See
+    // public-scenic-exposure.spec.ts for the cross-family guard.
     ).toEqual({
-      washTop: "#111514ad",
-      washMiddle: "#111514cc",
-      vignetteLeft: "#111514c7",
-      vignetteCenter: "#11151475",
-      vignetteRight: "#111514a8",
+      washTop: "#1115149e",
+      washMiddle: "#1115148c",
+      vignetteLeft: "#111514b3",
+      vignetteCenter: "#11151426",
     });
 
     for (const viewport of [

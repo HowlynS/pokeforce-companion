@@ -116,6 +116,22 @@ same focused commit.
   bounded inner panes; `/categories` and `/account/password` remain on the
   pre-redesign `PageHeader` shape pending their own pass.
 - Guarded by `e2e/public-shell-geometry.spec.ts` at 1920/2560/3440.
+- **One scenic EXPOSURE as well as one scenic position.** Directories are the
+  authority for brightness, contrast, black level and global vignette;
+  details were corrected up to match, never the reverse.
+  `.public-scenic-background` owns the whole compositing stack (wash, radial
+  vignette, image, crop). `--catalogue` and `--detail` declare no exposure at
+  all and survive only as identity hooks for the Appearance crop and the
+  contract specs. Never give either a wash, vignette, `opacity`, `filter`,
+  `mix-blend-mode`, or a re-declared `background-image`.
+- Resource identity lives in `.resource-atmosphere`: a hero-scale layer that
+  paints `rgba(var(--resource-hue), …)`. It may tint locally; it may not
+  darken the scenic page, and it must stay well under the viewport height.
+- `--public-scenic-vignette-right` is retired — every vignette is radial now,
+  so it takes only a centre and an edge.
+- Exposure is CSS-only and is NOT admin-configurable; only the per-surface
+  scenic crop is.
+- Guarded by `e2e/public-scenic-exposure.spec.ts`.
 - The official Merchants Codex image logo (`public/images/branding/
   merchants-codex-logo.png`) is the authoritative brand mark, replacing the
   prior temporary text lockup. It is the header's one home link, implemented

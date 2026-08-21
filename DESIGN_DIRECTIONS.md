@@ -988,6 +988,85 @@ while every fixed cell and its 64px height stayed exactly as calibrated.
   move between a directory and a detail page, and pushed the scene's bright
   content below the fold so a directory opened onto a flat dark band.
 
+## Global scenic exposure is shared (exposure pass, 2026-08-21)
+
+**ALL SCENIC PUBLIC PAGES SHARE ONE EXPOSURE.** The previous pass unified
+where the scenic layer sits; this one unifies how bright it is. Directories
+are the approved authority for scenic brightness, contrast, black level and
+global vignette. Details were corrected up to match them — directories were
+never darkened down.
+
+### One owner
+
+`.public-scenic-background` now owns the entire compositing stack: the
+vertical wash, the radial vignette, the image and the crop. Both
+`.public-scenic-background--catalogue` and `--detail` declare **no exposure
+of their own**. They remain in the markup only as identity hooks — the
+Appearance workspace targets them to publish a per-surface crop, and the
+public contract specs assert one scenic layer per page family.
+
+Never reintroduce a wash, vignette, `opacity`, `filter`, `mix-blend-mode`, or
+a re-declared `background-image` on either variant.
+
+### What was actually wrong
+
+`--catalogue` re-declared the whole `background-image` — its own gradient
+stops *plus* a radial vignette. `--detail` overrode only two wash custom
+properties and therefore silently fell back to the base rule's older, much
+heavier stack:
+
+| | directory | detail (before) |
+|---|---|---|
+| wash | `0.62` at 0%, `0.55` at 30% | `0.68` at 0%, `0.80` at **48%** |
+| vignette | radial, `0.15` centre → `0.7` edge | linear 90°, `0.78` → `0.46` → `0.66` |
+| composited darkness | ~0.62–0.73 | ~0.83–0.89 |
+
+The detail vignette's *lightest* point was `0.46`, against the directory
+radial's `0.15` centre. Neither rule looked wrong on its own, which is why
+the guard compares the **composited** result across page families rather than
+reading one variant.
+
+Nothing else contributed: no detail-only pseudo-element, wrapper background,
+`filter`, blend mode or opacity was involved — measured and confirmed.
+
+### Resource atmosphere is contained, not removed
+
+Every resource keeps its hue. `.resource-atmosphere` is a hero-scale layer
+(measured ~180–190px tall against a 1080px viewport) that paints
+`rgba(var(--resource-hue), 0.13)` and `0.062` — a tint, never black. That is
+the correct place for resource identity: it may tint locally, it may not
+darken the scenic page. The guard asserts both halves — that the layer stays
+under half the viewport height, and that it paints a hue rather than a dark
+wash.
+
+### Retired token
+
+`--public-scenic-vignette-right` is gone. Every variant now composes a
+**radial** vignette, which takes only a centre and an edge, so the token was
+unreachable — leaving it declared would have invited tuning a value that
+cannot affect anything.
+
+### Known intentional exceptions
+
+- **The landing page** keeps its own exposure (`0.55`/`0.50` wash,
+  `0.72`/`0.10` vignette) alongside its own full-viewport depth. It is a
+  centred full-bleed hero, not a content page frame.
+- **The Appearance workspace's mobile preview** simulates narrow-viewport
+  exposure inside a desktop-width pane, so it restates the narrow values on
+  `.appearance-public-preview--mobile .public-scenic-background`. It carries
+  the same invariant: one exposure, declared once, with only the per-variant
+  preview *depths* differing so each mock fits its pane. It previously had
+  the identical bug — catalogue held the values privately while detail
+  inherited the desktop exposure.
+- **Per-surface scenic position remains admin-configurable.** Appearance
+  stores an independent crop for home, catalogue and item detail. Exposure
+  is *not* admin-configurable and is not exposed anywhere in that workspace —
+  it is CSS only.
+
+`e2e/public-scenic-exposure.spec.ts` enforces this across seven directories
+and six detail pages at 1920/2560/3440.
+
+
 ## Main-directory List rows share one density
 
 **The `/recipes` directory List is the density authority.** Its measured
