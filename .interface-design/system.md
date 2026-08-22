@@ -711,3 +711,61 @@ Missing images preserve the 24px stage and restrained `No image` fallback.
 - The compact relationship lists (`.recipe-output-card--list`) are NOT
   governed by these tokens and have their own pass.
 - Guarded by `e2e/public-directory-list-geometry.spec.ts`.
+
+## Verification Card
+
+- Two placements only: LAST in the information sidebar where a page has one
+  (Item, Location), or directly under the hero via
+  `.public-verification-card--standalone` where it does not (Recipe,
+  Profession, Class, Shop). Never a floating badge, never trailing the page,
+  and never a sidebar created just to house it.
+- In a sidebar it shares the column's width, X origin, stack gap and
+  collapse — it declares no placement of its own and travels with the column.
+- `.public-panel-title` is the ONE treatment for every public panel heading
+  (Item details, Location Details, Traveler's Note, Verified information),
+  owned by `--public-panel-title-*`. A quiet uppercase label, never a page
+  heading. `.item-panel > h2` excludes it so a section-heading scale can
+  never leak in.
+- The card is the only public home for `Last updated`. No page shows it twice.
+- Status and build are both `.public-status-badge` pills and share one
+  colour, because the build is the reason for the state: green Verified /
+  red Outdated / neutral Unverified. An unverified record gets NO build badge.
+- `resolvePublicVerificationState` is the single comparison, against
+  `getCurrentGameVersion` (the `isCurrent` row). Compare by version NAME —
+  it is unique and is the only field public queries select. Incomplete stamp
+  → unverified; no current version configured → outdated, never verified.
+- Player-facing wording only: no foreign keys, enum names, or DB vocabulary.
+- Guarded by `e2e/public-verification.spec.ts`.
+
+## Compact Relationship Recipe List
+
+- One implementation for Used in recipes / Related Recipes / Profession
+  Recipes. The `/recipes` directory List is its visual authority.
+- The ingredient strip scrolls horizontally, so it clips on BOTH axes
+  (`overflow-x: auto` forces `overflow-y: auto`). It carries 5px of room and
+  the List badge tucks to `-3px` with a 1px ring so the badge fits inside.
+  Row height stays 64px; the Grid card's `-6px` badge and 2px ring are its
+  own and must stay untouched.
+- Profession is the directory's FIXED 10.5px (level line 11px) and EXP its
+  fixed 11.5px — neither ramps with `--pf`.
+- `--recipe-list-exp-gap` (10px) is shared by both lists, giving 24px of
+  Profession-to-EXP separation.
+- Known pre-existing, out of scope: the ingredient hover tooltip is clipped
+  by the same scroll container. A separate problem from the badge.
+- Guarded by `e2e/public-compact-recipe-list.spec.ts`.
+
+## Acquisition Card And Page-Link Arrow
+
+- The acquisition media frame owns the border, radius and ground; the nested
+  sprite stage takes the frame's size. Without that the 52px `--row` stage
+  overhangs the 40px frame and the art starts above the title beside it.
+- Currency art stays frameless (`.currency-price .resource-icon`), and
+  PokeYen stays symbol-only.
+- `PageLinkArrow` variants: `subtle` (no resting frame, dense lists),
+  `quiet` (resting frame at ~45%, 1.7 stroke — for a heading that is already
+  the loudest thing on its row), `default`, `prominent`. Set variant stroke
+  in CSS, not on the SVG: the glyph markup is shared and CSS beats the
+  presentation attribute.
+- Depart & Return choreography is locked — same keyframes, 1.05s, easing and
+  reduced-motion behaviour for every variant.
+- Guarded by `e2e/public-acquisition-and-arrow.spec.ts`.

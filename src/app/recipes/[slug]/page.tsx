@@ -11,7 +11,7 @@ import {
 } from "@/components/content/recipe-collection-views";
 import { VerificationCard } from "@/components/ui/verification-card";
 import { prisma } from "@/lib/db";
-import { formatDisplayDate } from "@/lib/format-date";
+import { getCurrentGameVersion } from "@/lib/game-versions";
 import { resolveRecipeDisplayImage } from "@/lib/recipes/recipe-image";
 import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 import { formatRecipeQuantityRange } from "@/lib/recipes/recipe-quantity";
@@ -69,6 +69,9 @@ export default async function RecipeDetailPage({
     notFound();
   }
 
+  // The ONE canonical current build: the GameVersion row marked isCurrent.
+  const currentGameVersion = await getCurrentGameVersion(prisma);
+
   // Related Recipes: other Recipes belonging to the same Profession — a
   // real, derivable relationship (Recipe.profession), never an invented
   // Class or gameplay-unlock association.
@@ -93,7 +96,6 @@ export default async function RecipeDetailPage({
     recipe.resultQuantityMin,
     recipe.resultQuantityMax
   );
-  const updatedAt = formatDisplayDate(recipe.updatedAt);
 
   return (
     <AppShell scenic="detail" wide>
@@ -171,6 +173,16 @@ export default async function RecipeDetailPage({
                 </div>
               </div>
             </section>
+
+            {/* Directly under the hero: the one consistent slot every
+                sidebar-less detail page uses, so verification is secondary
+                but never an afterthought trailing off the page bottom. */}
+            <VerificationCard
+              stamp={recipe}
+              currentGameVersionName={currentGameVersion?.name ?? null}
+              updatedAt={recipe.updatedAt}
+              className="public-verification-card--standalone"
+            />
 
             <div className="item-lower-grid recipe-lower-grid">
               {recipe.ingredients.length > 0 ? (
@@ -250,14 +262,6 @@ export default async function RecipeDetailPage({
               />
             ) : null}
 
-            <VerificationCard
-              stamp={recipe}
-              className="public-verification-card--standalone"
-            />
-
-            {updatedAt ? (
-              <p className="recipe-updated-at">Last updated {updatedAt}</p>
-            ) : null}
           </div>
 
         </div>

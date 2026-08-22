@@ -11,6 +11,7 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { VerificationCard } from "@/components/ui/verification-card";
 import { canExposePublicContent } from "@/lib/access/require-site-access";
 import { prisma } from "@/lib/db";
+import { getCurrentGameVersion } from "@/lib/game-versions";
 import {
   loadLocationAncestors,
   type LocationAncestor,
@@ -36,6 +37,7 @@ const loadPublicShop = cache((slug: string) =>
       image: true,
       verifiedAt: true,
       verifiedGameVersion: { select: { name: true } },
+      updatedAt: true,
       location: {
         select: {
           name: true,
@@ -120,6 +122,9 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
 
   if (!shop) notFound();
 
+  // The ONE canonical current build: the GameVersion row marked isCurrent.
+  const currentGameVersion = await getCurrentGameVersion(prisma);
+
   const ancestors = shop.location.parentId
     ? await loadLocationAncestors(prisma, shop.location.parentId)
     : [];
@@ -189,6 +194,16 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           </div>
         </section>
 
+        {/* Directly under the hero: the one consistent slot every
+            sidebar-less detail page uses, so verification is secondary but
+            never an afterthought trailing off the page bottom. */}
+        <VerificationCard
+          stamp={shop}
+          currentGameVersionName={currentGameVersion?.name ?? null}
+          updatedAt={shop.updatedAt}
+          className="public-verification-card--standalone"
+        />
+
         {shop.listings.length > 0 ? (
           <ShopInventory
             listings={shop.listings.map((listing) => ({
@@ -225,10 +240,6 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           />
         ) : null}
 
-        <VerificationCard
-          stamp={shop}
-          className="public-verification-card--standalone"
-        />
       </article>
     </AppShell>
   );

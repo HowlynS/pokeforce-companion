@@ -158,10 +158,36 @@ test("the region page-link uses the canonical navigation arrow, and the disclosu
     };
   });
 
-  // Gold arrow, gold outline — at rest, not only on hover.
-  expect(rest.color).toBe(gold.accent);
-  expect(rest.borderColor).toBe(gold.accentSoft);
+  // Gold arrow, gold outline — at rest, not only on hover. The Region
+  // heading uses the `quiet` weight (it sits beside the loudest thing on its
+  // row), so both are drawn from the SAME gold tokens at reduced alpha
+  // rather than swapped for another colour. Parsing the channels keeps this
+  // a check on the design system rather than on a literal.
+  const channels = (value: string) =>
+    (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+  // color() reports 0-1 components, rgb() reports 0-255; compare as ratios.
+  const normalise = (value: string) => {
+    const parts = channels(value);
+    const scale = value.startsWith("color(") ? 1 : 255;
+    return parts.map((part) => Math.round((part / scale) * 100) / 100);
+  };
+
+  expect(normalise(rest.color), "the glyph is still the accent gold").toEqual(
+    normalise(gold.accent)
+  );
+  expect(
+    normalise(rest.borderColor),
+    "the outline is still the soft accent gold"
+  ).toEqual(normalise(gold.accentSoft));
   expect(rest.borderWidth).toBe("1px");
+  // ...but both are held back, so the arrow yields to the region name.
+  expect(rest.color, "the glyph is quieter than full strength").not.toBe(
+    gold.accent
+  );
+  expect(
+    rest.borderColor,
+    "the outline is quieter than full strength"
+  ).not.toBe(gold.accentSoft);
 
   await regionLink.focus();
   await expect(regionLink).not.toHaveCSS("outline-style", "none");

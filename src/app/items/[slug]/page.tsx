@@ -13,7 +13,7 @@ import {
 import { RichTextContent } from "@/components/content/rich-text-content";
 import { VerificationCard } from "@/components/ui/verification-card";
 import { prisma } from "@/lib/db";
-import { formatDisplayDate } from "@/lib/format-date";
+import { getCurrentGameVersion } from "@/lib/game-versions";
 import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 import {
   ACQUISITION_TYPE_LABELS,
@@ -97,10 +97,12 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     notFound();
   }
 
+  // The ONE canonical current build: the GameVersion row marked isCurrent.
+  const currentGameVersion = await getCurrentGameVersion(prisma);
+
   const acquisitionGroups = groupAcquisitionSourcesByType(
     item.acquisitionSources
   );
-  const updatedAt = formatDisplayDate(item.updatedAt);
   const hasAcquisition =
     item.shopListings.length > 0 || acquisitionGroups.length > 0;
 
@@ -410,7 +412,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
             aria-label="Item information"
           >
             <section className="item-panel item-sidebar-panel">
-              <h2>Item details</h2>
+              <h2 className="public-panel-title">Item details</h2>
               <dl className="item-detail-list">
                 {item.category ? (
                   <div>
@@ -434,16 +436,18 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                     <dd>{numberFormatter.format(item.baseValue)}g</dd>
                   </div>
                 ) : null}
-                {updatedAt ? (
-                  <div>
-                    <dt>Last updated</dt>
-                    <dd>{updatedAt}</dd>
-                  </div>
-                ) : null}
               </dl>
             </section>
 
-            <VerificationCard stamp={item} className="item-panel" />
+            {/* Last, in the same column: same width, same X, same stack gap,
+                same collapse. `item-panel` is deliberately NOT passed -- its
+                own h2 rule is a 21px section heading, which is what made
+                this card's title tower over its neighbour's. */}
+            <VerificationCard
+              stamp={item}
+              currentGameVersionName={currentGameVersion?.name ?? null}
+              updatedAt={item.updatedAt}
+            />
           </aside>
         </div>
       </article>

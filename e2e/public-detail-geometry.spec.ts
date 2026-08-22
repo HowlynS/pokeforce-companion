@@ -122,7 +122,15 @@ async function readFrame(page: import("@playwright/test").Page): Promise<Frame> 
       ".public-detail-page",
     ]);
     const sidebar = firstRect([".public-detail-sidebar"]);
+    // The first block AFTER the hero, whatever that block happens to be.
+    // On a page with no information sidebar that is now the Verification
+    // card, which sits directly under the hero; on a page with one it is the
+    // page's own first content section. Either way the distance is the
+    // shared block rhythm, which is what this measures -- listing the card
+    // first is what keeps the comparison honest rather than accidentally
+    // measuring hero-to-SECOND-block on the sidebar-less families.
     const section = firstRect([
+      ".public-verification-card--standalone",
       ".item-lower-grid",
       ".recipe-collection-section",
       ".location-detail-directory",

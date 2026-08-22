@@ -89,6 +89,7 @@ export function LocationDirectoryFold({
           <PageLinkArrow
             href={href}
             label={`Open the ${title} page`}
+            variant="quiet"
             className="location-directory-fold-link"
           />
         ) : null}

@@ -2,10 +2,21 @@ import Link from "next/link";
 
 /**
  * How much visual weight the control carries. The arrow drawing and its
- * motion are identical across variants — only outline strength, surface, and
- * size differ, so the family always reads as one control.
+ * motion are identical across variants — only outline strength, surface,
+ * stroke weight and size differ, so the family always reads as one control.
+ *
+ * `quiet` is the weight for a heading that is ALREADY the loudest thing on
+ * its row (the Locations directory's Region headings): the affordance has to
+ * be findable without competing with the region name beside it. It keeps a
+ * real resting outline — unlike `subtle`, which drops its frame entirely and
+ * would disappear against a large heading — but draws that outline and the
+ * glyph itself more lightly than `default`.
  */
-export type PageLinkArrowVariant = "default" | "subtle" | "prominent";
+export type PageLinkArrowVariant =
+  | "default"
+  | "quiet"
+  | "subtle"
+  | "prominent";
 
 type PageLinkArrowProps = {
   href: string;

@@ -12,7 +12,7 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { VerificationCard } from "@/components/ui/verification-card";
 import { cataloguePageHref } from "@/lib/catalogue-query";
 import { prisma } from "@/lib/db";
-import { formatDisplayDate } from "@/lib/format-date";
+import { getCurrentGameVersion } from "@/lib/game-versions";
 import { recipeOutputCardSelect } from "@/lib/recipes/recipe-output-catalogue";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +47,9 @@ export default async function ProfessionDetailPage({
 
   if (!profession) notFound();
 
-  const updatedAt = formatDisplayDate(profession.updatedAt);
+  // The ONE canonical current build: the GameVersion row marked isCurrent.
+  const currentGameVersion = await getCurrentGameVersion(prisma);
+
   const grid = <RecipeCollectionGrid recipes={profession.recipes} />;
   const list = <RecipeCollectionList recipes={profession.recipes} />;
 
@@ -117,18 +119,21 @@ export default async function ProfessionDetailPage({
           </div>
         </section>
 
+        {/* Directly under the hero: the one consistent slot every
+            sidebar-less detail page uses, so verification is secondary but
+            never an afterthought trailing off the page bottom. */}
+        <VerificationCard
+          stamp={profession}
+          currentGameVersionName={currentGameVersion?.name ?? null}
+          updatedAt={profession.updatedAt}
+          className="public-verification-card--standalone"
+        />
+
         {profession.recipes.length > 0 ? (
           <RecipeCollectionSection title="Recipes" grid={grid} list={list} />
         ) : null}
 
 
-        <VerificationCard
-          stamp={profession}
-          className="public-verification-card--standalone"
-        />
-        {updatedAt ? (
-          <p className="profession-updated">Updated {updatedAt}</p>
-        ) : null}
       </article>
     </AppShell>
   );

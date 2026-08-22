@@ -152,6 +152,14 @@ export const E2E_PUBLIC_ITEM_DETAIL_SLUG_PREFIX =
 export const E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX =
   "test-e2e-public-profession-detail";
 
+// Three Items covering every public verification state at once: one stamped
+// against the CURRENT Game Version, one stamped against an older one, and one
+// never stamped. Public verification is the only place the current/outdated
+// distinction is visible, and it cannot be exercised from seeded data alone —
+// the seed leaves every record unverified.
+export const E2E_PUBLIC_VERIFICATION_SLUG_PREFIX =
+  "test-e2e-public-verification";
+
 const E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH =
   "items/test-e2e-public-item-detail.png";
 const E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH =
@@ -3591,5 +3599,98 @@ export async function readFixtureCounts(): Promise<{
       recipes: row.recipes as number,
       recipeIngredients: row.recipe_ingredients as number,
     };
+  });
+}
+
+/**
+ * Creates the three verification-state Items and the older Game Version the
+ * "outdated" one points at.
+ *
+ * The older version carries the browser-test Game Version prefix, so the
+ * existing Game Version cleanup removes it and it can never be mistaken for
+ * the persistent current-version fixture. `isCurrent` is deliberately NOT
+ * touched: `ensureCurrentGameVersionFixture` owns which version is current,
+ * and this fixture only points records at versions.
+ */
+export async function createE2ePublicVerificationFixtures(): Promise<{
+  currentVersionName: string;
+  olderVersionName: string;
+  verifiedSlug: string;
+  outdatedSlug: string;
+  unverifiedSlug: string;
+}> {
+  assertGameVersionPrefixesAreSafe();
+  await ensureCurrentGameVersionFixture();
+
+  const olderVersionName = `${E2E_GAME_VERSION_NAME_PREFIX}public-older`;
+  const verifiedSlug = `${E2E_PUBLIC_VERIFICATION_SLUG_PREFIX}-current`;
+  const outdatedSlug = `${E2E_PUBLIC_VERIFICATION_SLUG_PREFIX}-outdated`;
+  const unverifiedSlug = `${E2E_PUBLIC_VERIFICATION_SLUG_PREFIX}-unverified`;
+
+  await deleteE2ePublicVerificationFixtures();
+
+  await withVerifiedDatabase(async (client) => {
+    await client.query(
+      `insert into "GameVersion" (id, name, "isCurrent", "createdAt", "updatedAt")
+       values (gen_random_uuid()::text, $1, false, now(), now())`,
+      [olderVersionName]
+    );
+
+    const versions = await client.query(
+      `select id, name from "GameVersion" where name = any($1::text[])`,
+      [[E2E_CURRENT_GAME_VERSION_NAME, olderVersionName]]
+    );
+    const idFor = (name: string) =>
+      versions.rows.find((row) => row.name === name)?.id as string | undefined;
+
+    const currentId = idFor(E2E_CURRENT_GAME_VERSION_NAME);
+    const olderId = idFor(olderVersionName);
+    if (!currentId || !olderId) {
+      throw new Error(
+        "Cannot create the public verification fixtures: a Game Version was not found."
+      );
+    }
+
+    // Fixed verification timestamps so the rendered dates are deterministic.
+    await client.query(
+      `insert into "Item" (id, slug, name, "heldItem", "verifiedAt", "verifiedGameVersionId", "createdAt", "updatedAt")
+       values
+         (gen_random_uuid()::text, $1, $2, false, timestamp '2026-08-01 12:00:00+00', $3, now(), now()),
+         (gen_random_uuid()::text, $4, $5, false, timestamp '2026-06-02 12:00:00+00', $6, now(), now()),
+         (gen_random_uuid()::text, $7, $8, false, null, null, now(), now())`,
+      [
+        verifiedSlug,
+        "Test E2E Verification Current",
+        currentId,
+        outdatedSlug,
+        "Test E2E Verification Outdated",
+        olderId,
+        unverifiedSlug,
+        "Test E2E Verification Unverified",
+      ]
+    );
+  });
+
+  return {
+    currentVersionName: E2E_CURRENT_GAME_VERSION_NAME,
+    olderVersionName,
+    verifiedSlug,
+    outdatedSlug,
+    unverifiedSlug,
+  };
+}
+
+/** Removes the verification-state Items, then the older Game Version they
+    referenced — in that order, since the relation is ON DELETE RESTRICT. */
+export async function deleteE2ePublicVerificationFixtures(): Promise<void> {
+  assertGameVersionPrefixesAreSafe();
+
+  await withVerifiedDatabase(async (client) => {
+    await client.query(`delete from "Item" where slug like $1`, [
+      `${E2E_PUBLIC_VERIFICATION_SLUG_PREFIX}%`,
+    ]);
+    await client.query(`delete from "GameVersion" where name = $1`, [
+      `${E2E_GAME_VERSION_NAME_PREFIX}public-older`,
+    ]);
   });
 }

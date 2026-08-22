@@ -1109,3 +1109,141 @@ and a source. Standardizing density is not flattening content.
 
 `e2e/public-directory-list-geometry.spec.ts` enforces the row geometry, the
 token ownership, and the Items hue opt-out at 1920/2560/3440.
+
+## Verification is one sidebar-family panel (polish pass, 2026-08-22)
+
+**Verification is structured detail information with exactly two placements.**
+It is never a floating badge, never a hover-only fact, and never trails off the
+bottom of a page.
+
+- A page **with** an information sidebar (Item, Location) puts the card
+  **last in that column**, directly under the resource's own Details panel.
+  It shares the column's width, X origin, stack gap and responsive collapse,
+  so it needs no placement rules of its own and travels with the column when
+  the layout stacks.
+- A page **without** one (Recipe, Profession, Class, Shop) puts it **directly
+  under the hero**, via `.public-verification-card--standalone` (capped at
+  420px). One rule for all four — not four page-specific decisions.
+
+Empty sidebars are never created just to house it.
+
+### One panel title
+
+`.public-panel-title` is the single treatment for every public information
+panel heading — Item details, Location Details, Traveler's Note, Verified
+information. Owned by `--public-panel-title-*` tokens: a quiet uppercase
+label, not a page heading.
+
+Before this, one sidebar held three sizes: Item details at a flat 12px,
+Location Details ramping to 14.5px, and Verified information at **21px** —
+because the Item page handed the card its `item-panel` class, whose own `h2`
+rule is a 21px section heading. That class is no longer passed, and
+`.item-panel > h2` now excludes `:not(.public-panel-title)`, so an `h2` that
+declares itself a panel title can never pick up a section heading's scale.
+
+### Verification owns Last updated
+
+The card is the ONE public home for a record's last-changed date. The
+standalone `Last updated` / `Updated` lines that used to trail the Item
+sidebar, Recipe, Profession and Class pages are gone, along with their
+`.recipe-updated-at` / `.profession-updated` rules. No public page shows the
+date twice.
+
+### Status and build read as one statement
+
+Both are `.public-status-badge` pills, following the admin verification
+badge's visual language without importing the admin palette. The build badge
+inherits the status colour because the build **is** the reason for the state:
+
+| State | Badge | Build badge | Note |
+|---|---|---|---|
+| `verified` | green *Verified* | green, names the current version | checked for the current build |
+| `outdated` | red *Outdated* | red, names the older version | last verified for an older build |
+| `unverified` | neutral *Unverified* | **none** — never invented | not verified for the current build |
+
+`resolvePublicVerificationState` in `src/lib/public-verification.ts` is the
+only place the comparison happens. It reads the canonical current build from
+`getCurrentGameVersion` (the row marked `isCurrent`) — never a second source
+— and compares by version **name**, which is safe because `GameVersion.name`
+is unique and is the only field the public detail queries select. An
+incomplete stamp reads as unverified rather than inventing a build or a date,
+and a site with no current version configured reports `outdated` rather than
+claiming a match it cannot verify.
+
+Labels and notes are player-facing: no foreign keys, enum names, "stale
+revision", or database wording reaches a visitor.
+
+`e2e/public-verification.spec.ts` enforces placement, collapse, the shared
+title, the Last-updated migration, all three build states, and Location's
+full participation.
+
+## Shared compact Recipe list
+
+One implementation serves Item → Used in recipes, Recipe → Related Recipes
+and Profession → Recipes. The **`/recipes` directory List is its visual
+authority**, and these were the three ways it had drifted:
+
+- **Quantity badges were clipped.** The ingredient strip scrolls
+  horizontally, and a scroll container cannot clip on one axis: `overflow-x:
+  auto` forces `overflow-y` to `auto` too, so the badge hanging off each
+  chip's bottom-right corner was cut. The strip now carries 5px of real room
+  — exactly the budget the row already had, since its content box is 50px and
+  the chips are 40px — and the List badge tucks to `-3px` with a 1px
+  separator ring so it fits inside. **The row height is unchanged at 64px**;
+  the Grid card's own `-6px` badge and 2px ring are untouched.
+- **Profession ramped with `--pf`.** The cell inherited
+  `--card-meta-font-size`, so the same `ALCHEMY` label rendered 10.5px at
+  1920 and 13px at 3440. It is now the directory's fixed 10.5px, with its
+  level line at 11px. EXP joined it at the directory's fixed 11.5px so the
+  two cells in one row cannot drift apart at ultrawide.
+- **Profession sat too close to EXP.** `--recipe-list-exp-gap` (10px) is now
+  shared by the directory List and the compact List, giving both the same
+  24px separation (14px row gap + 10px). It used to be a literal inside the
+  directory rules only.
+
+`e2e/public-compact-recipe-list.spec.ts` guards all three across the three
+consumers, and its last test is the guard that the Grid card stayed put.
+
+### Known pre-existing issue, out of scope
+
+The ingredient **hover tooltip** is also clipped in the compact List: it is
+`position: absolute; top: calc(100% + 8px)`, which puts it outside the same
+scroll container. This predates this pass (the clipping came with
+`overflow-x: auto`) and is a different affordance from the quantity badge, so
+it was left alone rather than expanded into. Fixing it means rethinking how
+the strip scrolls, not nudging a value.
+
+## Acquisition cards top-align on one line
+
+The How-to-obtain card's media frame and its content stack begin on one top
+line. The row has always been `align-items: flex-start`, so the *boxes*
+already agreed — what did not was the art: `.public-sprite-stage--row` is
+52px by default and the frame is 40px, so the sprite overhung it by 6px in
+every direction and the image visibly started above the title beside it. The
+nested stage now takes the frame's size (the frame owns the border, radius
+and ground; the stage is just the centred content area), with the compact
+`No image` fallback the small directory stages already use.
+
+Unchanged: card size, the responsive grid, the Cheapest summary and its
+mixed-Currency rule, the Best price badge, links, and pricing. Currency art
+stays frameless — `.currency-price .resource-icon` still drops the admin
+chrome, and PokeYen is still symbol-only.
+
+## Page-link arrow: the `quiet` variant
+
+`quiet` is the weight for a heading that is already the loudest thing on its
+row — today, the Locations directory's Region headings. It keeps a real
+resting outline (unlike `subtle`, which drops its frame entirely and would
+vanish against a large heading) but draws it at ~45% strength, tints its
+surface into the page, and thins the glyph from 2.2 to 1.7. Hover and focus
+restore full strength.
+
+The stroke is set in CSS rather than on the SVG element because the glyph
+markup is shared by every variant: a CSS `stroke-width` beats the
+presentation attribute, so one variant can weigh its arrow differently
+without forking the component's drawing.
+
+`default`, `subtle` and `prominent` are untouched, and so is the Depart &
+Return choreography — same keyframes, 1.05s, `cubic-bezier(.4, 0, .3, 1)`,
+same reduced-motion behaviour. The Region **name** remains the disclosure
+trigger; the **arrow** remains navigation.

@@ -6,7 +6,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { VerificationCard } from "@/components/ui/verification-card";
 import { prisma } from "@/lib/db";
-import { formatDisplayDate } from "@/lib/format-date";
+import { getCurrentGameVersion } from "@/lib/game-versions";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +33,9 @@ export default async function PlayerClassDetailPage({
 
   if (!playerClass) notFound();
 
-  const updatedAt = formatDisplayDate(playerClass.updatedAt);
+  // The ONE canonical current build: the GameVersion row marked isCurrent.
+  const currentGameVersion = await getCurrentGameVersion(prisma);
+
 
   return (
     <AppShell scenic="detail" wide>
@@ -77,13 +79,15 @@ export default async function PlayerClassDetailPage({
         </section>
 
 
+        {/* Directly under the hero: the one consistent slot every
+            sidebar-less detail page uses, so verification is secondary but
+            never an afterthought trailing off the page bottom. */}
         <VerificationCard
           stamp={playerClass}
+          currentGameVersionName={currentGameVersion?.name ?? null}
+          updatedAt={playerClass.updatedAt}
           className="public-verification-card--standalone"
         />
-        {updatedAt ? (
-          <p className="profession-updated">Updated {updatedAt}</p>
-        ) : null}
       </article>
     </AppShell>
   );

@@ -8,6 +8,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { VerificationCard } from "@/components/ui/verification-card";
 import { prisma } from "@/lib/db";
+import { getCurrentGameVersion } from "@/lib/game-versions";
 import {
   loadLocationAncestors,
   type LocationAncestor,
@@ -86,6 +87,9 @@ export default async function LocationDetailPage({
   });
 
   if (!location) notFound();
+
+  // The ONE canonical current build: the GameVersion row marked isCurrent.
+  const currentGameVersion = await getCurrentGameVersion(prisma);
 
   const ancestors = location.parentId
     ? await loadLocationAncestors(prisma, location.parentId)
@@ -335,7 +339,7 @@ export default async function LocationDetailPage({
             aria-label="Location details"
           >
             <section className="location-detail-sidebar-panel">
-              <h2>Location Details</h2>
+              <h2 className="public-panel-title">Location Details</h2>
               <dl>
                 <div><dt>Type</dt><dd>{LOCATION_TYPE_LABELS[location.type]}</dd></div>
                 <div><dt>Parent</dt><dd>{parent?.name ?? "Root location"}</dd></div>
@@ -346,12 +350,16 @@ export default async function LocationDetailPage({
             </section>
             {location.accessNote ? (
               <section className="location-detail-sidebar-panel">
-                <h2>Traveler&apos;s Note</h2>
+                <h2 className="public-panel-title">Traveler&apos;s Note</h2>
                 <p>{location.accessNote}</p>
               </section>
             ) : null}
 
-            <VerificationCard stamp={location} />
+            <VerificationCard
+              stamp={location}
+              currentGameVersionName={currentGameVersion?.name ?? null}
+              updatedAt={location.updatedAt}
+            />
           </aside>
         </div>
       </article>
