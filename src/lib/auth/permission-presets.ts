@@ -63,4 +63,3 @@ export const INITIAL_ROLE_PERMISSION_PRESETS = {
   ADMINISTRATOR: ADMINISTRATOR_PERMISSIONS,
   OWNER: [],
 } as const satisfies Readonly<Record<UserRole, readonly PermissionKey[]>>;
-
