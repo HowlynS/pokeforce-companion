@@ -20,6 +20,7 @@ function friendlySecurityError(error: unknown): SecurityMutationResult {
 
   const messages: Record<string, string> = {
     invalid_permission: "Choose a valid permission.",
+    invalid_grant: "Choose whether this role should be allowed to use the permission.",
     protected_permission: "That setting is protected by the Codex.",
     invalid_role: "Choose a valid role.",
     owner_protected: "Owner access cannot be changed here.",

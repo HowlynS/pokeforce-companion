@@ -61,10 +61,14 @@ export async function setRolePermission(
   actorId: string,
   roleInput: unknown,
   permissionInput: unknown,
-  granted: boolean
+  grantedInput: unknown
 ) {
   const role = requireOrdinaryRole(roleInput);
   const permissionKey = requireOrdinaryPermission(permissionInput);
+  if (typeof grantedInput !== "boolean") {
+    throw new PermissionManagementError("invalid_grant");
+  }
+  const granted = grantedInput;
 
   return client.$transaction(async (tx) => {
     await tx.$executeRawUnsafe(

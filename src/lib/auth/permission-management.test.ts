@@ -218,6 +218,29 @@ describe("Owner-only permission management", () => {
     ).rejects.toMatchObject({ code: "owner_protected" });
   });
 
+  it("rejects arbitrary and prototype-inherited permission names", async () => {
+    const fake = createFakeClient();
+    await expect(
+      setRolePermission(
+        fake.client,
+        "owner-1",
+        "MEMBER",
+        "toString",
+        true
+      )
+    ).rejects.toMatchObject({ code: "invalid_permission" });
+    await expect(
+      setRolePermission(
+        fake.client,
+        "owner-1",
+        "MEMBER",
+        "content.items.edit",
+        "true"
+      )
+    ).rejects.toMatchObject({ code: "invalid_grant" });
+    expect(fake.roleRows().size).toBe(0);
+  });
+
   it("stores ALLOW and DENY and represents INHERIT by deleting the row", async () => {
     const fake = createFakeClient();
     await setUserPermissionOverride(

@@ -25,6 +25,7 @@ describe("permission registry", () => {
   it("rejects unknown permission strings", () => {
     expect(isPermissionKey("content.items.edit")).toBe(true);
     expect(isPermissionKey("content.items.superuser")).toBe(false);
+    expect(isPermissionKey("toString")).toBe(false);
     expect(isPermissionKey(null)).toBe(false);
   });
 

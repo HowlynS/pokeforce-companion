@@ -335,7 +335,9 @@ export const PROTECTED_PERMISSION_KEYS = Object.freeze(
 );
 
 export function isPermissionKey(value: unknown): value is PermissionKey {
-  return typeof value === "string" && value in PERMISSION_REGISTRY;
+  return (
+    typeof value === "string" && Object.hasOwn(PERMISSION_REGISTRY, value)
+  );
 }
 
 export function isProtectedPermission(key: PermissionKey): boolean {
