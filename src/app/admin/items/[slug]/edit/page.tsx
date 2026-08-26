@@ -184,6 +184,7 @@ export default async function EditItemPage({
           />
 
           <VerificationPanel
+            verificationPermission="content.items.verify"
             gameVersions={gameVersions}
             verifiedAt={item.verifiedAt}
             verifiedGameVersion={item.verifiedGameVersion}
@@ -196,6 +197,7 @@ export default async function EditItemPage({
           />
 
           <DangerZonePanel
+            deletePermission="content.items.delete"
             resourceLabel="item"
             deleteLabel="Delete item"
             dialogTitle="Delete Item"

@@ -58,7 +58,8 @@ export async function createProfessionAction(formData: FormData) {
   // never relies solely on the admin layout having already run.
   const { user: actor } = await requireContentMutation(
     formData,
-    "content.create"
+    "content.professions.create",
+    "content.professions.verify"
   );
 
   const parsed = parseProfessionInput(formData);
@@ -149,7 +150,11 @@ export async function createProfessionAction(formData: FormData) {
 export async function updateProfessionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.professions.edit",
+    "content.professions.verify"
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -311,7 +316,7 @@ export async function updateProfessionAction(formData: FormData) {
 export async function deleteProfessionAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.professions.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();

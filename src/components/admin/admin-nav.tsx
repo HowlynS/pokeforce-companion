@@ -34,7 +34,7 @@ import {
   type AdminNavIcon,
   type AdminNavItem,
 } from "@/lib/admin/admin-nav";
-import { useAdminRole } from "@/components/admin/admin-authorization";
+import { useAdminPermissions } from "@/components/admin/admin-authorization";
 
 const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -54,10 +54,10 @@ const ADMIN_NAV_ICONS: Record<AdminNavIcon, LucideIcon> = {
 };
 
 export function AdminNav() {
-  const role = useAdminRole();
+  const permissions = useAdminPermissions();
   const pathname = usePathname() ?? "";
-  const primaryItems = role ? filterAdminNavItems(ADMIN_NAV_ITEMS, role) : [];
-  const siteItems = role ? filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, role) : [];
+  const primaryItems = filterAdminNavItems(ADMIN_NAV_ITEMS, permissions);
+  const siteItems = filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, permissions);
   const itemsRouteActive =
     isAdminNavItemActive("/admin/items", pathname) ||
     isAdminNavItemActive("/admin/categories", pathname);

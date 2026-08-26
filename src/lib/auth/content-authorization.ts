@@ -2,7 +2,8 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 import { requirePermission } from "./authorization";
-import { hasPermission, type Capability } from "./permissions";
+import { hasEffectivePermission } from "./permission-resolver";
+import type { PermissionKey } from "./permission-registry";
 
 export function requestsVerification(formData: FormData): boolean {
   return Array.from(formData.entries()).some(
@@ -12,12 +13,17 @@ export function requestsVerification(formData: FormData): boolean {
 
 export async function requireContentMutation(
   formData: FormData,
-  capability: Extract<Capability, "content.create" | "content.edit">
+  capability: PermissionKey,
+  verificationCapability?: PermissionKey
 ) {
   const current = await requirePermission(capability);
   if (
     requestsVerification(formData) &&
-    !hasPermission(current.user.role, "content.verify")
+    (!verificationCapability ||
+      !hasEffectivePermission(
+        current.permissionContext,
+        verificationCapability
+      ))
   ) {
     redirect("/access-denied");
   }

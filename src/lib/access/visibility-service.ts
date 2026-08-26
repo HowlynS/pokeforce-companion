@@ -1,5 +1,4 @@
 import type { PrismaClient, SiteVisibility } from "@/generated/prisma/client";
-import { hasPermission } from "@/lib/auth/permissions";
 import { auditActor, writeAuditEvent } from "@/lib/audit/writer";
 import { SITE_ACCESS_SETTINGS_ID } from "@/lib/auth/bootstrap-owner";
 
@@ -18,7 +17,7 @@ export async function changeSiteVisibility(
     if (
       !actor ||
       actor.status !== "ACTIVE" ||
-      !hasPermission(actor.role, "visibility.change")
+      actor.role !== "OWNER"
     ) {
       throw new Error("permission_denied");
     }

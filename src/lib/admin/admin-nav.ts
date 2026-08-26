@@ -11,8 +11,7 @@
 // React, no icon-library import) so it remains unit-testable without a
 // render environment. src/components/admin/admin-nav.tsx maps each
 // identifier to its Lucide icon component.
-import { hasPermission, type Capability } from "@/lib/auth/permissions";
-import type { UserRole } from "@/lib/auth/roles";
+import type { PermissionKey } from "@/lib/auth/permission-registry";
 
 export type AdminNavIcon =
   | "dashboard"
@@ -34,7 +33,7 @@ export type AdminNavItem = {
   label: string;
   href: string;
   icon: AdminNavIcon;
-  requiredCapability?: Capability;
+  requiredCapability?: PermissionKey;
 };
 
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
@@ -49,7 +48,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
     label: "Game Versions",
     href: "/admin/settings/game-versions",
     icon: "gameVersions",
-    requiredCapability: "gameVersions.manage",
+    requiredCapability: "content.game-versions.edit",
   },
   {
     label: "Currencies",
@@ -63,13 +62,13 @@ export const SITE_ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
     label: "Appearance",
     href: "/admin/appearance",
     icon: "appearance",
-    requiredCapability: "appearance.manage",
+    requiredCapability: "site.appearance.manage",
   },
   {
     label: "Design review",
     href: "/admin/design-review",
     icon: "designReview",
-    requiredCapability: "designReview.access",
+    requiredCapability: "site.design-review.view",
   },
   {
     label: "Users & access",
@@ -99,11 +98,11 @@ export const ADMIN_NAV_DESTINATIONS: readonly AdminNavItem[] = [
 
 export function filterAdminNavItems(
   items: readonly AdminNavItem[],
-  role: UserRole
+  permissions: ReadonlySet<PermissionKey>
 ): readonly AdminNavItem[] {
   return items.filter(
     (item) =>
-      !item.requiredCapability || hasPermission(role, item.requiredCapability)
+      !item.requiredCapability || permissions.has(item.requiredCapability)
   );
 }
 

@@ -26,7 +26,7 @@ export default async function DeleteAcquisitionSourcePage({
 }: DeleteAcquisitionSourcePageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
-  await requirePermission("content.delete");
+  await requirePermission("content.items.edit");
 
   const { slug, sourceId } = await params;
   const { q } = await searchParams;

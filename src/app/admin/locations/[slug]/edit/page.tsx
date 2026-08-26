@@ -186,6 +186,7 @@ export default async function EditLocationPage({
           />
 
           <VerificationPanel
+            verificationPermission="content.locations.verify"
             gameVersions={gameVersions}
             verifiedAt={location.verifiedAt}
             verifiedGameVersion={location.verifiedGameVersion}
@@ -198,6 +199,7 @@ export default async function EditLocationPage({
           />
 
           <DangerZonePanel
+            deletePermission="content.locations.delete"
             resourceLabel="location"
             deleteLabel="Delete Location"
             dialogTitle="Delete Location"

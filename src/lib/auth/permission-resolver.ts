@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { UserRole } from "./roles";
 import {
+  PERMISSION_KEYS,
   isPermissionKey,
   isProtectedPermission,
   type PermissionKey,
@@ -115,4 +116,10 @@ export function hasEffectivePermission(
   }
 
   return context.roleGrants.has(requestedPermission);
+}
+
+export function effectivePermissionKeys(
+  context: PermissionContext
+): readonly PermissionKey[] {
+  return PERMISSION_KEYS.filter((key) => hasEffectivePermission(context, key));
 }

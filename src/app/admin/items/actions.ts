@@ -63,7 +63,8 @@ export async function createItemAction(formData: FormData) {
   // never relies solely on the admin layout having already run.
   const { user: actor } = await requireContentMutation(
     formData,
-    "content.create"
+    "content.items.create",
+    "content.items.verify"
   );
 
   const parsed = parseItemInput(formData);
@@ -224,7 +225,11 @@ export async function createItemAction(formData: FormData) {
 export async function updateItemAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.items.edit",
+    "content.items.verify"
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -416,7 +421,7 @@ export async function updateItemAction(formData: FormData) {
 export async function deleteItemAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.items.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();

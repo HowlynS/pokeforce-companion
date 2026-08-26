@@ -154,6 +154,7 @@ export default async function EditAcquisitionSourcePage({
       aside={
         <>
           <VerificationPanel
+            verificationPermission="content.items.verify"
             gameVersions={gameVersions}
             verifiedAt={source.verifiedAt}
             verifiedGameVersion={source.verifiedGameVersion}
@@ -161,6 +162,7 @@ export default async function EditAcquisitionSourcePage({
           />
 
           <DangerZonePanel
+            deletePermission="content.items.edit"
             resourceLabel="acquisition source"
             deleteLabel="Delete Source"
             dialogTitle="Delete Acquisition Source"

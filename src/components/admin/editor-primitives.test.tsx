@@ -483,7 +483,7 @@ describe("VerificationPanel", () => {
     expect(html).toMatch(/name="verifiedGameVersionId" value="v2"/);
   });
 
-  it("renders the verification picker and opt-in checkbox for Contributors", () => {
+  it("does not render canonical verification controls for Contributors", () => {
     const html = renderToStaticMarkup(
       <AdminAuthorizationProvider role="CONTRIBUTOR">
         <VerificationPanel
@@ -494,9 +494,8 @@ describe("VerificationPanel", () => {
       </AdminAuthorizationProvider>
     );
 
-    expect(html).toContain('name="verifiedGameVersionId"');
-    expect(html).toContain('name="markVerified"');
-    expect(html).toContain("Mark as verified for Summer Update");
+    expect(html).not.toContain('name="verifiedGameVersionId"');
+    expect(html).not.toContain('name="markVerified"');
   });
 
   it("falls back to generic checkbox wording when no version is current", () => {

@@ -63,7 +63,7 @@ export function ShopInventoryEditor({
   currencyOptions,
   gameVersions,
 }: ShopInventoryEditorProps) {
-  const canVerify = useAdminPermission("content.verify");
+  const canVerify = useAdminPermission("content.shops.verify");
   const rows = useMemo<InventoryRow[]>(
     () => [
       ...listings.map((listing) => ({

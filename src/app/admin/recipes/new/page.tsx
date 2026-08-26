@@ -158,6 +158,7 @@ export default async function NewRecipePage({
               are null, so the panel renders Unverified with no stamp
               rows — exactly the state a brand-new Recipe actually has. */}
           <VerificationPanel
+            verificationPermission="content.recipes.verify"
             gameVersions={gameVersions}
             verifiedAt={null}
             verifiedGameVersion={null}

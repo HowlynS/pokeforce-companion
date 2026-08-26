@@ -104,6 +104,7 @@ export default async function NewShopPage({
         <>
           <ImagePanel imageUrl={null} formId={FORM_ID} />
           <VerificationPanel
+            verificationPermission="content.shops.verify"
             gameVersions={gameVersions}
             verifiedAt={null}
             verifiedGameVersion={null}

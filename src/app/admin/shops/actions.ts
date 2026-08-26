@@ -65,7 +65,8 @@ function withInventoryResult(
 export async function createShopAction(formData: FormData) {
   const { user: actor } = await requireContentMutation(
     formData,
-    "content.create"
+    "content.shops.create",
+    "content.shops.verify"
   );
   const parsed = parseShopInput(formData);
   if (!parsed.ok) {
@@ -137,7 +138,11 @@ export async function createShopAction(formData: FormData) {
 }
 
 export async function updateShopAction(formData: FormData) {
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.shops.edit",
+    "content.shops.verify"
+  );
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
   const editPath = originalSlug
@@ -247,7 +252,11 @@ export async function updateShopAction(formData: FormData) {
 }
 
 export async function updateShopInventoryAction(formData: FormData) {
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.shops.edit",
+    "content.shops.verify"
+  );
 
   const shopId = String(formData.get("shopId") ?? "").trim();
   const query = String(formData.get("q") ?? "").trim();
@@ -448,7 +457,7 @@ export async function updateShopInventoryAction(formData: FormData) {
 }
 
 export async function deleteShopAction(formData: FormData) {
-  const { user: actor } = await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.shops.delete");
   const id = String(formData.get("id") ?? "").trim();
   if (!id) {
     redirect(`${SHOP_LIST_PATH}?error=missing_shop`);

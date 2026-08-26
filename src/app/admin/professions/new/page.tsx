@@ -113,6 +113,7 @@ export default async function NewProfessionPage({
               rows — exactly the state a brand-new Profession actually
               has. */}
           <VerificationPanel
+            verificationPermission="content.professions.verify"
             gameVersions={gameVersions}
             verifiedAt={null}
             verifiedGameVersion={null}

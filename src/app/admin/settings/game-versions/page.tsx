@@ -57,7 +57,7 @@ export default async function GameVersionSettingsPage({
 }: GameVersionSettingsPageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
-  await requirePermission("gameVersions.manage");
+  await requirePermission("content.game-versions.edit");
 
   const { error, success } = await searchParams;
   const errorMessage = error ? errorMessages[error] ?? "Something went wrong." : null;

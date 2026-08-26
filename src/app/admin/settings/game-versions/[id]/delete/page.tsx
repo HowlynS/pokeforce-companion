@@ -26,7 +26,7 @@ export default async function DeleteGameVersionPage({
 }: DeleteGameVersionPageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
-  await requirePermission("gameVersions.manage");
+  await requirePermission("content.game-versions.delete");
 
   const { id } = await params;
   const { error } = await searchParams;

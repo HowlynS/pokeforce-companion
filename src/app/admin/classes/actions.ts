@@ -58,7 +58,8 @@ export async function createPlayerClassAction(formData: FormData) {
   // never relies solely on the admin layout having already run.
   const { user: actor } = await requireContentMutation(
     formData,
-    "content.create"
+    "content.classes.create",
+    "content.classes.verify"
   );
 
   const parsed = parsePlayerClassInput(formData);
@@ -149,7 +150,11 @@ export async function createPlayerClassAction(formData: FormData) {
 export async function updatePlayerClassAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.classes.edit",
+    "content.classes.verify"
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -299,7 +304,7 @@ export async function updatePlayerClassAction(formData: FormData) {
 export async function deletePlayerClassAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.classes.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();

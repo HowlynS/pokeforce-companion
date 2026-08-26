@@ -132,6 +132,7 @@ export default async function EditPlayerClassPage({
           />
 
           <VerificationPanel
+            verificationPermission="content.classes.verify"
             gameVersions={gameVersions}
             verifiedAt={playerClass.verifiedAt}
             verifiedGameVersion={playerClass.verifiedGameVersion}
@@ -144,6 +145,7 @@ export default async function EditPlayerClassPage({
           />
 
           <DangerZonePanel
+            deletePermission="content.classes.delete"
             resourceLabel="class"
             deleteLabel="Delete Class"
             dialogTitle="Delete Class"

@@ -36,7 +36,7 @@ function first(value: string | string[] | undefined): string | undefined {
 export default async function DesignReviewPage({
   searchParams,
 }: DesignReviewPageProps) {
-  await requirePermission("designReview.access");
+  await requirePermission("site.design-review.view");
   const query = await searchParams;
   const contract =
     getPublicDesignContract(first(query.contract) ?? "") ??

@@ -131,6 +131,7 @@ export default async function EditShopPage({
             formId={FORM_ID}
           />
           <VerificationPanel
+            verificationPermission="content.shops.verify"
             gameVersions={gameVersions}
             verifiedAt={shop.verifiedAt}
             verifiedGameVersion={shop.verifiedGameVersion}
@@ -141,6 +142,7 @@ export default async function EditShopPage({
             updatedAt={shop.updatedAt}
           />
           <DangerZonePanel
+            deletePermission="content.shops.delete"
             resourceLabel="shop"
             deleteLabel="Delete Shop"
             dialogTitle="Delete Shop"

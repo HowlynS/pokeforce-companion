@@ -105,6 +105,7 @@ export default async function NewPlayerClassPage({
               are null, so the panel renders Unverified with no stamp
               rows — exactly the state a brand-new Class actually has. */}
           <VerificationPanel
+            verificationPermission="content.classes.verify"
             gameVersions={gameVersions}
             verifiedAt={null}
             verifiedGameVersion={null}
