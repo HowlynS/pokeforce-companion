@@ -24,7 +24,10 @@ test.describe.serial("private/public site gate", () => {
   });
 
   test.afterAll(async () => {
-    await setVisibility("PRIVATE_BETA");
+    // The remaining chromium project is the unauthenticated public
+    // regression suite. Restore its shared baseline after exercising the
+    // private gate so file order cannot strand every later route at login.
+    await setVisibility("PUBLIC");
     await pool.end();
   });
 
