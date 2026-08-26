@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resolveApplicationUserForIdentity } from "@/lib/auth/bootstrap-owner";
 import {
   disconnectTestPrisma,
@@ -8,6 +8,38 @@ import {
 const EMAIL = "test-owner-bootstrap@example.com";
 const AUTH_USER_ID = "test-owner-bootstrap-auth-user";
 const EXISTING_OWNER_ID = "test-owner-bootstrap-existing-owner";
+
+let preservedOwnerIds: string[] = [];
+
+beforeEach(async () => {
+  const prisma = await getVerifiedTestPrisma();
+  const configuredOwnerEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+
+  // Recover safely if an earlier test process was killed after the temporary
+  // demotion but before cleanup could restore the persistent test Owner.
+  if (configuredOwnerEmail) {
+    await prisma.appUser.updateMany({
+      where: { email: configuredOwnerEmail },
+      data: { role: "OWNER" },
+    });
+  }
+
+  const owners = await prisma.appUser.findMany({
+    where: { role: "OWNER" },
+    select: { id: true },
+  });
+  preservedOwnerIds = owners.map(({ id }) => id);
+
+  // The isolated test project intentionally retains its real test Owner.
+  // Bootstrap scenarios need the pre-Owner state, so temporarily move only
+  // those preserved fixtures to an ordinary role and restore them in cleanup.
+  if (preservedOwnerIds.length > 0) {
+    await prisma.appUser.updateMany({
+      where: { id: { in: preservedOwnerIds } },
+      data: { role: "ADMINISTRATOR" },
+    });
+  }
+});
 
 async function cleanup() {
   const prisma = await getVerifiedTestPrisma();
@@ -29,6 +61,14 @@ async function cleanup() {
       ],
     },
   });
+
+  if (preservedOwnerIds.length > 0) {
+    await prisma.appUser.updateMany({
+      where: { id: { in: preservedOwnerIds } },
+      data: { role: "OWNER" },
+    });
+    preservedOwnerIds = [];
+  }
 }
 
 afterEach(cleanup);
