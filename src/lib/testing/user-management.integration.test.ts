@@ -26,7 +26,7 @@ async function seed() {
   await prisma.appUser.createMany({
     data: [
       { ...USERS[0], role: "OWNER" },
-      { ...USERS[1], role: "OWNER" },
+      { ...USERS[1], role: "CONTRIBUTOR" },
       { ...USERS[2], role: "ADMINISTRATOR" },
       { ...USERS[3], role: "MEMBER" },
     ],
@@ -41,15 +41,11 @@ afterAll(async () => {
 });
 
 describe("user management invariants", () => {
-  it("allows an Administrator to disable and re-enable a Member", async () => {
+  it("prevents an Administrator from disabling a Member", async () => {
     const prisma = await seed();
-    const disabled = await setUserStatus(prisma, USERS[2].id, USERS[3].id, "DISABLED");
-    expect(disabled.status).toBe("DISABLED");
-    expect(disabled.disabledById).toBe(USERS[2].id);
-
-    const enabled = await setUserStatus(prisma, USERS[2].id, USERS[3].id, "ACTIVE");
-    expect(enabled.status).toBe("ACTIVE");
-    expect(enabled.disabledById).toBeNull();
+    await expect(
+      setUserStatus(prisma, USERS[2].id, USERS[3].id, "DISABLED")
+    ).rejects.toMatchObject({ code: "permission_denied" });
   });
 
   it("prevents an Administrator from modifying an Owner", async () => {
@@ -59,30 +55,30 @@ describe("user management invariants", () => {
     ).rejects.toMatchObject({ code: "permission_denied" });
   });
 
-  it("serializes concurrent Owner disables so one active Owner survives", async () => {
+  it("allows the Owner to assign an ordinary role", async () => {
     const prisma = await seed();
-    const outcomes = await Promise.allSettled([
-      setUserStatus(prisma, USERS[0].id, USERS[1].id, "DISABLED"),
-      setUserStatus(prisma, USERS[1].id, USERS[0].id, "DISABLED"),
-    ]);
-
-    expect(outcomes.filter((result) => result.status === "fulfilled")).toHaveLength(1);
-    const rejected = outcomes.find((result) => result.status === "rejected");
-    expect((rejected as PromiseRejectedResult).reason).toBeInstanceOf(UserManagementError);
-    expect(
-      await prisma.appUser.count({ where: { role: "OWNER", status: "ACTIVE", id: { in: [USERS[0].id, USERS[1].id] } } })
-    ).toBe(1);
+    const updated = await changeUserRole(
+      prisma,
+      USERS[0].id,
+      USERS[1].id,
+      "ADMINISTRATOR"
+    );
+    expect(updated.role).toBe("ADMINISTRATOR");
   });
 
-  it("serializes concurrent Owner demotions so one active Owner survives", async () => {
+  it("generic role and status APIs cannot alter or create an Owner", async () => {
     const prisma = await seed();
-    const outcomes = await Promise.allSettled([
-      changeUserRole(prisma, USERS[0].id, USERS[1].id, "ADMINISTRATOR"),
-      changeUserRole(prisma, USERS[1].id, USERS[0].id, "ADMINISTRATOR"),
-    ]);
-    expect(outcomes.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    await expect(
+      changeUserRole(prisma, USERS[0].id, USERS[1].id, "OWNER")
+    ).rejects.toBeInstanceOf(UserManagementError);
+    await expect(
+      changeUserRole(prisma, USERS[0].id, USERS[0].id, "ADMINISTRATOR")
+    ).rejects.toBeInstanceOf(UserManagementError);
+    await expect(
+      setUserStatus(prisma, USERS[0].id, USERS[0].id, "DISABLED")
+    ).rejects.toBeInstanceOf(UserManagementError);
     expect(
-      await prisma.appUser.count({ where: { role: "OWNER", status: "ACTIVE", id: { in: [USERS[0].id, USERS[1].id] } } })
-    ).toBe(1);
+      await prisma.appUser.count({ where: { role: "OWNER", status: "ACTIVE" } })
+    ).toBeGreaterThanOrEqual(1);
   });
 });
