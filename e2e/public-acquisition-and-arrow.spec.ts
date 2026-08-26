@@ -367,3 +367,378 @@ test("reduced motion still disables the Region arrow's loop", async ({
   // The control still works.
   await expect(arrow).toHaveAttribute("href", /^\/locations\//);
 });
+
+/* ======================================================================
+   Acquisition card typography, and the shared animated link underline.
+
+   The Related Items grid is the agreed scale reference for this card tier.
+   The acquisition card sat a full step above it: its title declared NO
+   font-size at all, so it inherited the 16px document base and rendered
+   16px at every viewport while a Related Items title beside it rendered
+   13.5px. Everything else in the card was measured against that.
+
+   These assert the RATIO and the shared tier, not a pile of literals --
+   except where the size itself is the contract (the acquisition title IS
+   the Related Items title token).
+   ====================================================================== */
+
+test("acquisition cards sit in the Related Items type tier", async ({
+  page,
+}) => {
+  for (const width of WIDTHS) {
+    await page.setViewportSize({ width, height: 1080 });
+
+    await page.goto("/items/iron-ore", { waitUntil: "domcontentloaded" });
+    const reference = await page.evaluate(() => {
+      const size = (selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        return element
+          ? Number.parseFloat(getComputedStyle(element).fontSize)
+          : null;
+      };
+      return {
+        title: size(".item-related-card-name"),
+        meta: size(".item-related-card-category"),
+      };
+    });
+
+    await page.goto("/items/test-e2e-shop-item", {
+      waitUntil: "domcontentloaded",
+    });
+    const card = await page.evaluate(() => {
+      const size = (selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        return element
+          ? Number.parseFloat(getComputedStyle(element).fontSize)
+          : null;
+      };
+      return {
+        title: size(".item-obtain-card-title"),
+        context: size(".item-obtain-card-context"),
+        value: size(".item-obtain-card-value"),
+        notes: size(".item-obtain-card-notes"),
+        groupHeading: size(".item-source-group > h3"),
+        documentBase: Number.parseFloat(
+          getComputedStyle(document.body).fontSize
+        ),
+      };
+    });
+
+    const label = `@${width}`;
+    expect(reference.title, `${label}: Related Items renders`).not.toBeNull();
+    expect(card.title, `${label}: acquisition cards render`).not.toBeNull();
+
+    // ---- The title is the reference tier, not the document base -------
+    expect(
+      card.title,
+      `${label}: the acquisition title takes the shared card title scale`
+    ).toBeCloseTo(reference.title!, 1);
+    expect(
+      card.title!,
+      `${label}: and is no longer just the inherited document size`
+    ).toBeLessThanOrEqual(card.documentBase);
+
+    // ---- The meta label is the reference tier too ---------------------
+    expect(
+      card.context,
+      `${label}: the context line takes the shared meta-label scale`
+    ).toBeCloseTo(reference.meta!, 1);
+
+    // ---- ...and the hierarchy inside the card survives ----------------
+    expect(
+      card.context!,
+      `${label}: context stays under the title`
+    ).toBeLessThan(card.title!);
+    expect(card.value!, `${label}: price stays under the title`).toBeLessThan(
+      card.title!
+    );
+    expect(
+      card.value!,
+      `${label}: ...but stays emphasized above the context`
+    ).toBeGreaterThan(card.context!);
+    expect(card.notes!, `${label}: notes stay under the price`).toBeLessThan(
+      card.value!
+    );
+    expect(
+      card.groupHeading!,
+      `${label}: the type heading steps down with its cards`
+    ).toBeLessThan(card.title!);
+
+    // Nothing is flattened into one size.
+    expect(
+      new Set([card.title, card.context, card.value, card.notes]).size,
+      `${label}: the four tiers stay distinct`
+    ).toBe(4);
+  }
+});
+
+test("acquisition cards stay compact around their smaller type", async ({
+  page,
+}) => {
+  // Reducing the type without reducing the box would leave oversized empty
+  // cards. Padding and gap step down with it, and the media/title top line
+  // (guarded above) is untouched.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/items/test-e2e-shop-item", {
+    waitUntil: "domcontentloaded",
+  });
+
+  const geometry = await page.evaluate(() => {
+    const row = document.querySelector<HTMLElement>(".item-acquisition-row")!;
+    const body = document.querySelector<HTMLElement>(".item-obtain-card-body")!;
+    const media = row.querySelector<HTMLElement>(".item-obtain-card-media")!;
+    const title = row.querySelector<HTMLElement>(".item-obtain-card-title")!;
+    const rowStyle = getComputedStyle(row);
+    return {
+      padding: Number.parseFloat(rowStyle.paddingTop),
+      gap: Number.parseFloat(rowStyle.columnGap),
+      bodyGap: Number.parseFloat(getComputedStyle(body).rowGap),
+      mediaSize: Math.round(media.getBoundingClientRect().width),
+      mediaTop: Math.round(media.getBoundingClientRect().top * 10) / 10,
+      titleTop: Math.round(title.getBoundingClientRect().top * 10) / 10,
+      cardHeight: Math.round(row.getBoundingClientRect().height),
+    };
+  });
+
+  expect(geometry.padding, "padding tightened with the type").toBeLessThan(12);
+  expect(geometry.gap, "so did the media/content gap").toBeLessThan(12);
+  expect(geometry.bodyGap, "and the content stack's own rhythm").toBeLessThan(
+    3
+  );
+  // The 40px media frame is what keeps the art inside its box; it is not
+  // part of the type scale and must not shrink with it.
+  expect(geometry.mediaSize, "the media frame is unchanged").toBe(40);
+  expect(
+    geometry.titleTop,
+    "media and title still share one top line"
+  ).toBeCloseTo(geometry.mediaTop, 0);
+  // The whole point: a genuinely more compact card, not an emptier one.
+  expect(geometry.cardHeight, "the card got shorter").toBeLessThan(142);
+});
+
+test("acquisition links grow an underline instead of wearing one", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/items/test-e2e-shop-item", {
+    waitUntil: "domcontentloaded",
+  });
+
+  const link = page.locator("a.item-obtain-card-title").first();
+  await expect(link, "a linked acquisition title renders").toBeVisible();
+
+  const read = () =>
+    link.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      return {
+        // Never the browser's own underline.
+        textDecorationLine: style.textDecorationLine,
+        // The animated rule: a gradient pinned to the element's bottom edge
+        // and grown from 0% to 100% width.
+        ruleWidth: Number.parseFloat(style.backgroundSize.split(" ")[0]!),
+        rulePosition: style.backgroundPosition,
+        paintsRule: /gradient/.test(style.backgroundImage),
+        ruleTransition: style.transitionDuration,
+        ruleProperty: style.transitionProperty,
+        width: Math.round(box.width),
+        height: Math.round(box.height),
+      };
+    });
+
+  const rest = await read();
+  expect(rest.textDecorationLine, "no text-decoration at rest").toBe("none");
+  expect(rest.paintsRule, "the rule is a real gradient").toBe(true);
+  expect(rest.ruleWidth, "the rule is collapsed at rest").toBe(0);
+  expect(rest.rulePosition, "and pinned to the bottom edge").toContain("100%");
+
+  await link.hover();
+  await page.waitForTimeout(320);
+  const hovered = await read();
+
+  expect(
+    hovered.ruleWidth,
+    "hover grows the rule across the text"
+  ).toBeGreaterThan(0);
+  expect(hovered.width, "and never shifts the layout").toBe(rest.width);
+  expect(hovered.height, "and never shifts the layout").toBe(rest.height);
+
+  // The motion is Codex-paced: a real animation, neither instant nor slow.
+  expect(rest.ruleProperty, "it is the rule that animates").toContain(
+    "background-size"
+  );
+  const durationMs =
+    Number.parseFloat(rest.ruleTransition.replace("s", "")) * 1000;
+  expect(durationMs, "a restrained transition").toBeGreaterThanOrEqual(140);
+  expect(durationMs, "a restrained transition").toBeLessThanOrEqual(260);
+
+  // Move away: it retracts.
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(320);
+  const left = await read();
+  expect(left.ruleWidth, "leaving retracts the rule").toBe(0);
+
+});
+
+test("keyboard focus gets the same underline affordance as hover", async ({
+  page,
+}) => {
+  // Deliberately a separate test with NO mouse interaction: Chromium only
+  // resolves :focus-visible on a programmatic focus() while the user is in
+  // keyboard modality, so a hover earlier in the same test would suppress
+  // the very state being asserted. One Tab press enters that modality.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/items/test-e2e-shop-item", {
+    waitUntil: "domcontentloaded",
+  });
+
+  const link = page.locator("a.item-obtain-card-title").first();
+  await expect(link).toBeVisible();
+
+  await page.keyboard.press("Tab");
+  await link.focus();
+  // The rule animates over ~190ms; read the settled state, not a frame
+  // partway through the transition.
+  await page.waitForTimeout(320);
+
+  const focused = await link.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      isFocusVisible: element.matches(":focus-visible"),
+      ruleWidth: Number.parseFloat(style.backgroundSize.split(" ")[0]!),
+      outline: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+    };
+  });
+
+  expect(focused.isFocusVisible, "the link is keyboard-focused").toBe(true);
+  expect(
+    focused.ruleWidth,
+    "focus grows the same rule hover does"
+  ).toBeGreaterThan(0);
+  expect(focused.outline, "and keeps the global focus ring").not.toBe("none");
+  expect(focused.outlineWidth, "a real ring, not a hairline").not.toBe("0px");
+});
+
+test("a plain acquisition title is never underlined", async ({ page }) => {
+  // Only links get the treatment. A source whose title is a plain label
+  // (no Shop or Location behind it) is a <strong>, and must stay inert.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/items/test-e2e-shop-item", {
+    waitUntil: "domcontentloaded",
+  });
+
+  const plain = await page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll<HTMLElement>("strong.item-obtain-card-title")
+    ).map((element) => ({
+      text: (element.textContent ?? "").trim(),
+      carriesUnderline: element.classList.contains("public-underline-link"),
+      decoration: getComputedStyle(element).textDecorationLine,
+    }))
+  );
+
+  expect(plain.length, "a label-only source renders").toBeGreaterThan(0);
+  for (const entry of plain) {
+    expect(
+      entry.carriesUnderline,
+      `"${entry.text}": non-link metadata never takes the link treatment`
+    ).toBe(false);
+    expect(entry.decoration, `"${entry.text}": and is not underlined`).toBe(
+      "none"
+    );
+  }
+});
+
+test("reduced motion keeps the underline affordance without animating it", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  const reducedPage = await context.newPage();
+  await reducedPage.setViewportSize({ width: 1920, height: 1080 });
+  await reducedPage.goto("/items/test-e2e-shop-item", {
+    waitUntil: "domcontentloaded",
+  });
+
+  const link = reducedPage.locator("a.item-obtain-card-title").first();
+  await expect(link).toBeVisible();
+
+  const duration = await link.evaluate(
+    (element) => getComputedStyle(element).transitionDuration
+  );
+  expect(duration, "no transition under reduced motion").toBe("0s");
+
+  await link.hover();
+  const shown = await link.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).backgroundSize.split(" ")[0]!)
+  );
+  expect(
+    shown,
+    "but the affordance is still there, immediately"
+  ).toBeGreaterThan(0);
+
+  await context.close();
+});
+
+test("the crafted-result card gilds the Item category, not the Item name", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/recipes/iron-sword", { waitUntil: "domcontentloaded" });
+
+  const card = await page.evaluate(() => {
+    const row = document.querySelector<HTMLElement>(".recipe-result-row")!;
+    const copy = row.querySelector<HTMLElement>(".item-recipe-copy")!;
+    const title = copy.querySelector<HTMLElement>("strong")!;
+    const category = copy.querySelector<HTMLElement>(".public-meta-category");
+    const yieldLine = Array.from(
+      copy.querySelectorAll<HTMLElement>("span")
+    ).find((span) => /Produces/.test(span.textContent ?? ""));
+    const read = (element: HTMLElement | null | undefined) =>
+      element
+        ? {
+            text: (element.textContent ?? "").trim(),
+            color: getComputedStyle(element).color,
+            fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
+          }
+        : null;
+    return {
+      title: read(title),
+      category: read(category),
+      yieldLine: read(yieldLine),
+      accent: getComputedStyle(document.documentElement)
+        .getPropertyValue("--color-accent")
+        .trim(),
+      textColor: getComputedStyle(document.documentElement)
+        .getPropertyValue("--color-text")
+        .trim(),
+    };
+  });
+
+  const toRgb = (hex: string) => {
+    const value = hex.replace("#", "");
+    return `rgb(${[0, 2, 4]
+      .map((offset) => Number.parseInt(value.slice(offset, offset + 2), 16))
+      .join(", ")})`;
+  };
+
+  expect(
+    card.category,
+    "the crafted result names its Item category"
+  ).not.toBeNull();
+  expect(card.category!.color, "the category takes the shared gold").toBe(
+    toRgb(card.accent)
+  );
+  expect(card.title!.color, "the Item name stays primary ivory").toBe(
+    toRgb(card.textColor)
+  );
+  expect(
+    card.category!.fontSize,
+    "and the category reads as meta under the name"
+  ).toBeLessThan(card.title!.fontSize);
+  // A fact about this recipe, not a reference to another resource.
+  expect(card.yieldLine, "the yield line renders").not.toBeNull();
+  expect(card.yieldLine!.color, "the yield line stays muted").not.toBe(
+    toRgb(card.accent)
+  );
+});

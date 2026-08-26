@@ -63,8 +63,10 @@ same focused commit.
 - Source: the original coastal-overlook PNG as one decorative CSS background;
   never transform the lossless master or expose it semantically.
 - Desktop crop: `55% center`; mobile crop: `82% center`.
-- Finite upper-page depths: home `880px`, catalogue `600px`, detail `760px`;
-  mobile home `760px`, catalogue `560px`, detail `700px`.
+- Upper-page depth is ONE value, the landing page's own:
+  `max(880px, 100vh)` desktop, `760px` narrow. The original per-surface
+  depths (home `880`, catalogue `600`, detail `760`; mobile `760`/`560`/`700`)
+  are retired — see "landing page is the scenic POSITION authority" below.
 - Use a strong charcoal vertical wash, subtle horizontal vignette, and a
   complete fade to `#111514`; cards and panels remain nearly opaque.
 - Home desktop wash: `0.55`/`0.50`; radial vignette edge/center:
@@ -111,11 +113,22 @@ same focused commit.
   wrapper, so its geometry never depends on a page's record count. Scenic
   DEPTH is part of that coordinate system: `cover` crops the same photograph
   differently at different depths, so a private depth makes the scene move.
-- Exceptions, all deliberate: the landing hero keeps its full-viewport depth;
-  Search renders no scenic layer but shares both origins; World keeps its
-  bounded inner panes; `/categories` and `/account/password` remain on the
-  pre-redesign `PageHeader` shape pending their own pass.
+- Exceptions, all deliberate: Search renders no scenic layer but shares both
+  origins; World keeps its bounded inner panes; `/categories` and
+  `/account/password` remain on the pre-redesign `PageHeader` shape pending
+  their own pass.
 - Guarded by `e2e/public-shell-geometry.spec.ts` at 1920/2560/3440.
+- **THE LANDING PAGE IS THE SCENIC POSITION AUTHORITY.** Every scenic family
+  inherits its crop: one asset, `cover`, the `55% / 50%` desktop and
+  `82% / 50%` narrow anchors, and its DEPTH. Depth was the only thing that
+  ever differed (`max(880px, 100vh)` / `760px` on the landing page against
+  `760px` / `700px` on content pages), which is why the scene moved between
+  the landing page and anything opened from it.
+  `--public-scenic-content-depth` carries the landing values at both
+  breakpoints and `.public-scenic-background--home` declares no depth of its
+  own. This is POSITION only — never move an exposure token for it.
+  Guarded by `e2e/public-scenic-position.spec.ts` at
+  1920/2560/3440/1000/390.
 - **One scenic EXPOSURE as well as one scenic position.** Directories are the
   authority for brightness, contrast, black level and global vignette;
   details were corrected up to match, never the reverse.

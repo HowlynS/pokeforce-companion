@@ -128,7 +128,22 @@
      resize the relationship cards, whose anatomy is settled. */
   --card-title-font-size: clamp(13.5px, calc(13.5px + 2.5px * var(--pf)), 16px);
   --card-meta-font-size: clamp(10.5px, calc(10.5px + 2.5px * var(--pf)), 13px);
+  /* The small uppercase gold META LABEL under a card title -- Related
+     Items' category, the acquisition card's location/type context, and the
+     crafted-result card's Item category. Related Items is the agreed scale
+     reference for that whole tier, so this is its own value, promoted to a
+     token rather than restated per card family. */
+  --card-meta-label-font-size: clamp(9px, calc(9px + 2px * var(--pf)), 11px);
   --card-gap: clamp(12px, calc(12px + 3px * var(--pf)), 15px);
+
+  /* "How to obtain" cards sit in the same tier and take
+     --card-title-font-size for their title. These two keep the ratios the
+     card already had against its old 16px title -- 0.85x for the emphasized
+     price, 0.78x for the supporting notes -- so the hierarchy survives the
+     reduction instead of flattening. */
+  --obtain-card-value-font-size: clamp(11.5px, calc(11.5px + 2px * var(--pf)), 13.5px);
+  --obtain-card-notes-font-size: clamp(10.5px, calc(10.5px + 2px * var(--pf)), 12.5px);
+  --obtain-group-heading-font-size: clamp(10px, calc(10px + 2px * var(--pf)), 12px);
 
   /* Resource DIRECTORY cards (/items, /professions, /classes, /locations,
      /shops). The /recipes directory card is the agreed scale authority and
@@ -293,13 +308,32 @@
   /* The approved image stage inside the frame. */
   --directory-list-stage-size: 44px;
 
-  /* Visible depth of the scenic layer on a CONTENT page. Depth is part of
-     the background's coordinate system, not decoration: the layer paints
+  /* ===== THE LANDING PAGE IS THE CANONICAL SCENIC POSITION ============
+     Visible depth of the scenic layer. Depth is part of the background's
+     COORDINATE SYSTEM, not decoration: the layer paints
      `background-size: cover`, so two page families with different depths
      crop the same photograph differently and the scene appears to move
-     between them. The landing hero is the one documented exception (see
-     .public-scenic-background--home). */
-  --public-scenic-content-depth: 760px;
+     between them.
+
+     Every scenic surface already agreed on the asset, on
+     `background-size: cover` and on the anchor percentages (55% 50%
+     desktop / 82% 50% narrow, from the Appearance defaults). Depth was the
+     ONE remaining difference, and it was the landing page that differed:
+     `max(880px, 100vh)` against a content page's 760px. That is why the
+     scene visibly moved between the landing page and everything opened
+     from it.
+
+     This token is now the LANDING page's own depth, and every scenic page
+     family -- directories, details, World -- reads it. The direction is
+     deliberate: the landing page is the visual authority for scenic
+     POSITION, and .public-scenic-background--home no longer declares a
+     depth of its own because this value IS its value.
+
+     Exposure is a separate contract and is NOT owned here: the directory
+     compositing stack remains the exposure authority (see
+     .public-scenic-background), and the landing page keeps its own
+     documented full-viewport wash. */
+  --public-scenic-content-depth: max(880px, 100vh);
 
   /* ===== Canonical public detail-page geometry ========================
      ONE source of truth for the frame every public resource detail page
@@ -1498,12 +1532,13 @@
   --public-scenic-vignette-center: rgba(17, 21, 20, 0.2);
 }
 
-.appearance-public-preview--mobile .public-scenic-background--catalogue {
-  --public-scenic-depth: 560px;
-}
-
+/* The catalogue and detail mocks used to hold 560px and 700px, mirroring
+   the narrow-viewport crop drift the live site has now retired. They take
+   the landing mock's own 760px, so the preview shows the same scenic
+   coordinate system the published pages actually render. */
+.appearance-public-preview--mobile .public-scenic-background--catalogue,
 .appearance-public-preview--mobile .public-scenic-background--detail {
-  --public-scenic-depth: 700px;
+  --public-scenic-depth: 760px;
 }
 
 .appearance-public-preview--mobile .landing-overview,
@@ -1698,8 +1733,10 @@ select:focus-visible {
   background-size: cover;
 }
 
+/* Depth is deliberately absent: --public-scenic-content-depth IS this
+   page's depth now, and every other scenic family inherits it from here.
+   Only the landing page's own documented EXPOSURE lives in this rule. */
 .public-scenic-background--home {
-  --public-scenic-depth: max(880px, 100vh);
   --public-scenic-wash-top: rgba(17, 21, 20, 0.55);
   --public-scenic-wash-middle: rgba(17, 21, 20, 0.5);
   --public-scenic-vignette-left: rgba(17, 21, 20, 0.72);
@@ -2818,9 +2855,12 @@ select:focus-visible {
   }
 
   :root {
-    /* One narrow-viewport depth for every scenic content page, replacing the
-       catalogue's 100vh and detail's 700px private values. */
-    --public-scenic-content-depth: 700px;
+    /* Narrow viewports take the LANDING page's narrow depth, exactly as the
+       desktop token takes its desktop depth -- the same authority, applied
+       per breakpoint rather than copied from one desktop value. This was
+       760px on the landing page and 700px on every content page, which is
+       the narrow half of the same crop drift. */
+    --public-scenic-content-depth: 760px;
   }
 
   /* Narrow viewports take the directory exposure too, for the same reason:
@@ -2837,7 +2877,6 @@ select:focus-visible {
   }
 
   .public-scenic-background--home {
-    --public-scenic-depth: 760px;
     --public-scenic-wash-top: rgba(17, 21, 20, 0.52);
     --public-scenic-wash-middle: rgba(17, 21, 20, 0.58);
     --public-scenic-vignette-left: rgba(17, 21, 20, 0.56);
@@ -3076,25 +3115,80 @@ select:focus-visible {
   line-height: 1.6;
 }
 
-/* ---- The ONE Profession-meta treatment --------------------------------
-   A Profession NAME rendered as secondary metadata is gold, uppercase and
-   letter-spaced, everywhere it appears: the Recipe directory Grid and List,
-   the compact relationship Grid and List, and the Recipe hero's own
-   Profession chip value.
+/* ===== The ONE gold for a resource reference ==========================
+   A public surface paints exactly one thing gold in its metadata: a
+   reference to another resource. Three semantic names share that colour,
+   declared once here so no component ever hardcodes it again:
 
-   It exists because four card variants each carried a private copy of these
-   four declarations, keyed on `> span:first-child`. Two of those copies
-   were then followed by a `> span:last-child` rule that recoloured the
-   value dim grey -- so a Recipe with a Profession but NO required level
-   (one span, therefore both first AND last child) lost its gold entirely,
-   which is why the same directory Grid showed some professions gold and
-   others muted. The treatment is a named class now, so it can never again
-   depend on how many siblings a card happens to render. */
-.public-meta-profession {
+     .public-meta-profession -- a Profession NAME as card metadata
+     .public-meta-category   -- an Item CATEGORY/type as card metadata
+     .public-meta-link       -- a NAVIGABLE resource value inside a hero chip
+
+   The first two are the card meta TIER: small, uppercase, letter-spaced.
+   The third is a hero-chip value, so it keeps the chip's own typography and
+   casing and takes only the colour -- "Profession: Smithing", never
+   "Profession: SMITHING".
+
+   None of them is positional. The profession treatment exists because four
+   card variants each carried a private copy keyed on `> span:first-child`,
+   two of which were then followed by a `> span:last-child` rule that
+   recoloured the value dim grey -- so a Recipe with a Profession but NO
+   required level (one span, therefore both first AND last child) lost its
+   gold. The hero-chip treatment exists for the same reason: a
+   `.profession-detail-chip:last-child strong` rule used to gild whichever
+   chip happened to come last, whether or not it linked anywhere. */
+.public-meta-profession,
+.public-meta-category,
+.public-meta-link {
   color: var(--color-accent);
+}
+
+/* The card meta tier. */
+.public-meta-profession,
+.public-meta-category {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+/* The hero-chip tier: a chip value is bold, and nothing else about the
+   chip's typography changes because the value happens to be a link. */
+.public-meta-link {
+  font-weight: 700;
+}
+
+/* ---- The ONE linked-hero-chip interaction -----------------------------
+   Item/Recipe's .item-info-chip, Profession/Class/Location's
+   .profession-detail-chip and Shop's .shop-detail-chip are three names for
+   one component, so their hover/focus feedback is written once: the chip's
+   own border turns gold and a soft glow lifts it off the hero.
+
+   .item-info-chip used to do something different -- it painted a
+   transparent 2px `outline` at rest and turned it gold on hover ALONGSIDE
+   the gold border, which drew two concentric gold rings 2px apart. That is
+   the double outline. Hover now moves only the border and the glow, and the
+   keyboard ring is left entirely to the global `a:focus-visible` rule, so
+   there is exactly one ring in each state and neither changes the chip's
+   box. */
+a.item-info-chip,
+a.profession-detail-chip,
+a.shop-detail-chip {
+  transition:
+    border-color 165ms ease,
+    background-color 165ms ease,
+    box-shadow 165ms ease,
+    color 165ms ease;
+}
+
+a.item-info-chip:hover,
+a.item-info-chip:focus-visible,
+a.profession-detail-chip:hover,
+a.profession-detail-chip:focus-visible,
+a.shop-detail-chip:hover,
+a.shop-detail-chip:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+  box-shadow: 0 0 14px rgba(216, 181, 98, 0.18);
 }
 
 .public-filter-nav {
@@ -4699,6 +4793,59 @@ select:focus-visible {
   text-decoration-color: var(--color-accent);
 }
 
+/* ---- The ONE animated link underline ----------------------------------
+   For links that live INSIDE a card rather than in prose: no underline at
+   rest, and a gold rule that grows in from the left on hover or focus and
+   retracts on the way out.
+
+   `text-decoration` cannot be animated, so the rule is a background
+   gradient pinned to the element's bottom edge and grown from 0% to 100%
+   width. It costs no layout -- a background never does -- so the card can
+   never shift as the rule appears.
+
+   It is deliberately NOT a ::after pseudo-element, which is the obvious
+   implementation and is broken for exactly half of what this rule is for:
+   Chromium does not invalidate pseudo-element style when :focus-visible
+   changes, so a `:focus-visible::after` rule matches the selector, reports
+   :focus-visible as true, paints the global focus ring on the element --
+   and still leaves the pseudo at its rest transform. Hover worked; the
+   keyboard affordance silently did not. Driving a property on the ELEMENT
+   sidesteps that entirely.
+
+   The host is a shrink-to-fit block (`justify-self: start` where it sits in
+   a grid), so the rule spans the TEXT rather than the whole card column.
+
+   Under reduced motion the rule still appears -- the affordance is not the
+   motion, the transition is -- it simply appears at once. */
+.public-underline-link {
+  background-image: linear-gradient(
+    var(--color-accent-soft),
+    var(--color-accent-soft)
+  );
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  text-decoration: none;
+  /* The colour shift lives here too. A per-card `transition: color` further
+     down the sheet is the same specificity, so it would replace this whole
+     shorthand -- taking the underline's animation with it, and defeating the
+     reduced-motion override below. One list, one owner. */
+  transition:
+    background-size 190ms cubic-bezier(0.23, 1, 0.32, 1),
+    color 165ms ease;
+}
+
+.public-underline-link:hover,
+.public-underline-link:focus-visible {
+  background-size: 100% 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-underline-link {
+    transition: none;
+  }
+}
+
 /* Icon + amount, or -- for a symbol-only Currency such as PokeYen -- the
    amount alone. `gap` only applies BETWEEN flex items and the width is
    fit-content, so dropping the icon leaves no reserved gap or placeholder
@@ -5182,33 +5329,15 @@ select:focus-visible {
 }
 
 /* A chip's value is full-strength text UNLESS it carries a semantic
-   treatment of its own -- the Profession meta gold, or the accent used for
-   EXP and sell value. Excluding those here is what lets the semantic
-   classes own their own colour: this rule used to out-specify them, which
-   is why .item-info-chip-accent needed an `!important` to win. */
-.item-info-chip strong:not(.public-meta-profession):not(.item-info-chip-accent) {
+   treatment of its own -- the meta gold classes, or the accent used for EXP
+   and sell value. Excluding those here is what lets the semantic classes own
+   their own colour: this rule used to out-specify them, which is why
+   .item-info-chip-accent needed an `!important` to win. */
+.item-info-chip
+  strong:not(.public-meta-profession):not(.public-meta-link):not(
+    .item-info-chip-accent
+  ) {
   color: var(--color-text);
-}
-
-/* Only the chips that are actually links get interactive feedback: a gold
-   outer ring drawn with `outline`, so the chip's own box never changes size
-   and the hover state is pixel-identical to the global focus ring. Purely
-   informational chips (Level, Reward, Sell value) stay inert. */
-a.item-info-chip {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  transition:
-    outline-color 165ms ease,
-    border-color 165ms ease,
-    background-color 165ms ease,
-    color 165ms ease;
-}
-
-a.item-info-chip:hover,
-a.item-info-chip:focus-visible {
-  outline-color: var(--color-accent);
-  border-color: var(--color-accent);
-  background: var(--color-surface-soft);
 }
 
 .item-info-chip-accent {
@@ -5358,11 +5487,12 @@ a.item-info-chip:focus-visible {
 }
 
 /* The acquisition TYPE heading is the same class of metadata as the cards'
-   own context line, so it takes the same gold rather than a muted grey. */
+   own context line, so it takes the same gold rather than a muted grey --
+   and steps down with them, staying one notch above the cards' own meta. */
 .item-source-group > h3 {
-  margin: 0 0 9px;
+  margin: 0 0 8px;
   color: var(--color-accent);
-  font-size: 12px;
+  font-size: var(--obtain-group-heading-font-size);
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -5383,16 +5513,19 @@ a.item-info-chip:focus-visible {
   gap: 12px;
 }
 
+/* Gap and padding step down with the type inside them (see the typography
+   block below), so the card gets more compact instead of leaving a large
+   empty box around small text. */
 .item-acquisition-row {
   position: relative;
   min-width: 0;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-surface);
-  padding: 12px;
+  padding: 10px;
 }
 
 .item-obtain-card-media {
@@ -5445,41 +5578,60 @@ a.item-info-chip:focus-visible {
 .item-obtain-card-body {
   min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 2px;
 }
 
-/* An acquisition card's title and its context line are links, but they are
-   card content -- not prose -- so they carry no permanent underline. The
-   affordance is a colour shift on hover, matching the restraint every other
-   public card uses; `:focus-visible` still draws the global focus ring, so
-   keyboard reachability is unchanged. These two used to also carry
-   .public-content-link, whose underline made them read as old-school inline
-   hyperlinks inside a card. */
+/* The title and context are grid items, so they would otherwise stretch to
+   the full column width and carry their animated underline right across the
+   card. Shrink-to-fit keeps the rule under the text itself. */
+.item-obtain-card-title,
+.item-obtain-card-context {
+  justify-self: start;
+  max-width: 100%;
+}
+
+/* ---- Acquisition card typography --------------------------------------
+   The Related Items grid is the agreed scale reference for this whole card
+   tier, and this family sat a full step above it: the title declared NO
+   font-size at all, so it inherited the 16px document base and rendered
+   16px at every viewport while a Related Items title beside it rendered
+   13.5px. The rest of the card was measured against that oversized title.
+
+   Every line now reads a shared token, keeping the original ratios --
+   title primary, price emphasized beneath it, context and notes secondary:
+
+     title    16px -> --card-title-font-size       (13.5px @1920, 16 @3440)
+     price    13.5 -> --obtain-card-value-font-size (0.85x the title, as before)
+     notes    12.5 -> --obtain-card-notes-font-size (0.78x the title, as before)
+     context  11   -> --card-meta-label-font-size   (the Related Items tier)
+
+   The links carry no underline at rest and grow one on hover/focus -- see
+   .public-underline-link. */
 .item-obtain-card-title {
   color: var(--color-text);
+  font-size: var(--card-title-font-size);
   font-weight: 650;
+  line-height: 1.3;
   overflow-wrap: anywhere;
   text-decoration: none;
-  transition: color 165ms ease;
 }
 
 a.item-obtain-card-title:hover {
   color: var(--color-accent-soft);
 }
 
-/* The card's secondary type/location metadata takes the canonical
-   Profession/meta gold -- it names the same kind of thing (a Shop's
-   Location, a source's Location or Profession) that the Recipe cards' own
-   Profession line does, so it reads as metadata rather than muted body
-   copy. */
+/* The card's secondary type/location metadata takes the canonical gold --
+   it names the same kind of thing (a Shop's Location, a source's Location
+   or Profession) that the Recipe cards' own Profession line does, so it
+   reads as metadata rather than muted body copy. */
 .item-obtain-card-context {
   color: var(--color-accent);
-  font-size: 11px;
+  font-size: var(--card-meta-label-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
+  line-height: 1.4;
   text-decoration: none;
   text-transform: uppercase;
-  transition: color 165ms ease;
 }
 
 a.item-obtain-card-context:hover {
@@ -5487,17 +5639,17 @@ a.item-obtain-card-context:hover {
 }
 
 .item-obtain-card-value {
-  margin-top: 2px;
+  margin-top: 1px;
   color: var(--color-accent-soft);
-  font-size: 13.5px;
+  font-size: var(--obtain-card-value-font-size);
   font-weight: 700;
   white-space: nowrap;
 }
 
 .item-obtain-card-notes {
-  margin: 2px 0 0;
+  margin: 1px 0 0;
   color: var(--color-text-muted);
-  font-size: 12.5px;
+  font-size: var(--obtain-card-notes-font-size);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -5575,9 +5727,20 @@ a.item-obtain-card-context:hover {
 }
 
 .item-recipe-copy span {
-  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.35;
+}
+
+/* Only the lines that are NOT a semantic resource reference are muted --
+   the crafted-result card's Item category owns its own gold. */
+.item-recipe-copy span:not(.public-meta-category) {
+  color: var(--color-text-muted);
+}
+
+/* ...and the category drops to the shared card meta-label tier, so it reads
+   as metadata under the Item name rather than as a second body line. */
+.item-recipe-copy .public-meta-category {
+  font-size: var(--card-meta-label-font-size);
 }
 
 /* Related Items (Claude Design redesign, Slice 5): a real "crafted
@@ -5672,11 +5835,13 @@ a.item-obtain-card-context:hover {
   overflow-wrap: anywhere;
 }
 
-/* A subtle step down from the previous 10-12.5px ramp: the gold category
-   line is supporting metadata, so it must stay clearly secondary to the
-   card's own title rather than competing with it at wide widths. */
+/* A subtle step down from the card title: the gold category line is
+   supporting metadata, so it must stay clearly secondary rather than
+   competing at wide widths. The value is unchanged -- it is simply the
+   --card-meta-label-font-size token now, because this card is the scale
+   reference the acquisition and crafted-result cards follow. */
 .item-related-card-category {
-  font-size: clamp(9px, calc(9px + 2px * var(--pf)), 11px);
+  font-size: var(--card-meta-label-font-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--color-accent);
@@ -12285,19 +12450,13 @@ input[type="checkbox"] {
     box-shadow 0.18s ease;
 }
 
-.profession-detail-chip strong {
+/* A chip value is full-strength text unless it is a navigable resource
+   reference, which takes .public-meta-link's gold. The rule this replaced
+   was `.profession-detail-chip:last-child strong`, which gilded whichever
+   chip happened to render last -- on Location detail that was the plain
+   "Shops: 0" count, which links nowhere. */
+.profession-detail-chip strong:not(.public-meta-link) {
   color: var(--color-text);
-}
-
-.profession-detail-chip:last-child strong {
-  color: var(--color-accent-soft);
-}
-
-a.profession-detail-chip:hover,
-a.profession-detail-chip:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-surface-soft);
-  box-shadow: 0 0 14px rgba(216, 181, 98, 0.14);
 }
 
 .recipe-collection-section {
@@ -14090,7 +14249,7 @@ a.profession-detail-chip:focus-visible {
     box-shadow 0.18s ease;
 }
 
-.shop-detail-chip strong {
+.shop-detail-chip strong:not(.public-meta-link) {
   color: var(--color-text);
 }
 
@@ -14106,12 +14265,8 @@ a.profession-detail-chip:focus-visible {
   white-space: nowrap;
 }
 
-a.shop-detail-chip:hover,
-a.shop-detail-chip:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-surface-soft);
-  box-shadow: 0 0 14px rgba(216, 181, 98, 0.25);
-}
+/* Hover/focus feedback for every linked hero chip lives in ONE rule -- see
+   the .public-detail-page chip section. */
 
 .shop-detail-inventory {
   min-width: 0;

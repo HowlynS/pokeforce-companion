@@ -178,15 +178,23 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
                   href={`/locations/${rootLocation.slug}`}
                   className="shop-detail-chip"
                 >
-                  Region:&nbsp;<strong>{rootLocation.name}</strong>
+                  Region:&nbsp;
+                  <strong className="public-meta-link">
+                    {rootLocation.name}
+                  </strong>
                 </Link>
               ) : null}
+              {/* Region and Location navigate; Type and Location type are
+                  plain classifications and stay full-strength text. */}
               <Link
                 href={`/locations/${shop.location.slug}`}
                 className="shop-detail-chip"
               >
                 <h3 className="shop-detail-location-label">Location</h3>
-                Location:&nbsp;<strong>{shop.location.name}</strong>
+                Location:&nbsp;
+                <strong className="public-meta-link">
+                  {shop.location.name}
+                </strong>
               </Link>
               <span className="shop-detail-chip">
                 Location type:&nbsp;

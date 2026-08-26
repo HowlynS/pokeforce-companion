@@ -349,7 +349,13 @@ test("the shared shell owns the page frame, not the page families", async ({
     expect(tokens.breadcrumbSpace, `${route}: breadcrumb space token`).toBe(
       "20px"
     );
-    expect(tokens.scenicDepth, `${route}: scenic depth token`).toBe("760px");
+    // The scenic depth is the LANDING page's own value now -- see
+    // public-scenic-position.spec.ts, which owns that contract. Asserting a
+    // literal here would just be a second, weaker copy of it; what this spec
+    // cares about is that every page family reads the same token.
+    expect(tokens.scenicDepth, `${route}: scenic depth token`).toBe(
+      "max(880px, 100vh)"
+    );
     expect(
       tokens.detailGutter,
       `${route}: --detail-gutter must resolve to --public-page-gutter`

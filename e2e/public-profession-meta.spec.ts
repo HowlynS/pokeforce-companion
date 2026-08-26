@@ -18,6 +18,12 @@
 // palette change moves the whole system together instead of failing here.
 
 import { expect, test } from "@playwright/test";
+import {
+  createE2ePublicShopFixtures,
+  deleteE2eTestShopRecords,
+  createE2ePublicLocationDirectoryFixtures,
+  deleteE2ePublicLocationDirectoryFixtures,
+} from "./helpers/database-cleanup";
 import { requireSiteVisibility } from "./helpers/site-visibility";
 
 requireSiteVisibility("PUBLIC");
@@ -79,6 +85,16 @@ const SURFACES: MetaSurface[] = [
 ];
 
 let pageErrors: string[] = [];
+
+test.beforeAll(async () => {
+  await createE2ePublicShopFixtures();
+  await createE2ePublicLocationDirectoryFixtures();
+});
+
+test.afterAll(async () => {
+  await deleteE2ePublicLocationDirectoryFixtures();
+  await deleteE2eTestShopRecords();
+});
 
 test.beforeEach(({ page }) => {
   pageErrors = [];
@@ -209,42 +225,261 @@ test("a Profession with no required level beside it keeps its gold", async ({
   ).toBe(colors.withSiblings);
 });
 
-test("the Recipe hero's Profession value uses the same treatment", async ({
+test("the Recipe hero's Profession value is a linked chip value, not card meta", async ({
   page,
 }) => {
+  // The hero chip is a DIFFERENT tier from the cards. It carries
+  // .public-meta-link -- the same gold, but the chip's own typography and
+  // ordinary title casing: "Profession: Smithing", never
+  // "Profession: SMITHING". It used to carry .public-meta-profession, whose
+  // uppercase and letter-spacing made this one chip read wider and louder
+  // than its Level and Reward neighbours.
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/recipes/iron-sword", { waitUntil: "domcontentloaded" });
 
-  const hero = await page.evaluate((shared) => {
-    const value = document.querySelector<HTMLElement>(
-      `.recipe-info-chips .${shared}`
+  const hero = await page.evaluate(() => {
+    const chip = document.querySelector<HTMLElement>(
+      ".recipe-info-chips a.item-info-chip"
     );
+    if (!chip) return null;
+    const value = chip.querySelector<HTMLElement>(".public-meta-link");
     if (!value) return null;
-    const style = getComputedStyle(value);
+    const valueStyle = getComputedStyle(value);
+    const chipStyle = getComputedStyle(chip);
+
+    // A plain, non-linked neighbour is the sizing reference.
+    const plainChip = document.querySelector<HTMLElement>(
+      ".recipe-info-chips span.item-info-chip"
+    );
+    const plainStyle = plainChip ? getComputedStyle(plainChip) : null;
+
     return {
       text: (value.textContent ?? "").trim(),
-      color: style.color,
-      textTransform: style.textTransform,
+      color: valueStyle.color,
+      textTransform: valueStyle.textTransform,
+      letterSpacing: valueStyle.letterSpacing,
+      fontSize: valueStyle.fontSize,
+      // The card meta treatment must NOT be on this element.
+      carriesCardMeta: value.classList.contains("public-meta-profession"),
+      chipFontSize: chipStyle.fontSize,
+      chipPadding: chipStyle.padding,
+      chipHeight: Math.round(chip.getBoundingClientRect().height),
+      chipBorderWidth: chipStyle.borderTopWidth,
+      chipRadius: chipStyle.borderTopLeftRadius,
+      plainChipFontSize: plainStyle?.fontSize ?? null,
+      plainChipPadding: plainStyle?.padding ?? null,
+      plainChipHeight: plainChip
+        ? Math.round(plainChip.getBoundingClientRect().height)
+        : null,
       accent: getComputedStyle(document.documentElement)
         .getPropertyValue("--color-accent")
         .trim(),
-      // Chip shape and typography hierarchy are untouched by this pass.
-      chipBorder: getComputedStyle(value.closest(".item-info-chip")!)
-        .borderTopWidth,
-      chipRadius: getComputedStyle(value.closest(".item-info-chip")!)
-        .borderTopLeftRadius,
     };
-  }, SHARED_CLASS);
+  });
 
-  expect(hero, "the Recipe hero names its Profession").not.toBeNull();
-  expect(hero!.color, "the hero value takes the canonical accent").toBe(
+  expect(hero, "the Recipe hero names its Profession in a linked chip").not.toBeNull();
+
+  // ---- Gold, because it navigates ------------------------------------
+  expect(hero!.color, "the linked value takes the canonical accent").toBe(
     hexToRgbString(hero!.accent)
   );
-  expect(hero!.textTransform, "uppercase, like every other surface").toBe(
-    "uppercase"
+
+  // ---- Ordinary chip typography, ordinary casing ----------------------
+  expect(hero!.text, "title casing, not uppercase").toBe("Smithing");
+  expect(hero!.textTransform, "no uppercase transform").toBe("none");
+  expect(hero!.letterSpacing, "no card-meta tracking").toBe("normal");
+  expect(hero!.carriesCardMeta, "not the card meta treatment").toBe(false);
+
+  // ---- Sized and shaped exactly like its plain neighbours -------------
+  expect(hero!.fontSize, "value matches the chip's own type size").toBe(
+    hero!.chipFontSize
   );
-  expect(hero!.chipBorder, "the chip keeps its border").not.toBe("0px");
+  expect(hero!.chipFontSize, "same type size as a plain chip").toBe(
+    hero!.plainChipFontSize
+  );
+  expect(hero!.chipPadding, "same padding as a plain chip").toBe(
+    hero!.plainChipPadding
+  );
+  expect(hero!.chipHeight, "same height as a plain chip").toBe(
+    hero!.plainChipHeight
+  );
+  expect(hero!.chipBorderWidth, "the chip keeps its border").not.toBe("0px");
   expect(hero!.chipRadius, "the chip keeps its shape").not.toBe("0px");
+});
+
+test("a linked hero chip shows exactly one ring on hover and on focus", async ({
+  page,
+}) => {
+  // The double outline: a.item-info-chip painted a transparent 2px `outline`
+  // at rest and turned it gold on hover ALONGSIDE the gold border, so hover
+  // drew two concentric gold rings 2px apart. Hover now moves the border and
+  // the glow only; the keyboard ring is the global a:focus-visible outline.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/recipes/iron-sword", { waitUntil: "domcontentloaded" });
+
+  const chip = page.locator(".recipe-info-chips a.item-info-chip").first();
+  await expect(chip).toBeVisible();
+
+  const read = () =>
+    chip.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      return {
+        outlineStyle: style.outlineStyle,
+        outlineWidth: style.outlineWidth,
+        outlineColor: style.outlineColor,
+        borderColor: style.borderTopColor,
+        width: Math.round(box.width),
+        height: Math.round(box.height),
+      };
+    });
+
+  const rest = await read();
+  expect(rest.outlineStyle, "no ring is painted at rest").toBe("none");
+
+  await chip.hover();
+  // The border transition is 165ms; settle it before reading.
+  await page.waitForTimeout(300);
+  const hovered = await read();
+
+  expect(
+    hovered.outlineStyle,
+    "hover draws NO outline -- the border alone is the hover ring"
+  ).toBe("none");
+  expect(hovered.borderColor, "hover moves the border").not.toBe(
+    rest.borderColor
+  );
+  expect(hovered.width, "hover never changes the chip's box").toBe(rest.width);
+  expect(hovered.height, "hover never changes the chip's box").toBe(
+    rest.height
+  );
+
+  // Keyboard focus keeps a clear, single ring: the global focus outline.
+  await chip.focus();
+  const focused = await chip.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+  });
+  expect(focused.outlineStyle, "focus is still visibly ringed").not.toBe(
+    "none"
+  );
+  expect(focused.outlineWidth, "and it is a real ring").not.toBe("0px");
+});
+
+test("hero chips gild the values that navigate, and only those", async ({
+  page,
+}) => {
+  // The semantic rule, across every detail hero: a chip value that links to
+  // another public page is gold; a plain scalar fact is full-strength text.
+  // This replaced `.profession-detail-chip:last-child strong`, which gilded
+  // whichever chip happened to come last -- on Location detail that was the
+  // "Shops: 0" count, which links nowhere.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  const pages = [
+    { name: "Profession", route: "/professions/smithing" },
+    { name: "Class", route: "/classes/artisan" },
+    {
+      name: "Location",
+      route: "/locations/test-e2e-location-public-directory-region",
+    },
+    { name: "Shop", route: "/shops/test-e2e-shop-public-alpha" },
+    { name: "Recipe", route: "/recipes/iron-sword" },
+  ] as const;
+
+  for (const target of pages) {
+    const response = await page.goto(target.route, {
+      waitUntil: "domcontentloaded",
+    });
+    expect(response?.status(), `${target.name} must render`).toBe(200);
+
+    const chips = await page.evaluate(() => {
+      const container = document.querySelector(
+        ".profession-detail-chips, .shop-detail-chips, .item-info-chips"
+      );
+      if (!container) return null;
+      const accent = getComputedStyle(document.documentElement)
+        .getPropertyValue("--color-accent")
+        .trim();
+      return {
+        accent,
+        rows: Array.from(container.children).map((child) => {
+          const element = child as HTMLElement;
+          const value = element.querySelector<HTMLElement>("strong");
+          return {
+            text: (element.textContent ?? "").replace(/\s+/g, " ").trim(),
+            isLink: element.tagName === "A",
+            carriesLinkedMeta: Boolean(
+              value?.classList.contains("public-meta-link")
+            ),
+            // An explicitly accented value (EXP reward, sell value) is a
+            // deliberate emphasis, not a navigational reference.
+            carriesOwnAccent: Boolean(
+              value?.classList.contains("item-info-chip-accent")
+            ),
+            valueColor: value ? getComputedStyle(value).color : null,
+          };
+        }),
+      };
+    });
+
+    expect(chips, `${target.name}: renders hero chips`).not.toBeNull();
+    const gold = hexToRgbString(chips!.accent);
+
+    for (const row of chips!.rows) {
+      const label = `${target.name} "${row.text}"`;
+      if (row.isLink) {
+        expect(
+          row.carriesLinkedMeta,
+          `${label}: a navigable chip value uses .public-meta-link`
+        ).toBe(true);
+        expect(row.valueColor, `${label}: and is therefore gold`).toBe(gold);
+      } else if (!row.carriesOwnAccent && row.valueColor) {
+        expect(
+          row.carriesLinkedMeta,
+          `${label}: a plain fact must not claim the linked treatment`
+        ).toBe(false);
+        expect(
+          row.valueColor,
+          `${label}: a plain fact stays full-strength text, not gold`
+        ).not.toBe(gold);
+      }
+    }
+  }
+});
+
+test("Profession and Class heroes say Type, never Resource", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  for (const target of [
+    { route: "/professions/smithing", value: "Profession", href: "/professions" },
+    { route: "/classes/artisan", value: "Class", href: "/classes" },
+  ]) {
+    await page.goto(target.route, { waitUntil: "domcontentloaded" });
+
+    const chip = page
+      .locator(".profession-detail-chips > *")
+      .filter({ hasText: "Type:" })
+      .first();
+    await expect(chip, `${target.route}: has a Type chip`).toBeVisible();
+    await expect(chip, `${target.route}: names the resource`).toContainText(
+      target.value
+    );
+    await expect(chip, `${target.route}: links to its directory`).toHaveAttribute(
+      "href",
+      target.href
+    );
+
+    // The old wording is gone from the whole hero.
+    await expect(
+      page.locator(".profession-detail-chips").getByText("Resource:", {
+        exact: false,
+      }),
+      `${target.route}: no "Resource" wording remains`
+    ).toHaveCount(0);
+  }
 });
 
 test("compact Recipe metadata stays clearly secondary to the card title", async ({

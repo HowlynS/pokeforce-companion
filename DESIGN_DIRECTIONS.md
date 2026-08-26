@@ -933,11 +933,13 @@ scaling.
   The `--detail-breadcrumb-*` tokens are aliases. Both families restate only
   the *margin*, and only because each lays its children out with a gap that
   has to be subtracted back off.
-- `--public-scenic-content-depth` (`760px`, `700px` narrow) — the visible
-  depth of the scenic layer on a content page. Depth is part of the
-  background's coordinate system, not decoration: the layer paints
+- `--public-scenic-content-depth` (`max(880px, 100vh)`, `760px` narrow) —
+  the visible depth of the scenic layer. Depth is part of the background's
+  coordinate system, not decoration: the layer paints
   `background-size: cover`, so two families with different depths crop the
   same photograph differently and the scene visibly moves between them.
+  These values are the LANDING PAGE's own depths — see "Global scenic
+  position follows the landing page" below.
 
 ### The shared frame
 
@@ -969,9 +971,10 @@ while every fixed cell and its 64px height stayed exactly as calibrated.
 
 ### Known intentional exceptions
 
-- **The landing page** keeps its own full-viewport scenic depth
-  (`max(880px, 100vh)`) and its own wash. It is a centred full-bleed hero,
-  not a content page frame, and it is not opted into `.public-page-frame`.
+- **The landing page** keeps its own wash (see the exposure section) and is
+  not opted into `.public-page-frame` — it is a centred full-bleed hero, not
+  a content page frame. Its scenic DEPTH is no longer an exception: it is
+  the shared value every family reads.
 - **World** keeps its bounded-pane inner scrolling and the height-locked
   catalogue shell. That is inner behavior; its scenic origin, header
   relationship and outer coordinate system are the shared ones.
@@ -987,6 +990,48 @@ while every fixed cell and its 64px height stayed exactly as calibrated.
   anchor — the catalogue's `y: 60` default was what made the scene appear to
   move between a directory and a detail page, and pushed the scene's bright
   content below the fold so a directory opened onto a flat dark band.
+
+## Global scenic position follows the landing page (2026-08-26)
+
+**THE LANDING PAGE IS THE VISUAL AUTHORITY FOR GLOBAL SCENIC POSITIONING.**
+Every public scenic page family — the six directories, the six resource
+detail families and World — inherits the landing page's scenic coordinate
+system. The direction is deliberate and one-way: the landing page does not
+follow the directories or the detail pages.
+
+Position means the whole crop: the asset, `background-size`, the anchor
+percentages, and the layer's DEPTH. Depth belongs in that list because the
+layer paints `background-size: cover` — a layer of a different height
+scales and crops the same photograph differently even when every other
+declaration matches.
+
+Depth was the only thing that ever differed, and it was the landing page
+that differed:
+
+| | landing (before) | content pages (before) | shared (now) |
+|---|---|---|---|
+| desktop | `max(880px, 100vh)` | `760px` | `max(880px, 100vh)` |
+| narrow  | `760px`             | `700px` | `760px` |
+
+Everything else already agreed — one asset, `cover`, and a `55% / 50%`
+desktop / `82% / 50%` narrow anchor from the Appearance defaults. That
+single difference is why the scene visibly moved between the landing page
+and anything opened from it.
+
+`--public-scenic-content-depth` now carries the landing page's own values at
+both breakpoints, and `.public-scenic-background--home` declares no depth of
+its own: the token IS its value. The breakpoint-aware half matters — copying
+only a desktop value would have left the narrow crop drifting.
+
+This is POSITION only. Exposure is a separate, unchanged contract: the
+directory compositing stack remains the brightness authority, and the
+landing page keeps its own documented full-viewport wash. Do not move a
+wash, a vignette, an opacity, a filter or a blend mode in the name of
+position.
+
+`e2e/public-scenic-position.spec.ts` enforces this at 1920/2560/3440/1000/390
+against the landing page itself, and asserts that the landing page resolves
+the shared token rather than a private depth.
 
 ## Global scenic exposure is shared (exposure pass, 2026-08-21)
 

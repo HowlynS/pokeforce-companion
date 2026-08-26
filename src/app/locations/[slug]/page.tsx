@@ -232,12 +232,17 @@ export default async function LocationDetailPage({
                   />
                 ) : null}
                 <div className="profession-detail-chips" aria-label="Location facts">
+                  {/* Navigates into the Locations directory filtered by
+                      this type, so the value is gold. The two counts below
+                      link nowhere and stay full-strength text. */}
                   <Link
                     href={`/locations?type=${location.type}`}
                     className="profession-detail-chip"
                   >
                     Type:&nbsp;
-                    <strong>{LOCATION_TYPE_LABELS[location.type]}</strong>
+                    <strong className="public-meta-link">
+                      {LOCATION_TYPE_LABELS[location.type]}
+                    </strong>
                   </Link>
                   <span className="profession-detail-chip">
                     Sub-locations:&nbsp;<strong>{location.children.length}</strong>

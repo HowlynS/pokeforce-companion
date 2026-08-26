@@ -89,8 +89,12 @@ export default async function ProfessionDetailPage({
               className="profession-description rich-text-content"
             />
             <div className="profession-detail-chips" aria-label="Profession facts">
+              {/* The chip names what this record IS, so the label reads
+                  "Type". Its value navigates to the Professions directory,
+                  so it takes the shared linked-value gold. */}
               <Link href="/professions" className="profession-detail-chip">
-                Resource:&nbsp;<strong>Profession</strong>
+                Type:&nbsp;
+                <strong className="public-meta-link">Profession</strong>
               </Link>
               {levelSummary._max.level ? (
                 <span className="profession-detail-chip">
@@ -110,7 +114,10 @@ export default async function ProfessionDetailPage({
                   className="profession-detail-chip"
                   aria-label={`View ${profession.recipes.length} ${profession.name} recipes`}
                 >
-                  Recipes:&nbsp;<strong>{profession.recipes.length}</strong>
+                  Recipes:&nbsp;
+                  <strong className="public-meta-link">
+                    {profession.recipes.length}
+                  </strong>
                 </Link>
               ) : (
                 <span className="profession-detail-chip">

@@ -73,8 +73,10 @@ export default async function PlayerClassDetailPage({
               className="profession-description rich-text-content"
             />
             <div className="profession-detail-chips" aria-label="Class facts">
+              {/* Same shape as Profession's: "Type" names what the record
+                  is, and the value navigates, so it is gold. */}
               <Link href="/classes" className="profession-detail-chip">
-                Resource:&nbsp;<strong>Class</strong>
+                Type:&nbsp;<strong className="public-meta-link">Class</strong>
               </Link>
             </div>
           </div>

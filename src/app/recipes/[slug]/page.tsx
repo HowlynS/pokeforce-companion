@@ -152,12 +152,19 @@ export default async function RecipeDetailPage({
                 </p>
                 <div className="item-info-chips recipe-info-chips">
                   {recipe.profession ? (
+                    // The value navigates to the Profession, so it takes
+                    // the shared linked-value gold -- NOT the card meta
+                    // treatment, whose uppercase/letter-spacing made this
+                    // one chip read larger and louder than its Level and
+                    // Reward neighbours. `public-content-link` is gone with
+                    // it: its underline was cancelled by a Recipe-only rule
+                    // anyway, and the chip is not prose.
                     <Link
                       href={"/professions/" + recipe.profession.slug}
-                      className="item-info-chip public-content-link"
+                      className="item-info-chip"
                     >
                       Profession:{" "}
-                      <strong className="public-meta-profession">
+                      <strong className="public-meta-link">
                         {recipe.profession.name}
                       </strong>
                     </Link>
@@ -238,8 +245,14 @@ export default async function RecipeDetailPage({
                   </span>
                   <span className="item-recipe-copy">
                     <strong>{recipe.resultingItem.name}</strong>
+                    {/* The Item's category is a resource classification, so
+                        it takes the shared gold meta treatment. The yield
+                        line below is a fact about this recipe, not a
+                        reference to another resource, and stays muted. */}
                     {recipe.resultingItem.category ? (
-                      <span>{recipe.resultingItem.category.name}</span>
+                      <span className="public-meta-category">
+                        {recipe.resultingItem.category.name}
+                      </span>
                     ) : null}
                     <span>Produces × {resultQuantity}</span>
                   </span>

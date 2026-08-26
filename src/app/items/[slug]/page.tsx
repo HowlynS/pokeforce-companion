@@ -264,13 +264,13 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                                 <span className="item-obtain-card-body">
                                   <Link
                                     href={`/shops/${listing.shop.slug}`}
-                                    className="item-obtain-card-title"
+                                    className="item-obtain-card-title public-underline-link"
                                   >
                                     {listing.shop.name}
                                   </Link>
                                   <Link
                                     href={`/locations/${listing.shop.location.slug}`}
-                                    className="item-obtain-card-context"
+                                    className="item-obtain-card-context public-underline-link"
                                   >
                                     {listing.shop.location.name}
                                   </Link>
@@ -322,14 +322,14 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                                   title !== source.location.name ? (
                                     <Link
                                       href={`/locations/${source.location.slug}`}
-                                      className="item-obtain-card-context"
+                                      className="item-obtain-card-context public-underline-link"
                                     >
                                       {source.location.name}
                                     </Link>
                                   ) : source.location ? (
                                     <Link
                                       href={`/locations/${source.location.slug}`}
-                                      className="item-obtain-card-context"
+                                      className="item-obtain-card-context public-underline-link"
                                     >
                                       View location
                                     </Link>
@@ -338,7 +338,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                                   title !== source.profession.name ? (
                                     <Link
                                       href={`/professions/${source.profession.slug}`}
-                                      className="item-obtain-card-context"
+                                      className="item-obtain-card-context public-underline-link"
                                     >
                                       {source.profession.name}
                                     </Link>
