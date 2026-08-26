@@ -212,13 +212,15 @@ test("populated Recipe uses the shared detail composition and real relationships
   await page.goBack();
   await expect(page.locator(".recipe-result-row")).toBeVisible();
 
+  // The Recipe Details panel is the information column's own, exactly like
+  // Item's -- never a fact rail beside the hero.
   await expect(
-    page.getByRole("heading", {
+    page.locator(".public-detail-sidebar").getByRole("heading", {
       level: 2,
       name: "Recipe details",
       exact: true,
     })
-  ).toHaveCount(0);
+  ).toHaveCount(1);
   // The handoff moves Profession, its optional level, and EXP from the
   // removed fact rail into factual hero chips.
   await expect(page.getByText("Required class", { exact: true })).toHaveCount(
@@ -227,15 +229,21 @@ test("populated Recipe uses the shared detail composition and real relationships
   await expect(
     page.getByText("Required profession level", { exact: true })
   ).toHaveCount(0);
-  await expect(page.getByText("25", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".recipe-info-chips").getByText("25", { exact: true })
+  ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Profession: Smithing", exact: true })
   ).toHaveAttribute("href", "/professions/smithing");
   await expect(page.getByText("+10 EXP", { exact: true })).toBeVisible();
-  // Verification is a structured card closing the page, not a hero badge.
+  // Verification is a structured card in the information column, not a hero
+  // badge and not a main-content block.
+  await expect(
+    page.locator(".public-detail-sidebar .public-verification-card")
+  ).toHaveCount(1);
   await expect(
     page.locator(".item-main-column .public-verification-card")
-  ).toHaveCount(1);
+  ).toHaveCount(0);
   await expect(page.getByText("Quick Links", { exact: true })).toHaveCount(0);
   for (const speculative of [
     "Required level",
@@ -368,8 +376,12 @@ test("sparse and no-image Recipes preserve hide-empty behavior", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: "Charcoal", exact: true })
   ).toBeVisible();
+  // A Recipe with no Profession omits the Profession row from its Details
+  // panel entirely -- hide-empty, never a placeholder dash.
   await expect(
-    page.locator(".item-sidebar-panel").getByText("Profession", { exact: true })
+    page
+      .locator(".public-detail-sidebar .public-detail-panel")
+      .getByText("Profession", { exact: true })
   ).toHaveCount(0);
   // A Recipe without a Profession has no profession-level requirement;
   // its required EXP reward still renders independently.

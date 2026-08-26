@@ -6,6 +6,7 @@ import { CollapsibleSection } from "@/components/content/collapsible-section";
 import { ContentImage } from "@/components/content/content-image";
 import { CurrencyPrice } from "@/components/content/currency-price";
 import { RecipeCollectionSection } from "@/components/content/recipe-collection-section";
+import { RelatedItemGrid } from "@/components/content/related-item-grid";
 import {
   RecipeCollectionGrid,
   RecipeCollectionList,
@@ -263,13 +264,13 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                                 <span className="item-obtain-card-body">
                                   <Link
                                     href={`/shops/${listing.shop.slug}`}
-                                    className="item-obtain-card-title public-content-link"
+                                    className="item-obtain-card-title"
                                   >
                                     {listing.shop.name}
                                   </Link>
                                   <Link
                                     href={`/locations/${listing.shop.location.slug}`}
-                                    className="item-obtain-card-context public-content-link"
+                                    className="item-obtain-card-context"
                                   >
                                     {listing.shop.location.name}
                                   </Link>
@@ -321,14 +322,14 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                                   title !== source.location.name ? (
                                     <Link
                                       href={`/locations/${source.location.slug}`}
-                                      className="item-obtain-card-context public-content-link"
+                                      className="item-obtain-card-context"
                                     >
                                       {source.location.name}
                                     </Link>
                                   ) : source.location ? (
                                     <Link
                                       href={`/locations/${source.location.slug}`}
-                                      className="item-obtain-card-context public-content-link"
+                                      className="item-obtain-card-context"
                                     >
                                       View location
                                     </Link>
@@ -337,7 +338,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                                   title !== source.profession.name ? (
                                     <Link
                                       href={`/professions/${source.profession.slug}`}
-                                      className="item-obtain-card-context public-content-link"
+                                      className="item-obtain-card-context"
                                     >
                                       {source.profession.name}
                                     </Link>
@@ -378,7 +379,7 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                 className="item-panel item-related-panel"
                 animationVariant="stagger"
               >
-                <div className="item-related-grid">
+                <RelatedItemGrid>
                   {relatedItems.map((related) => (
                     <Link
                       key={related.slug}
@@ -392,17 +393,19 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                           size="grid"
                         />
                       </span>
-                      <span className="item-related-card-name">
-                        {related.name}
-                      </span>
-                      {related.category ? (
-                        <span className="item-related-card-category">
-                          {related.category}
+                      <span className="item-related-card-copy">
+                        <span className="item-related-card-name">
+                          {related.name}
                         </span>
-                      ) : null}
+                        {related.category ? (
+                          <span className="item-related-card-category">
+                            {related.category}
+                          </span>
+                        ) : null}
+                      </span>
                     </Link>
                   ))}
-                </div>
+                </RelatedItemGrid>
               </CollapsibleSection>
             ) : null}
           </div>

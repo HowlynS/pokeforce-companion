@@ -114,6 +114,47 @@ describe("RecipeOutputCard", () => {
   });
 });
 
+describe("RecipeOutputCard Profession metadata", () => {
+  // Every variant routes the Profession NAME through the one shared
+  // semantic class, so no card can carry a private copy of the treatment
+  // and no rule can key it on how many siblings the cell happens to render.
+  const VARIANTS = [
+    "standard",
+    "directory-grid",
+    "directory-list",
+    "grid",
+    "list",
+  ] as const;
+
+  for (const variant of VARIANTS) {
+    it(`marks the profession as shared meta in the ${variant} variant`, () => {
+      const html = renderToStaticMarkup(
+        <RecipeOutputCard recipe={recipe} variant={variant} />
+      );
+
+      expect(html).toContain('class="public-meta-profession"');
+      // The unused `standard` variant still renders its level as inline
+      // prose rather than a cell of its own; every production variant uses
+      // the named level class.
+      if (variant !== "standard") {
+        expect(html).toContain("recipe-output-requirement-level");
+      }
+    });
+
+    it(`keeps the shared meta class with no required level in the ${variant} variant`, () => {
+      const html = renderToStaticMarkup(
+        <RecipeOutputCard
+          recipe={{ ...recipe, requiredLevel: null }}
+          variant={variant}
+        />
+      );
+
+      expect(html).toContain('class="public-meta-profession"');
+      expect(html).not.toContain("recipe-output-requirement-level");
+    });
+  }
+});
+
 describe("RecipeOutputCard, canonical grid variant", () => {
   it("previews three ingredients and offers the chevron past that", () => {
     const html = renderToStaticMarkup(

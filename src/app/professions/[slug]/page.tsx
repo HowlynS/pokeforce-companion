@@ -64,6 +64,8 @@ export default async function ProfessionDetailPage({
           current={profession.name}
         />
 
+        <div className="public-detail-layout profession-detail-layout">
+          <div className="public-detail-main">
         <section
           className="profession-detail-hero resource-atmosphere resource-atmosphere--profession"
           aria-labelledby="profession-title"
@@ -119,21 +121,41 @@ export default async function ProfessionDetailPage({
           </div>
         </section>
 
-        {/* Directly under the hero: the one consistent slot every
-            sidebar-less detail page uses, so verification is secondary but
-            never an afterthought trailing off the page bottom. */}
-        <VerificationCard
-          stamp={profession}
-          currentGameVersionName={currentGameVersion?.name ?? null}
-          updatedAt={profession.updatedAt}
-          className="public-verification-card--standalone"
-        />
-
         {profession.recipes.length > 0 ? (
           <RecipeCollectionSection title="Recipes" grid={grid} list={list} />
         ) : null}
+          </div>
 
+          {/* The canonical information column, the same one Item, Recipe,
+              Class, Location and Shop render: the resource's own Details
+              panel with Verification directly under it. */}
+          <aside
+            className="public-detail-sidebar profession-detail-sidebar"
+            aria-label="Profession information"
+          >
+            <section className="public-detail-panel">
+              <h2 className="public-panel-title">Profession details</h2>
+              <dl className="public-detail-facts">
+                <div>
+                  <dt>Recipes</dt>
+                  <dd>{profession.recipes.length}</dd>
+                </div>
+                {levelSummary._max.level ? (
+                  <div>
+                    <dt>Max level</dt>
+                    <dd>{levelSummary._max.level}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </section>
 
+            <VerificationCard
+              stamp={profession}
+              currentGameVersionName={currentGameVersion?.name ?? null}
+              updatedAt={profession.updatedAt}
+            />
+          </aside>
+        </div>
       </article>
     </AppShell>
   );

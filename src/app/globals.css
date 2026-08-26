@@ -3006,11 +3006,95 @@ select:focus-visible {
   --public-status-badge-text: var(--color-text-muted);
 }
 
-/* Pages with no information column place the card near the top of their
-   content instead. It is capped so a full-bleed detail page never stretches
-   one short panel across an ultrawide viewport. */
-.public-verification-card--standalone {
-  width: min(100%, 420px);
+/* ---- Canonical information-column panel -------------------------------
+   The sibling of .public-verification-card: EVERY resource "Details" panel
+   in a public detail page's information column is this class, so a Details
+   card and the Verification card under it are the same box by construction
+   rather than by two families happening to agree. The values ARE the
+   Verification card's own -- same border, radius, ground and padding ramp --
+   because the two are meant to read as one stack.
+
+   This replaced .location-detail-sidebar-panel, which was already a
+   character-for-character copy of the Verification card's box and its fact
+   list. The --standalone placement modifier that used to park Verification
+   under a sidebar-less page's hero is gone with it: every resource detail
+   page now has an information column, so there is no second placement left
+   to name. */
+.public-detail-panel {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  padding: clamp(18px, calc(18px + 3px * var(--pf)), 21px);
+}
+
+/* One labelled row per fact, matching .public-verification-card-facts
+   exactly -- the two lists sit directly above one another in the same
+   column, so any difference between them reads as a mistake. */
+.public-detail-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.public-detail-facts > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--detail-chip-font-size);
+}
+
+.public-detail-facts dt {
+  color: var(--color-text-muted);
+}
+
+.public-detail-facts dd {
+  max-width: clamp(138px, calc(138px + 16px * var(--pf)), 154px);
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.public-detail-facts dd a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.public-detail-facts dd a:hover,
+.public-detail-facts dd a:focus-visible {
+  color: var(--color-accent);
+}
+
+.public-detail-panel > p {
+  margin: -4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* ---- The ONE Profession-meta treatment --------------------------------
+   A Profession NAME rendered as secondary metadata is gold, uppercase and
+   letter-spaced, everywhere it appears: the Recipe directory Grid and List,
+   the compact relationship Grid and List, and the Recipe hero's own
+   Profession chip value.
+
+   It exists because four card variants each carried a private copy of these
+   four declarations, keyed on `> span:first-child`. Two of those copies
+   were then followed by a `> span:last-child` rule that recoloured the
+   value dim grey -- so a Recipe with a Profession but NO required level
+   (one span, therefore both first AND last child) lost its gold entirely,
+   which is why the same directory Grid showed some professions gold and
+   others muted. The treatment is a named class now, so it can never again
+   depend on how many siblings a card happens to render. */
+.public-meta-profession {
+  color: var(--color-accent);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .public-filter-nav {
@@ -5097,7 +5181,12 @@ select:focus-visible {
   font-size: var(--detail-chip-font-size);
 }
 
-.item-info-chip strong {
+/* A chip's value is full-strength text UNLESS it carries a semantic
+   treatment of its own -- the Profession meta gold, or the accent used for
+   EXP and sell value. Excluding those here is what lets the semantic
+   classes own their own colour: this rule used to out-specify them, which
+   is why .item-info-chip-accent needed an `!important` to win. */
+.item-info-chip strong:not(.public-meta-profession):not(.item-info-chip-accent) {
   color: var(--color-text);
 }
 
@@ -5123,7 +5212,7 @@ a.item-info-chip:focus-visible {
 }
 
 .item-info-chip-accent {
-  color: var(--color-accent-soft) !important;
+  color: var(--color-accent-soft);
 }
 
 .item-fact-strip {
@@ -5268,9 +5357,11 @@ a.item-info-chip:focus-visible {
   margin-top: 24px;
 }
 
+/* The acquisition TYPE heading is the same class of metadata as the cards'
+   own context line, so it takes the same gold rather than a muted grey. */
 .item-source-group > h3 {
   margin: 0 0 9px;
-  color: var(--color-text-muted);
+  color: var(--color-accent);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -5357,15 +5448,42 @@ a.item-info-chip:focus-visible {
   gap: 3px;
 }
 
+/* An acquisition card's title and its context line are links, but they are
+   card content -- not prose -- so they carry no permanent underline. The
+   affordance is a colour shift on hover, matching the restraint every other
+   public card uses; `:focus-visible` still draws the global focus ring, so
+   keyboard reachability is unchanged. These two used to also carry
+   .public-content-link, whose underline made them read as old-school inline
+   hyperlinks inside a card. */
 .item-obtain-card-title {
   color: var(--color-text);
   font-weight: 650;
   overflow-wrap: anywhere;
+  text-decoration: none;
+  transition: color 165ms ease;
 }
 
+a.item-obtain-card-title:hover {
+  color: var(--color-accent-soft);
+}
+
+/* The card's secondary type/location metadata takes the canonical
+   Profession/meta gold -- it names the same kind of thing (a Shop's
+   Location, a source's Location or Profession) that the Recipe cards' own
+   Profession line does, so it reads as metadata rather than muted body
+   copy. */
 .item-obtain-card-context {
-  color: var(--color-text-muted);
-  font-size: 12.5px;
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 165ms ease;
+}
+
+a.item-obtain-card-context:hover {
+  color: var(--color-accent-soft);
 }
 
 .item-obtain-card-value {
@@ -5510,14 +5628,48 @@ a.item-info-chip:focus-visible {
     var(--color-surface);
 }
 
+/* ---- Adaptive Related-Items title allowance ---------------------------
+   The collection decides, once, how many lines its titles get, and every
+   card in it reads that decision through these two inherited properties --
+   so a group is compact when nothing in it wraps and uniformly taller when
+   something does, and never jagged card-by-card. RelatedItemGrid owns the
+   measurement; nothing here is per-card, per-name or per-viewport.
+
+   The default IS the compact mode: that is the geometry these cards already
+   had, so a server-rendered group never paints taller than it settles. */
+.item-related-grid {
+  --related-title-lines: 1;
+  --related-copy-gap: 3px;
+}
+
+.item-related-grid[data-related-title-mode="expanded"] {
+  --related-title-lines: 2;
+  --related-copy-gap: 6px;
+}
+
+.item-related-card-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--related-copy-gap);
+}
+
 .item-related-card-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--related-title-lines);
+  line-clamp: var(--related-title-lines);
+  /* The block claims exactly its allowance, so every card in the group
+     shares one category baseline whether or not its own title uses both
+     lines. 1.25em is the line-height above, expressed against the title's
+     own size so the two can never drift apart. */
+  min-height: calc(var(--related-title-lines) * 1.25em);
+  overflow: hidden;
   font-size: var(--card-title-font-size);
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 /* A subtle step down from the previous 10-12.5px ramp: the gold category
@@ -5769,16 +5921,13 @@ a.item-info-chip:focus-visible {
 
 
 
-.recipe-detail-page .item-content-grid {
-  display: block;
-}
-
-/* Section rhythm is the shared --detail-stack-gap. */
-
-
-.recipe-detail-page .item-content-grid > .item-sidebar {
-  display: none;
-}
+/* Recipe detail's page frame, its main/sidebar split and its section rhythm
+   ALL come from the shared .public-detail-page / .public-detail-layout
+   primitives now. This family used to force its content grid to
+   `display: block` and hide the information column outright, which made it
+   the one detail page whose main column ran the full page width -- so its
+   hero, its resource atmosphere and the scenic backdrop behind them sat on a
+   different horizontal coordinate system from every other resource page. */
 
 .recipe-detail-page .item-identity-panel {
   min-height: 0;
@@ -5911,9 +6060,9 @@ a.item-info-chip:focus-visible {
   padding: 8px;
 }
 
-body:has(.recipe-detail-page) .public-site-footer {
-  display: none;
-}
+/* Recipe detail used to hide the site footer outright -- the only public
+   page in the site that did. The public shell is shared infrastructure; a
+   resource family does not get to delete part of it. */
 
 .recipe-detail-page .recipe-ingredient-row {
   min-height: 50px;
@@ -6742,18 +6891,22 @@ body:has(.recipe-detail-page) .public-site-footer {
   line-height: 12px;
 }
 
-.recipe-output-card--directory-grid .recipe-output-requirement > span:first-child {
+/* Colour, weight, letter-spacing and casing come from the shared
+   .public-meta-profession treatment; only this card's own truncation
+   geometry lives here. The rule used to restate all four, and the level rule
+   below used to be keyed on `> span:last-child` -- which also matched the
+   PROFESSION span on a Recipe with no required level, recolouring it dim
+   grey. That is the drift that made some Grid professions gold and others
+   muted. */
+.recipe-output-card--directory-grid .recipe-output-requirement
+  > .public-meta-profession {
   min-width: 0;
   overflow: hidden;
-  color: var(--color-accent);
-  font-weight: 600;
-  letter-spacing: 0.05em;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.recipe-output-card--directory-grid .recipe-output-requirement > span:last-child {
+.recipe-output-card--directory-grid .recipe-output-requirement-level {
   flex: none;
   color: var(--color-text-meta-dim);
   font-weight: 500;
@@ -7034,18 +7187,14 @@ body:has(.recipe-detail-page) .public-site-footer {
   gap: 2px;
 }
 
-.recipe-output-list-profession > span:first-child {
-  color: var(--color-accent);
+.recipe-output-list-profession > .public-meta-profession {
   font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.recipe-output-list-profession > span:last-child:not(:first-child) {
+.recipe-output-list-profession > .recipe-output-requirement-level {
   color: var(--color-text-meta);
   font-size: 11px;
 }
@@ -12404,23 +12553,33 @@ a.profession-detail-chip:focus-visible {
   white-space: nowrap;
 }
 
+/* Profession/level cell. This used to inherit --card-meta-font-size, which
+   ramps 10.5px -> 13px with --pf, while the card TITLE is a fixed
+   11-13.5px ramp chosen from the recipe's own name length -- so at 3440 the
+   metadata rendered as large as the title it is supposed to sit under. It
+   now takes the same FIXED sizes the /recipes directory List authority uses
+   (see .recipe-output-list-profession): a 10.5px uppercase gold Profession
+   over an 11px level, so the title stays primary at every width. */
 .recipe-output-card--grid .recipe-output-requirement {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--card-meta-font-size);
+  line-height: 1.35;
 }
 
-.recipe-output-card--grid .recipe-output-requirement > span:first-child {
-  color: var(--color-accent);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.recipe-output-card--grid .recipe-output-requirement
+  > .public-meta-profession {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.recipe-output-card--grid .recipe-output-requirement > span:last-child {
+.recipe-output-card--grid .recipe-output-requirement-level {
   flex: none;
   color: var(--color-text-meta-dim);
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -12774,20 +12933,15 @@ a.profession-detail-chip:focus-visible {
   gap: 2px;
 }
 
-.recipe-output-card--list .recipe-output-requirement > span:first-child {
+.recipe-output-card--list .recipe-output-requirement
+  > .public-meta-profession {
   overflow: hidden;
-  color: var(--color-accent);
   font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.recipe-output-card--list
-  .recipe-output-requirement
-  > span:last-child:not(:first-child) {
+.recipe-output-card--list .recipe-output-requirement-level {
   color: var(--color-text-meta);
   font-size: 11px;
 }
@@ -13227,46 +13381,9 @@ a.profession-detail-chip:focus-visible {
   top: 88px;
 }
 
-.location-detail-sidebar-panel {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-  padding: clamp(18px, calc(18px + 3px * var(--pf)), 21px);
-}
-
-.location-detail-sidebar-panel dl {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-}
-
-.location-detail-sidebar-panel dl > div {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: var(--detail-chip-font-size);
-}
-
-.location-detail-sidebar-panel dt {
-  color: var(--color-text-muted);
-}
-
-.location-detail-sidebar-panel dd {
-  max-width: clamp(138px, calc(138px + 16px * var(--pf)), 154px);
-  margin: 0;
-  color: var(--color-text);
-  font-weight: 700;
-  text-align: right;
-}
-
-.location-detail-sidebar-panel p {
-  margin: -4px 0 0;
-  color: var(--color-text-muted);
-  font-size: 12.5px;
-  line-height: 1.6;
-}
+/* Location's own information panels are the shared .public-detail-panel /
+   .public-detail-facts pair now; this family owns no private copy of that
+   box. */
 
 .location-detail-directory,
 .location-detail-section {

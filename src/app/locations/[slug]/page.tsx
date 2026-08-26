@@ -338,9 +338,9 @@ export default async function LocationDetailPage({
             className="public-detail-sidebar location-detail-sidebar"
             aria-label="Location details"
           >
-            <section className="location-detail-sidebar-panel">
+            <section className="public-detail-panel">
               <h2 className="public-panel-title">Location Details</h2>
-              <dl>
+              <dl className="public-detail-facts">
                 <div><dt>Type</dt><dd>{LOCATION_TYPE_LABELS[location.type]}</dd></div>
                 <div><dt>Parent</dt><dd>{parent?.name ?? "Root location"}</dd></div>
                 <div><dt>Sub-locations</dt><dd>{location.children.length}</dd></div>
@@ -349,7 +349,7 @@ export default async function LocationDetailPage({
               </dl>
             </section>
             {location.accessNote ? (
-              <section className="location-detail-sidebar-panel">
+              <section className="public-detail-panel">
                 <h2 className="public-panel-title">Traveler&apos;s Note</h2>
                 <p>{location.accessNote}</p>
               </section>

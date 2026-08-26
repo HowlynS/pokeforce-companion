@@ -1,12 +1,11 @@
 // Canonical public VERIFICATION presentation.
 //
-// Verification is structured detail information with exactly two placements:
-//
-//   * a page WITH an information sidebar (Item, Location) puts it LAST in
-//     that column, sharing the Details panel's width, X origin, stack gap
-//     and responsive collapse;
-//   * a page WITHOUT one (Recipe, Profession, Class, Shop) puts it near the
-//     TOP of its content, above the first content section.
+// Verification is structured detail information with exactly ONE placement:
+// every resource detail page renders the canonical information column, and
+// Verification is the LAST panel in it -- directly under the resource's own
+// Details panel, sharing that column's width, X origin, stack gap and
+// responsive collapse. There is no second placement, and no page positions
+// the card itself.
 //
 // It is the ONE public home for the record's last-updated date, and it
 // reports the record's build against the single canonical current Game
@@ -55,22 +54,28 @@ test.afterAll(async () => {
   await deleteE2eTestShopRecords();
 });
 
-/** Pages that already have an information column. */
+/** Every resource detail page. All six render the information column. */
 const SIDEBAR_PAGES = [
   { name: "Item", route: "/items/iron-ore" },
   {
     name: "Location",
     route: "/locations/test-e2e-location-public-directory-region",
   },
-] as const;
-
-/** Pages with no information column. */
-const STANDALONE_PAGES = [
   { name: "Recipe", route: "/recipes/iron-sword" },
   { name: "Profession", route: "/professions/smithing" },
   { name: "Class", route: "/classes/artisan" },
   { name: "Shop", route: "/shops/test-e2e-shop-public-alpha" },
 ] as const;
+
+/**
+ * The families that carry a resource Details panel ABOVE Verification.
+ * Class is deliberately absent: it has no public metadata beyond its own
+ * identity, and the rule is that a panel shows real fields or is not
+ * rendered at all.
+ */
+const DETAILS_PANEL_PAGES = SIDEBAR_PAGES.filter(
+  (target) => target.name !== "Class"
+);
 
 test("verification sits last in the sidebar stack, sharing its geometry", async ({
   page,
@@ -106,6 +111,13 @@ test("verification sits last in the sidebar stack, sharing its geometry", async 
         // No placement rules of its own.
         cardPosition: getComputedStyle(card).position,
         cardMarginTop: getComputedStyle(card).marginTop,
+        cardIsMainContent: Boolean(
+          card.closest(".public-detail-main, .item-main-column")
+        ),
+        // The retired placement modifier must not come back.
+        hasStandaloneModifier: card.classList.contains(
+          "public-verification-card--standalone"
+        ),
       };
     });
 
@@ -113,6 +125,15 @@ test("verification sits last in the sidebar stack, sharing its geometry", async 
       true
     );
     expect(geometry.cardIsLast, `${target.name}: last panel`).toBe(true);
+    // It is never the first main-content block under the hero.
+    expect(
+      geometry.cardIsMainContent,
+      `${target.name}: never a main-column block`
+    ).toBe(false);
+    expect(
+      geometry.hasStandaloneModifier,
+      `${target.name}: the retired standalone placement is gone`
+    ).toBe(false);
     expect(geometry.cardLeft, `${target.name}: shares the column X`).toBeCloseTo(
       geometry.firstPanelLeft,
       0
@@ -194,57 +215,89 @@ test("verification collapses with its sidebar rather than independently", async 
   }
 });
 
-test("sidebar-less pages place verification near the top of their content", async ({
+test("every resource detail page pairs a Details panel with Verification", async ({
   page,
 }) => {
+  // The Item detail pattern is the authority: a resource Details panel with
+  // Verification directly under it, both in the information column. This is
+  // the guard that keeps a family from drifting back to a card floating
+  // under its hero.
   await page.setViewportSize({ width: 1920, height: 1080 });
 
-  for (const target of STANDALONE_PAGES) {
+  for (const target of DETAILS_PANEL_PAGES) {
     const response = await page.goto(target.route, {
       waitUntil: "domcontentloaded",
     });
     expect(response?.status(), `${target.name} must render`).toBe(200);
 
-    const placement = await page.evaluate(() => {
+    const stack = await page.evaluate(() => {
+      const sidebar = document.querySelector(".public-detail-sidebar")!;
       const card = document.querySelector(".public-verification-card")!;
-      const hero = document.querySelector(
-        ".item-identity-panel, .profession-detail-hero, .shop-detail-hero"
-      )!;
-      const cardBox = card.getBoundingClientRect();
-      const documentHeight = document.documentElement.scrollHeight;
+      const panels = Array.from(sidebar.children);
+      const details = panels[0]!;
       return {
-        hasStandaloneModifier: card.classList.contains(
-          "public-verification-card--standalone"
-        ),
-        hasNoSidebar: document.querySelector(".public-detail-sidebar") === null,
-        // Directly after the hero, not trailing the page.
-        isBelowHero: cardBox.top >= hero.getBoundingClientRect().bottom - 1,
-        relativeDepth: cardBox.top / documentHeight,
-        position: getComputedStyle(card).position,
+        panelCount: panels.length,
+        detailsIsFirst: details !== card,
+        verificationBelowDetails:
+          card.getBoundingClientRect().top >=
+          details.getBoundingClientRect().bottom,
+        // The details panel is a real dl of real facts, never an empty box.
+        detailsFactCount: details.querySelectorAll("dl > div").length,
+        detailsHasTitle: Boolean(details.querySelector(".public-panel-title")),
       };
     });
 
-    expect(placement.hasNoSidebar, `${target.name}: has no sidebar`).toBe(true);
     expect(
-      placement.hasStandaloneModifier,
-      `${target.name}: uses the shared standalone placement`
-    ).toBe(true);
-    expect(placement.isBelowHero, `${target.name}: sits under the hero`).toBe(
+      stack.panelCount,
+      `${target.name}: the column holds a Details panel and Verification`
+    ).toBeGreaterThanOrEqual(2);
+    expect(stack.detailsIsFirst, `${target.name}: Details opens the column`).toBe(
       true
     );
     expect(
-      placement.relativeDepth,
-      `${target.name}: near the TOP of the page, not the bottom`
-    ).toBeLessThan(0.5);
-    expect(placement.position, `${target.name}: never floating`).toBe("static");
+      stack.verificationBelowDetails,
+      `${target.name}: Verification sits under Details`
+    ).toBe(true);
+    expect(
+      stack.detailsFactCount,
+      `${target.name}: the Details panel carries real facts`
+    ).toBeGreaterThan(0);
+    expect(stack.detailsHasTitle, `${target.name}: shared panel title`).toBe(
+      true
+    );
   }
+});
+
+test("a resource with no public metadata gets no invented Details panel", async ({
+  page,
+}) => {
+  // Class carries name, description, image and a verification stamp and
+  // nothing else. The column still exists, so Verification is where it is on
+  // every other page -- but the panel above it is omitted rather than padded
+  // out with fields the record does not have.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/classes/artisan", { waitUntil: "domcontentloaded" });
+
+  const column = await page.evaluate(() => {
+    const sidebar = document.querySelector(".public-detail-sidebar")!;
+    const card = document.querySelector(".public-verification-card")!;
+    return {
+      panelCount: sidebar.children.length,
+      onlyPanelIsVerification: sidebar.children[0] === card,
+      detailsPanels: sidebar.querySelectorAll(".public-detail-panel").length,
+    };
+  });
+
+  expect(column.panelCount, "Class: one panel").toBe(1);
+  expect(column.onlyPanelIsVerification, "Class: it is Verification").toBe(true);
+  expect(column.detailsPanels, "Class: no empty Details panel").toBe(0);
 });
 
 test("every information panel title shares one treatment", async ({ page }) => {
   for (const width of [1920, 3440]) {
     await page.setViewportSize({ width, height: 1080 });
 
-    for (const target of SIDEBAR_PAGES) {
+    for (const target of DETAILS_PANEL_PAGES) {
       await page.goto(target.route, { waitUntil: "domcontentloaded" });
       const titles = await page.evaluate(() => {
         // Every panel heading in the column, whichever panel it belongs to.
@@ -303,7 +356,7 @@ test("every information panel title shares one treatment", async ({ page }) => {
 test("last updated lives in verification, and only there", async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
 
-  for (const target of [...SIDEBAR_PAGES, ...STANDALONE_PAGES]) {
+  for (const target of SIDEBAR_PAGES) {
     await page.goto(target.route, { waitUntil: "domcontentloaded" });
 
     const dates = await page.evaluate(() => {
@@ -476,7 +529,7 @@ test("Location participates fully in the verification system", async ({
   const wiring = await page.evaluate(() => {
     const sidebar = document.querySelector(".public-detail-sidebar")!;
     const element = document.querySelector(".public-verification-card")!;
-    const details = sidebar.querySelector(".location-detail-sidebar-panel")!;
+    const details = sidebar.querySelector(".public-detail-panel")!;
     return {
       underDetails:
         element.getBoundingClientRect().top >=

@@ -108,8 +108,8 @@ export default async function RecipeDetailPage({
           current={recipe.name}
         />
 
-        <div className="item-content-grid">
-          <div className="item-main-column">
+        <div className="public-detail-layout recipe-detail-layout">
+          <div className="public-detail-main item-main-column">
             <section
               className="item-identity-panel resource-atmosphere resource-atmosphere--recipe"
               aria-labelledby="recipe-title"
@@ -156,7 +156,10 @@ export default async function RecipeDetailPage({
                       href={"/professions/" + recipe.profession.slug}
                       className="item-info-chip public-content-link"
                     >
-                      Profession: <strong>{recipe.profession.name}</strong>
+                      Profession:{" "}
+                      <strong className="public-meta-profession">
+                        {recipe.profession.name}
+                      </strong>
                     </Link>
                   ) : null}
                   {recipe.requiredLevel !== null ? (
@@ -173,16 +176,6 @@ export default async function RecipeDetailPage({
                 </div>
               </div>
             </section>
-
-            {/* Directly under the hero: the one consistent slot every
-                sidebar-less detail page uses, so verification is secondary
-                but never an afterthought trailing off the page bottom. */}
-            <VerificationCard
-              stamp={recipe}
-              currentGameVersionName={currentGameVersion?.name ?? null}
-              updatedAt={recipe.updatedAt}
-              className="public-verification-card--standalone"
-            />
 
             <div className="item-lower-grid recipe-lower-grid">
               {recipe.ingredients.length > 0 ? (
@@ -261,9 +254,70 @@ export default async function RecipeDetailPage({
                 list={<RecipeCollectionList recipes={relatedRecipes} />}
               />
             ) : null}
-
           </div>
 
+          {/* The canonical information column, identical to Item and
+              Location's: the resource's own Details panel with Verification
+              directly under it, sharing the column's width, X origin, stack
+              gap and responsive collapse. Recipe used to render no column at
+              all -- which is what made its main content span the full page
+              while every other detail page's stopped at the sidebar edge, so
+              its hero, its atmosphere and the scenic backdrop behind them all
+              sat on a different horizontal coordinate system. */}
+          <aside
+            className="public-detail-sidebar recipe-detail-sidebar"
+            aria-label="Recipe information"
+          >
+            <section className="public-detail-panel">
+              <h2 className="public-panel-title">Recipe details</h2>
+              <dl className="public-detail-facts">
+                {recipe.profession ? (
+                  <div>
+                    <dt>Profession</dt>
+                    <dd>
+                      <Link href={`/professions/${recipe.profession.slug}`}>
+                        {recipe.profession.name}
+                      </Link>
+                    </dd>
+                  </div>
+                ) : null}
+                {recipe.requiredLevel !== null ? (
+                  <div>
+                    <dt>Level</dt>
+                    <dd>{recipe.requiredLevel}</dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>EXP reward</dt>
+                  <dd>+{recipe.experienceReward}</dd>
+                </div>
+                <div>
+                  <dt>Yield</dt>
+                  <dd>&times; {resultQuantity}</dd>
+                </div>
+                <div>
+                  <dt>Crafted result</dt>
+                  <dd>
+                    <Link href={`/items/${recipe.resultingItem.slug}`}>
+                      {recipe.resultingItem.name}
+                    </Link>
+                  </dd>
+                </div>
+                {recipe.ingredients.length > 0 ? (
+                  <div>
+                    <dt>Ingredients</dt>
+                    <dd>{recipe.ingredients.length}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </section>
+
+            <VerificationCard
+              stamp={recipe}
+              currentGameVersionName={currentGameVersion?.name ?? null}
+              updatedAt={recipe.updatedAt}
+            />
+          </aside>
         </div>
       </article>
     </AppShell>

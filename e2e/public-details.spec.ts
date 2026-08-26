@@ -326,28 +326,28 @@ test.describe("public detail pages", () => {
   test("every detail page shows verification as one structured card, never a hero badge", async ({
     page,
   }) => {
-    // One predictable place per page type: the page's own information column
-    // where it has one, its closing panel where it does not. No page may
-    // show a verification badge inside its hero any more.
+    // ONE predictable place for every page type: the resource's own
+    // information column. No page may show a verification badge inside its
+    // hero, and none places the card in its main content column any more.
     const pages = [
       {
         route: `/items/${itemFixture.item.slug}`,
-        host: ".item-sidebar",
+        host: ".public-detail-sidebar",
         hero: ".item-identity-panel",
       },
       {
         route: "/recipes/iron-sword",
-        host: ".item-main-column",
+        host: ".public-detail-sidebar",
         hero: ".item-identity-panel",
       },
       {
         route: "/professions/smithing",
-        host: ".profession-detail-page",
+        host: ".public-detail-sidebar",
         hero: ".profession-detail-hero",
       },
       {
         route: "/classes/artisan",
-        host: ".profession-detail-page",
+        host: ".public-detail-sidebar",
         hero: ".profession-detail-hero",
       },
     ];

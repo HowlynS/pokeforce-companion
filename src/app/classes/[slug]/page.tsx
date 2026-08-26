@@ -48,6 +48,8 @@ export default async function PlayerClassDetailPage({
           current={playerClass.name}
         />
 
+        <div className="public-detail-layout class-detail-layout">
+          <div className="public-detail-main">
         <section
           className="profession-detail-hero resource-atmosphere resource-atmosphere--class"
           aria-labelledby="player-class-title"
@@ -77,17 +79,24 @@ export default async function PlayerClassDetailPage({
             </div>
           </div>
         </section>
+          </div>
 
-
-        {/* Directly under the hero: the one consistent slot every
-            sidebar-less detail page uses, so verification is secondary but
-            never an afterthought trailing off the page bottom. */}
-        <VerificationCard
-          stamp={playerClass}
-          currentGameVersionName={currentGameVersion?.name ?? null}
-          updatedAt={playerClass.updatedAt}
-          className="public-verification-card--standalone"
-        />
+          {/* The canonical information column. A Class carries no public
+              metadata beyond its own identity -- no counts, no level, no
+              relations -- so this column holds Verification alone rather
+              than a Details panel padded out with invented fields. The
+              PLACEMENT is what is shared; the content stays honest. */}
+          <aside
+            className="public-detail-sidebar class-detail-sidebar"
+            aria-label="Class information"
+          >
+            <VerificationCard
+              stamp={playerClass}
+              currentGameVersionName={currentGameVersion?.name ?? null}
+              updatedAt={playerClass.updatedAt}
+            />
+          </aside>
+        </div>
       </article>
     </AppShell>
   );

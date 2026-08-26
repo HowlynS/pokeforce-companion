@@ -32,17 +32,18 @@ type DetailPage = {
   hasSidebar: boolean;
 };
 
+// Every resource detail page now renders the canonical information column.
 const DETAIL_PAGES: DetailPage[] = [
   { name: "Item", route: "/items/iron-ore", hasSidebar: true },
-  { name: "Recipe", route: "/recipes/iron-sword", hasSidebar: false },
-  { name: "Profession", route: "/professions/smithing", hasSidebar: false },
-  { name: "Class", route: "/classes/artisan", hasSidebar: false },
+  { name: "Recipe", route: "/recipes/iron-sword", hasSidebar: true },
+  { name: "Profession", route: "/professions/smithing", hasSidebar: true },
+  { name: "Class", route: "/classes/artisan", hasSidebar: true },
   {
     name: "Location",
     route: "/locations/test-e2e-location-public-directory-region",
     hasSidebar: true,
   },
-  { name: "Shop", route: "/shops/test-e2e-shop-public-alpha", hasSidebar: false },
+  { name: "Shop", route: "/shops/test-e2e-shop-public-alpha", hasSidebar: true },
 ];
 
 // Desktop widths only. Narrow layouts wrap breadcrumbs and stack columns by
@@ -122,15 +123,11 @@ async function readFrame(page: import("@playwright/test").Page): Promise<Frame> 
       ".public-detail-page",
     ]);
     const sidebar = firstRect([".public-detail-sidebar"]);
-    // The first block AFTER the hero, whatever that block happens to be.
-    // On a page with no information sidebar that is now the Verification
-    // card, which sits directly under the hero; on a page with one it is the
-    // page's own first content section. Either way the distance is the
-    // shared block rhythm, which is what this measures -- listing the card
-    // first is what keeps the comparison honest rather than accidentally
-    // measuring hero-to-SECOND-block on the sidebar-less families.
+    // The first content block AFTER the hero in the MAIN column, whatever
+    // that block happens to be. Verification is no longer a candidate: it
+    // lives in the information column on every family now, so it is not a
+    // main-column block at all.
     const section = firstRect([
-      ".public-verification-card--standalone",
       ".item-lower-grid",
       ".recipe-collection-section",
       ".location-detail-directory",

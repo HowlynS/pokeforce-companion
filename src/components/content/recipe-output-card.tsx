@@ -218,9 +218,13 @@ export function RecipeOutputCard({
         <span className="recipe-output-list-profession">
           {recipe.profession ? (
             <>
-              <span>{recipe.profession.name}</span>
+              <span className="public-meta-profession">
+                {recipe.profession.name}
+              </span>
               {recipe.requiredLevel !== null ? (
-                <span>Lvl {recipe.requiredLevel}</span>
+                <span className="recipe-output-requirement-level">
+                  Lvl {recipe.requiredLevel}
+                </span>
               ) : null}
             </>
           ) : null}
@@ -294,9 +298,13 @@ export function RecipeOutputCard({
             </Link>
             {recipe.profession ? (
               <span className="recipe-output-requirement">
-                <span>{recipe.profession.name}</span>
+                <span className="public-meta-profession">
+                  {recipe.profession.name}
+                </span>
                 {recipe.requiredLevel !== null ? (
-                  <span>Lvl {recipe.requiredLevel}</span>
+                  <span className="recipe-output-requirement-level">
+                    Lvl {recipe.requiredLevel}
+                  </span>
                 ) : null}
               </span>
             ) : null}
@@ -382,14 +390,20 @@ export function RecipeOutputCard({
             <span className="recipe-output-requirement">
               {variant.startsWith("directory-") ? (
                 <>
-                  <span>{recipe.profession.name}</span>
+                  <span className="public-meta-profession">
+                    {recipe.profession.name}
+                  </span>
                   {recipe.requiredLevel !== null ? (
-                    <span>Lvl {recipe.requiredLevel}</span>
+                    <span className="recipe-output-requirement-level">
+                      Lvl {recipe.requiredLevel}
+                    </span>
                   ) : null}
                 </>
               ) : (
                 <>
-                  {recipe.profession.name}
+                  <span className="public-meta-profession">
+                    {recipe.profession.name}
+                  </span>
                   {recipe.requiredLevel !== null
                     ? ` · Level ${recipe.requiredLevel}`
                     : ""}

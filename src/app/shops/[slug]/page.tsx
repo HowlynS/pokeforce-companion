@@ -145,6 +145,8 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           current={shop.name}
         />
 
+        <div className="public-detail-layout shop-detail-layout">
+          <div className="public-detail-main">
         <section
           className="detail-hero shop-detail-hero resource-atmosphere resource-atmosphere--shop"
           aria-labelledby="shop-title"
@@ -194,16 +196,6 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
           </div>
         </section>
 
-        {/* Directly under the hero: the one consistent slot every
-            sidebar-less detail page uses, so verification is secondary but
-            never an afterthought trailing off the page bottom. */}
-        <VerificationCard
-          stamp={shop}
-          currentGameVersionName={currentGameVersion?.name ?? null}
-          updatedAt={shop.updatedAt}
-          className="public-verification-card--standalone"
-        />
-
         {shop.listings.length > 0 ? (
           <ShopInventory
             listings={shop.listings.map((listing) => ({
@@ -239,7 +231,53 @@ export default async function ShopDetailPage({ params }: ShopDetailPageProps) {
             }))}
           />
         ) : null}
+          </div>
 
+          {/* The canonical information column, the same one every other
+              resource detail page renders. */}
+          <aside
+            className="public-detail-sidebar shop-detail-sidebar"
+            aria-label="Shop information"
+          >
+            <section className="public-detail-panel">
+              <h2 className="public-panel-title">Shop details</h2>
+              <dl className="public-detail-facts">
+                <div>
+                  <dt>Location</dt>
+                  <dd>
+                    <Link href={`/locations/${shop.location.slug}`}>
+                      {shop.location.name}
+                    </Link>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Location type</dt>
+                  <dd>{LOCATION_TYPE_LABELS[shop.location.type]}</dd>
+                </div>
+                {rootLocation.slug !== shop.location.slug ? (
+                  <div>
+                    <dt>Region</dt>
+                    <dd>
+                      <Link href={`/locations/${rootLocation.slug}`}>
+                        {rootLocation.name}
+                      </Link>
+                    </dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>Inventory</dt>
+                  <dd>{shop.listings.length}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <VerificationCard
+              stamp={shop}
+              currentGameVersionName={currentGameVersion?.name ?? null}
+              updatedAt={shop.updatedAt}
+            />
+          </aside>
+        </div>
       </article>
     </AppShell>
   );

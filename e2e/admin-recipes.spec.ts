@@ -453,7 +453,9 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
     cardLink(page, "Iron Ingot").getByText("Produces × 2", { exact: true })
   ).toBeVisible();
   await expect(
-    page.locator(".item-detail-list").getByText("Smithing", { exact: true })
+    page
+      .locator(".public-detail-sidebar .public-detail-panel")
+      .getByText("Smithing", { exact: true })
   ).toBeVisible();
   await expect(
     cardLink(page, "Charcoal").getByText("× 1", { exact: true })
@@ -773,7 +775,9 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
   ).toBeVisible();
   // Empty optional Profession context remains hidden.
   await expect(
-    page.locator(".item-detail-list").getByText("Profession", { exact: true })
+    page
+      .locator(".public-detail-sidebar .public-detail-panel")
+      .getByText("Profession", { exact: true })
   ).toHaveCount(0);
   await expect(
     cardLink(page, "Charcoal").getByText("× 1", { exact: true })
@@ -869,7 +873,9 @@ test("Ingredients editing updates the ingredient rows and leaves General fields 
     cardLink(page, "Iron Ingot").getByText("Produces × 1", { exact: true })
   ).toBeVisible();
   await expect(
-    page.locator(".item-detail-list").getByText("Smithing", { exact: true })
+    page
+      .locator(".public-detail-sidebar .public-detail-panel")
+      .getByText("Smithing", { exact: true })
   ).toBeVisible();
   // ...but the ingredients are fully replaced.
   await expect(
