@@ -29,31 +29,65 @@ enum SiteVisibility {
   PUBLIC
 }
 
+enum PermissionOverrideEffect {
+  ALLOW
+  DENY
+}
+
 // Application authorization is keyed to the immutable Supabase Auth user ID.
 // Supabase continues to own passwords, sessions, and authentication identity;
 // this table owns only Codex access, roles, lifecycle state, and attribution.
 model AppUser {
-  id                String     @id @default(cuid())
-  authUserId        String     @unique
-  email             String     @unique
-  displayName       String?
-  role              UserRole   @default(MEMBER)
-  status            UserStatus @default(ACTIVE)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  createdById       String?
-  createdBy         AppUser?   @relation("AppUserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdUsers      AppUser[]  @relation("AppUserCreatedBy")
-  disabledAt        DateTime?
-  disabledById      String?
-  disabledBy        AppUser?   @relation("AppUserDisabledBy", fields: [disabledById], references: [id], onDelete: SetNull)
-  disabledUsers     AppUser[]  @relation("AppUserDisabledBy")
-  lastKnownSignInAt DateTime?
-  auditEvents       AuditEvent[]
+  id                  String                   @id @default(cuid())
+  authUserId          String                   @unique
+  email               String                   @unique
+  displayName         String?
+  role                UserRole                 @default(MEMBER)
+  status              UserStatus               @default(ACTIVE)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  createdById         String?
+  createdBy           AppUser?                 @relation("AppUserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers        AppUser[]                @relation("AppUserCreatedBy")
+  disabledAt          DateTime?
+  disabledById        String?
+  disabledBy          AppUser?                 @relation("AppUserDisabledBy", fields: [disabledById], references: [id], onDelete: SetNull)
+  disabledUsers       AppUser[]                @relation("AppUserDisabledBy")
+  lastKnownSignInAt   DateTime?
+  auditEvents         AuditEvent[]
+  permissionOverrides UserPermissionOverride[]
 
   @@index([role, status])
   @@index([createdById])
   @@index([disabledById])
+}
+
+// Permission keys are durable references to the code-controlled registry.
+// A row grants one ordinary permission to a role; missing rows deny it.
+// Protected Owner/system permissions are deliberately rejected by services
+// and are never made configurable through this table.
+model RolePermission {
+  role          UserRole
+  permissionKey String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@id([role, permissionKey])
+  @@index([permissionKey])
+}
+
+// INHERIT is represented by no row. A present row is an explicit ALLOW or
+// DENY, with the compound primary key preventing contradictory duplicates.
+model UserPermissionOverride {
+  userId        String
+  user          AppUser                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionKey String
+  effect        PermissionOverrideEffect
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  @@id([userId, permissionKey])
+  @@index([permissionKey])
 }
 
 // Append-only administrative history. Actor and target snapshots preserve a
