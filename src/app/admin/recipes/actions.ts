@@ -62,7 +62,8 @@ export async function createRecipeAction(formData: FormData) {
   // never relies solely on the admin layout having already run.
   const { user: actor } = await requireContentMutation(
     formData,
-    "content.create"
+    "content.recipes.create",
+    "content.recipes.verify"
   );
 
   const parsed = parseRecipeInput(formData);
@@ -216,7 +217,11 @@ export async function createRecipeAction(formData: FormData) {
 export async function updateRecipeGeneralAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.recipes.edit",
+    "content.recipes.verify"
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -439,7 +444,11 @@ export async function updateRecipeGeneralAction(formData: FormData) {
 export async function updateRecipeIngredientsAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.recipes.edit",
+    "content.recipes.verify"
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -563,7 +572,7 @@ export async function updateRecipeIngredientsAction(formData: FormData) {
 export async function deleteRecipeAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.recipes.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();

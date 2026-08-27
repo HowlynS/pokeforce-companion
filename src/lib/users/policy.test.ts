@@ -2,20 +2,20 @@ import { describe, expect, it } from "vitest";
 import { assignableRoles, canCreateRole, canManageUser } from "./policy";
 
 describe("user-management policy", () => {
-  it("lets Administrators manage only Members and Contributors", () => {
-    expect(canCreateRole("ADMINISTRATOR", "MEMBER")).toBe(true);
-    expect(canCreateRole("ADMINISTRATOR", "CONTRIBUTOR")).toBe(true);
+  it("does not let Administrators assign any role", () => {
+    expect(canCreateRole("ADMINISTRATOR", "MEMBER")).toBe(false);
+    expect(canCreateRole("ADMINISTRATOR", "CONTRIBUTOR")).toBe(false);
     expect(canCreateRole("ADMINISTRATOR", "ADMINISTRATOR")).toBe(false);
     expect(canCreateRole("ADMINISTRATOR", "OWNER")).toBe(false);
   });
 
-  it("lets Owners assign every fixed role", () => {
+  it("lets Owners assign ordinary roles but never OWNER", () => {
     expect(assignableRoles("OWNER")).toEqual([
       "MEMBER",
       "CONTRIBUTOR",
       "ADMINISTRATOR",
-      "OWNER",
     ]);
+    expect(canCreateRole("OWNER", "OWNER")).toBe(false);
   });
 
   it("prohibits self-management and Administrator escalation", () => {
@@ -29,6 +29,12 @@ describe("user-management policy", () => {
       canManageUser(
         { id: "admin", role: "ADMINISTRATOR" },
         { id: "owner", role: "OWNER" }
+      )
+    ).toBe(false);
+    expect(
+      canManageUser(
+        { id: "owner", role: "OWNER" },
+        { id: "other-owner", role: "OWNER" }
       )
     ).toBe(false);
   });

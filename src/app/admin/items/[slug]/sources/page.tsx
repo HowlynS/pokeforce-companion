@@ -270,6 +270,7 @@ export default async function AdminItemSourcesPage({
               are null, so the panel renders Unverified with no stamp
               rows — exactly the state a brand-new source actually has. */}
           <VerificationPanel
+            verificationPermission="content.items.verify"
             gameVersions={gameVersions}
             verifiedAt={null}
             verifiedGameVersion={null}

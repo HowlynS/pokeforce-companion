@@ -28,6 +28,7 @@ import { ContextPanel } from "@/components/admin/context-panel";
 import { DeleteRecordDialog } from "@/components/admin/delete-record-dialog";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { useAdminPermission } from "@/components/admin/admin-authorization";
+import type { PermissionKey } from "@/lib/auth/permission-registry";
 import {
   EDITOR_DIRTY_STATE_EVENT,
   dispatchDeleteDialogState,
@@ -48,6 +49,7 @@ type DangerZonePanelProps = {
       text-danger explanation) the dedicated /delete page also renders. */
   children?: React.ReactNode;
   canDelete: boolean;
+  deletePermission?: PermissionKey;
   /** The existing server action this resource's delete form already
       posted to — unchanged. */
   formAction: (formData: FormData) => void | Promise<void>;
@@ -63,10 +65,11 @@ export function DangerZonePanel({
   dialogDescription,
   children,
   canDelete,
+  deletePermission = "content.items.delete",
   formAction,
   hiddenFields,
 }: DangerZonePanelProps) {
-  const mayDelete = useAdminPermission("content.delete");
+  const mayDelete = useAdminPermission(deletePermission);
   const [open, setOpen] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
 

@@ -62,13 +62,13 @@ describe("ADMIN_NAV_ITEMS", () => {
         label: "Appearance",
         href: "/admin/appearance",
         icon: "appearance",
-        requiredCapability: "appearance.manage",
+        requiredCapability: "site.appearance.manage",
       },
       {
         label: "Design review",
         href: "/admin/design-review",
         icon: "designReview",
-        requiredCapability: "designReview.access",
+        requiredCapability: "site.design-review.view",
       },
       {
         label: "Users & access",
@@ -89,10 +89,15 @@ describe("ADMIN_NAV_ITEMS", () => {
   });
 
   it("filters restricted workspaces from Contributor navigation", () => {
-    expect(filterAdminNavItems(ADMIN_NAV_ITEMS, "CONTRIBUTOR").map((item) => item.label))
+    expect(filterAdminNavItems(ADMIN_NAV_ITEMS, new Set()).map((item) => item.label))
       .not.toContain("Game Versions");
-    expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, "CONTRIBUTOR")).toEqual([]);
-    expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, "ADMINISTRATOR").map((item) => item.label))
+    expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, new Set())).toEqual([]);
+    expect(filterAdminNavItems(SITE_ADMIN_NAV_ITEMS, new Set([
+      "site.appearance.manage" as const,
+      "site.design-review.view" as const,
+      "users.view" as const,
+      "audit.view" as const,
+    ])).map((item) => item.label))
       .toEqual(["Appearance", "Design review", "Users & access", "Audit log"]);
   });
 

@@ -142,6 +142,7 @@ export default async function EditCategoryPage({
           />
 
           <DangerZonePanel
+            deletePermission="content.categories.delete"
             resourceLabel="category"
             deleteLabel="Delete Category"
             dialogTitle="Delete Category"

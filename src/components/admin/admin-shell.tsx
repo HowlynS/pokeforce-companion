@@ -17,6 +17,7 @@ import { designTokens } from "@/lib/design-tokens";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminSuccessToast } from "@/components/admin/admin-success-toast";
 import { requirePermission } from "@/lib/auth/authorization";
+import { effectivePermissionKeys } from "@/lib/auth/permission-resolver";
 import { AdminAuthorizationProvider } from "@/components/admin/admin-authorization";
 import { signOutAction } from "@/app/admin/actions";
 import { getPublishedSiteAppearance } from "@/lib/appearance/public";
@@ -30,7 +31,7 @@ type AdminShellProps = {
 export async function AdminShell({ children }: AdminShellProps) {
   // Cached (React cache()) so this repeats no Supabase lookup beyond the
   // one the /admin layout's own gate already performs for this request.
-  const { identity, user } = await requirePermission("admin.access");
+  const { identity, user, permissionContext } = await requirePermission("admin.access");
   const appearance = await getPublishedSiteAppearance();
   const adminAppearance =
     appearance.admin ?? DEFAULT_SITE_APPEARANCE.admin;
@@ -39,7 +40,10 @@ export async function AdminShell({ children }: AdminShellProps) {
     "/images/admin/admin-shell-background.webp";
 
   return (
-    <AdminAuthorizationProvider role={user.role}>
+    <AdminAuthorizationProvider
+      role={user.role}
+      permissions={effectivePermissionKeys(permissionContext)}
+    >
     <div
       className="admin-shell"
       style={{

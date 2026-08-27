@@ -1,14 +1,18 @@
 import type { UserRole } from "@/lib/auth/roles";
 
-export const ADMINISTRATOR_MANAGED_ROLES = ["MEMBER", "CONTRIBUTOR"] as const;
+export const ORDINARY_USER_ROLES = [
+  "MEMBER",
+  "CONTRIBUTOR",
+  "ADMINISTRATOR",
+] as const;
 
 export function canCreateRole(actorRole: UserRole, requestedRole: UserRole): boolean {
-  return actorRole === "OWNER"
-    ? true
-    : actorRole === "ADMINISTRATOR" &&
-        ADMINISTRATOR_MANAGED_ROLES.includes(
-          requestedRole as (typeof ADMINISTRATOR_MANAGED_ROLES)[number]
-        );
+  return (
+    actorRole === "OWNER" &&
+    ORDINARY_USER_ROLES.includes(
+      requestedRole as (typeof ORDINARY_USER_ROLES)[number]
+    )
+  );
 }
 
 export function canManageUser(
@@ -18,21 +22,11 @@ export function canManageUser(
   if (actor.id === target.id) {
     return false;
   }
-  if (actor.role === "OWNER") {
-    return true;
-  }
-  return (
-    actor.role === "ADMINISTRATOR" &&
-    ADMINISTRATOR_MANAGED_ROLES.includes(
-      target.role as (typeof ADMINISTRATOR_MANAGED_ROLES)[number]
-    )
-  );
+  return actor.role === "OWNER" && target.role !== "OWNER";
 }
 
 export function assignableRoles(actorRole: UserRole): readonly UserRole[] {
   return actorRole === "OWNER"
-    ? ["MEMBER", "CONTRIBUTOR", "ADMINISTRATOR", "OWNER"]
-    : actorRole === "ADMINISTRATOR"
-      ? ADMINISTRATOR_MANAGED_ROLES
-      : [];
+    ? ORDINARY_USER_ROLES
+    : [];
 }

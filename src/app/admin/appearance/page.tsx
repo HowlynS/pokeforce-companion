@@ -38,7 +38,7 @@ type AppearancePageProps = {
 export default async function AppearancePage({
   searchParams,
 }: AppearancePageProps) {
-  await requirePermission("appearance.manage");
+  await requirePermission("site.appearance.manage");
   const { error } = await searchParams;
   const errorMessage = error ? ERROR_MESSAGES[error] ?? "Appearance could not be saved." : null;
   const record = await prisma.siteAppearance.findUnique({

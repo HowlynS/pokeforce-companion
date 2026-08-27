@@ -121,6 +121,7 @@ export default async function EditCurrencyPage({
             formId={FORM_ID}
           />
           <VerificationPanel
+            verificationPermission="content.currencies.verify"
             gameVersions={gameVersions}
             verifiedAt={currency.verifiedAt}
             verifiedGameVersion={currency.verifiedGameVersion}
@@ -131,6 +132,7 @@ export default async function EditCurrencyPage({
             updatedAt={currency.updatedAt}
           />
           <DangerZonePanel
+            deletePermission="content.currencies.delete"
             resourceLabel="currency"
             deleteLabel="Delete Currency"
             dialogTitle="Delete Currency"

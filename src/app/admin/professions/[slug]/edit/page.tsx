@@ -152,6 +152,7 @@ export default async function EditProfessionPage({
           />
 
           <VerificationPanel
+            verificationPermission="content.professions.verify"
             gameVersions={gameVersions}
             verifiedAt={profession.verifiedAt}
             verifiedGameVersion={profession.verifiedGameVersion}
@@ -164,6 +165,7 @@ export default async function EditProfessionPage({
           />
 
           <DangerZonePanel
+            deletePermission="content.professions.delete"
             resourceLabel="profession"
             deleteLabel="Delete Profession"
             dialogTitle="Delete Profession"

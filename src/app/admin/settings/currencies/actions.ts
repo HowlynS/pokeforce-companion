@@ -49,7 +49,8 @@ async function tryDeleteImage(objectPath: string | null): Promise<boolean> {
 export async function createCurrencyAction(formData: FormData) {
   const { user: actor } = await requireContentMutation(
     formData,
-    "content.create"
+    "content.currencies.create",
+    "content.currencies.verify"
   );
   const parsed = parseCurrencyInput(formData);
 
@@ -114,7 +115,11 @@ export async function createCurrencyAction(formData: FormData) {
 }
 
 export async function updateCurrencyAction(formData: FormData) {
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.currencies.edit",
+    "content.currencies.verify"
+  );
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
   const editPath = originalSlug
@@ -212,7 +217,7 @@ export async function updateCurrencyAction(formData: FormData) {
 }
 
 export async function deleteCurrencyAction(formData: FormData) {
-  const { user: actor } = await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.currencies.delete");
   const id = String(formData.get("id") ?? "").trim();
 
   if (!id) {

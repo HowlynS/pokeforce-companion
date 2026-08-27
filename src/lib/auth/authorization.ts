@@ -1,15 +1,17 @@
 import "server-only";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
 import {
   getAuthenticatedIdentity,
   getCurrentAppUser,
 } from "./current-user";
 import {
-  hasAnyPermission,
-  hasPermission,
-  type Capability,
-} from "./permissions";
+  hasEffectivePermission,
+  loadPermissionContext,
+} from "./permission-resolver";
+import type { PermissionKey } from "./permission-registry";
 import { loginPathFor } from "./return-path";
 
 export async function requireSignedInUser(returnTo?: string) {
@@ -34,24 +36,36 @@ export async function requireActiveSiteUser() {
   return { identity, user };
 }
 
-export async function requirePermission(capability: Capability) {
-  const current = await requireActiveSiteUser();
-  if (!hasPermission(current.user.role, capability)) {
+export const getCurrentPermissionContext = cache(
+  async function getCurrentPermissionContext() {
+    const current = await requireActiveSiteUser();
+    const permissionContext = await loadPermissionContext(prisma, current.user);
+    return { ...current, permissionContext };
+  }
+);
+
+export async function requirePermission(capability: PermissionKey) {
+  const current = await getCurrentPermissionContext();
+  if (!hasEffectivePermission(current.permissionContext, capability)) {
     redirect("/access-denied");
   }
   return current;
 }
 
 export async function requireAnyPermission(
-  ...capabilities: readonly Capability[]
+  ...capabilities: readonly PermissionKey[]
 ) {
-  const current = await requireActiveSiteUser();
-  if (!hasAnyPermission(current.user.role, capabilities)) {
+  const current = await getCurrentPermissionContext();
+  if (
+    !capabilities.some((capability) =>
+      hasEffectivePermission(current.permissionContext, capability)
+    )
+  ) {
     redirect("/access-denied");
   }
   return current;
 }
 
 export async function requireOwner() {
-  return requirePermission("owners.manage");
+  return requirePermission("security.ownership.manage");
 }

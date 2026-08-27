@@ -64,7 +64,8 @@ export async function createLocationAction(formData: FormData) {
   // never relies solely on the admin layout having already run.
   const { user: actor } = await requireContentMutation(
     formData,
-    "content.create"
+    "content.locations.create",
+    "content.locations.verify"
   );
 
   const parsed = parseLocationInput(formData);
@@ -181,7 +182,11 @@ export async function createLocationAction(formData: FormData) {
 export async function updateLocationGeneralAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.locations.edit",
+    "content.locations.verify"
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -346,7 +351,11 @@ export async function updateLocationGeneralAction(formData: FormData) {
 export async function updateLocationHierarchyAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.locations.edit",
+    "content.locations.verify"
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const originalSlug = String(formData.get("originalSlug") ?? "").trim();
@@ -434,7 +443,7 @@ export async function updateLocationHierarchyAction(formData: FormData) {
 export async function deleteLocationAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.locations.delete");
 
   const id = String(formData.get("id") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();

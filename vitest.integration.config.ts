@@ -11,6 +11,12 @@ export default defineConfig({
       // Mirrors the "@/*" path alias in tsconfig.json without adding a
       // resolver dependency.
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Integration tests may exercise real server-only services directly.
+      // Next.js replaces this marker while bundling; Vitest needs the same
+      // no-op used by the unit configuration.
+      "server-only": fileURLToPath(
+        new URL("./vitest.server-only-stub.ts", import.meta.url)
+      ),
     },
   },
   test: {

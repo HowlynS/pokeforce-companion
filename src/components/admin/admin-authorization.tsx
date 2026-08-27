@@ -2,38 +2,55 @@
 
 import { createContext, useContext } from "react";
 import type { UserRole } from "@/lib/auth/roles";
-import { hasPermission, type Capability } from "@/lib/auth/permissions";
+import type { PermissionKey } from "@/lib/auth/permission-registry";
+import { PERMISSION_KEYS } from "@/lib/auth/permission-registry";
 
-const AdminRoleContext = createContext<UserRole | null>(null);
+type AdminAuthorization = {
+  role: UserRole;
+  permissions: ReadonlySet<PermissionKey>;
+};
+
+const AdminAuthorizationContext = createContext<AdminAuthorization | null>(null);
 
 export function AdminAuthorizationProvider({
   role,
+  permissions = role === "OWNER" ? PERMISSION_KEYS : [],
   children,
 }: {
   role: UserRole;
+  permissions?: readonly PermissionKey[];
   children: React.ReactNode;
 }) {
   return (
-    <AdminRoleContext.Provider value={role}>
+    <AdminAuthorizationContext.Provider
+      value={{ role, permissions: new Set(permissions) }}
+    >
       {children}
-    </AdminRoleContext.Provider>
+    </AdminAuthorizationContext.Provider>
   );
 }
 
-export function useAdminPermission(capability: Capability): boolean {
-  const role = useAdminRole();
-  return role ? hasPermission(role, capability) : false;
+export function useAdminPermission(capability: PermissionKey): boolean {
+  return useAdminAuthorization()?.permissions.has(capability) ?? false;
 }
 
 export function useAdminRole(): UserRole | null {
-  return useContext(AdminRoleContext);
+  return useAdminAuthorization()?.role ?? null;
+}
+
+export function useAdminPermissions(): ReadonlySet<PermissionKey> {
+  return useAdminAuthorization()?.permissions ?? new Set();
+}
+
+function useAdminAuthorization(): AdminAuthorization | null {
+  return useContext(AdminAuthorizationContext);
 }
 
 export function AdminPermissionBoundary({
   capability,
   children,
 }: {
-  capability: Capability;
+  capability: PermissionKey;
   children: React.ReactNode;
 }) {
   return useAdminPermission(capability) ? children : null;

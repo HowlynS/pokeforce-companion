@@ -132,6 +132,7 @@ export default async function NewLocationPage({
               rows — exactly the state a brand-new Location actually
               has. */}
           <VerificationPanel
+            verificationPermission="content.locations.verify"
             gameVersions={gameVersions}
             verifiedAt={null}
             verifiedGameVersion={null}

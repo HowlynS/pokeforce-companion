@@ -26,7 +26,7 @@ export default async function DeleteCategoryPage({
 }: DeleteCategoryPageProps) {
   // Repeated here deliberately: this page stays protected through the
   // admin layout, but also re-runs the check itself rather than assuming it.
-  await requirePermission("content.delete");
+  await requirePermission("content.categories.delete");
 
   const { slug } = await params;
   const { q, error } = await searchParams;

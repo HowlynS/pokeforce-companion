@@ -85,6 +85,7 @@ export default async function NewCurrencyPage({
         <>
           <ImagePanel imageUrl={null} formId={FORM_ID} />
           <VerificationPanel
+            verificationPermission="content.currencies.verify"
             gameVersions={gameVersions}
             verifiedAt={null}
             verifiedGameVersion={null}

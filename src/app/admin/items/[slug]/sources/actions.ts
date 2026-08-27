@@ -47,7 +47,8 @@ export async function createAcquisitionSourceAction(formData: FormData) {
   // never relies solely on the admin layout having already run.
   const { user: actor } = await requireContentMutation(
     formData,
-    "content.create"
+    "content.items.edit",
+    "content.items.verify"
   );
 
   const itemId = String(formData.get("itemId") ?? "").trim();
@@ -130,7 +131,11 @@ export async function createAcquisitionSourceAction(formData: FormData) {
 export async function updateAcquisitionSourceAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requireContentMutation(formData, "content.edit");
+  const { user: actor } = await requireContentMutation(
+    formData,
+    "content.items.edit",
+    "content.items.verify"
+  );
 
   const id = String(formData.get("id") ?? "").trim();
   const itemSlug = String(formData.get("itemSlug") ?? "").trim();
@@ -242,7 +247,7 @@ export async function updateAcquisitionSourceAction(formData: FormData) {
 export async function deleteAcquisitionSourceAction(formData: FormData) {
   // Repeated here deliberately: every mutation re-checks authorization and
   // never relies solely on the admin layout having already run.
-  const { user: actor } = await requirePermission("content.delete");
+  const { user: actor } = await requirePermission("content.items.edit");
 
   const id = String(formData.get("id") ?? "").trim();
   const itemSlug = String(formData.get("itemSlug") ?? "").trim();

@@ -130,6 +130,7 @@ export default async function NewItemPage({ searchParams }: NewItemPageProps) {
               are null, so the panel renders Unverified with no stamp
               rows — exactly the state a brand-new Item actually has. */}
           <VerificationPanel
+            verificationPermission="content.items.verify"
             gameVersions={gameVersions}
             verifiedAt={null}
             verifiedGameVersion={null}

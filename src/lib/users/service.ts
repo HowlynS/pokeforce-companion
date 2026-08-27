@@ -1,6 +1,5 @@
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { UserRole } from "@/lib/auth/roles";
-import { hasPermission } from "@/lib/auth/permissions";
 import { canCreateRole, canManageUser } from "./policy";
 import { auditActor, writeAuditEvent } from "@/lib/audit/writer";
 
@@ -27,7 +26,7 @@ async function loadActorAndTarget(
     tx.appUser.findUnique({ where: { id: actorId } }),
     tx.appUser.findUnique({ where: { id: targetId } }),
   ]);
-  if (!actor || actor.status !== "ACTIVE" || !hasPermission(actor.role, "users.modify")) {
+  if (!actor || actor.status !== "ACTIVE" || actor.role !== "OWNER") {
     throw new UserManagementError("permission_denied");
   }
   if (!target) {
@@ -39,17 +38,6 @@ async function loadActorAndTarget(
   return { actor, target };
 }
 
-async function ensureAnotherActiveOwner(
-  tx: Prisma.TransactionClient
-) {
-  const activeOwners = await tx.appUser.count({
-    where: { role: "OWNER", status: "ACTIVE" },
-  });
-  if (activeOwners <= 1) {
-    throw new UserManagementError("final_owner");
-  }
-}
-
 export async function validateUserCreation(
   client: PrismaClient,
   actorId: string,
@@ -59,7 +47,6 @@ export async function validateUserCreation(
   if (
     !actor ||
     actor.status !== "ACTIVE" ||
-    !hasPermission(actor.role, "users.create") ||
     !canCreateRole(actor.role, requestedRole)
   ) {
     throw new UserManagementError("permission_denied");
@@ -76,11 +63,8 @@ export async function changeUserRole(
   return client.$transaction(async (tx) => {
     await lockOwnerMutations(tx);
     const { actor, target } = await loadActorAndTarget(tx, actorId, targetId);
-    if (!canCreateRole(actor.role, role)) {
-      throw new UserManagementError("permission_denied");
-    }
-    if (target.role === "OWNER" && role !== "OWNER" && target.status === "ACTIVE") {
-      await ensureAnotherActiveOwner(tx);
+    if (!canCreateRole(actor.role, role) || target.role === "OWNER") {
+      throw new UserManagementError("owner_protected");
     }
     const updated = await tx.appUser.update({
       where: { id: target.id },
@@ -107,13 +91,6 @@ export async function setUserStatus(
   return client.$transaction(async (tx) => {
     await lockOwnerMutations(tx);
     const { actor, target } = await loadActorAndTarget(tx, actorId, targetId);
-    const required = status === "ACTIVE" ? "users.reenable" : "users.disable";
-    if (!hasPermission(actor.role, required)) {
-      throw new UserManagementError("permission_denied");
-    }
-    if (target.role === "OWNER" && target.status === "ACTIVE" && status === "DISABLED") {
-      await ensureAnotherActiveOwner(tx);
-    }
     const updated = await tx.appUser.update({
       where: { id: target.id },
       data:
@@ -137,16 +114,11 @@ export async function setUserStatus(
 export async function validateUserStatusChange(
   client: PrismaClient,
   actorId: string,
-  targetId: string,
-  status: "ACTIVE" | "DISABLED"
+  targetId: string
 ) {
   return client.$transaction(async (tx) => {
     await lockOwnerMutations(tx);
-    const { actor, target } = await loadActorAndTarget(tx, actorId, targetId);
-    const required = status === "ACTIVE" ? "users.reenable" : "users.disable";
-    if (!hasPermission(actor.role, required)) {
-      throw new UserManagementError("permission_denied");
-    }
+    const { target } = await loadActorAndTarget(tx, actorId, targetId);
     return target;
   });
 }
@@ -158,10 +130,7 @@ export async function validatePasswordReset(
 ) {
   return client.$transaction(async (tx) => {
     await lockOwnerMutations(tx);
-    const { actor, target } = await loadActorAndTarget(tx, actorId, targetId);
-    if (!hasPermission(actor.role, "users.password.reset")) {
-      throw new UserManagementError("permission_denied");
-    }
+    const { target } = await loadActorAndTarget(tx, actorId, targetId);
     return target;
   });
 }

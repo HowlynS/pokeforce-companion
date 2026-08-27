@@ -133,7 +133,7 @@ async function cleanupAssets(paths: readonly (string | null | undefined)[]) {
 }
 
 export async function saveAppearanceAction(formData: FormData) {
-  const { user: actor } = await requirePermission("appearance.manage");
+  const { user: actor } = await requirePermission("site.appearance.manage");
 
   const existing = await prisma.siteAppearance.findUnique({
     where: { id: SITE_APPEARANCE_ID },

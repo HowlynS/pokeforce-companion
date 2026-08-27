@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth/authorization";
+import { requireOwner } from "@/lib/auth/authorization";
 import { isUserRole } from "@/lib/auth/roles";
 import { normalizeEmail } from "@/lib/auth/bootstrap-owner";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -36,7 +36,7 @@ function managementErrorPath(error: unknown): string {
 }
 
 export async function createUserAction(formData: FormData) {
-  const { user: actor } = await requirePermission("users.create");
+  const { user: actor } = await requireOwner();
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   const displayName = String(formData.get("displayName") ?? "").trim();
   const password = String(formData.get("temporaryPassword") ?? "");
@@ -127,7 +127,7 @@ export async function createUserAction(formData: FormData) {
 }
 
 export async function changeUserRoleAction(formData: FormData) {
-  const { user: actor } = await requirePermission("users.modify");
+  const { user: actor } = await requireOwner();
   const targetId = String(formData.get("userId") ?? "");
   const role = String(formData.get("role") ?? "");
   if (!targetId) redirect(`${USERS_PATH}?error=missing_user`);
@@ -146,7 +146,7 @@ export async function changeUserRoleAction(formData: FormData) {
 }
 
 export async function setUserStatusAction(formData: FormData) {
-  const { user: actor } = await requirePermission("users.modify");
+  const { user: actor } = await requireOwner();
   const targetId = String(formData.get("userId") ?? "");
   const requestedStatus = String(formData.get("status") ?? "");
   if (!targetId) redirect(`${USERS_PATH}?error=missing_user`);
@@ -162,8 +162,7 @@ export async function setUserStatusAction(formData: FormData) {
     target = await validateUserStatusChange(
       prisma,
       actor.id,
-      targetId,
-      requestedStatus
+      targetId
     );
   } catch (error) {
     redirect(managementErrorPath(error));
@@ -206,7 +205,7 @@ export async function setUserStatusAction(formData: FormData) {
 }
 
 export async function resetUserPasswordAction(formData: FormData) {
-  const { user: actor } = await requirePermission("users.password.reset");
+  const { user: actor } = await requireOwner();
   const targetId = String(formData.get("userId") ?? "");
   const password = String(formData.get("temporaryPassword") ?? "");
   if (!targetId) redirect(`${USERS_PATH}?error=missing_user`);

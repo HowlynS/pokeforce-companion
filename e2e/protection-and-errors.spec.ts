@@ -144,7 +144,10 @@ test.describe("unauthenticated admin protection", () => {
     test(`${route} redirects to the login page`, async ({ page }) => {
       await page.goto(route);
 
-      await expect(page).toHaveURL(/\/login\?next=/);
+      // With the shared public baseline, the admin layout's dynamic
+      // permission gate owns this redirect. Route-preserving `next` belongs
+      // to the separate private-site proxy gate covered above.
+      await expect(page).toHaveURL("/login");
       await expect(
         page.getByRole("heading", { level: 1, name: "Private beta sign-in" })
       ).toBeVisible();

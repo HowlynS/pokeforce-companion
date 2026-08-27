@@ -189,6 +189,7 @@ export default async function EditRecipePage({
           />
 
           <VerificationPanel
+            verificationPermission="content.recipes.verify"
             gameVersions={gameVersions}
             verifiedAt={recipe.verifiedAt}
             verifiedGameVersion={recipe.verifiedGameVersion}
@@ -201,6 +202,7 @@ export default async function EditRecipePage({
           />
 
           <DangerZonePanel
+            deletePermission="content.recipes.delete"
             resourceLabel="recipe"
             deleteLabel="Delete Recipe"
             dialogTitle="Delete Recipe"

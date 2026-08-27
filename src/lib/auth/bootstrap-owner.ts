@@ -55,6 +55,15 @@ export async function resolveApplicationUserForIdentity(
     const byEmail = await tx.appUser.findUnique({
       where: { email: normalizedEmail },
     });
+    const existingOwner = await tx.appUser.findFirst({
+      where: {
+        role: "OWNER",
+        ...(byEmail ? { id: { not: byEmail.id } } : {}),
+      },
+    });
+    if (existingOwner) {
+      throw new Error("owner_already_exists");
+    }
     if (byEmail) {
       const reconciled = await tx.appUser.update({
         where: { id: byEmail.id },

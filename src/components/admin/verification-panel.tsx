@@ -25,6 +25,7 @@ import {
 import { formatDisplayDate } from "@/lib/format-date";
 import { SECTION_ICONS } from "@/lib/admin/section-icons";
 import { AdminPermissionBoundary } from "@/components/admin/admin-authorization";
+import type { PermissionKey } from "@/lib/auth/permission-registry";
 
 type VerificationPanelProps = {
   /** Every Game Version, current first — the same list the picker uses. */
@@ -39,6 +40,7 @@ type VerificationPanelProps = {
       status badge and the read-only rows below it (the read-only
       Metadata-style surfaces still using this panel). */
   readOnly?: boolean;
+  verificationPermission?: PermissionKey;
 };
 
 const STATUS_BADGE_CLASSES = {
@@ -53,6 +55,7 @@ export function VerificationPanel({
   verifiedGameVersion,
   formId,
   readOnly = false,
+  verificationPermission = "content.items.verify",
 }: VerificationPanelProps) {
   const currentVersion = gameVersions.find((version) => version.isCurrent);
 
@@ -72,7 +75,7 @@ export function VerificationPanel({
       icon={SECTION_ICONS.verification}
       footer={
         readOnly ? null : (
-          <AdminPermissionBoundary capability="content.verify">
+          <AdminPermissionBoundary capability={verificationPermission}>
             <GameVersionVerificationControls
               gameVersions={gameVersions}
               formId={formId}
