@@ -64,12 +64,16 @@ export type UserPermissionReadModel = Readonly<{
   user: PermissionUser;
   ownerProtected: boolean;
   groups: readonly GroupedPermissionReadModel<PersonalPermissionRowReadModel>[];
+  protectedPermissions: readonly UserProtectedPermissionReadModel[];
 }>;
 
 export type ProtectedPermissionReadModel = PermissionDefinitionReadModel &
   Readonly<{
     protection: "OWNER_SYSTEM";
   }>;
+
+export type UserProtectedPermissionReadModel = ProtectedPermissionReadModel &
+  Readonly<{ effective: boolean }>;
 
 type PermissionReadClient = Pick<
   Prisma.TransactionClient,
@@ -173,6 +177,11 @@ export function buildUserPermissionReadModel(
     user: context.user,
     ownerProtected: context.user.role === "OWNER",
     groups: groupRows(rows),
+    protectedPermissions: PROTECTED_PERMISSION_KEYS.map((key) => ({
+      ...definitionFor(key),
+      protection: "OWNER_SYSTEM" as const,
+      effective: hasEffectivePermission(context, key),
+    })),
   };
 }
 

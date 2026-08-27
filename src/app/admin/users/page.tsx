@@ -175,25 +175,25 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                     <th>Role</th>
                     <th>Status</th>
                     <th>Last activity</th>
-                    <th>
-                      <span className="visually-hidden">Open member</span>
-                    </th>
+                    <th>Open</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((target) => (
                     <tr key={target.id}>
                       <td>
-                        <strong>{target.displayName || target.email}</strong>
-                        {target.displayName ? (
-                          <span className="admin-table-meta">{target.email}</span>
-                        ) : null}
-                        <span className="admin-table-meta">
-                          Created {formatDisplayDate(target.createdAt)}
-                          {target.createdBy
-                            ? ` by ${target.createdBy.displayName || target.createdBy.email}`
-                            : ""}
-                        </span>
+                        <div className="security-directory-identity">
+                          <strong>{target.displayName || target.email}</strong>
+                          {target.displayName ? (
+                            <span className="admin-table-meta">{target.email}</span>
+                          ) : null}
+                          <span className="admin-table-meta">
+                            Created {formatDisplayDate(target.createdAt)}
+                            {target.createdBy
+                              ? ` by ${target.createdBy.displayName || target.createdBy.email}`
+                              : ""}
+                          </span>
+                        </div>
                       </td>
                       <td>{USER_ROLE_LABELS[target.role]}</td>
                       <td>

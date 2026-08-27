@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updatePersonalPermissionAction } from "@/app/admin/users/permission-actions";
 import type {
@@ -31,16 +31,29 @@ export function PersonalPermissionControl({
   editable: boolean;
 }) {
   const router = useRouter();
+  const optionRefs = useRef<
+    Partial<Record<PersonalPermissionSetting, HTMLButtonElement | null>>
+  >({});
+  const restoreFocusRef = useRef<PersonalPermissionSetting | null>(null);
   const [pending, startTransition] = useTransition();
   const [saveState, setSaveState] = useState<SaveState>({
     tone: "idle",
     message: "",
   });
 
+  useLayoutEffect(() => {
+    const setting = restoreFocusRef.current;
+    if (setting) {
+      optionRefs.current[setting]?.focus();
+      restoreFocusRef.current = null;
+    }
+  }, [permission.personalSetting]);
+
   function select(setting: PersonalPermissionSetting) {
     if (setting === permission.personalSetting) {
       return;
     }
+    restoreFocusRef.current = setting;
     setSaveState({ tone: "idle", message: "" });
     startTransition(async () => {
       const formData = new FormData();
@@ -50,6 +63,7 @@ export function PersonalPermissionControl({
       const result = await updatePersonalPermissionAction(formData);
 
       if (!result.ok) {
+        restoreFocusRef.current = null;
         setSaveState({ tone: "error", message: result.error });
         return;
       }
@@ -59,6 +73,7 @@ export function PersonalPermissionControl({
         message: result.changed ? "Saved" : "Already up to date",
       });
       router.refresh();
+      requestAnimationFrame(() => optionRefs.current[setting]?.focus());
     });
   }
 
@@ -94,6 +109,9 @@ export function PersonalPermissionControl({
       >
         {SETTINGS.map((setting) => (
           <button
+            ref={(node) => {
+              optionRefs.current[setting.value] = node;
+            }}
             key={setting.value}
             type="button"
             className="security-personal-option"
@@ -105,7 +123,11 @@ export function PersonalPermissionControl({
           </button>
         ))}
       </div>
-      {saveState.message ? (
+      {pending ? (
+        <span className="security-control-message" role="status">
+          Saving…
+        </span>
+      ) : saveState.message ? (
         <span
           className={`security-control-message security-control-message--${saveState.tone}`}
           role={saveState.tone === "error" ? "alert" : "status"}

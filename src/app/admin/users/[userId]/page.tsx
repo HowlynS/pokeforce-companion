@@ -8,7 +8,6 @@ import { requirePermission } from "@/lib/auth/authorization";
 import { hasEffectivePermission } from "@/lib/auth/permission-resolver";
 import {
   loadUserPermissionReadModel,
-  protectedPermissionReadModel,
   type PersonalPermissionRowReadModel,
 } from "@/lib/auth/permission-read-model";
 import { USER_ROLE_LABELS } from "@/lib/auth/roles";
@@ -67,7 +66,6 @@ export default async function MemberDetailPage({
   }
 
   const model = await loadUserPermissionReadModel(prisma, target);
-  const protectedPermissions = protectedPermissionReadModel();
   const manageable = canManageUser(actor, target);
   const canManageRole =
     manageable &&
@@ -402,7 +400,7 @@ export default async function MemberDetailPage({
         className="security-protected-section"
       >
         <div className="security-permission-list">
-          {protectedPermissions.map((permission) => (
+          {model.protectedPermissions.map((permission) => (
             <div className="security-permission-row" key={permission.key}>
               <div className="security-permission-copy">
                 <div className="security-permission-name-row">
@@ -413,12 +411,12 @@ export default async function MemberDetailPage({
               </div>
               <span
                 className={
-                  model.ownerProtected
+                  permission.effective
                     ? "security-state-badge security-state-badge--allowed"
                     : "security-state-badge"
                 }
               >
-                {model.ownerProtected ? "Allowed to Owner" : "Not delegated"}
+                {permission.effective ? "Allowed to Owner" : "Not delegated"}
               </span>
             </div>
           ))}

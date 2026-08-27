@@ -200,6 +200,25 @@ export async function cleanupPermissionMemberFixture(): Promise<void> {
   });
 }
 
+export async function resetRolePermissionFixture(): Promise<void> {
+  await withVerifiedDatabase(async (client) => {
+    await client.query(
+      `DELETE FROM "RolePermission"
+       WHERE "role" = 'MEMBER' AND "permissionKey" = 'admin.access'`
+    );
+    await client.query(
+      `DELETE FROM "AuditEvent"
+       WHERE "targetType" = 'ROLE'
+         AND "targetId" = 'MEMBER'
+         AND "action" IN (
+           'security.role_permission_grant',
+           'security.role_permission_revoke'
+         )
+         AND "metadata" ->> 'permissionKey' = 'admin.access'`
+    );
+  });
+}
+
 const E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH =
   "items/test-e2e-public-item-detail.png";
 const E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH =

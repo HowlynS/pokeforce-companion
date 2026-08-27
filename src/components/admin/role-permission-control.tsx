@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type {
   OrdinaryUserRole,
@@ -23,14 +23,24 @@ export function RolePermissionControl({
   editable: boolean;
 }) {
   const router = useRouter();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusRef = useRef(false);
   const [saveState, setSaveState] = useState<SaveState>({
     tone: "idle",
     message: "",
   });
   const [pending, startTransition] = useTransition();
 
+  useLayoutEffect(() => {
+    if (restoreFocusRef.current) {
+      buttonRef.current?.focus();
+      restoreFocusRef.current = false;
+    }
+  }, [permission.granted]);
+
   function toggle() {
     const nextGranted = !permission.granted;
+    restoreFocusRef.current = true;
     setSaveState({ tone: "idle", message: "" });
     startTransition(async () => {
       const formData = new FormData();
@@ -40,6 +50,7 @@ export function RolePermissionControl({
       const result = await updateRolePermissionAction(formData);
 
       if (!result.ok) {
+        restoreFocusRef.current = false;
         setSaveState({ tone: "error", message: result.error });
         return;
       }
@@ -49,6 +60,7 @@ export function RolePermissionControl({
         message: result.changed ? "Saved" : "Already up to date",
       });
       router.refresh();
+      requestAnimationFrame(() => buttonRef.current?.focus());
     });
   }
 
@@ -59,6 +71,7 @@ export function RolePermissionControl({
     >
       {editable ? (
         <button
+          ref={buttonRef}
           type="button"
           className="security-permission-toggle"
           aria-pressed={permission.granted}

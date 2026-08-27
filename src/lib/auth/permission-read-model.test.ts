@@ -88,6 +88,8 @@ describe("permission editor read models", () => {
       effective: true,
       effectiveSource: "ROLE",
     });
+    expect(model.protectedPermissions.every(({ effective }) => !effective))
+      .toBe(true);
   });
 
   it("presents Owner authority as protected and resolver-effective", () => {
@@ -104,6 +106,8 @@ describe("permission editor read models", () => {
     expect(model.ownerProtected).toBe(true);
     expect(rows.every(({ effective }) => effective)).toBe(true);
     expect(rows.every(({ effectiveSource }) => effectiveSource === "OWNER"))
+      .toBe(true);
+    expect(model.protectedPermissions.every(({ effective }) => effective))
       .toBe(true);
   });
 });

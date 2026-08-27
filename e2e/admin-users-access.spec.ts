@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   cleanupPermissionMemberFixture,
   ensurePermissionMemberFixture,
+  resetRolePermissionFixture,
 } from "./helpers/database-cleanup";
 
 test("Owner can open Users & access without exposing credentials", async ({ page }) => {
@@ -52,6 +53,7 @@ test("Owner can inspect a member and change a personal override", async ({
       "aria-pressed",
       "true"
     );
+    await expect(personal.getByRole("button", { name: "Deny" })).toBeFocused();
     await expect(permission).toContainText("Personal deny");
     await expect(permission).toContainText("Denied");
 
@@ -60,6 +62,7 @@ test("Owner can inspect a member and change a personal override", async ({
       "aria-pressed",
       "true"
     );
+    await expect(personal.getByRole("button", { name: "Inherit" })).toBeFocused();
     await expect(permission).toContainText("Role allows");
     await expect(permission).toContainText("Allowed");
   } finally {
@@ -91,4 +94,32 @@ test("Owner can inspect registry-derived role policy and protected safeguards", 
   await expect(
     page.getByText("Manage Member Roles", { exact: true })
   ).toHaveCount(1);
+});
+
+test("Owner can change role policy without losing selection or focus", async ({
+  page,
+}) => {
+  await resetRolePermissionFixture();
+
+  try {
+    await page.goto("/admin/users/roles?role=MEMBER");
+    const allow = page.getByRole("button", {
+      name: "Allow Access the Admin Workspace for Member",
+    });
+    await expect(allow).toHaveAttribute("aria-pressed", "false");
+    await allow.click();
+
+    const remove = page.getByRole("button", {
+      name: "Remove Access the Admin Workspace for Member",
+    });
+    await expect(remove).toHaveAttribute("aria-pressed", "true");
+    await expect(remove).toBeFocused();
+    await expect(page).toHaveURL(/\/admin\/users\/roles\?role=MEMBER$/);
+
+    await remove.click();
+    await expect(allow).toHaveAttribute("aria-pressed", "false");
+    await expect(allow).toBeFocused();
+  } finally {
+    await resetRolePermissionFixture();
+  }
 });

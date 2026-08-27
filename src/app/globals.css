@@ -12198,6 +12198,7 @@ input[type="checkbox"] {
 
 .security-directory-tools {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   min-width: 0;
 }
@@ -12215,6 +12216,22 @@ input[type="checkbox"] {
   width: 1%;
   white-space: nowrap;
   text-align: right;
+}
+
+.security-directory-table .admin-table-meta {
+  display: block;
+  margin-top: 3px;
+  white-space: normal;
+}
+
+.security-directory-identity {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.security-directory-identity .admin-table-meta {
+  margin-top: 0;
 }
 
 .security-visibility-summary {
@@ -12435,6 +12452,10 @@ input[type="checkbox"] {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .security-directory-tools {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .security-permission-groups--personal {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -12455,9 +12476,16 @@ input[type="checkbox"] {
 }
 
 @media (min-width: 1700px) {
-  .security-permission-groups {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+  .security-permission-groups:not(.security-permission-groups--personal) {
+    display: block;
+    columns: 2;
+    column-gap: 20px;
+  }
+
+  .security-permission-groups:not(.security-permission-groups--personal)
+    > .admin-editor-section {
+    break-inside: avoid;
+    margin-bottom: 20px;
   }
 }
 
@@ -12479,6 +12507,7 @@ input[type="checkbox"] {
   }
 
   .security-directory-filters,
+  .security-directory-tools,
   .security-account-facts,
   .security-personal-permission-row {
     grid-template-columns: minmax(0, 1fr);

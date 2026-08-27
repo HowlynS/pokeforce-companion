@@ -690,6 +690,33 @@ Owner-only visibility control that states both stored and effective mode.
 Audit log is append-only, newest first, filterable, and presents readable
 field summaries instead of raw JSON as its primary interface.
 
+### Users & access permission workbench
+
+Users & access is a scan-and-open directory, not an inline ACL table. The
+member table owns search, role/status filters, account identity, state, recent
+activity, and one explicit Open action. Account role/status/password controls
+belong on the selected member detail page. Account creation and site visibility
+remain compact Owner-only directory tools; users who hold only `users.view`
+see neither mutation surface.
+
+`Members` and `Role policies` are link-based workspace tabs. Role policies use
+three compact role selectors and registry-ordered permission groups. Each
+ordinary permission appears exactly once with its registry label and
+description, plus one server-backed allowed/not-allowed control for Owners or
+a static state for read-only viewers. Protected permissions live in a separate
+Owner/system safeguard section and never render as toggles.
+
+Member detail makes inheritance the focal relationship: every ordinary row
+shows `Role setting → Personal → Effective` together. Personal state is the
+three-way `Inherit / Allow / Deny` segmented control; Inherit means no stored
+override row. Effective state and its provenance come from the canonical
+resolver, never client-side permission math. Owner accounts replace every
+mutation control with read-only system authority. Use quiet bordered surfaces,
+restrained gold for selected/allowed controls, green/red only for the final
+effective result, and stack the inheritance columns without horizontal
+overflow at narrow widths. Pending, success, and error feedback stays inline
+with the control and focus remains on the changed button after refresh.
+
 Latest clean visual baseline commit: `8ec557e`. Later access-control commits
 intentionally leave the current public visual design unchanged.
 
