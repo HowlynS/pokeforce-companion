@@ -160,6 +160,46 @@ export const E2E_PUBLIC_PROFESSION_DETAIL_SLUG_PREFIX =
 export const E2E_PUBLIC_VERIFICATION_SLUG_PREFIX =
   "test-e2e-public-verification";
 
+export const E2E_PERMISSION_MEMBER_ID = "test-e2e-permission-member";
+export const E2E_PERMISSION_MEMBER_EMAIL =
+  "test-e2e-permission-member@example.invalid";
+
+export async function ensurePermissionMemberFixture(): Promise<void> {
+  await withVerifiedDatabase(async (client) => {
+    await client.query(
+      `INSERT INTO "AppUser"
+        ("id", "authUserId", "email", "displayName", "role", "status", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, 'Permission Fixture', 'MEMBER', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       ON CONFLICT ("email") DO UPDATE SET
+         "displayName" = EXCLUDED."displayName",
+         "role" = 'MEMBER',
+         "status" = 'ACTIVE',
+         "updatedAt" = CURRENT_TIMESTAMP`,
+      [
+        E2E_PERMISSION_MEMBER_ID,
+        "00000000-0000-4000-8000-000000000099",
+        E2E_PERMISSION_MEMBER_EMAIL,
+      ]
+    );
+    await client.query(
+      `DELETE FROM "UserPermissionOverride" WHERE "userId" = $1`,
+      [E2E_PERMISSION_MEMBER_ID]
+    );
+  });
+}
+
+export async function cleanupPermissionMemberFixture(): Promise<void> {
+  await withVerifiedDatabase(async (client) => {
+    await client.query(
+      `DELETE FROM "AuditEvent" WHERE "targetId" = $1`,
+      [E2E_PERMISSION_MEMBER_ID]
+    );
+    await client.query(`DELETE FROM "AppUser" WHERE "id" = $1`, [
+      E2E_PERMISSION_MEMBER_ID,
+    ]);
+  });
+}
+
 const E2E_PUBLIC_ITEM_DETAIL_IMAGE_PATH =
   "items/test-e2e-public-item-detail.png";
 const E2E_PUBLIC_RECIPE_DETAIL_IMAGE_PATH =

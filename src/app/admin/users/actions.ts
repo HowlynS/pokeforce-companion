@@ -20,6 +20,10 @@ import {
   validateUserCreation,
 } from "@/lib/users/service";
 import { auditActor, writeAuditEvent } from "@/lib/audit/writer";
+import {
+  adminUserResultPath,
+  adminUserReturnPath,
+} from "@/lib/users/admin-return-path";
 
 const USERS_PATH = "/admin/users";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,11 +32,14 @@ function validPassword(password: string): boolean {
   return password.length >= 12 && password.length <= 128;
 }
 
-function managementErrorPath(error: unknown): string {
+function managementErrorPath(
+  error: unknown,
+  basePath: string = USERS_PATH
+): string {
   if (error instanceof UserManagementError) {
-    return `${USERS_PATH}?error=${error.code}`;
+    return adminUserResultPath(basePath, "error", error.code);
   }
-  return `${USERS_PATH}?error=operation_failed`;
+  return adminUserResultPath(basePath, "error", "operation_failed");
 }
 
 export async function createUserAction(formData: FormData) {
@@ -129,32 +136,34 @@ export async function createUserAction(formData: FormData) {
 export async function changeUserRoleAction(formData: FormData) {
   const { user: actor } = await requireOwner();
   const targetId = String(formData.get("userId") ?? "");
+  const returnPath = adminUserReturnPath(targetId, formData.get("returnTo"));
   const role = String(formData.get("role") ?? "");
-  if (!targetId) redirect(`${USERS_PATH}?error=missing_user`);
-  if (!isUserRole(role)) redirect(`${USERS_PATH}?error=invalid_role`);
+  if (!targetId) redirect(adminUserResultPath(returnPath, "error", "missing_user"));
+  if (!isUserRole(role)) redirect(adminUserResultPath(returnPath, "error", "invalid_role"));
   if (formData.get("confirmed") !== "on") {
-    redirect(`${USERS_PATH}?error=confirmation_required`);
+    redirect(adminUserResultPath(returnPath, "error", "confirmation_required"));
   }
 
   try {
     await changeUserRole(prisma, actor.id, targetId, role);
   } catch (error) {
-    redirect(managementErrorPath(error));
+    redirect(managementErrorPath(error, returnPath));
   }
-  revalidatePath(USERS_PATH);
-  redirect(`${USERS_PATH}?success=role_changed`);
+  revalidatePath(USERS_PATH, "layout");
+  redirect(adminUserResultPath(returnPath, "success", "role_changed"));
 }
 
 export async function setUserStatusAction(formData: FormData) {
   const { user: actor } = await requireOwner();
   const targetId = String(formData.get("userId") ?? "");
+  const returnPath = adminUserReturnPath(targetId, formData.get("returnTo"));
   const requestedStatus = String(formData.get("status") ?? "");
-  if (!targetId) redirect(`${USERS_PATH}?error=missing_user`);
+  if (!targetId) redirect(adminUserResultPath(returnPath, "error", "missing_user"));
   if (requestedStatus !== "ACTIVE" && requestedStatus !== "DISABLED") {
-    redirect(`${USERS_PATH}?error=invalid_status`);
+    redirect(adminUserResultPath(returnPath, "error", "invalid_status"));
   }
   if (formData.get("confirmed") !== "on") {
-    redirect(`${USERS_PATH}?error=confirmation_required`);
+    redirect(adminUserResultPath(returnPath, "error", "confirmation_required"));
   }
 
   let target;
@@ -165,72 +174,73 @@ export async function setUserStatusAction(formData: FormData) {
       targetId
     );
   } catch (error) {
-    redirect(managementErrorPath(error));
+    redirect(managementErrorPath(error, returnPath));
   }
 
   let admin;
   try {
     admin = createSupabaseAdminClient();
   } catch {
-    redirect(`${USERS_PATH}?error=service_unavailable`);
+    redirect(adminUserResultPath(returnPath, "error", "service_unavailable"));
   }
 
   if (requestedStatus === "ACTIVE") {
     const { error } = await admin.auth.admin.updateUserById(target.authUserId, {
       ban_duration: "none",
     });
-    if (error) redirect(`${USERS_PATH}?error=reenable_failed`);
+    if (error) redirect(adminUserResultPath(returnPath, "error", "reenable_failed"));
   }
 
   try {
     await setUserStatus(prisma, actor.id, targetId, requestedStatus);
   } catch (error) {
-    redirect(managementErrorPath(error));
+    redirect(managementErrorPath(error, returnPath));
   }
 
   if (requestedStatus === "DISABLED") {
     const { error } = await admin.auth.admin.updateUserById(target.authUserId, {
       ban_duration: "876000h",
     });
-    revalidatePath(USERS_PATH);
+    revalidatePath(USERS_PATH, "layout");
     redirect(
       error
-        ? `${USERS_PATH}?success=user_disabled_session_warning`
-        : `${USERS_PATH}?success=user_disabled`
+        ? adminUserResultPath(returnPath, "success", "user_disabled_session_warning")
+        : adminUserResultPath(returnPath, "success", "user_disabled")
     );
   }
 
-  revalidatePath(USERS_PATH);
-  redirect(`${USERS_PATH}?success=user_reenabled`);
+  revalidatePath(USERS_PATH, "layout");
+  redirect(adminUserResultPath(returnPath, "success", "user_reenabled"));
 }
 
 export async function resetUserPasswordAction(formData: FormData) {
   const { user: actor } = await requireOwner();
   const targetId = String(formData.get("userId") ?? "");
+  const returnPath = adminUserReturnPath(targetId, formData.get("returnTo"));
   const password = String(formData.get("temporaryPassword") ?? "");
-  if (!targetId) redirect(`${USERS_PATH}?error=missing_user`);
-  if (!validPassword(password)) redirect(`${USERS_PATH}?error=invalid_password`);
+  if (!targetId) redirect(adminUserResultPath(returnPath, "error", "missing_user"));
+  if (!validPassword(password)) redirect(adminUserResultPath(returnPath, "error", "invalid_password"));
   if (formData.get("confirmed") !== "on") {
-    redirect(`${USERS_PATH}?error=confirmation_required`);
+    redirect(adminUserResultPath(returnPath, "error", "confirmation_required"));
   }
 
   let target;
   try {
     target = await validatePasswordReset(prisma, actor.id, targetId);
   } catch (error) {
-    redirect(managementErrorPath(error));
+    redirect(managementErrorPath(error, returnPath));
   }
 
   let admin;
   try {
     admin = createSupabaseAdminClient();
   } catch {
-    redirect(`${USERS_PATH}?error=service_unavailable`);
+    redirect(adminUserResultPath(returnPath, "error", "service_unavailable"));
   }
   const { error } = await admin.auth.admin.updateUserById(target.authUserId, {
     password,
   });
-  if (error) redirect(`${USERS_PATH}?error=password_reset_failed`);
+  if (error) redirect(adminUserResultPath(returnPath, "error", "password_reset_failed"));
 
   await writeAuditEvent(prisma, {
     actor: auditActor(actor),
@@ -241,6 +251,6 @@ export async function resetUserPasswordAction(formData: FormData) {
     metadata: { administrative: true },
   });
 
-  revalidatePath(USERS_PATH);
-  redirect(`${USERS_PATH}?success=password_reset`);
+  revalidatePath(USERS_PATH, "layout");
+  redirect(adminUserResultPath(returnPath, "success", "password_reset"));
 }
