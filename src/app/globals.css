@@ -11947,6 +11947,275 @@ input[type="checkbox"] {
   align-items: start;
 }
 
+/* Users & access permission workbench. This is a dense policy ledger, not a
+   generic settings form: role context stays fixed above grouped registry rows,
+   while every row keeps its explanation and server-backed state together. */
+.security-page-intro {
+  max-width: 760px;
+  margin: -4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.security-role-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.security-role-selector-link {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.security-role-selector-link:hover,
+.security-role-selector-link:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-soft);
+}
+
+.security-role-selector-link[aria-current="page"] {
+  border-color: var(--color-accent);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.security-role-selector-link span {
+  font-weight: 700;
+}
+
+.security-role-selector-link small {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.security-permission-groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.security-permission-groups > .admin-editor-section {
+  margin-bottom: 0;
+}
+
+.security-permission-list {
+  display: grid;
+}
+
+.security-permission-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(156px, auto);
+  align-items: center;
+  gap: 16px 24px;
+  min-width: 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--color-border-muted);
+}
+
+.security-permission-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.security-permission-row:last-child {
+  padding-bottom: 0;
+}
+
+.security-permission-copy,
+.security-permission-name-row {
+  min-width: 0;
+}
+
+.security-permission-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.security-permission-copy strong {
+  font-size: 14px;
+}
+
+.security-permission-copy p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.security-risk-label,
+.security-protected-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid rgba(217, 149, 65, 0.45);
+  border-radius: 999px;
+  color: var(--color-warning, #d99541);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.security-protected-label {
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.security-permission-control {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.security-permission-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  min-width: 142px;
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.security-permission-toggle:hover:not(:disabled),
+.security-permission-toggle:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.security-permission-toggle[aria-pressed="true"] {
+  border-color: rgba(216, 181, 98, 0.55);
+  color: var(--color-accent-soft);
+}
+
+.security-permission-toggle:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.security-permission-toggle-track {
+  position: relative;
+  width: 30px;
+  height: 16px;
+  flex: 0 0 30px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.security-permission-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.security-permission-toggle[aria-pressed="true"]
+  .security-permission-toggle-track {
+  background: rgba(216, 181, 98, 0.3);
+}
+
+.security-permission-toggle[aria-pressed="true"]
+  .security-permission-toggle-thumb {
+  background: var(--color-accent);
+  transform: translateX(14px);
+}
+
+.security-state-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.security-state-badge--allowed {
+  border-color: rgba(216, 181, 98, 0.45);
+  color: var(--color-accent-soft);
+}
+
+.security-control-message {
+  min-height: 16px;
+  font-size: 11px;
+}
+
+.security-control-message--success {
+  color: var(--color-success, #75b887);
+}
+
+.security-control-message--error {
+  max-width: 220px;
+  color: var(--color-error, #e07878);
+  text-align: right;
+}
+
+.security-protected-section {
+  margin-top: 24px;
+}
+
+@media (min-width: 1700px) {
+  .security-permission-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .security-role-selector {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .security-permission-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .security-permission-control {
+    justify-items: start;
+  }
+
+  .security-state-badge {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .security-role-selector-link,
+  .security-permission-toggle,
+  .security-permission-toggle-thumb {
+    transition: none;
+  }
+}
+
 @media (min-width: 1700px) {
   .admin-gameversions-layout {
     grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);

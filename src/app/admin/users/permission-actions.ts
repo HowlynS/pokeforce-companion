@@ -51,7 +51,7 @@ export async function updateRolePermissionAction(
       formData.get("permissionKey"),
       operation === "grant"
     );
-    revalidatePath("/admin/users");
+    revalidatePath("/admin/users", "layout");
     return { ok: true, changed: result.changed };
   } catch (error) {
     return friendlySecurityError(error);
@@ -73,7 +73,7 @@ export async function updatePersonalPermissionAction(
       formData.get("permissionKey"),
       effect
     );
-    revalidatePath("/admin/users");
+    revalidatePath("/admin/users", "layout");
     return { ok: true, changed: result.changed };
   } catch (error) {
     return friendlySecurityError(error);

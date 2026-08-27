@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EditorSection } from "@/components/admin/editor-section";
 import { AdminSelect } from "@/components/admin/admin-select";
 import { EmptyState } from "@/components/ui/empty-state";
+import { UsersAccessTabs } from "@/components/admin/users-access-tabs";
 import { requirePermission } from "@/lib/auth/authorization";
 import { USER_ROLES, USER_ROLE_LABELS, type UserRole } from "@/lib/auth/roles";
 import { prisma } from "@/lib/db";
@@ -120,6 +121,8 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
 
       {errorMessage ? <p role="alert" className="banner banner-error">{errorMessage}</p> : null}
       {successMessage ? <p role="status" className="banner banner-success">{successMessage}</p> : null}
+
+      <UsersAccessTabs active="members" />
 
       <div className="admin-gameversions-layout">
         <EditorSection title="Approved accounts" icon={SECTION_ICONS.identity}>

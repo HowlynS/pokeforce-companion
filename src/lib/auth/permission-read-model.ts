@@ -76,6 +76,17 @@ type PermissionReadClient = Pick<
   "rolePermission" | "userPermissionOverride"
 >;
 
+export function ordinaryRoleFrom(
+  value: unknown,
+  fallback: OrdinaryUserRole = "MEMBER"
+): OrdinaryUserRole {
+  return value === "MEMBER" ||
+    value === "CONTRIBUTOR" ||
+    value === "ADMINISTRATOR"
+    ? value
+    : fallback;
+}
+
 function definitionFor(key: PermissionKey): PermissionDefinitionReadModel {
   const definition: PermissionDefinition = PERMISSION_REGISTRY[key];
   return {

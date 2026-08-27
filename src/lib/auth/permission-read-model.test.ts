@@ -6,6 +6,7 @@ import {
 import {
   buildRolePermissionReadModel,
   buildUserPermissionReadModel,
+  ordinaryRoleFrom,
   protectedPermissionReadModel,
 } from "./permission-read-model";
 import { createPermissionContext } from "./permission-resolver";
@@ -15,6 +16,14 @@ function flattened<T>(groups: readonly { permissions: readonly T[] }[]) {
 }
 
 describe("permission editor read models", () => {
+  it("accepts only ordinary roles for editable role policy", () => {
+    expect(ordinaryRoleFrom("CONTRIBUTOR")).toBe("CONTRIBUTOR");
+    expect(ordinaryRoleFrom("OWNER")).toBe("MEMBER");
+    expect(ordinaryRoleFrom("unknown", "ADMINISTRATOR")).toBe(
+      "ADMINISTRATOR"
+    );
+  });
+
   it("derives one registry-ordered ordinary row per permission", () => {
     const model = buildRolePermissionReadModel("MEMBER", [
       "content.items.edit",
