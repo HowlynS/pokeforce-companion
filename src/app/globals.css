@@ -12203,8 +12203,10 @@ input[type="checkbox"] {
 /* ---- Role permission toggle ------------------------------------------ */
 .security-permission-control {
   display: grid;
+  align-content: start;
   justify-items: end;
   gap: 4px;
+  min-height: 50px;
 }
 
 .security-permission-toggle {
@@ -12784,15 +12786,16 @@ input[type="checkbox"] {
 /* ---- Personal tri-state control ---------------------------------------- */
 .security-personal-control {
   display: grid;
+  align-content: start;
   gap: 4px;
   min-width: 0;
+  min-height: 49px;
 }
 
 .security-personal-options {
   display: inline-grid;
   grid-template-columns: repeat(3, minmax(0, auto));
   justify-self: start;
-  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
@@ -12815,6 +12818,17 @@ input[type="checkbox"] {
 
 .security-personal-option:first-child {
   border-left: 0;
+  border-radius: 7px 0 0 7px;
+}
+
+.security-personal-option:last-child {
+  border-radius: 0 7px 7px 0;
+}
+
+/* The focused option draws its ring above its neighbours' fills. */
+.security-personal-option:focus-visible {
+  position: relative;
+  z-index: 1;
 }
 
 .security-personal-option:hover:not(:disabled),
