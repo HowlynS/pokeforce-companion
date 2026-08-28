@@ -838,9 +838,10 @@ a static state for read-only viewers. Protected permissions live in a separate
 Owner/system safeguard section and never render as toggles.
 
 Member detail makes inheritance the focal relationship: every ordinary row
-shows `Role setting → Personal → Effective` together. Personal state is the
-three-way `Inherit / Allow / Deny` segmented control; Inherit means no stored
-override row. Effective state and its provenance come from the canonical
+shows `Role setting → Personal setting → Effective result` together. Personal
+state is the three-way `Use role setting / Allow / Deny` segmented control;
+Use role setting means no stored override row. Effective state and its
+provenance come from the canonical
 resolver, never client-side permission math. Owner accounts replace every
 mutation control with read-only system authority. Use quiet bordered surfaces,
 restrained gold for selected/allowed controls, green/red only for the final

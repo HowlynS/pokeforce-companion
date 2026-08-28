@@ -12,7 +12,7 @@ const SETTINGS: readonly {
   value: PersonalPermissionSetting;
   label: string;
 }[] = [
-  { value: "INHERIT", label: "Inherit" },
+  { value: "INHERIT", label: "Use role setting" },
   { value: "ALLOW", label: "Allow" },
   { value: "DENY", label: "Deny" },
 ];
@@ -56,24 +56,32 @@ export function PersonalPermissionControl({
     restoreFocusRef.current = setting;
     setSaveState({ tone: "idle", message: "" });
     startTransition(async () => {
-      const formData = new FormData();
-      formData.set("userId", userId);
-      formData.set("permissionKey", permission.key);
-      formData.set("effect", setting);
-      const result = await updatePersonalPermissionAction(formData);
+      try {
+        const formData = new FormData();
+        formData.set("userId", userId);
+        formData.set("permissionKey", permission.key);
+        formData.set("effect", setting);
+        const result = await updatePersonalPermissionAction(formData);
 
-      if (!result.ok) {
+        if (!result.ok) {
+          restoreFocusRef.current = null;
+          setSaveState({ tone: "error", message: result.error });
+          return;
+        }
+
+        setSaveState({
+          tone: "success",
+          message: result.changed ? "Saved" : "Already up to date",
+        });
+        router.refresh();
+        requestAnimationFrame(() => optionRefs.current[setting]?.focus());
+      } catch {
         restoreFocusRef.current = null;
-        setSaveState({ tone: "error", message: result.error });
-        return;
+        setSaveState({
+          tone: "error",
+          message: "The change could not be saved.",
+        });
       }
-
-      setSaveState({
-        tone: "success",
-        message: result.changed ? "Saved" : "Already up to date",
-      });
-      router.refresh();
-      requestAnimationFrame(() => optionRefs.current[setting]?.focus());
     });
   }
 
@@ -89,7 +97,7 @@ export function PersonalPermissionControl({
         }
       >
         {permission.personalSetting === "INHERIT"
-          ? "Inherit role"
+          ? "Use role setting"
           : permission.personalSetting === "ALLOW"
             ? "Personal allow"
             : "Personal deny"}

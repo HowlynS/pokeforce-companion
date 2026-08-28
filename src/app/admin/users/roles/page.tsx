@@ -130,9 +130,9 @@ export default async function RolePoliciesPage({
       </div>
 
       <EditorSection
-        title="Owner & system safeguards"
+        title="Protected Owner Permissions"
         icon={ShieldCheck}
-        description="Protected authority is fixed in code and cannot be delegated through role policy."
+        description="The Owner is system-protected and always has every registered permission. These permissions cannot be assigned to ordinary roles."
         className="security-protected-section"
       >
         <div className="security-permission-list">

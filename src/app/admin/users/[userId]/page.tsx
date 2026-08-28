@@ -3,6 +3,7 @@ import { AdminSelect } from "@/components/admin/admin-select";
 import { EditorHeader } from "@/components/admin/editor-header";
 import { EditorSection } from "@/components/admin/editor-section";
 import { PersonalPermissionControl } from "@/components/admin/personal-permission-control";
+import { SecurityFormSubmitButton } from "@/components/admin/security-form-submit-button";
 import { UsersAccessTabs } from "@/components/admin/users-access-tabs";
 import { requirePermission } from "@/lib/auth/authorization";
 import { hasEffectivePermission } from "@/lib/auth/permission-resolver";
@@ -32,18 +33,21 @@ type MemberDetailPageProps = {
   searchParams: Promise<{ error?: string; success?: string }>;
 };
 
-function sourceLabel(permission: PersonalPermissionRowReadModel): string {
+function sourceLabel(
+  permission: PersonalPermissionRowReadModel,
+  roleLabel: string
+): string {
   switch (permission.effectiveSource) {
     case "OWNER":
-      return "Owner authority";
+      return "Protected Owner access";
     case "PERSONAL_ALLOW":
-      return "Personal allow";
+      return "Allowed for this member";
     case "PERSONAL_DENY":
-      return "Personal deny";
+      return "Denied for this member";
     case "ROLE":
-      return "Role allows";
+      return `Allowed through ${roleLabel}`;
     case "DEFAULT_DENY":
-      return "No grant";
+      return `Not allowed through ${roleLabel}`;
   }
 }
 
@@ -228,9 +232,12 @@ export default async function MemberDetailPage({
                     <input type="checkbox" name="confirmed" required />
                     <span>Confirm role change</span>
                   </label>
-                  <button type="submit" className="btn btn-secondary btn-compact">
+                  <SecurityFormSubmitButton
+                    className="btn btn-secondary btn-compact"
+                    pendingLabel="Updating role…"
+                  >
                     Update role
-                  </button>
+                  </SecurityFormSubmitButton>
                 </form>
               ) : null}
 
@@ -261,18 +268,22 @@ export default async function MemberDetailPage({
                       Confirm {target.status === "ACTIVE" ? "disable" : "re-enable"}
                     </span>
                   </label>
-                  <button
-                    type="submit"
+                  <SecurityFormSubmitButton
                     className={
                       target.status === "ACTIVE"
                         ? "btn btn-danger-outline btn-compact"
                         : "btn btn-secondary btn-compact"
                     }
+                    pendingLabel={
+                      target.status === "ACTIVE"
+                        ? "Disabling account…"
+                        : "Re-enabling account…"
+                    }
                   >
                     {target.status === "ACTIVE"
                       ? "Disable account"
                       : "Re-enable account"}
-                  </button>
+                  </SecurityFormSubmitButton>
                 </form>
               ) : null}
 
@@ -299,9 +310,12 @@ export default async function MemberDetailPage({
                     <input type="checkbox" name="confirmed" required />
                     <span>Confirm password reset</span>
                   </label>
-                  <button type="submit" className="btn btn-secondary btn-compact">
+                  <SecurityFormSubmitButton
+                    className="btn btn-secondary btn-compact"
+                    pendingLabel="Setting password…"
+                  >
                     Set temporary password
-                  </button>
+                  </SecurityFormSubmitButton>
                 </form>
               ) : null}
             </div>
@@ -314,8 +328,9 @@ export default async function MemberDetailPage({
           <p className="admin-editor-eyebrow">Effective access</p>
           <h2>Personal permissions</h2>
           <p>
-            Each result follows Role setting → Personal override → Effective
-            access. Inherit stores no personal row.
+            Each result follows Role setting → Personal setting → Effective
+            result. Use role setting removes any personal choice and returns
+            to the role policy.
           </p>
         </div>
       </div>
@@ -360,7 +375,7 @@ export default async function MemberDetailPage({
                     </div>
 
                     <div className="security-inheritance-state security-inheritance-state--personal">
-                      <span>Personal</span>
+                      <span>Personal setting</span>
                       {model.ownerProtected ? (
                         <span className="security-state-badge">System fixed</span>
                       ) : (
@@ -373,7 +388,7 @@ export default async function MemberDetailPage({
                     </div>
 
                     <div className="security-inheritance-state security-inheritance-state--effective">
-                      <span>Effective</span>
+                      <span>Effective result</span>
                       <strong
                         className={
                           permission.effective
@@ -383,7 +398,12 @@ export default async function MemberDetailPage({
                       >
                         {permission.effective ? "Allowed" : "Denied"}
                       </strong>
-                      <small>{sourceLabel(permission)}</small>
+                      <small>
+                        {sourceLabel(
+                          permission,
+                          USER_ROLE_LABELS[target.role]
+                        )}
+                      </small>
                     </div>
                   </div>
                 );
@@ -394,9 +414,9 @@ export default async function MemberDetailPage({
       </div>
 
       <EditorSection
-        title="Protected authority"
+        title="Protected Owner Permissions"
         icon={SECTION_ICONS.verification}
-        description="These capabilities are enforced by the Owner invariant and never accept personal overrides."
+        description="These permissions are reserved for the Owner and cannot be assigned to other roles or changed for one member."
         className="security-protected-section"
       >
         <div className="security-permission-list">

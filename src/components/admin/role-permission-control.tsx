@@ -43,24 +43,32 @@ export function RolePermissionControl({
     restoreFocusRef.current = true;
     setSaveState({ tone: "idle", message: "" });
     startTransition(async () => {
-      const formData = new FormData();
-      formData.set("role", role);
-      formData.set("permissionKey", permission.key);
-      formData.set("operation", nextGranted ? "grant" : "revoke");
-      const result = await updateRolePermissionAction(formData);
+      try {
+        const formData = new FormData();
+        formData.set("role", role);
+        formData.set("permissionKey", permission.key);
+        formData.set("operation", nextGranted ? "grant" : "revoke");
+        const result = await updateRolePermissionAction(formData);
 
-      if (!result.ok) {
+        if (!result.ok) {
+          restoreFocusRef.current = false;
+          setSaveState({ tone: "error", message: result.error });
+          return;
+        }
+
+        setSaveState({
+          tone: "success",
+          message: result.changed ? "Saved" : "Already up to date",
+        });
+        router.refresh();
+        requestAnimationFrame(() => buttonRef.current?.focus());
+      } catch {
         restoreFocusRef.current = false;
-        setSaveState({ tone: "error", message: result.error });
-        return;
+        setSaveState({
+          tone: "error",
+          message: "The change could not be saved.",
+        });
       }
-
-      setSaveState({
-        tone: "success",
-        message: result.changed ? "Saved" : "Already up to date",
-      });
-      router.refresh();
-      requestAnimationFrame(() => buttonRef.current?.focus());
     });
   }
 
