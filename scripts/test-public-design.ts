@@ -75,7 +75,7 @@ async function main(): Promise<void> {
         "e2e/public-design-contracts.spec.ts",
         "e2e/admin-design-review.spec.ts",
         "--project=chromium-private-beta",
-        "--project=chromium-admin",
+        "--project=chromium-design-review",
         "--workers=1",
       ],
       "focused authenticated public contracts and Owner Design Review browser tests"

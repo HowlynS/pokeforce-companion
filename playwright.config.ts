@@ -58,10 +58,27 @@ export default defineConfig({
       },
     },
     // Authenticated admin tests: reuse the storage state saved by setup.
+    // admin-design-review.spec.ts is deliberately excluded — it asserts
+    // against the deterministic public-design fixtures, which are seeded
+    // and torn down around it by `pnpm test:public-design`, not by this
+    // project. Running it here would fail on missing fixture records and
+    // leave the general admin suite unusable as a regression gate.
     {
       name: "chromium-admin",
       dependencies: ["setup"],
       testMatch: /admin-.+\.spec\.ts/,
+      testIgnore: /admin-design-review\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/admin.json",
+      },
+    },
+    // The Owner Design Review workspace, run only by the focused
+    // public-design command, which owns its fixtures' lifecycle.
+    {
+      name: "chromium-design-review",
+      dependencies: ["setup"],
+      testMatch: /admin-design-review\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/admin.json",
