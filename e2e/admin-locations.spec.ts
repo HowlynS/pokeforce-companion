@@ -738,7 +738,15 @@ test("assigning a location's own descendant as its parent is rejected server-sid
         "A location cannot be its own parent or one of its own sub-locations.",
     })
   ).toBeVisible();
-  await page.getByRole("button", { name: "Discard draft" }).click();
+  // A server-side validation redirect is no longer treated as abandonment:
+  // AdminFormGuard auto-restores the just-submitted draft and keeps the form
+  // dirty, so no recovery prompt appears here any more.
+  await expect(
+    page.getByRole("button", { name: "Discard draft" })
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: "Parent location", exact: true })
+  ).toContainText(CYCLE_DESCENDANT.name);
   // The picker itself still excludes the ancestor from its own choices —
   // self-parenting was never even offerable. AdminSelect only renders its
   // options while open (portaled), so the picker is opened first; Escape

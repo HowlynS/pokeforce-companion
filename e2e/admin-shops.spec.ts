@@ -171,7 +171,12 @@ test("Shop Inventory supports validation, alternative Currencies, verification, 
   await expect(page.locator(".banner-error")).toContainText(
     "Prices must be whole numbers greater than zero."
   );
-  await page.getByRole("button", { name: "Restore draft" }).click();
+  // A server-side validation redirect is no longer treated as abandonment:
+  // AdminFormGuard auto-restores the just-submitted draft and keeps the form
+  // dirty, so no recovery prompt appears here any more.
+  await expect(
+    page.getByRole("button", { name: "Restore draft" })
+  ).toHaveCount(0);
   row = page.locator(".shop-inventory-row:visible").first();
   await expect(row.getByLabel("Price amount", { exact: true })).toHaveValue("0");
 

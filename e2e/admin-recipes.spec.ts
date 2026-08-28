@@ -600,7 +600,21 @@ test("a maximum quantity below the minimum is rejected with a useful error, both
   await expect(recordRow(page, "Test E2E Recipe Invalid Range")).toHaveCount(
     0
   );
-  await page.getByRole("button", { name: "Discard draft" }).click();
+  // A server-side validation redirect is no longer treated as abandonment:
+  // AdminFormGuard auto-restores the just-submitted draft and keeps the form
+  // dirty, so no recovery prompt appears here any more.
+  await expect(
+    page.getByRole("button", { name: "Discard draft" })
+  ).toHaveCount(0);
+  await expect(
+    page.getByLabel("Maximum quantity", { exact: true })
+  ).toHaveValue("2");
+  // The draft is still offered on a LATER visit, which is where the prompt
+  // belongs, and discarding it there leaves a clean create form behind.
+  await page.goto("/admin/recipes/new");
+  await page
+    .getByRole("button", { name: "Discard draft", exact: true })
+    .click();
 
   // --- The same rule is enforced identically on an existing recipe's edit
   // --- form ----------------------------------------------------------------

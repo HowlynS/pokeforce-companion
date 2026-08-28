@@ -123,6 +123,11 @@ test("each ingredient row's search/selection is fully isolated from the others",
   page,
 }) => {
   await page.goto("/admin/recipes/new");
+  // The ingredient editor now opens with a single row and grows on demand
+  // (it previously rendered five fixed rows), so the second row has to be
+  // added before it can be addressed.
+  await page.getByRole("button", { name: "+ Ingredient", exact: true }).click();
+
   const group = ingredientGroup(page);
   const row0 = group.getByRole("combobox").nth(0);
   const row1 = group.getByRole("combobox").nth(1);

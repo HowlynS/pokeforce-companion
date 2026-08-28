@@ -157,6 +157,11 @@ test("Recipe Ingredients: each row's dropdown is keyboard-operable and isolated 
   const group = page.getByRole("group", {
     name: "Ingredients (fill at least one row)",
   });
+  // The ingredient editor now opens with a single row and grows on demand
+  // (it previously rendered five fixed rows), so the second row has to be
+  // added before it can be addressed.
+  await page.getByRole("button", { name: "+ Ingredient", exact: true }).click();
+
   const row0 = group.getByRole("combobox").nth(0);
   const row1 = group.getByRole("combobox").nth(1);
 

@@ -224,8 +224,14 @@ test("Recipe's create form uses the wider form-grid variant with readable, align
   await expect(editorSurface.locator("form.form-grid-wide")).toHaveCount(1);
   await noHorizontalOverflow(editorSurface);
 
+  // The ingredient editor opens with one row and grows on demand through
+  // its own "+ Ingredient" control (it previously rendered five fixed
+  // rows). Both states are checked, so the row's layout is still proven
+  // for a freshly added row and not only for the initial one.
   const rows = page.locator(".ingredient-row");
-  await expect(rows).toHaveCount(5);
+  await expect(rows).toHaveCount(1);
+  await page.getByRole("button", { name: "+ Ingredient", exact: true }).click();
+  await expect(rows).toHaveCount(2);
 
   // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
   // replaced the native <select> here — its trigger button (role
@@ -320,7 +326,9 @@ test("Location's long description and access-note textareas render with the tall
   const accessNote = page.getByLabel(/^Extra information/);
   const nameInput = page.getByLabel("Name", { exact: true });
 
-  await expect(description).toHaveValue(LOCATION.description);
+  // Description is the rich editor (a contenteditable), so its content is
+  // text rather than a form value; Extra information is still a textarea.
+  await expect(description).toHaveText(LOCATION.description);
   await expect(accessNote).toHaveValue(LOCATION.accessNote);
 
   const [inputHeight, descriptionHeight, accessNoteHeight] = await Promise.all([
