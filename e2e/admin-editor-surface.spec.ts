@@ -25,6 +25,7 @@ import {
   deleteE2eTestItemRecords,
   deleteE2eTestLocationRecords,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -164,7 +165,7 @@ test("the description textarea renders with more default height than a single-li
   await page.goto("/admin/items/iron-ore/edit");
 
   const nameInput = page.getByLabel("Name", { exact: true });
-  const description = page.getByLabel(/^Description/);
+  const description = descriptionEditor(page);
 
   const [inputHeight, textareaHeight] = await Promise.all([
     nameInput.evaluate((el) => el.getBoundingClientRect().height),
@@ -303,7 +304,7 @@ test("Location's long description and access-note textareas render with the tall
     page.getByRole("combobox", { name: "Type", exact: true }),
     LOCATION.type
   );
-  await page.getByLabel(/^Description/).fill(LOCATION.description);
+  await descriptionEditor(page).fill(LOCATION.description);
   await page.getByLabel(/^Extra information/).fill(LOCATION.accessNote);
   await expect(page.locator("#location-name-availability")).not.toHaveText(
     "Checking name availability..."
@@ -315,7 +316,7 @@ test("Location's long description and access-note textareas render with the tall
   // Polish Pass 2, Part 2) — already here, so no redundant re-navigation.
   await expect(page).toHaveURL(`/admin/locations/${LOCATION.slug}/edit`);
 
-  const description = page.getByLabel(/^Description/);
+  const description = descriptionEditor(page);
   const accessNote = page.getByLabel(/^Extra information/);
   const nameInput = page.getByLabel("Name", { exact: true });
 

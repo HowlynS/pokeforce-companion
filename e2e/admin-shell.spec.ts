@@ -3,7 +3,9 @@
 // carries nine top-level destinations plus Categories nested beneath Items
 // (Game Versions
 // promoted to primary in the Visual Pass, sub-slice 8; Shops and Currencies
-// added in Milestone 11; Classes added in Milestone 12), marks the active
+// added in Milestone 11; Classes added in Milestone 12), then the Site
+// administration group (Appearance, plus Design review, Users & access and
+// Audit log added by the Permission Foundation work), marks the active
 // section (including on child routes), and never appears on public
 // pages. Runs in the chromium-admin project with the storage state saved
 // by auth.setup.ts. Read-only: every visit targets seeded fixtures
@@ -26,7 +28,11 @@ const PRIMARY_DESTINATIONS = [
   { label: "Shops", href: "/admin/shops" },
   { label: "Game Versions", href: "/admin/settings/game-versions" },
   { label: "Currencies", href: "/admin/settings/currencies" },
+  // Site administration group, in its own rendered order.
   { label: "Appearance", href: "/admin/appearance" },
+  { label: "Design review", href: "/admin/design-review" },
+  { label: "Users & access", href: "/admin/users" },
+  { label: "Audit log", href: "/admin/audit-log" },
 ] as const;
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
@@ -48,6 +54,20 @@ function sidebar(page: Page) {
 
 function activeLink(page: Page) {
   return sidebar(page).locator('a[aria-current="page"]');
+}
+
+/**
+ * Matches exactly one destination's own route, with or without a query
+ * string. A destination page is allowed to canonicalize itself by adding
+ * its own default parameters on arrival (Design review does this, landing
+ * on its default contract/fixture/viewport), and that is the destination
+ * working correctly — but the PATH still has to be the one that was
+ * clicked, so this stays an exact path match rather than a loose
+ * "contains" check.
+ */
+function destinationUrl(href: string): RegExp {
+  const escaped = href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^http://localhost:3100${escaped}(\\?.*)?$`);
 }
 
 test("the sidebar carries every approved destination with its target", async ({
@@ -211,7 +231,7 @@ test("the sidebar persists across admin sections and marks the active one", asyn
     await sidebar(page)
       .getByRole("link", { name: destination.label, exact: true })
       .click();
-    await expect(page).toHaveURL(destination.href);
+    await expect(page).toHaveURL(destinationUrl(destination.href));
     await expect(activeLink(page)).toHaveText(destination.label);
   }
 });

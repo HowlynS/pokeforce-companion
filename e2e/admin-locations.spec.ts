@@ -35,6 +35,7 @@ import {
   deleteE2eTestGameVersionRecords,
   deleteE2eTestLocationRecords,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 // The persistent test-only Game Version fixture, made current by
 // auth.setup.ts before any admin spec runs.
@@ -200,7 +201,7 @@ async function createLocationThroughForm(
     );
   }
   if (data.description) {
-    await page.getByLabel(/^Description/).fill(data.description);
+    await descriptionEditor(page).fill(data.description);
   }
   if (data.accessNote) {
     await page.getByLabel(/^Extra information/).fill(data.accessNote);
@@ -447,7 +448,7 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
     page.getByRole("combobox", { name: "Type", exact: true }),
     EDITED.type
   );
-  await page.getByLabel(/^Description/).fill(EDITED.description);
+  await descriptionEditor(page).fill(EDITED.description);
   await page.getByLabel(/^Extra information/).fill(EDITED.accessNote);
   // The verification checkbox must render unchecked by default and stays
   // untouched here: a normal edit must not stamp verification metadata.
@@ -601,8 +602,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     page.getByLabel("Verify this record for"),
     HISTORICAL_VERSION_NAME
   );
-  await page
-    .getByLabel(/^Description/)
+  await descriptionEditor(page)
     .fill("Edited without touching verification.");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL(
@@ -887,7 +887,7 @@ test("Hierarchy tab: changing and removing the parent preserves General fields, 
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
     SUBJECT.name
   );
-  await expect(page.getByLabel(/^Description/)).toHaveValue(
+  await expect(descriptionEditor(page)).toHaveText(
     SUBJECT.description
   );
   await expect(page.getByLabel(/^Extra information/)).toHaveValue(

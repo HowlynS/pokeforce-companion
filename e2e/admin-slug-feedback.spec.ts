@@ -29,6 +29,7 @@ import {
   deleteE2eTestLocationRecords,
   readFixtureCounts,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 type ResourceCase = {
   label: string;
@@ -340,8 +341,7 @@ test("the Page address feedback row has a fixed height that never moves the Desc
   // font-swap reflow shortly after navigation is unrelated to this
   // field's own layout and would otherwise read as a false positive here.
   await page.evaluate(() => document.fonts.ready);
-  const descriptionBefore = await page
-    .getByLabel(/^Description/)
+  const descriptionBefore = await descriptionEditor(page)
     .boundingBox();
 
   await nameInput(page).fill("Test E2E Fixed Height Demo");
@@ -349,7 +349,7 @@ test("the Page address feedback row has a fixed height that never moves the Desc
   await expect(page.locator("#item-slug-availability")).toHaveText(
     "An item with that page address already exists."
   );
-  const descriptionAfter = await page.getByLabel(/^Description/).boundingBox();
+  const descriptionAfter = await descriptionEditor(page).boundingBox();
 
   expect(descriptionAfter?.y).toBe(descriptionBefore?.y);
 });

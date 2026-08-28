@@ -3,6 +3,7 @@ import {
   countE2eTestCurrencyRecords,
   deleteE2eTestCurrencyRecords,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 const INITIAL = {
   name: "Test E2E Currency",
@@ -49,7 +50,7 @@ test("Currency admin lifecycle uses the shared protected workspace", async ({
   await page.getByLabel("Name", { exact: true }).fill(INITIAL.name);
   await page.getByLabel(/^Page address/).fill(INITIAL.slug);
   await page.getByLabel(/^Symbol/).fill(INITIAL.symbol);
-  await page.getByLabel(/^Description/).fill(INITIAL.description);
+  await descriptionEditor(page).fill(INITIAL.description);
   await page.locator('input[type="file"]').setInputFiles(
     "e2e/fixtures/tiny-valid.png"
   );
@@ -76,7 +77,7 @@ test("Currency admin lifecycle uses the shared protected workspace", async ({
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel(/^Page address/).fill(EDITED.slug);
   await page.getByLabel(/^Symbol/).fill(EDITED.symbol);
-  await page.getByLabel(/^Description/).fill(EDITED.description);
+  await descriptionEditor(page).fill(EDITED.description);
   await page.getByLabel("Remove image").click();
   await expect(persistedImage).toBeVisible();
   await expect(persistedImage).toHaveClass(/pending-removal/);

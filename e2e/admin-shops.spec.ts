@@ -6,6 +6,7 @@ import {
   createE2eShopLocation,
   deleteE2eTestShopRecords,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 const INITIAL = {
   name: "Test E2E Shop",
@@ -71,7 +72,7 @@ test("Shop admin lifecycle requires a Location and uses the shared workspace", a
     page.getByRole("combobox", { name: "Location", exact: true }),
     location.name
   );
-  await page.getByLabel(/^Description/).fill(INITIAL.description);
+  await descriptionEditor(page).fill(INITIAL.description);
   await page.getByRole("button", { name: /Create Shop/ }).click();
 
   await expect(page).toHaveURL(`/admin/shops/${INITIAL.slug}/edit`);
@@ -87,7 +88,7 @@ test("Shop admin lifecycle requires a Location and uses the shared workspace", a
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel(/^Page address/).fill(EDITED.slug);
-  await page.getByLabel(/^Description/).fill(EDITED.description);
+  await descriptionEditor(page).fill(EDITED.description);
   await page.getByRole("button", { name: /Save Changes/ }).click();
 
   await expect(page).toHaveURL(`/admin/shops/${EDITED.slug}/edit`);

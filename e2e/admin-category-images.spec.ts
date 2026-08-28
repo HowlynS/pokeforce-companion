@@ -37,6 +37,7 @@ import {
   readCategoryImagePath,
   removeTemporaryItemForCategory,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 const PNG_FIXTURE = path.join(__dirname, "fixtures", "tiny-valid.png");
 const WEBP_FIXTURE = path.join(__dirname, "fixtures", "tiny-valid.webp");
@@ -293,8 +294,7 @@ test("saving without touching the image controls preserves the current image", a
   // A normal edit that touches only the description — neither the file
   // input nor the remove checkbox is interacted with at all.
   await page.goto(`/admin/categories/${CATEGORY.slug}/edit`);
-  await page
-    .getByLabel(/^Description/)
+  await descriptionEditor(page)
     .fill("Edited without touching the image.");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 

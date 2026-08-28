@@ -28,6 +28,7 @@ import {
   deleteE2eTestGameVersionRecords,
   deleteE2eTestPlayerClassRecords,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 const INITIAL = {
   name: "Test E2E Player Class",
@@ -114,7 +115,7 @@ async function createPlayerClassThroughForm(
 ) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page.getByLabel(/^Description/).fill(data.description);
+  await descriptionEditor(page).fill(data.description);
   await page.getByRole("button", { name: "Create Class", exact: true }).click();
 
   await expect(page).toHaveURL(`/admin/classes/${data.slug}/edit`);
@@ -212,7 +213,7 @@ test("class create/edit/delete lifecycle through the real admin UI", async ({
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
-  await page.getByLabel(/^Description/).fill(EDITED.description);
+  await descriptionEditor(page).fill(EDITED.description);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   // The redirect follows the NEW slug (this save also renamed the class).
@@ -339,8 +340,7 @@ test("gameplay verification stamps the selected game version and survives normal
     page.getByLabel("Verify this record for"),
     HISTORICAL_VERSION_NAME
   );
-  await page
-    .getByLabel(/^Description/)
+  await descriptionEditor(page)
     .fill("Verifies the shared verification panel (edited).");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL(
@@ -364,8 +364,7 @@ test("unsaved changes are protected by the discard-changes prompt", async ({
     description: "Verifies the shared unsaved-changes guard.",
   });
 
-  await page
-    .getByLabel(/^Description/)
+  await descriptionEditor(page)
     .fill("An edit that is never saved.");
   await expect(page.getByText("Unsaved changes")).toBeVisible();
 
@@ -381,9 +380,9 @@ test("unsaved changes are protected by the discard-changes prompt", async ({
   await expect(page).toHaveURL(
     "/admin/classes/test-e2e-player-class-unsaved/edit"
   );
-  await expect(
-    page.getByLabel(/^Description/)
-  ).toHaveValue("An edit that is never saved.");
+  await expect(descriptionEditor(page)).toHaveText(
+    "An edit that is never saved."
+  );
 
   await page.getByRole("link", { name: "Cancel", exact: true }).click();
   await page

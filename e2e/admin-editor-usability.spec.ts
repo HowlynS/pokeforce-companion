@@ -16,6 +16,7 @@
 // styles are the narrowest checks that can catch a regression.
 
 import { expect, test, type Page } from "@playwright/test";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 // Browser error hygiene: any uncaught page error fails the test. Serial
 // single-worker execution makes this module-level state safe.
@@ -138,7 +139,7 @@ test("Item edit's form section headings render in the documented order, and ever
   // changed.
   await expect(page.getByLabel("Name", { exact: true })).toBeVisible();
   await expect(page.getByLabel(/^Page address/)).toBeVisible();
-  await expect(page.getByLabel(/^Description/)).toBeVisible();
+  await expect(descriptionEditor(page)).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Category", exact: true })).toBeVisible();
   await expect(page.getByLabel("Held item", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Tradeable", { exact: true })).toBeVisible();
@@ -419,7 +420,7 @@ test("at 1440x650, the sticky actions bar never overlaps the context rail, and t
 
   // The last field before the actions bar stays scrollable into view
   // (not permanently hidden behind the sticky footer).
-  const description = page.getByLabel(/^Description/);
+  const description = descriptionEditor(page);
   await description.scrollIntoViewIfNeeded();
   await expect(description).toBeInViewport();
 

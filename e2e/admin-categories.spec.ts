@@ -18,6 +18,7 @@ import {
   readFixtureCounts,
   removeTemporaryItemForCategory,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 const INITIAL = {
   name: "Test E2E Category",
@@ -113,7 +114,7 @@ async function createCategoryThroughForm(
 ) {
   await page.getByLabel("Name", { exact: true }).fill(data.name);
   await page.getByLabel(/^Page address/).fill(data.slug);
-  await page.getByLabel(/^Description/).fill(data.description);
+  await descriptionEditor(page).fill(data.description);
   await page
     .getByRole("button", { name: "Create Category", exact: true })
     .click();
@@ -306,7 +307,7 @@ test("category create/edit/delete lifecycle through the real admin UI", async ({
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
-  await page.getByLabel(/^Description/).fill(EDITED.description);
+  await descriptionEditor(page).fill(EDITED.description);
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   // The redirect follows the NEW slug (this save also renamed the

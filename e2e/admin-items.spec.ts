@@ -27,6 +27,7 @@ import {
   readFixtureCounts,
   removeTemporaryItemRelationRecords,
 } from "./helpers/database-cleanup";
+import { descriptionEditor } from "./helpers/admin-description-field";
 
 // The lifecycle flips both booleans between create and edit (tradeable
 // Yes -> No, held item No -> Yes), which also keeps every row's "Yes" and
@@ -220,7 +221,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
 
   await page.getByLabel("Name", { exact: true }).fill(INITIAL.name);
   await page.getByLabel(/^Page address/).fill(INITIAL.slug);
-  await page.getByLabel(/^Description/).fill(INITIAL.description);
+  await descriptionEditor(page).fill(INITIAL.description);
   // getByLabel cannot target the select exactly (a wrapping label's text
   // includes the option texts), so the accessible role/name is used.
   await selectAdminOption(
@@ -319,7 +320,7 @@ test("item create/edit/delete lifecycle through the real admin UI", async ({
 
   await page.getByLabel("Name", { exact: true }).fill(EDITED.name);
   await page.getByLabel("Page address", { exact: true }).fill(EDITED.slug);
-  await page.getByLabel(/^Description/).fill(EDITED.description);
+  await descriptionEditor(page).fill(EDITED.description);
   await selectAdminOption(
     page.getByRole("combobox", { name: "Category", exact: true }),
     EDITED.category
@@ -508,7 +509,7 @@ test("an invalid Item Acquisition Source creates nothing and restores every fiel
   await page
     .getByLabel(/^Page address/)
     .fill("test-e2e-item-invalid-source");
-  await page.getByLabel(/^Description/).fill("Preserve this Item description.");
+  await descriptionEditor(page).fill("Preserve this Item description.");
   await page
     .getByRole("button", { name: "+ Acquisition source", exact: true })
     .click();
@@ -546,7 +547,7 @@ test("an invalid Item Acquisition Source creates nothing and restores every fiel
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
     "Test E2E Item Invalid Source"
   );
-  await expect(page.getByLabel(/^Description/)).toHaveValue(
+  await expect(descriptionEditor(page)).toHaveText(
     "Preserve this Item description."
   );
   await expect(page.getByLabel(/^Source label/)).toHaveValue(
@@ -653,8 +654,7 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
     page.getByLabel("Verify this record for"),
     HISTORICAL_VERSION_NAME
   );
-  await page
-    .getByLabel(/^Description/)
+  await descriptionEditor(page)
     .fill("Edited without touching verification.");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
   await expect(page).toHaveURL(
