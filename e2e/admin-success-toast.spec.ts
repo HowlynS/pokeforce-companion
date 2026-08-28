@@ -17,10 +17,19 @@ import {
   deleteE2eTestRecipeRecords,
 } from "./helpers/database-cleanup";
 
-const ITEM = {
-  name: "Test E2E Item Toast",
-  slug: "test-e2e-item-toast",
-} as const;
+// Every test that creates an Item gets its OWN slug. Sharing one slug
+// across adjacent tests coupled them through the database: a test would
+// create the record, its afterEach would delete it, and the next test's
+// create could still be rejected as a duplicate because the delete was not
+// yet visible on the application's own pooled connection. Distinct
+// fixtures remove that coupling outright, so each test passes alone, after
+// another test, and in the full suite alike.
+function toastItem(suffix: string) {
+  return {
+    name: `Test E2E Item Toast ${suffix}`,
+    slug: `test-e2e-item-toast-${suffix}`,
+  } as const;
+}
 
 const RECIPE = {
   name: "Test E2E Recipe Toast",
@@ -57,6 +66,7 @@ function toast(page: import("@playwright/test").Page) {
 test("a successful create shows the toast as an accessible live region, and it is gone after the auto-dismiss duration", async ({
   page,
 }) => {
+  const ITEM = toastItem("create");
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
@@ -77,6 +87,7 @@ test("a successful create shows the toast as an accessible live region, and it i
 test("the flash param is stripped from the URL immediately and does not reappear on refresh", async ({
   page,
 }) => {
+  const ITEM = toastItem("flash");
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
@@ -96,6 +107,7 @@ test("the flash param is stripped from the URL immediately and does not reappear
 test("the manual dismiss button removes the toast immediately, without waiting for the auto-dismiss timer", async ({
   page,
 }) => {
+  const ITEM = toastItem("dismiss");
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
@@ -110,6 +122,7 @@ test("the manual dismiss button removes the toast immediately, without waiting f
 test("a failed save shows the existing validation error and never a success toast", async ({
   page,
 }) => {
+  const ITEM = toastItem("failed");
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
@@ -131,6 +144,7 @@ test("a failed save shows the existing validation error and never a success toas
 test("the toast overlay causes zero layout shift — stable editor elements never move while it appears or disappears", async ({
   page,
 }) => {
+  const ITEM = toastItem("shift");
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
@@ -230,6 +244,7 @@ test("the toast does not cover the title or tabs, and stays within the content r
 test("the in-editor delete confirmation dialog stays above a toast that is still visible", async ({
   page,
 }) => {
+  const ITEM = toastItem("dialog");
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);
@@ -258,6 +273,7 @@ test("the in-editor delete confirmation dialog stays above a toast that is still
 test("the toast stays pinned in the viewport even when the page is scrolled to reach a below-the-fold action", async ({
   page,
 }) => {
+  const ITEM = toastItem("pinned");
   // A real regression caught during this pass's own visual review: an
   // earlier `position: absolute` implementation also avoided layout
   // shift, but scrolled away with the page — on a shorter viewport, the
@@ -296,6 +312,7 @@ test("the toast stays pinned in the viewport even when the page is scrolled to r
 test("a successful delete shows its own toast on the destination list page", async ({
   page,
 }) => {
+  const ITEM = toastItem("delete");
   await page.goto("/admin/items/new");
   await page.getByLabel("Name", { exact: true }).fill(ITEM.name);
   await page.getByLabel(/^Page address/).fill(ITEM.slug);

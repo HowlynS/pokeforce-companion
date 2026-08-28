@@ -74,6 +74,11 @@ test("Create form: dirty Cancel prompts before leaving; Mark as current stays a 
   await createE2eTestGameVersion("test-e2e-gv-unsaved-markcurrent");
 
   await page.goto("/admin/settings/game-versions");
+  // Wait for the guard to report a clean form before typing, exactly as the
+  // sibling create-form test does. The guard snapshots its baseline when it
+  // mounts; typing before that snapshot lands makes the typed value part of
+  // the baseline, and the form then never reads as dirty.
+  await expect(status(page)).toHaveCount(0);
   await page
     .locator('#create-game-version input[name="name"]')
     .fill("test-e2e-gv-unsaved-dirty");
