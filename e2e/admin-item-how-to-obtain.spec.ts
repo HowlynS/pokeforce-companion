@@ -41,7 +41,17 @@ test.afterAll(async () => {
 });
 
 function cardTitle(page: Page, name: string) {
-  return page.locator(".item-acquisition-row strong").filter({ hasText: name });
+  return page
+    .locator(".item-obtain-card-title")
+    .filter({ hasText: name });
+}
+
+/** The "How to obtain" panel, which is what this spec is about. The item
+    hero now carries its own fact chips (including a "Source:" chip naming
+    the primary acquisition source), so page-wide text assertions about
+    acquisition facts would pick those up too. */
+function obtainPanel(page: Page) {
+  return page.locator(".item-obtain-panel");
 }
 
 function cardLink(page: Page, name: string) {
@@ -140,12 +150,22 @@ test("a single partial source (type only) renders cleanly with no empty text", a
   ).toBeVisible();
   // The type label doubles as both the group label and (with nothing else
   // populated) the card's own title.
-  await expect(page.getByText("Foraging").first()).toBeVisible();
+  await expect(
+    obtainPanel(page).getByRole("heading", { level: 3, name: "Foraging" })
+  ).toBeVisible();
   // No stray labelled-but-empty facts for the fields that were never set.
-  await expect(page.getByText("Profession:", { exact: false })).toHaveCount(0);
-  await expect(page.getByText("Quantity:", { exact: false })).toHaveCount(0);
-  await expect(page.getByText("Notes:", { exact: false })).toHaveCount(0);
-  await expect(page.getByText("Source:", { exact: false })).toHaveCount(0);
+  await expect(
+    obtainPanel(page).getByText("Profession:", { exact: false })
+  ).toHaveCount(0);
+  await expect(
+    obtainPanel(page).getByText("Quantity:", { exact: false })
+  ).toHaveCount(0);
+  await expect(
+    obtainPanel(page).getByText("Notes:", { exact: false })
+  ).toHaveCount(0);
+  await expect(
+    obtainPanel(page).getByText("Source:", { exact: false })
+  ).toHaveCount(0);
 });
 
 test("multiple acquisition types group and label correctly, each with its own sources", async ({
@@ -175,8 +195,12 @@ test("multiple acquisition types group and label correctly, each with its own so
   ).toBeVisible();
 
   // Both type labels are present as group labels...
-  await expect(page.getByText("Foraging", { exact: true })).toBeVisible();
-  await expect(page.getByText("Mining", { exact: true })).toBeVisible();
+  await expect(
+    obtainPanel(page).getByRole("heading", { level: 3, name: "Foraging" })
+  ).toBeVisible();
+  await expect(
+    obtainPanel(page).getByRole("heading", { level: 3, name: "Mining" })
+  ).toBeVisible();
   // ...and every individual source card renders, including both sources
   // that share the Mining type.
   await expect(cardTitle(page, "Forest Clearing")).toBeVisible();

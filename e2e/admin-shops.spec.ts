@@ -353,7 +353,12 @@ test("Shop Inventory supports validation, alternative Currencies, verification, 
   await expect(page.locator(".banner-error")).toContainText(
     "same Item and Currency combination"
   );
-  await page.getByRole("button", { name: "Restore draft" }).click();
+  // A server-side validation redirect is no longer treated as abandonment:
+  // AdminFormGuard auto-restores the just-submitted draft and keeps the
+  // form dirty, so no recovery prompt appears here any more.
+  await expect(
+    page.getByRole("button", { name: "Restore draft" })
+  ).toHaveCount(0);
   rows = page.locator(".shop-inventory-row:visible");
   await expect(rows).toHaveCount(3);
   await rows

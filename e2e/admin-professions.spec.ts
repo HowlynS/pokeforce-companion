@@ -416,9 +416,13 @@ test("profession create/edit/delete lifecycle through the real admin UI", async 
   ).toBeVisible();
   await expect(page.getByText(INITIAL.description)).toBeVisible();
   await expect(page.getByText("No image available")).toBeVisible();
-  await expect(
-    page.locator(".profession-hero-counts").getByText("0", { exact: true })
-  ).toHaveCount(2);
+  // The hero's fact chips state the factual zero for a profession with no
+  // recipes — the count is not hidden — and it is the only zero among
+  // them, since Max Level comes from the shared level progression table
+  // rather than from this record.
+  const heroFacts = page.locator(".profession-detail-chips");
+  await expect(heroFacts.getByText("Recipes:")).toBeVisible();
+  await expect(heroFacts.getByText("0", { exact: true })).toHaveCount(1);
   await expect(
     page.getByRole("heading", { level: 2, name: "Recipes", exact: true })
   ).toHaveCount(0);
@@ -856,6 +860,15 @@ test("gameplay verification stamps the selected game version and survives normal
   ).toBe(stampedDateText);
 
   // --- Verifying against a SELECTED historical version -------------------
+  // Save-in-place re-renders the panel and returns the picker to its
+  // unchecked, current-version baseline. Waiting for that baseline before
+  // choosing again is a synchronization point on real product state, not a
+  // delay: choosing while the picker still shows the previous selection
+  // would be a no-op click on an already-selected option, and the save
+  // would then stamp the default version instead of the one under test.
+  await expect(page.getByLabel("Verify this record for")).toHaveText(
+    `${CURRENT_VERSION_NAME} (current)`
+  );
   await selectAdminOption(
     page.getByLabel("Verify this record for"),
     HISTORICAL_VERSION_NAME

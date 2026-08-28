@@ -157,7 +157,11 @@ test("Item create's every original field name still exists inside the same form 
 
   await expect(page.locator('#item-create-form input[name="name"]')).toHaveCount(1);
   await expect(page.locator('#item-create-form input[name="slug"]')).toHaveCount(1);
-  await expect(page.locator('#item-create-form textarea[name="description"]')).toHaveCount(1);
+  // Description is the shared rich editor now, so the form carries it as
+  // that editor's own submitted hidden field rather than a <textarea>.
+  await expect(
+    page.locator('#item-create-form input[name="descriptionRich"]')
+  ).toHaveCount(1);
   // AdminSelect (Massive Admin Interaction Completion Pass, Phase 1)
   // replaced the native <select> here — the field's own name is still
   // carried by its submitted proxy <input>.
@@ -213,7 +217,7 @@ test("Item edit: General renders the explicit two-column composition — Name/Pa
     columnSideOf(page, '#item-edit-form input[name="slug"]')
   ).resolves.toBe("left");
   await expect(
-    columnSideOf(page, '#item-edit-form textarea[name="description"]')
+    columnSideOf(page, '#item-edit-form input[name="descriptionRich"]')
   ).resolves.toBe("left");
 
   // Right column: Category, Held item, Tradeable, Base value.
@@ -234,7 +238,9 @@ test("Item edit: General renders the explicit two-column composition — Name/Pa
   // entirely (besides the two hidden id/originalSlug inputs, which carry
   // no visible column membership at all).
   const fieldCounts = await page.evaluate(() => {
-    const names = ["name", "slug", "description", "categoryId", "heldItem", "tradeable", "baseValue"];
+    // "descriptionRich" rather than "description": the Description field is
+    // the shared rich editor, which submits under its own field name.
+    const names = ["name", "slug", "descriptionRich", "categoryId", "heldItem", "tradeable", "baseValue"];
     return names.map((name) => ({
       name,
       count: document.querySelectorAll(
@@ -270,7 +276,7 @@ test("Item create: General renders the same explicit two-column composition, wit
     columnSideOf(page, '#item-create-form input[name="slug"]')
   ).resolves.toBe("left");
   await expect(
-    columnSideOf(page, '#item-create-form textarea[name="description"]')
+    columnSideOf(page, '#item-create-form input[name="descriptionRich"]')
   ).resolves.toBe("left");
   await expect(
     columnSideOf(page, '#item-create-form input[name="categoryId"]')
