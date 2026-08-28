@@ -123,6 +123,7 @@ export function PersonalPermissionControl({
             key={setting.value}
             type="button"
             className="security-personal-option"
+            data-setting={setting.value}
             aria-pressed={permission.personalSetting === setting.value}
             disabled={pending}
             onClick={() => select(setting.value)}

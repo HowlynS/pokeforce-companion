@@ -12524,6 +12524,27 @@ input[type="checkbox"] {
   .security-member-overview {
     grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
   }
+
+  /* Once the record sits in its own narrower column, one fact per line
+     reads better than two cramped ones — a long email stops wrapping, and
+     the card comes closer to the height of the controls beside it. */
+  .security-account-facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 13px;
+  }
+
+  /* No account controls to sit beside it (an Owner record, or a viewer who
+     may only look): the record keeps its two-up facts and does not leave
+     half a row blank. */
+  .security-member-overview--single {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 760px;
+  }
+
+  .security-member-overview--single .security-account-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+  }
 }
 
 .security-account-facts {
@@ -12732,6 +12753,40 @@ input[type="checkbox"] {
   color: var(--color-text-body);
 }
 
+/* ---- Owner access summary ---------------------------------------------- */
+/* The Owner record's stand-in for the tri-state ledger. One tile per
+   registry group states the whole area at once, so Owner authority reads as
+   a property of the account rather than as forty-six switches that all
+   happen to be on. */
+.security-owner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.security-owner-tile {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 13px 15px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.security-owner-tile strong {
+  font-size: 13.5px;
+}
+
+.security-owner-tile span {
+  color: var(--color-accent-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* ---- Personal tri-state control ---------------------------------------- */
 .security-personal-control {
   display: grid;
@@ -12885,12 +12940,18 @@ input[type="checkbox"] {
   }
 }
 
+/* Below ledger width the row reflows into three stacked bands rather than
+   four, and keeps its DOM order: the permission, then Role beside Personal
+   (the pair the reader compares), then the Effective result across the
+   full width as the conclusion. */
 @media (max-width: 1079px) {
   .security-personal-permission-row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(96px, 0.34fr) minmax(0, 1fr);
+    gap: 14px 20px;
   }
 
-  .security-personal-permission-row > .security-permission-copy {
+  .security-personal-permission-row > .security-permission-copy,
+  .security-personal-permission-row > .security-inheritance-state--effective {
     grid-column: 1 / -1;
     max-width: none;
   }
@@ -12926,13 +12987,8 @@ input[type="checkbox"] {
 
   .security-directory-filters,
   .security-directory-tools,
-  .security-account-facts,
-  .security-personal-permission-row {
+  .security-account-facts {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .security-personal-permission-row > .security-permission-copy {
-    grid-column: auto;
   }
 
   .security-role-form {
