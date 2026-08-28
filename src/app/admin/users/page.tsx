@@ -175,7 +175,6 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                     <th>Role</th>
                     <th>Status</th>
                     <th>Last activity</th>
-                    <th>Open</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -183,7 +182,13 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                     <tr key={target.id}>
                       <td>
                         <div className="security-directory-identity">
-                          <strong>{target.displayName || target.email}</strong>
+                          <a
+                            href={`/admin/users/${target.id}`}
+                            className="security-directory-open"
+                            aria-label={`Open ${target.displayName || target.email}`}
+                          >
+                            {target.displayName || target.email}
+                          </a>
                           {target.displayName ? (
                             <span className="admin-table-meta">{target.email}</span>
                           ) : null}
@@ -195,7 +200,17 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                           </span>
                         </div>
                       </td>
-                      <td>{USER_ROLE_LABELS[target.role]}</td>
+                      <td>
+                        <span
+                          className={
+                            target.role === "OWNER"
+                              ? "security-role-tag security-role-tag--owner"
+                              : "security-role-tag"
+                          }
+                        >
+                          {USER_ROLE_LABELS[target.role]}
+                        </span>
+                      </td>
                       <td>
                         <span
                           className={
@@ -211,15 +226,6 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                         {target.lastKnownSignInAt
                           ? formatDisplayDate(target.lastKnownSignInAt)
                           : "No sign-in recorded"}
-                      </td>
-                      <td>
-                        <a
-                          href={`/admin/users/${target.id}`}
-                          className="btn btn-secondary btn-compact"
-                          aria-label={`Open ${target.displayName || target.email}`}
-                        >
-                          Open
-                        </a>
                       </td>
                     </tr>
                   ))}
@@ -282,13 +288,22 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                 icon={SECTION_ICONS.verification}
                 description="Owner-protected public access control."
               >
-                <p className="text-muted security-visibility-summary">
-                  Stored: {storedVisibility === "PUBLIC" ? "Public" : "Private beta"}
-                  <br />
-                  Effective: {effectiveVisibility === "PUBLIC" ? "Public" : "Private beta"}
-                  {storedVisibility !== effectiveVisibility
-                    ? " (server override active)"
-                    : ""}
+                <p className="security-visibility-summary">
+                  <strong>
+                    The Codex is currently{" "}
+                    {effectiveVisibility === "PUBLIC" ? "public" : "in private beta"}.
+                  </strong>
+                  {storedVisibility !== effectiveVisibility ? (
+                    <>
+                      <br />
+                      <span className="text-muted">
+                        A server setting is holding it there, so the choice
+                        saved here —{" "}
+                        {storedVisibility === "PUBLIC" ? "public" : "private beta"}{" "}
+                        — is not in effect.
+                      </span>
+                    </>
+                  ) : null}
                 </p>
                 <form action={changeSiteVisibilityAction} className="form-grid">
                   <input
@@ -305,7 +320,7 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
                     <input type="checkbox" name="confirmed" required />
                     <span>I understand this site-wide access change</span>
                   </label>
-                  <button type="submit" className="btn btn-primary">
+                  <button type="submit" className="btn btn-secondary">
                     Switch to {storedVisibility === "PUBLIC" ? "Private beta" : "Public"}
                   </button>
                 </form>

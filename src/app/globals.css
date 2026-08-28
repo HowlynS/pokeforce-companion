@@ -12444,13 +12444,6 @@ input[type="checkbox"] {
   gap: 12px;
 }
 
-.security-directory-table td:last-child,
-.security-directory-table th:last-child {
-  width: 1%;
-  white-space: nowrap;
-  text-align: right;
-}
-
 .security-directory-table .admin-table-meta {
   display: block;
   margin-top: 3px;
@@ -12507,8 +12500,9 @@ input[type="checkbox"] {
 }
 
 .security-visibility-summary {
-  margin: 0;
-  line-height: 1.7;
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 /* ---- Member detail ----------------------------------------------------- */
