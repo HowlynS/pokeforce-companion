@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ORDINARY_PERMISSION_KEYS,
+  PERMISSION_REGISTRY,
   PROTECTED_PERMISSION_KEYS,
 } from "./permission-registry";
 import {
@@ -41,6 +42,14 @@ describe("permission editor read models", () => {
     expect(
       rows.some(({ key }) => key === "security.members.roles.manage")
     ).toBe(false);
+    expect(rows.find(({ key }) => key === "content.items.create")).toMatchObject({
+      label: PERMISSION_REGISTRY["content.items.create"].label,
+      description: PERMISSION_REGISTRY["content.items.create"].description,
+      dangerous: false,
+    });
+    expect(rows.find(({ key }) => key === "content.items.delete")).toMatchObject({
+      dangerous: true,
+    });
   });
 
   it("keeps protected definitions in a separate read-only collection", () => {

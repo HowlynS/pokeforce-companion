@@ -200,6 +200,19 @@ export async function cleanupPermissionMemberFixture(): Promise<void> {
   });
 }
 
+export async function readPermissionMemberAuditActions(): Promise<string[]> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query<{ action: string }>(
+      `SELECT action
+       FROM "AuditEvent"
+       WHERE "targetId" = $1
+       ORDER BY "createdAt" ASC, "id" ASC`,
+      [E2E_PERMISSION_MEMBER_ID]
+    );
+    return result.rows.map(({ action }) => action);
+  });
+}
+
 export async function resetRolePermissionFixture(): Promise<void> {
   await withVerifiedDatabase(async (client) => {
     await client.query(
@@ -216,6 +229,22 @@ export async function resetRolePermissionFixture(): Promise<void> {
          )
          AND "metadata" ->> 'permissionKey' = 'admin.access'`
     );
+  });
+}
+
+export async function readRolePermissionFixtureAuditActions(): Promise<
+  string[]
+> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query<{ action: string }>(
+      `SELECT action
+       FROM "AuditEvent"
+       WHERE "targetType" = 'ROLE'
+         AND "targetId" = 'MEMBER'
+         AND "metadata" ->> 'permissionKey' = 'admin.access'
+       ORDER BY "createdAt" ASC, "id" ASC`
+    );
+    return result.rows.map(({ action }) => action);
   });
 }
 
@@ -3465,6 +3494,21 @@ export async function setE2eTestAdminRole(
         "Expected exactly one isolated-test admin application row to change role."
       );
     }
+  });
+}
+
+export async function getE2eTestAdminUserId(): Promise<string> {
+  return withVerifiedDatabase(async (client) => {
+    const result = await client.query<{ id: string }>(
+      `SELECT id FROM "AppUser" WHERE lower(email) = lower($1)`,
+      [process.env.ADMIN_EMAIL]
+    );
+    if (result.rowCount !== 1) {
+      throw new Error(
+        "Expected exactly one isolated-test admin application row."
+      );
+    }
+    return result.rows[0].id;
   });
 }
 

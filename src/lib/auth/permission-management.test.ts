@@ -162,9 +162,9 @@ function createFakeClient(options?: { failAudit?: boolean }) {
 }
 
 describe("Owner-only permission management", () => {
-  it("atomically grants and audits an ordinary role permission", async () => {
+  it("atomically grants and revokes an ordinary role permission once each", async () => {
     const fake = createFakeClient();
-    await setRolePermission(
+    const granted = await setRolePermission(
       fake.client,
       "owner-1",
       "CONTRIBUTOR",
@@ -179,6 +179,32 @@ describe("Owner-only permission management", () => {
     expect(fake.auditRows()[0]?.action).toBe(
       "security.role_permission_grant"
     );
+
+    const unchanged = await setRolePermission(
+      fake.client,
+      "owner-1",
+      "CONTRIBUTOR",
+      "content.items.edit",
+      true
+    );
+    const revoked = await setRolePermission(
+      fake.client,
+      "owner-1",
+      "CONTRIBUTOR",
+      "content.items.edit",
+      false
+    );
+
+    expect(granted.changed).toBe(true);
+    expect(unchanged.changed).toBe(false);
+    expect(revoked.changed).toBe(true);
+    expect(fake.roleRows()).not.toContain(
+      "CONTRIBUTOR:content.items.edit"
+    );
+    expect(fake.auditRows().map(({ action }) => action)).toEqual([
+      "security.role_permission_grant",
+      "security.role_permission_revoke",
+    ]);
   });
 
   it("denies Administrators without writing grants or audit", async () => {
@@ -273,7 +299,19 @@ describe("Owner-only permission management", () => {
       null
     );
     expect(fake.overrideRows().has("member-1:content.items.edit")).toBe(false);
-    expect(fake.auditRows()).toHaveLength(3);
+    const unchanged = await setUserPermissionOverride(
+      fake.client,
+      "owner-1",
+      "member-1",
+      "content.items.edit",
+      null
+    );
+    expect(unchanged.changed).toBe(false);
+    expect(fake.auditRows().map(({ action }) => action)).toEqual([
+      "security.personal_permission_allow",
+      "security.personal_permission_deny",
+      "security.personal_permission_inherit",
+    ]);
   });
 
   it("prevents non-Owners from changing their own override", async () => {
