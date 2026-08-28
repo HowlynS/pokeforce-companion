@@ -45,6 +45,17 @@ type ResourceCase = {
   fillRequiredFields?: (page: Page) => Promise<void>;
 };
 
+// Availability feedback is a DEBOUNCED round-trip to the isolated Supabase
+// test project, not local state: the field waits for typing to settle and
+// then asks the server whether the address is free. Under full-suite load
+// that round-trip can legitimately outlast Playwright's default 5s
+// expect timeout, which showed up as an assertion stuck on "Checking page
+// address availability…" — a slow answer, never a wrong one. These
+// assertions therefore get a longer budget than the default. The budget is
+// applied ONLY to the settled-answer assertions, so a genuinely wrong
+// answer still fails, and fails fast.
+const AVAILABILITY_TIMEOUT = 20_000;
+
 const RESOURCES: ResourceCase[] = [
   {
     label: "Item",
@@ -198,11 +209,15 @@ for (const resource of RESOURCES) {
 
     // A unique manually-entered Page address is available: no visible text.
     await slugInput(page).fill("test-e2e-unique-slug-availability-demo");
-    await expect(feedback).toHaveText("Page address is available.");
+    await expect(feedback).toHaveText("Page address is available.", {
+      timeout: AVAILABILITY_TIMEOUT,
+    });
 
     // The seeded slug is taken.
     await slugInput(page).fill(resource.seededSlug);
-    await expect(feedback).toHaveText(resource.slugTakenText);
+    await expect(feedback).toHaveText(resource.slugTakenText, {
+      timeout: AVAILABILITY_TIMEOUT,
+    });
 
     // Blank shows nothing (never checked).
     await slugInput(page).fill("");
@@ -217,9 +232,13 @@ for (const resource of RESOURCES) {
 
     await slugInput(page).fill(resource.seededSlug);
     await slugInput(page).fill("test-e2e-unique-rapid-slug-demo");
-    await expect(feedback).toHaveText("Page address is available.");
+    await expect(feedback).toHaveText("Page address is available.", {
+      timeout: AVAILABILITY_TIMEOUT,
+    });
     await page.waitForTimeout(700);
-    await expect(feedback).toHaveText("Page address is available.");
+    await expect(feedback).toHaveText("Page address is available.", {
+      timeout: AVAILABILITY_TIMEOUT,
+    });
   });
 
   test(`${resource.label} edit form: starts showing the persisted Page address, then tracks Name live (deleting/replacing words) until manually edited`, async ({
@@ -255,7 +274,9 @@ for (const resource of RESOURCES) {
     // working after these automatic changes, not just after a manual
     // edit.
     await nameInput(page).fill(resource.otherSeededSlug);
-    await expect(feedback).toHaveText(resource.slugTakenText);
+    await expect(feedback).toHaveText(resource.slugTakenText, {
+      timeout: AVAILABILITY_TIMEOUT,
+    });
 
     // Manually editing Page address stops it from following Name any
     // further.
@@ -384,6 +405,18 @@ test("Location create/edit: Page address live tracking, manual override, and ava
   await selectAdminOption(
     page.getByRole("combobox", { name: "Type", exact: true }),
     "Region"
+  );
+  // Let the name/address availability round-trips settle before
+  // submitting. Submitting mid-check races the server's own validation and
+  // the form comes back to /new with nothing created — the same
+  // synchronization the Location admin spec already performs.
+  await expect(page.locator("#location-name-availability")).not.toHaveText(
+    /Checking/,
+    { timeout: AVAILABILITY_TIMEOUT }
+  );
+  await expect(page.locator("#location-slug-availability")).not.toHaveText(
+    /Checking/,
+    { timeout: AVAILABILITY_TIMEOUT }
   );
   await page
     .getByRole("button", { name: "Create Location", exact: true })
