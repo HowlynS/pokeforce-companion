@@ -11949,7 +11949,15 @@ input[type="checkbox"] {
 
 /* Users & access permission workbench. This is a dense policy ledger, not a
    generic settings form: role context stays fixed above grouped registry rows,
-   while every row keeps its explanation and server-backed state together. */
+   while every row keeps its explanation and server-backed state together.
+
+   Two rules shape the whole surface. First, the ledger is WIDTH-BOUNDED
+   (--security-ledger-max): a permission name on the far left and its control
+   on the far right of a 3440px viewport is unreadable, so the ledger stops
+   growing long before the viewport does. Second, a permission group is a
+   BAND, not a card — fifteen registry groups wrapped in fifteen identical
+   bordered cards was bulk without hierarchy, so the group title carries the
+   hierarchy and one hairline rule carries the separation. */
 .security-page-intro {
   max-width: 760px;
   margin: -4px 0 0;
@@ -11958,82 +11966,204 @@ input[type="checkbox"] {
   line-height: 1.6;
 }
 
-.security-role-selector {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
+.security-ledger {
+  --security-ledger-max: 1560px;
+  max-width: var(--security-ledger-max);
+  min-width: 0;
 }
 
-.security-role-selector-link {
+/* ---- Role rail ------------------------------------------------------- */
+.security-role-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.security-role-chip {
   display: grid;
-  gap: 3px;
+  gap: 2px;
+  flex: 0 1 auto;
   min-width: 0;
-  padding: 14px 16px;
+  padding: 10px 18px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: var(--color-surface-raised);
-  color: var(--color-text);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   text-decoration: none;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.security-role-selector-link:hover,
-.security-role-selector-link:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-surface-soft);
-}
-
-.security-role-selector-link[aria-current="page"] {
-  border-color: var(--color-accent);
-  box-shadow: inset 3px 0 0 var(--color-accent);
-}
-
-.security-role-selector-link span {
+.security-role-chip span {
+  font-size: 14px;
   font-weight: 700;
 }
 
-.security-role-selector-link small {
-  color: var(--color-text-muted);
-  font-size: 12px;
+.security-role-chip small {
+  font-size: 11.5px;
+  letter-spacing: 0.01em;
 }
 
+.security-role-chip:hover,
+.security-role-chip:focus-visible {
+  border-color: var(--color-border-hover);
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+}
+
+/* The selected role must be unmistakable at a glance, so it changes THREE
+   things at once (fill, border, text colour) rather than relying on a single
+   thin accent border the eye can miss across a wide header. */
+.security-role-chip[aria-current="page"] {
+  border-color: var(--color-accent);
+  background: rgba(195, 154, 75, 0.16);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
+  color: var(--color-accent-soft);
+}
+
+.security-role-chip[aria-current="page"] span {
+  color: var(--color-text);
+}
+
+/* ---- Selected role identity ------------------------------------------ */
+.security-role-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  margin-bottom: 28px;
+  padding: 18px 22px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.security-role-identity-copy {
+  min-width: 0;
+  max-width: 640px;
+}
+
+.security-role-identity-eyebrow {
+  margin: 0;
+  color: var(--color-text-meta);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.security-role-identity-name {
+  margin: 5px 0 0;
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.security-role-identity-summary {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.security-role-identity-tally {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  margin: 0;
+  text-align: right;
+}
+
+.security-role-identity-tally strong {
+  color: var(--color-accent-soft);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.security-role-identity-tally span {
+  max-width: 200px;
+  color: var(--color-text-meta);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* ---- Permission group bands ------------------------------------------ */
 .security-permission-groups {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 20px;
+  gap: 30px;
 }
 
-.security-permission-groups > .admin-editor-section {
-  margin-bottom: 0;
+.security-group {
+  min-width: 0;
 }
 
-.security-permission-list {
+.security-group-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-accent);
+}
+
+.security-group-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.security-group-meta {
+  margin: 0;
+  color: var(--color-text-meta);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.security-group-body {
   display: grid;
 }
 
+/* ---- Role permission rows -------------------------------------------- */
 .security-permission-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(156px, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(150px, auto);
   align-items: center;
-  gap: 16px 24px;
+  gap: 10px 24px;
   min-width: 0;
-  padding: 14px 0;
+  padding: 13px 12px 13px 0;
   border-top: 1px solid var(--color-border-muted);
 }
 
-.security-permission-row:first-child {
-  padding-top: 0;
+.security-group-body > .security-permission-row:first-child {
   border-top: 0;
 }
 
-.security-permission-row:last-child {
-  padding-bottom: 0;
+/* A sensitive permission is a valid, higher-risk setting — never an error.
+   One quiet ember edge marks it; the row keeps its ordinary surface. */
+.security-permission-row--sensitive {
+  padding-left: 14px;
+  box-shadow: inset 2px 0 0 rgba(190, 106, 68, 0.55);
 }
 
 .security-permission-copy,
 .security-permission-name-row {
   min-width: 0;
+}
+
+.security-permission-copy {
+  max-width: 620px;
 }
 
 .security-permission-name-row {
@@ -12048,141 +12178,244 @@ input[type="checkbox"] {
 }
 
 .security-permission-copy p {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
-.security-risk-label,
-.security-protected-label {
+/* ---- Markers ---------------------------------------------------------- */
+.security-risk-label {
   display: inline-flex;
   align-items: center;
-  min-height: 20px;
+  min-height: 19px;
   padding: 2px 7px;
-  border: 1px solid rgba(217, 149, 65, 0.45);
+  border: 1px solid rgba(190, 106, 68, 0.5);
   border-radius: 999px;
-  color: var(--color-warning, #d99541);
-  font-size: 10px;
+  background: rgba(190, 106, 68, 0.12);
+  color: #d08a63;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.security-protected-label {
-  border-color: var(--color-border);
-  color: var(--color-text-muted);
-}
-
+/* ---- Role permission toggle ------------------------------------------ */
 .security-permission-control {
   display: grid;
   justify-items: end;
-  gap: 5px;
+  gap: 4px;
 }
 
 .security-permission-toggle {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 9px;
-  min-width: 142px;
-  padding: 7px 10px;
+  gap: 10px;
+  width: 148px;
+  padding: 7px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
-  color: var(--color-text-muted);
+  color: var(--color-text-meta);
   font: inherit;
   font-size: 12px;
   font-weight: 700;
+  text-align: left;
   cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .security-permission-toggle:hover:not(:disabled),
 .security-permission-toggle:focus-visible {
-  border-color: var(--color-accent);
+  border-color: var(--color-border-hover);
   color: var(--color-text);
 }
 
 .security-permission-toggle[aria-pressed="true"] {
-  border-color: rgba(216, 181, 98, 0.55);
+  border-color: rgba(195, 154, 75, 0.55);
+  background: rgba(195, 154, 75, 0.1);
   color: var(--color-accent-soft);
 }
 
 .security-permission-toggle:disabled {
-  cursor: wait;
+  cursor: progress;
   opacity: 0.7;
 }
 
 .security-permission-toggle-track {
   position: relative;
-  width: 30px;
-  height: 16px;
-  flex: 0 0 30px;
+  width: 28px;
+  height: 15px;
+  flex: 0 0 28px;
   border-radius: 999px;
   background: var(--color-border);
+  transition: background-color 0.15s ease;
 }
 
 .security-permission-toggle-thumb {
   position: absolute;
   top: 3px;
   left: 3px;
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--color-text-muted);
+  background: var(--color-text-meta);
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 .security-permission-toggle[aria-pressed="true"]
   .security-permission-toggle-track {
-  background: rgba(216, 181, 98, 0.3);
+  background: rgba(195, 154, 75, 0.35);
 }
 
 .security-permission-toggle[aria-pressed="true"]
   .security-permission-toggle-thumb {
-  background: var(--color-accent);
-  transform: translateX(14px);
+  background: var(--color-accent-soft);
+  transform: translateX(13px);
 }
 
+/* ---- Read-only state badges ------------------------------------------ */
 .security-state-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   justify-self: end;
-  min-height: 28px;
-  padding: 4px 9px;
+  min-height: 26px;
+  padding: 4px 10px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
-  color: var(--color-text-muted);
+  color: var(--color-text-meta);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .security-state-badge--allowed {
-  border-color: rgba(216, 181, 98, 0.45);
+  border-color: rgba(195, 154, 75, 0.45);
+  background: rgba(195, 154, 75, 0.1);
   color: var(--color-accent-soft);
 }
 
+.security-state-badge--denied {
+  border-color: rgba(176, 122, 116, 0.4);
+  color: #b98a86;
+}
+
 .security-control-message {
-  min-height: 16px;
+  min-height: 15px;
   font-size: 11px;
 }
 
 .security-control-message--success {
-  color: var(--color-success, #75b887);
+  color: var(--color-success);
 }
 
 .security-control-message--error {
   max-width: 220px;
-  color: var(--color-error, #e07878);
+  color: #d98a84;
   text-align: right;
 }
 
-.security-protected-section {
-  margin-top: 24px;
+/* ---- Protected Owner permissions -------------------------------------- */
+/* Reserved authority, not a disabled setting: a warm tinted panel with a
+   lock, one lead sentence, and compact tiles that carry NO control column
+   and no repeated per-row "Owner protected" pill. */
+.security-protected-panel {
+  margin-top: 34px;
+  padding: 22px 24px 24px;
+  border: 1px solid rgba(195, 154, 75, 0.34);
+  border-radius: 14px;
+  background: linear-gradient(
+    180deg,
+    rgba(195, 154, 75, 0.08),
+    rgba(195, 154, 75, 0.03)
+  );
 }
 
+.security-protected-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin-bottom: 18px;
+}
+
+.security-protected-panel-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(195, 154, 75, 0.4);
+  border-radius: 9px;
+  background: rgba(195, 154, 75, 0.12);
+  color: var(--color-accent-soft);
+}
+
+.security-protected-panel-title {
+  margin: 0;
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.security-protected-panel-lead {
+  max-width: 760px;
+  margin: 5px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.security-protected-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.security-protected-tile {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(195, 154, 75, 0.2);
+  border-radius: 10px;
+  background: rgba(23, 27, 25, 0.55);
+}
+
+.security-protected-tile strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.security-protected-tile p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.security-protected-note {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--color-accent-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.security-protected-panel-footnote {
+  max-width: 760px;
+  margin: 16px 0 0;
+  color: var(--color-text-meta);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* ---- Member directory -------------------------------------------------- */
 .security-directory-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -12226,7 +12459,7 @@ input[type="checkbox"] {
 
 .security-directory-identity {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -12234,11 +12467,51 @@ input[type="checkbox"] {
   margin-top: 0;
 }
 
+/* The member's own name is the affordance, so the whole identity reads as
+   the way in rather than a far-right button being the only target. Its
+   accessible name still states the action ("Open <member>"). */
+.security-directory-open {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.security-directory-open:hover,
+.security-directory-open:focus-visible {
+  color: var(--color-accent-soft);
+  text-decoration: underline;
+}
+
+.security-role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Owner is the one role that is system-protected rather than configured,
+   so the directory marks it instead of listing it like the rest. */
+.security-role-tag--owner {
+  color: var(--color-accent-soft);
+}
+
+.security-role-tag--owner::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
 .security-visibility-summary {
   margin: 0;
   line-height: 1.7;
 }
 
+/* ---- Member detail ----------------------------------------------------- */
 .security-member-overview {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -12249,7 +12522,7 @@ input[type="checkbox"] {
 
 @media (min-width: 1200px) {
   .security-member-overview {
-    grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
   }
 }
 
@@ -12265,8 +12538,8 @@ input[type="checkbox"] {
 }
 
 .security-account-facts dt,
-.security-inheritance-state > span {
-  color: var(--color-text-muted);
+.security-state-label {
+  color: var(--color-text-meta);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -12309,76 +12582,167 @@ input[type="checkbox"] {
   justify-self: start;
 }
 
-.security-personal-heading {
+/* Security-sensitive inputs never stretch the full width of a wide column:
+   a 900px-wide password field reads as a page-level form, not one
+   deliberate account action. */
+.security-account-control .form-field,
+.security-role-form .form-field {
+  max-width: 360px;
+}
+
+/* ---- Role assignment block -------------------------------------------- */
+/* Role lives with the permission story (Role -> Personal -> Effective), not
+   with account lifecycle actions, so changing what a member MAY DO is never
+   presented as the same kind of action as disabling their account. */
+.security-role-block {
   display: flex;
-  align-items: end;
+  flex-wrap: wrap;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
+  gap: 20px 32px;
+  margin-bottom: 26px;
+  padding: 18px 22px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.security-role-block-copy {
+  min-width: 0;
+  max-width: 560px;
+}
+
+.security-role-block-copy h3 {
+  margin: 5px 0 0;
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.security-role-block-copy p {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.security-role-form {
+  display: grid;
+  gap: 12px;
+  min-width: 280px;
+}
+
+.security-role-form .btn {
+  justify-self: start;
+}
+
+/* ---- Personal permission ledger ---------------------------------------- */
+.security-personal-heading {
   margin-bottom: 20px;
 }
 
 .security-personal-heading h2 {
   margin: 4px 0 0;
-  font-size: 24px;
+  font-family: var(--font-resource-title), Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 600;
 }
 
 .security-personal-heading p:last-child {
-  max-width: 720px;
+  max-width: 760px;
   margin: 7px 0 0;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.55;
 }
 
-.security-personal-permission-list {
+/* One shared track for the row and its column header, so the header labels
+   can never drift out of alignment with the cells they name. */
+.security-personal-permission-row,
+.security-group-columns {
   display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) minmax(104px, 0.32fr) minmax(232px, 0.58fr)
+    minmax(150px, 0.42fr);
+  gap: 12px 20px;
+  min-width: 0;
+}
+
+.security-group-columns {
+  padding: 9px 0 7px;
+  border-bottom: 1px solid var(--color-border-muted);
+  color: var(--color-text-meta);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .security-personal-permission-row {
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(105px, 0.25fr)
-    minmax(220px, auto) minmax(100px, 0.25fr);
   align-items: center;
-  gap: 16px 20px;
-  min-width: 0;
-  padding: 16px 0;
+  padding: 15px 0;
   border-top: 1px solid var(--color-border-muted);
 }
 
-.security-personal-permission-row:first-child {
-  padding-top: 0;
+.security-group-columns + .security-group-body
+  > .security-personal-permission-row:first-child {
   border-top: 0;
 }
 
-.security-personal-permission-row:last-child {
-  padding-bottom: 0;
+.security-personal-permission-row.security-permission-row--sensitive {
+  padding-left: 14px;
+  box-shadow: inset 2px 0 0 rgba(190, 106, 68, 0.55);
 }
 
 .security-inheritance-state {
   display: grid;
-  justify-items: start;
-  gap: 5px;
+  align-content: center;
+  gap: 4px;
   min-width: 0;
 }
 
-.security-inheritance-state strong {
-  font-size: 12px;
+/* At ledger widths the group's own column header names each cell, so the
+   per-row label becomes visual noise — but it stays in the DOM, because it
+   is what a screen reader reads for the cell it labels. */
+@media (min-width: 1080px) {
+  .security-state-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
-.security-inheritance-state small {
-  color: var(--color-text-muted);
-  font-size: 10px;
+@media (max-width: 1079px) {
+  .security-group-columns {
+    display: none;
+  }
 }
 
+.security-inheritance-state > strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.security-inheritance-state--role > strong {
+  color: var(--color-text-body);
+}
+
+/* ---- Personal tri-state control ---------------------------------------- */
 .security-personal-control {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 
 .security-personal-options {
   display: inline-grid;
-  grid-template-columns: repeat(3, auto);
+  grid-template-columns: repeat(3, minmax(0, auto));
+  justify-self: start;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -12387,15 +12751,17 @@ input[type="checkbox"] {
 
 .security-personal-option {
   min-height: 30px;
-  padding: 5px 8px;
+  padding: 6px 11px;
   border: 0;
   border-left: 1px solid var(--color-border);
   background: transparent;
-  color: var(--color-text-muted);
+  color: var(--color-text-meta);
   font: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .security-personal-option:first-child {
@@ -12408,21 +12774,46 @@ input[type="checkbox"] {
   color: var(--color-text);
 }
 
+/* "Use role setting" is the neutral default and reads as such; an explicit
+   personal Allow or Deny is a deliberate exception and reads louder. Deny
+   is a permission state, never a destructive action, so it borrows a muted
+   clay rather than the danger red used for real deletions. */
 .security-personal-option[aria-pressed="true"] {
-  background: rgba(216, 181, 98, 0.16);
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  box-shadow: inset 0 -2px 0 var(--color-text-meta);
+}
+
+.security-personal-option[data-setting="ALLOW"][aria-pressed="true"] {
+  background: rgba(195, 154, 75, 0.16);
   color: var(--color-accent-soft);
   box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
+.security-personal-option[data-setting="DENY"][aria-pressed="true"] {
+  background: rgba(176, 122, 116, 0.16);
+  color: #d3a5a0;
+  box-shadow: inset 0 -2px 0 #b07a74;
+}
+
 .security-personal-option:disabled {
-  cursor: wait;
+  cursor: progress;
   opacity: 0.65;
+}
+
+/* ---- Effective result --------------------------------------------------- */
+.security-inheritance-state--effective small {
+  display: block;
+  color: var(--color-text-meta);
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .security-effective {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 13px;
 }
 
 .security-effective::before {
@@ -12434,20 +12825,21 @@ input[type="checkbox"] {
 }
 
 .security-effective--allowed {
-  color: var(--color-success, #75b887);
+  color: #86c496;
 }
 
-.security-effective--denied,
-.security-state-badge--denied {
-  color: var(--color-error, #e07878);
+/* A member simply not holding an optional permission is the normal case on
+   this page, so it must not read like a failure: muted clay, not alarm red. */
+.security-effective--denied {
+  color: #b98a86;
 }
 
+/* ---- Responsive --------------------------------------------------------- */
 @media (min-width: 1700px) {
   .security-directory-layout {
     grid-template-columns: minmax(0, 7fr) minmax(300px, 3fr);
   }
 
-  .security-directory-layout--single,
   .security-directory-layout--single {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -12455,9 +12847,35 @@ input[type="checkbox"] {
   .security-directory-tools {
     grid-template-columns: minmax(0, 1fr);
   }
+}
 
-  .security-permission-groups--personal {
-    grid-template-columns: minmax(0, 1fr);
+/* Two tracks of bands once the ledger is wide enough that a single column
+   would leave half the ledger empty. Column flow keeps the registry's own
+   group order readable top-to-bottom, then top-to-bottom again. */
+@media (min-width: 1500px) {
+  .security-permission-groups:not(.security-permission-groups--personal) {
+    display: block;
+    columns: 2;
+    column-gap: 44px;
+  }
+
+  .security-permission-groups:not(.security-permission-groups--personal)
+    > .security-group {
+    break-inside: avoid;
+    margin-bottom: 30px;
+  }
+}
+
+/* Ultrawide fills with a THIRD band track, never with wider rows: the
+   ledger's own cap rises, each column stays around the same comfortable
+   reading measure, and the page stops stranding half a 3440px viewport. */
+@media (min-width: 2280px) {
+  .security-ledger {
+    --security-ledger-max: 2280px;
+  }
+
+  .security-permission-groups:not(.security-permission-groups--personal) {
+    columns: 3;
   }
 }
 
@@ -12465,33 +12883,33 @@ input[type="checkbox"] {
   .security-directory-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
+@media (max-width: 1079px) {
   .security-personal-permission-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .security-personal-permission-row > .security-permission-copy {
     grid-column: 1 / -1;
-  }
-}
-
-@media (min-width: 1700px) {
-  .security-permission-groups:not(.security-permission-groups--personal) {
-    display: block;
-    columns: 2;
-    column-gap: 20px;
-  }
-
-  .security-permission-groups:not(.security-permission-groups--personal)
-    > .admin-editor-section {
-    break-inside: avoid;
-    margin-bottom: 20px;
+    max-width: none;
   }
 }
 
 @media (max-width: 760px) {
-  .security-role-selector {
-    grid-template-columns: minmax(0, 1fr);
+  .security-role-chip {
+    flex: 1 1 100%;
+  }
+
+  .security-role-identity,
+  .security-role-block {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .security-role-identity-tally {
+    justify-items: start;
+    text-align: left;
   }
 
   .security-permission-row {
@@ -12516,11 +12934,16 @@ input[type="checkbox"] {
   .security-personal-permission-row > .security-permission-copy {
     grid-column: auto;
   }
+
+  .security-role-form {
+    min-width: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .security-role-selector-link,
+  .security-role-chip,
   .security-permission-toggle,
+  .security-permission-toggle-track,
   .security-permission-toggle-thumb,
   .security-personal-option {
     transition: none;

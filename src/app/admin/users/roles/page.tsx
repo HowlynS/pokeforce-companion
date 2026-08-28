@@ -1,6 +1,6 @@
-import { ShieldCheck } from "lucide-react";
 import { EditorHeader } from "@/components/admin/editor-header";
-import { EditorSection } from "@/components/admin/editor-section";
+import { PermissionGroupSection } from "@/components/admin/permission-group-section";
+import { ProtectedPermissionPanel } from "@/components/admin/protected-permission-panel";
 import { RolePermissionControl } from "@/components/admin/role-permission-control";
 import { UsersAccessTabs } from "@/components/admin/users-access-tabs";
 import { requirePermission } from "@/lib/auth/authorization";
@@ -12,6 +12,7 @@ import {
   type OrdinaryUserRole,
 } from "@/lib/auth/permission-read-model";
 import { USER_ROLE_LABELS } from "@/lib/auth/roles";
+import { ORDINARY_ROLE_COPY } from "@/lib/admin/role-policy-copy";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -22,13 +23,11 @@ const EDITABLE_ROLES: readonly OrdinaryUserRole[] = [
   "ADMINISTRATOR",
 ];
 
-type RolePoliciesPageProps = {
-  searchParams: Promise<{ role?: string }>;
-};
-
 export default async function RolePoliciesPage({
   searchParams,
-}: RolePoliciesPageProps) {
+}: {
+  searchParams: Promise<{ role?: string }>;
+}) {
   const { permissionContext } = await requirePermission("users.view");
   const { role: requestedRole } = await searchParams;
   const role = ordinaryRoleFrom(requestedRole);
@@ -47,6 +46,7 @@ export default async function RolePoliciesPage({
     (count, group) => count + group.permissions.length,
     0
   );
+  const roleLabel = USER_ROLE_LABELS[role];
 
   return (
     <>
@@ -56,11 +56,6 @@ export default async function RolePoliciesPage({
         subtitle="Ordinary role permissions"
         backHref="/admin/users"
         backLabel="Users & access"
-        status={
-          <span className="admin-status-badge admin-status-badge-current">
-            {grantedCount} of {permissionCount} allowed
-          </span>
-        }
       />
       <p className="security-page-intro">
         Set the shared baseline for each ordinary role. Personal member
@@ -70,88 +65,94 @@ export default async function RolePoliciesPage({
 
       <UsersAccessTabs active="roles" />
 
-      <nav className="security-role-selector" aria-label="Role policy">
-        {EDITABLE_ROLES.map((candidate) => (
-          <a
-            key={candidate}
-            href={`/admin/users/roles?role=${candidate}`}
-            className="security-role-selector-link"
-            aria-current={candidate === role ? "page" : undefined}
-          >
-            <span>{USER_ROLE_LABELS[candidate]}</span>
-            <small>
-              {candidate === "MEMBER"
-                ? "Reference access"
-                : candidate === "CONTRIBUTOR"
-                  ? "Propose changes"
-                  : "Maintain the Codex"}
-            </small>
-          </a>
-        ))}
-      </nav>
-
-      {!canEdit ? (
-        <p className="banner banner-info">
-          You can inspect role policy because you may view members. Only the
-          Owner can change role permissions.
-        </p>
-      ) : null}
-
-      <div className="security-permission-groups">
-        {model.groups.map((group) => (
-          <EditorSection
-            key={group.group}
-            title={group.group}
-            icon={ShieldCheck}
-            description={`${group.permissions.length} ${group.permissions.length === 1 ? "permission" : "permissions"}`}
-          >
-            <div className="security-permission-list">
-              {group.permissions.map((permission) => (
-                <div className="security-permission-row" key={permission.key}>
-                  <div className="security-permission-copy">
-                    <div className="security-permission-name-row">
-                      <strong>{permission.label}</strong>
-                      {permission.dangerous ? (
-                        <span className="security-risk-label">Sensitive</span>
-                      ) : null}
-                    </div>
-                    <p>{permission.description}</p>
-                  </div>
-                  <RolePermissionControl
-                    role={role}
-                    permission={permission}
-                    editable={canEdit}
-                  />
-                </div>
-              ))}
-            </div>
-          </EditorSection>
-        ))}
-      </div>
-
-      <EditorSection
-        title="Protected Owner Permissions"
-        icon={ShieldCheck}
-        description="The Owner is system-protected and always has every registered permission. These permissions cannot be assigned to ordinary roles."
-        className="security-protected-section"
-      >
-        <div className="security-permission-list">
-          {protectedPermissions.map((permission) => (
-            <div className="security-permission-row" key={permission.key}>
-              <div className="security-permission-copy">
-                <div className="security-permission-name-row">
-                  <strong>{permission.label}</strong>
-                  <span className="security-protected-label">
-                    Owner protected
-                  </span>
-                </div>
-                <p>{permission.description}</p>
-              </div>
-              <span className="security-state-badge">Fixed by system</span>
-            </div>
+      <div className="security-ledger">
+        <nav className="security-role-rail" aria-label="Role policy">
+          {EDITABLE_ROLES.map((candidate) => (
+            <a
+              key={candidate}
+              href={`/admin/users/roles?role=${candidate}`}
+              className="security-role-chip"
+              aria-current={candidate === role ? "page" : undefined}
+            >
+              <span>{USER_ROLE_LABELS[candidate]}</span>
+              <small>{ORDINARY_ROLE_COPY[candidate].tagline}</small>
+            </a>
           ))}
+        </nav>
+
+        <div className="security-role-identity">
+          <div className="security-role-identity-copy">
+            <p className="security-role-identity-eyebrow">Editing role policy</p>
+            <h2 className="security-role-identity-name">{roleLabel}</h2>
+            <p className="security-role-identity-summary">
+              {ORDINARY_ROLE_COPY[role].summary}
+            </p>
+          </div>
+          <p className="security-role-identity-tally">
+            <strong>{grantedCount}</strong>
+            <span>
+              of {permissionCount} permissions allowed for {roleLabel}
+            </span>
+          </p>
         </div>
-      </EditorSection>
+
+        {!canEdit ? (
+          <p className="banner banner-info">
+            You can inspect role policy because you may view members. Only the
+            Owner can change role permissions.
+          </p>
+        ) : null}
+
+        <div className="security-permission-groups">
+          {model.groups.map((group) => {
+            const allowed = group.permissions.filter(
+              ({ granted }) => granted
+            ).length;
+            return (
+              <PermissionGroupSection
+                key={group.group}
+                title={group.group}
+                meta={`${allowed} of ${group.permissions.length} allowed`}
+              >
+                {group.permissions.map((permission) => (
+                  <div
+                    className={
+                      permission.dangerous
+                        ? "security-permission-row security-permission-row--sensitive"
+                        : "security-permission-row"
+                    }
+                    key={permission.key}
+                  >
+                    <div className="security-permission-copy">
+                      <div className="security-permission-name-row">
+                        <strong>{permission.label}</strong>
+                        {permission.dangerous ? (
+                          <span className="security-risk-label">Sensitive</span>
+                        ) : null}
+                      </div>
+                      <p>{permission.description}</p>
+                    </div>
+                    <RolePermissionControl
+                      role={role}
+                      permission={permission}
+                      editable={canEdit}
+                    />
+                  </div>
+                ))}
+              </PermissionGroupSection>
+            );
+          })}
+        </div>
+
+        <ProtectedPermissionPanel
+          lead={`The Owner is system-protected and always holds every registered permission. These powers cannot be granted to ${roleLabel} or to any other ordinary role.`}
+          entries={protectedPermissions.map((permission) => ({
+            key: permission.key,
+            label: permission.label,
+            description: permission.description,
+          }))}
+        />
+      </div>
     </>
   );
 }
