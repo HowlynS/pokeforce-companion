@@ -40,8 +40,12 @@ test.afterAll(async () => {
 });
 
 // The public card renders its title as an h3 inside the card link.
+// A record card names itself at level 4. The public location page reserves
+// level 3 for the group fold each card sits under (the acquisition type on
+// Obtainable Items, the location type on Sub-locations), so the record name
+// is one level deeper than it was before that grouping existed.
 function cardTitle(page: Page, name: string) {
-  return page.getByRole("heading", { level: 3, name, exact: true });
+  return page.getByRole("heading", { level: 4, name, exact: true });
 }
 
 function cardLink(page: Page, name: string) {
@@ -315,8 +319,14 @@ test("no Game Version or verification information appears on the location page",
     page.getByRole("heading", { level: 2, name: "Obtainable Items", exact: true })
   ).toBeVisible();
 
-  await expect(page.getByText(/verified/i)).toHaveCount(0);
-  await expect(page.getByText(/game version/i)).toHaveCount(0);
+  // Verified information is now a deliberate PUBLIC feature with its own
+  // structured card in the sidebar (owned by public-verification.spec.ts),
+  // so this is no longer a page-wide prohibition. What this spec owns is
+  // the Obtainable Items listing, which is acquisition data and must not
+  // start carrying verification or Game Version text of its own.
+  const obtainable = page.locator(".location-detail-obtainable-groups");
+  await expect(obtainable.getByText(/verified/i)).toHaveCount(0);
+  await expect(obtainable.getByText(/game version/i)).toHaveCount(0);
 });
 
 test("existing description, hierarchy, and notFound behavior remain intact", async ({

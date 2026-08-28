@@ -81,9 +81,14 @@ test("a root location shows Locations -> Current Location, with no ancestor link
     "href",
     "/locations"
   );
-  // Only the root "Locations" link and the current (non-linked) name — no
-  // ancestor links at all for a root location.
-  await expect(crumb.getByRole("link")).toHaveCount(1);
+  // The public breadcrumb opens with a Home link before the Locations root
+  // (added when the public page shell was normalized), so a root location
+  // carries exactly those two links and its own non-linked name — still no
+  // ancestor links at all.
+  await expect(
+    crumb.getByRole("link", { name: "Home", exact: true })
+  ).toHaveAttribute("href", "/");
+  await expect(crumb.getByRole("link")).toHaveCount(2);
   await expect(crumb.getByText(ROOT.name, { exact: true })).toBeVisible();
   // The current location's own name is not itself a link.
   await expect(
@@ -156,10 +161,11 @@ test("a three-level hierarchy shows the full ancestor chain, root-first, with th
   await expect(regionLink).toHaveAttribute("href", `/locations/${REGION.slug}`);
   await expect(townLink).toHaveAttribute("href", `/locations/${TOWN.slug}`);
 
-  // Root-first reading order: Locations, then Region, then Town, then the
-  // current (unlinked) Building name.
+  // Root-first reading order: Home, Locations, then Region, then Town, then
+  // the current (unlinked) Building name. Home opens the public breadcrumb
+  // on every page since the public shell was normalized.
   const linksInOrder = await crumb.getByRole("link").allTextContents();
-  expect(linksInOrder).toEqual(["Locations", REGION.name, TOWN.name]);
+  expect(linksInOrder).toEqual(["Home", "Locations", REGION.name, TOWN.name]);
 
   // The current location itself is never one of the breadcrumb's links.
   await expect(
@@ -210,7 +216,9 @@ test("direct children render in deterministic name order, and no Sub-locations s
     page.getByRole("heading", { level: 2, name: "Sub-locations", exact: true })
   ).toBeVisible();
 
-  const childHeadings = page.getByRole("heading", { level: 3 });
+  // Sub-location cards name themselves at level 4; level 3 is the type
+  // fold they are grouped under.
+  const childHeadings = page.getByRole("heading", { level: 4 });
   const names = await childHeadings.allTextContents();
   const alphaIndex = names.indexOf(CHILD_ALPHA.name);
   const zebraIndex = names.indexOf(CHILD_ZEBRA.name);
@@ -220,7 +228,7 @@ test("direct children render in deterministic name order, and no Sub-locations s
 
   const childLink = page
     .getByRole("link")
-    .filter({ has: page.getByRole("heading", { level: 3, name: CHILD_ALPHA.name, exact: true }) });
+    .filter({ has: page.getByRole("heading", { level: 4, name: CHILD_ALPHA.name, exact: true }) });
   await expect(childLink).toHaveAttribute("href", `/locations/${CHILD_ALPHA.slug}`);
   await childLink.click();
   await expect(page).toHaveURL(`/locations/${CHILD_ALPHA.slug}`);
@@ -244,8 +252,12 @@ test("no Game Version or verification information appears in or around the bread
 
   await page.goto(`/locations/${CHILD.slug}`);
   await expect(breadcrumb(page)).toBeVisible();
-  await expect(page.getByText(/verified/i)).toHaveCount(0);
-  await expect(page.getByText(/game version/i)).toHaveCount(0);
+  // Scoped to the breadcrumb itself, which is exactly what this test is
+  // about. Verified information is now a deliberate public feature with
+  // its own sidebar card (owned by public-verification.spec.ts); what must
+  // stay true is that hierarchy navigation carries none of it.
+  await expect(breadcrumb(page).getByText(/verified/i)).toHaveCount(0);
+  await expect(breadcrumb(page).getByText(/game version/i)).toHaveCount(0);
 });
 
 test("the Locations root link opens the public locations list, which links back to a location's own page", async ({
@@ -265,8 +277,21 @@ test("the Locations root link opens the public locations list, which links back 
     page.getByRole("heading", { level: 1, name: "Locations", exact: true })
   ).toBeVisible();
 
-  const listLink = page
-    .getByRole("link")
-    .filter({ has: page.getByRole("heading", { level: 3, name: LOCATION.name, exact: true }) });
-  await expect(listLink).toHaveAttribute("href", `/locations/${LOCATION.slug}`);
+  // The directory groups by root region, so a root location is reachable
+  // from its own band heading rather than from a card nested inside one.
+  // What matters to this test is the same either way: the list links back
+  // to the location's own page, under the location's own name.
+  // The directory reaches a root location through its band's own
+  // PageLinkArrow, which carries the name in its accessible label rather
+  // than as visible text — so the link is matched by that name.
+  const listLink = page.getByRole("link", {
+    name: `Open the ${LOCATION.name} page`,
+    exact: true,
+  });
+  await expect(listLink).toHaveAttribute(
+    "href",
+    `/locations/${LOCATION.slug}`
+  );
+  await listLink.click();
+  await expect(page).toHaveURL(`/locations/${LOCATION.slug}`);
 });

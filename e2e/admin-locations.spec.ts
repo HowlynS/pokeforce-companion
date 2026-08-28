@@ -413,7 +413,9 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText(INITIAL.description)).toBeVisible();
   // Slice 10D: the type is the PageHeader's own eyebrow, shown as its
   // plain label ("Town") rather than a "Type: Town" fact row.
-  await expect(page.getByText(INITIAL.type, { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".profession-detail-eyebrow")
+  ).toHaveText(INITIAL.type);
   await expect(page.getByText(INITIAL.accessNote)).toBeVisible();
   await expect(page.getByText("No image available")).toBeVisible();
   await expect(
@@ -475,7 +477,9 @@ test("location create/edit/delete lifecycle through the real admin UI", async ({
   await expect(page.getByText(EDITED.description)).toBeVisible();
   // Slice 10D: the type is the PageHeader's own eyebrow, shown as its
   // plain label ("Region") rather than a "Type: Region" fact row.
-  await expect(page.getByText(EDITED.type, { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".profession-detail-eyebrow")
+  ).toHaveText(EDITED.type);
   await expect(page.getByText(EDITED.accessNote)).toBeVisible();
   await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
 
@@ -584,11 +588,18 @@ test("gameplay verification stamps the selected game version, stays admin-only, 
   // duplicate row entirely.
   await expect(panelRow(page, "Timestamps", "Verified")).toHaveCount(0);
 
-  // Verification is admin-only since Slice 9A: the PUBLIC page must not
-  // render it even for a verified location.
+  // Verified information became a deliberate PUBLIC feature: every resource
+  // detail page carries a structured verification card naming the Game
+  // Version it was checked against (its placement and states are owned by
+  // public-verification.spec.ts). What this admin spec still pins is that
+  // the version the admin just stamped is the one the public page reports,
+  // and that it appears ONLY inside that card — never leaking into the
+  // page's own hero, facts or hierarchy copy.
   await page.goto(`/locations/${VERIFY_LOCATION.slug}`);
-  await expect(page.getByText("Gameplay data verified")).toHaveCount(0);
-  await expect(page.getByText(CURRENT_VERSION_NAME)).toHaveCount(0);
+  const verificationCard = page.locator(".public-verification-card");
+  await expect(verificationCard).toHaveCount(1);
+  await expect(verificationCard).toContainText(CURRENT_VERSION_NAME);
+  await expect(page.getByText(CURRENT_VERSION_NAME)).toHaveCount(1);
 
   // --- A later NORMAL edit, even one that moves the picker, must not
   // alter the stamp: the picker only ever proposes a version, and
@@ -1080,9 +1091,11 @@ test("a sparse location (no description, no image, no parent) renders without em
       exact: true,
     })
   ).toBeVisible();
-  // Slice 10D: the type is the PageHeader's own eyebrow ("Special area"),
-  // not a "Type: Special area" fact row.
-  await expect(page.getByText("Special area", { exact: true })).toBeVisible();
+  // Slice 10D: the type is the hero's own eyebrow ("Special area"), not a
+  // "Type: Special area" fact row.
+  await expect(page.locator(".profession-detail-eyebrow")).toHaveText(
+    "Special area"
+  );
   await expect(page.getByText("No image available")).toBeVisible();
   // No children: the entire Sub-locations section — heading and empty
   // state alike — must be absent, not just its content hidden.
