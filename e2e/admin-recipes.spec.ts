@@ -91,6 +91,17 @@ function cardLink(page: Page, name: string) {
     .filter({ has: page.getByText(name, { exact: true }) });
 }
 
+// One ingredient row on the public recipe page, scoped to the Ingredients
+// panel. The page also carries a Related Recipes section, so an item name
+// can legitimately appear elsewhere on it — an ingredient assertion has to
+// name the panel it is about rather than search the whole page.
+function ingredientRowLink(page: Page, name: string) {
+  return page
+    .locator(".recipe-ingredients-panel")
+    .getByRole("link")
+    .filter({ has: page.getByText(name, { exact: true }) });
+}
+
 // One row of the shared Recipe record list (Slice 9C.1), located by its
 // exact primary text inside the list's navigation landmark. The row link
 // itself opens the edit route — there is no separate per-row Edit/Delete
@@ -438,9 +449,12 @@ test("recipe creation renders result, profession, and ingredients publicly", asy
   const createdCard = cardLink(page, "Test E2E Recipe");
   await expect(createdCard).toBeVisible();
   await expect(createdCard).toHaveAttribute("href", "/recipes/test-e2e-recipe");
+  // The summary now closes with the required Profession level when the
+  // recipe carries one — Recipe cards and detail expose that level, and
+  // this fixture sets Smithing level 3.
   await expect(createdCard).toHaveAttribute(
     "aria-label",
-    "Test E2E Recipe, produces ×2 Iron Ingot, category Components"
+    "Test E2E Recipe, produces ×2 Iron Ingot, category Components, Smithing level 3"
   );
 
   // Public detail page shows the name, resulting item, profession, both
@@ -600,24 +614,42 @@ test("a maximum quantity below the minimum is rejected with a useful error, both
   await expect(recordRow(page, "Test E2E Recipe Invalid Range")).toHaveCount(
     0
   );
-  // A server-side validation redirect is no longer treated as abandonment:
-  // AdminFormGuard auto-restores the just-submitted draft and keeps the form
-  // dirty, so no recovery prompt appears here any more.
+  // A server-side validation redirect is no longer treated as abandonment,
+  // so the contributor is never asked whether to recover work they did not
+  // choose to discard: no draft-recovery prompt appears on this reload.
   await expect(
     page.getByRole("button", { name: "Discard draft" })
   ).toHaveCount(0);
   await expect(
-    page.getByLabel("Maximum quantity", { exact: true })
-  ).toHaveValue("2");
-  // The draft is still offered on a LATER visit, which is where the prompt
-  // belongs, and discarding it there leaves a clean create form behind.
-  await page.goto("/admin/recipes/new");
-  await page
-    .getByRole("button", { name: "Discard draft", exact: true })
-    .click();
+    page.getByRole("button", { name: "Restore draft" })
+  ).toHaveCount(0);
 
   // --- The same rule is enforced identically on an existing recipe's edit
   // --- form ----------------------------------------------------------------
+  // The rejected values are still in the create form. Leaving goes through
+  // the guard's own discard prompt — the path a contributor actually takes
+  // — rather than a forced navigation, which would leave that confirmation
+  // modal open over the next page and block every later interaction.
+  await page.getByRole("link", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await expect(page).toHaveURL("/admin/recipes");
+
+  // The rejected values were also kept as this form's draft. Returning to
+  // the create form is where the recovery prompt belongs, and discarding
+  // there leaves a clean form — and, just as importantly, no open modal
+  // sitting over the next recipe's fields.
+  await page.goto("/admin/recipes/new");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Discard draft", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByLabel("Minimum quantity", { exact: true })
+  ).toHaveValue("1");
   await createRecipeThroughForm(page, {
     name: "Test E2E Recipe Invalid Range Edit",
     slug: "test-e2e-recipe-invalid-range-edit",
@@ -727,7 +759,7 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
       page.getByRole("combobox", { name: "Profession", exact: true })
     )
   ).toBe("Smithing");
-  await expect(page.getByLabel(/^Required level/)).toHaveValue("3");
+  await expect(page.getByLabel(/^Required profession level/)).toHaveValue("3");
   // Ingredients moved entirely to their own tab (Slice 9C.3) — no
   // ingredient group renders on General any more.
   await expect(
@@ -750,7 +782,7 @@ test("General editing updates its own fields and leaves ingredients byte-for-byt
     page.getByRole("combobox", { name: "Profession", exact: true }),
     "No profession"
   );
-  await page.getByLabel(/^Required level/).fill("");
+  await page.getByLabel(/^Required profession level/).fill("");
   await page.getByRole("button", { name: "Save Changes", exact: true }).click();
 
   // The redirect follows the NEW slug (this save also renamed the
@@ -893,13 +925,13 @@ test("Ingredients editing updates the ingredient rows and leaves General fields 
   ).toBeVisible();
   // ...but the ingredients are fully replaced.
   await expect(
-    cardLink(page, "Spring Water").getByText("× 5", { exact: true })
+    ingredientRowLink(page, "Spring Water").getByText("× 5", { exact: true })
   ).toBeVisible();
   await expect(
-    cardLink(page, "Wood").getByText("× 4", { exact: true })
+    ingredientRowLink(page, "Wood").getByText("× 4", { exact: true })
   ).toBeVisible();
-  await expect(cardLink(page, "Charcoal")).toHaveCount(0);
-  await expect(cardLink(page, "Iron Ore")).toHaveCount(0);
+  await expect(ingredientRowLink(page, "Charcoal")).toHaveCount(0);
+  await expect(ingredientRowLink(page, "Iron Ore")).toHaveCount(0);
 });
 
 test("incomplete ingredient pairs are rejected in both directions", async ({
@@ -1559,6 +1591,15 @@ test("gameplay verification stamps the selected game version and survives normal
   ).toBe(stampedDateText);
 
   // --- Verifying against a SELECTED historical version -------------------
+  // Save-in-place re-renders the panel and returns the picker to its
+  // unchecked, current-version baseline. Waiting for that baseline before
+  // choosing again is a real synchronization point, not a delay: choosing
+  // while the picker still shows the previous selection would be a no-op
+  // click on an already-selected option, and the save would then stamp the
+  // default version instead of the one under test.
+  await expect(page.getByLabel("Verify this record for")).toHaveText(
+    `${CURRENT_VERSION_NAME} (current)`
+  );
   await selectAdminOption(
     page.getByLabel("Verify this record for"),
     HISTORICAL_VERSION_NAME

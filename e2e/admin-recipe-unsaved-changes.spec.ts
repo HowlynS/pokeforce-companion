@@ -151,7 +151,7 @@ test("General: Ctrl+S saves a valid form", async ({ page }) => {
   await page.goto(`/admin/recipes/${slug}/edit`);
 
   await page
-    .getByLabel("Required level (optional)", { exact: true })
+    .getByLabel("Required profession level (optional)", { exact: true })
     .fill("5");
   await expect(status(page)).toBeVisible();
 
